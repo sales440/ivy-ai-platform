@@ -34,17 +34,17 @@ RUN npm install -g pnpm@10.4.1
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/pnpm-lock.yaml ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/dist/index.js ./dist/
+COPY --from=builder /app/dist/public ./dist/public
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/shared ./shared
 
 # Set environment
 ENV NODE_ENV=production
-ENV PORT=3000
 
-# Expose port
-EXPOSE 3000
+# Expose port (Railway uses dynamic PORT)
+EXPOSE ${PORT:-3000}
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
