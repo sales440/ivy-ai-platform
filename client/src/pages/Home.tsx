@@ -4,10 +4,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Bot, Zap, TrendingUp, Users, ArrowRight, CheckCircle2 } from "lucide-react";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
+import { useEffect } from "react";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      setLocation('/dashboard');
+    }
+  }, [isAuthenticated, loading, setLocation]);
 
   if (loading) {
     return (
@@ -18,7 +26,6 @@ export default function Home() {
   }
 
   if (isAuthenticated) {
-    setLocation('/dashboard');
     return null;
   }
 
