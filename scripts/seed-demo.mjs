@@ -131,7 +131,7 @@ async function seedDemoData() {
         customerEmail: "customer3@example.com",
         subject: "Feature request: Export to CSV",
         issue: "It would be great to have an option to export analytics data to CSV format for reporting.",
-        category: "feature_request",
+        category: "general",
         priority: "low",
         status: "open",
         assignedTo: 0
