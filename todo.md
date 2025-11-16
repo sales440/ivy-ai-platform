@@ -196,3 +196,13 @@
 - [x] Ejecutar compilación TypeScript sin errores
 - [ ] Ejecutar tests y verificar que pasen
 - [x] Verificar que el servidor inicie correctamente
+
+## Mejoras UX (Nuevas)
+- [x] Implementar skeleton loaders para dashboard mientras carga datos
+- [x] Añadir animaciones de transición suaves en cards de agentes
+- [x] Crear componente Toast para mensajes de éxito/error
+- [x] Implementar mensaje de éxito después de seed data
+- [x] Añadir indicadores de progreso en workflows
+- [x] Mostrar estado en tiempo real de ejecución de workflows
+- [x] Añadir badges de estado (running, completed, failed) en workflows
+- [ ] Implementar auto-refresh de métricas cada 30 segundos

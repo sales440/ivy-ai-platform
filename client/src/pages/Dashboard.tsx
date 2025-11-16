@@ -6,6 +6,9 @@ import { AgentCard } from '@/components/AgentCard';
 import { CommandConsole } from '@/components/CommandConsole';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DashboardSkeleton } from '@/components/DashboardSkeleton';
+import { WorkflowCard } from '@/components/WorkflowCard';
+import { toast } from 'sonner';
 import { 
   Bot, 
   Activity, 
@@ -14,7 +17,8 @@ import {
   Briefcase,
   HeadphonesIcon,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Database
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -23,6 +27,30 @@ export default function Dashboard() {
   const { data: agentsData, isLoading: agentsLoading, refetch: refetchAgents } = trpc.agents.list.useQuery();
   const { data: systemStatus, isLoading: statusLoading } = trpc.analytics.systemStatus.useQuery();
   const { data: kpisData } = trpc.agents.kpis.useQuery();
+  
+  const seedData = trpc.seed.executeSeed.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success('Database seeded successfully!', {
+          description: data.message,
+          duration: 5000,
+        });
+        // Refetch data to show new entries
+        refetchAgents();
+      } else {
+        toast.error('Failed to seed database', {
+          description: data.message,
+          duration: 5000,
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error('Error seeding database', {
+        description: error.message,
+        duration: 5000,
+      });
+    },
+  });
 
   const agents = agentsData?.agents || [];
   const totalAgents = agentsData?.total || 0;
@@ -48,8 +76,8 @@ export default function Dashboard() {
 
   if (agentsLoading || statusLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="container py-6">
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -64,10 +92,29 @@ export default function Dashboard() {
             Intelligent Agent Orchestration System
           </p>
         </div>
-        <Button onClick={() => refetchAgents()} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => seedData.mutate({ 
+              includeLeads: true, 
+              includeTickets: true, 
+              includeKnowledgeBase: true 
+            })} 
+            variant="outline" 
+            size="sm"
+            disabled={seedData.isPending}
+          >
+            {seedData.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4 mr-2" />
+            )}
+            Seed Demo Data
+          </Button>
+          <Button onClick={() => refetchAgents()} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* System Stats */}
@@ -194,40 +241,69 @@ export default function Dashboard() {
 
         {/* Workflows Tab */}
         <TabsContent value="workflows" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Available Workflows</CardTitle>
-              <CardDescription>
-                Pre-configured automation workflows
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-                  <div>
-                    <h4 className="font-medium">Automated Sales Process</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Lead generation → Qualification → Outreach
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Execute
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-                  <div>
-                    <h4 className="font-medium">Support Ticket Resolution</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Automated ticket analysis and resolution
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Execute
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+            <WorkflowCard
+              id="sales_pipeline"
+              name="Sales Pipeline"
+              description="Automated lead generation, scoring, and outreach workflow"
+              steps={[
+                'Find potential leads',
+                'Score and qualify leads',
+                'Generate personalized outreach',
+                'Analyze deal potential',
+                'Create proposal'
+              ]}
+              onExecute={async (id) => {
+                console.log('Executing workflow:', id);
+                // This would call the actual workflow execution
+              }}
+            />
+            <WorkflowCard
+              id="support_escalation"
+              name="Support Escalation"
+              description="Intelligent ticket routing and resolution workflow"
+              steps={[
+                'Search knowledge base',
+                'Generate auto-response',
+                'Analyze sentiment',
+                'Escalate if needed',
+                'Notify team'
+              ]}
+              onExecute={async (id) => {
+                console.log('Executing workflow:', id);
+              }}
+            />
+            <WorkflowCard
+              id="employee_onboarding"
+              name="Employee Onboarding"
+              description="Automated recruitment and onboarding process"
+              steps={[
+                'Screen candidate',
+                'Schedule interview',
+                'Assess cultural fit',
+                'Provision accounts',
+                'Send orientation materials'
+              ]}
+              onExecute={async (id) => {
+                console.log('Executing workflow:', id);
+              }}
+            />
+            <WorkflowCard
+              id="market_analysis"
+              name="Market Analysis"
+              description="Competitive intelligence and strategic planning"
+              steps={[
+                'Gather market data',
+                'Analyze competitors',
+                'Identify trends',
+                'Generate insights',
+                'Create strategy report'
+              ]}
+              onExecute={async (id) => {
+                console.log('Executing workflow:', id);
+              }}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>

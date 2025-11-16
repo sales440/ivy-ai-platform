@@ -1,6 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { seedRouter } from "./seed-router";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
 import { z } from "zod";
@@ -43,6 +44,7 @@ function parseCommand(input: string): ParsedCommand {
 
 export const appRouter = router({
   system: systemRouter,
+  seed: seedRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
