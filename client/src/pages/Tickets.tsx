@@ -38,6 +38,13 @@ export default function Tickets() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [exportFilters, setExportFilters] = useState<{
+    status?: string;
+    priority?: string;
+    startDate?: string;
+    endDate?: string;
+  }>({});
+  const [showExportFilters, setShowExportFilters] = useState(false);
 
   const { data: ticketsData, isLoading, refetch } = trpc.tickets.list.useQuery();
   const createTicket = trpc.tickets.create.useMutation({
@@ -51,9 +58,12 @@ export default function Tickets() {
     }
   });
 
-  const exportTickets = trpc.export.tickets.useQuery(undefined, {
-    enabled: false,
-  });
+  const exportTickets = trpc.export.tickets.useQuery(
+    exportFilters.status || exportFilters.priority || exportFilters.startDate || exportFilters.endDate
+      ? exportFilters as any
+      : undefined,
+    { enabled: false }
+  );
 
   const handleExportCSV = async () => {
     try {
@@ -69,6 +79,7 @@ export default function Tickets() {
         link.click();
         document.body.removeChild(link);
         toast.success(`Exported ${result.data.count} tickets to CSV`);
+        setShowExportFilters(false);
       }
     } catch (error) {
       toast.error('Failed to export tickets');
@@ -163,14 +174,94 @@ export default function Tickets() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleExportCSV} variant="outline" disabled={exportTickets.isFetching}>
-            {exportTickets.isFetching ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            Export CSV
-          </Button>
+          <Dialog open={showExportFilters} onOpenChange={setShowExportFilters}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Export Tickets to CSV</DialogTitle>
+                <DialogDescription>
+                  Apply filters to export specific tickets
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Status Filter</Label>
+                  <Select
+                    value={exportFilters.status || 'all'}
+                    onValueChange={(value) =>
+                      setExportFilters({ ...exportFilters, status: value === 'all' ? undefined : value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="escalated">Escalated</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Priority Filter</Label>
+                  <Select
+                    value={exportFilters.priority || 'all'}
+                    onValueChange={(value) =>
+                      setExportFilters({ ...exportFilters, priority: value === 'all' ? undefined : value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All priorities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Priorities</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={exportFilters.startDate || ''}
+                    onChange={(e) => setExportFilters({ ...exportFilters, startDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={exportFilters.endDate || ''}
+                    onChange={(e) => setExportFilters({ ...exportFilters, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowExportFilters(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleExportCSV} disabled={exportTickets.isFetching}>
+                  {exportTickets.isFetching ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Export
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>

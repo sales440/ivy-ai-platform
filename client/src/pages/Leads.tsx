@@ -37,6 +37,12 @@ export default function Leads() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [exportFilters, setExportFilters] = useState<{
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+  }>({});
+  const [showExportFilters, setShowExportFilters] = useState(false);
 
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery();
   const createLead = trpc.leads.create.useMutation({
@@ -50,9 +56,12 @@ export default function Leads() {
     }
   });
 
-  const exportLeads = trpc.export.leads.useQuery(undefined, {
-    enabled: false,
-  });
+  const exportLeads = trpc.export.leads.useQuery(
+    exportFilters.status || exportFilters.startDate || exportFilters.endDate
+      ? exportFilters as any
+      : undefined,
+    { enabled: false }
+  );
 
   const handleExportCSV = async () => {
     try {
@@ -68,10 +77,15 @@ export default function Leads() {
         link.click();
         document.body.removeChild(link);
         toast.success(`Exported ${result.data.count} leads to CSV`);
+        setShowExportFilters(false);
       }
     } catch (error) {
       toast.error('Failed to export leads');
     }
+  };
+  
+  const handleExportWithFilters = () => {
+    setShowExportFilters(true);
   };
 
   // Qualify lead functionality (to be implemented)
@@ -146,14 +160,75 @@ export default function Leads() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleExportCSV} variant="outline" disabled={exportLeads.isFetching}>
-            {exportLeads.isFetching ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
-            )}
-            Export CSV
-          </Button>
+          <Dialog open={showExportFilters} onOpenChange={setShowExportFilters}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Export Leads to CSV</DialogTitle>
+                <DialogDescription>
+                  Apply filters to export specific leads
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Status Filter</Label>
+                  <Select
+                    value={exportFilters.status || 'all'}
+                    onValueChange={(value) =>
+                      setExportFilters({ ...exportFilters, status: value === 'all' ? undefined : value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="qualified">Qualified</SelectItem>
+                      <SelectItem value="nurture">Nurture</SelectItem>
+                      <SelectItem value="converted">Converted</SelectItem>
+                      <SelectItem value="lost">Lost</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input
+                    type="date"
+                    value={exportFilters.startDate || ''}
+                    onChange={(e) => setExportFilters({ ...exportFilters, startDate: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input
+                    type="date"
+                    value={exportFilters.endDate || ''}
+                    onChange={(e) => setExportFilters({ ...exportFilters, endDate: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowExportFilters(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleExportCSV} disabled={exportLeads.isFetching}>
+                  {exportLeads.isFetching ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  Export
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>

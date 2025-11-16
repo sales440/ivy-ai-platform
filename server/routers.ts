@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { seedRouter } from "./seed-router";
 import { notificationsRouter } from "./notifications-router";
 import { exportRouter } from "./export-router";
+import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
 import { z } from "zod";
@@ -59,6 +60,58 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+  }),
+
+  // ============================================================================
+  // USER PREFERENCES ROUTER
+  // ============================================================================
+  
+  preferences: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const prefs = await db.getUserPreferences(ctx.user.id);
+      
+      // Si no existen preferencias, crear las predeterminadas
+      if (!prefs) {
+        await db.createDefaultUserPreferences(ctx.user.id);
+        return await db.getUserPreferences(ctx.user.id);
+      }
+      
+      return prefs;
+    }),
+
+    update: protectedProcedure
+      .input(z.object({
+        theme: z.enum(["light", "dark", "system"]).optional(),
+        language: z.string().optional(),
+        notificationsEnabled: z.boolean().optional(),
+        emailNotifications: z.boolean().optional(),
+        workflowNotifications: z.boolean().optional(),
+        leadNotifications: z.boolean().optional(),
+        ticketNotifications: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Obtener preferencias actuales
+        const currentPrefs = await db.getUserPreferences(ctx.user.id);
+        
+        // Merge con nuevos valores
+        const updatedPrefs = {
+          userId: ctx.user.id,
+          theme: input.theme ?? currentPrefs?.theme ?? "dark",
+          language: input.language ?? currentPrefs?.language ?? "en",
+          notificationsEnabled: input.notificationsEnabled ?? currentPrefs?.notificationsEnabled ?? true,
+          emailNotifications: input.emailNotifications ?? currentPrefs?.emailNotifications ?? true,
+          workflowNotifications: input.workflowNotifications ?? currentPrefs?.workflowNotifications ?? true,
+          leadNotifications: input.leadNotifications ?? currentPrefs?.leadNotifications ?? true,
+          ticketNotifications: input.ticketNotifications ?? currentPrefs?.ticketNotifications ?? true,
+        };
+        
+        await db.upsertUserPreferences(updatedPrefs);
+        
+        return {
+          success: true,
+          preferences: updatedPrefs
+        };
+      }),
   }),
 
   // ============================================================================
@@ -141,9 +194,18 @@ export const appRouter = router({
         workflowName: z.string(),
         initialData: z.record(z.string(), z.any())
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const hive = await getHive();
         const result = await hive.executeWorkflow(input.workflowName, input.initialData);
+        
+        // Create notification for workflow completion
+        if (ctx.user && result.success) {
+          await notificationHelper.notifyWorkflowCompleted(
+            input.workflowName,
+            ctx.user.id,
+            `Completed at ${result.completed_at}`
+          );
+        }
         
         return result;
       }),
@@ -184,7 +246,7 @@ export const appRouter = router({
         industry: z.string().optional(),
         location: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
         const { v4: uuidv4 } = await import('uuid');
         const lead = await db.createLead({
           leadId: uuidv4(),
@@ -196,6 +258,17 @@ export const appRouter = router({
           location: input.location,
           status: "new"
         });
+        
+        // If lead is qualified (score >= 70), create notification
+        if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore >= 70) {
+          await notificationHelper.notifyLeadQualified(
+            lead.name,
+            lead.company || 'Unknown Company',
+            lead.qualificationScore,
+            ctx.user.id
+          );
+        }
+        
         return { lead };
       }),
   }),
@@ -241,8 +314,26 @@ export const appRouter = router({
         ticketId: z.number(),
         resolution: z.string()
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        // Get ticket info before resolving
+        const ticket = await db.getTicketById(input.ticketId);
+        
         await db.updateTicketStatus(input.ticketId, "resolved", input.resolution);
+        
+        // Create notification for ticket resolution
+        if (ctx.user && ticket) {
+          const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+          const resolvedAt = new Date();
+          const resolutionTime = Math.round((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60)); // minutes
+          
+          await notificationHelper.notifyTicketResolved(
+            ticket.ticketId,
+            ticket.subject,
+            ctx.user.id,
+            `${resolutionTime} minutes`
+          );
+        }
+        
         return { success: true };
       }),
   }),

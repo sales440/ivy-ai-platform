@@ -3,6 +3,9 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
   users, 
+  userPreferences,
+  InsertUserPreferences,
+  UserPreferences,
   agents, 
   InsertAgent,
   Agent,
@@ -560,4 +563,84 @@ export async function getAllTicketsForExport() {
     .orderBy(desc(tickets.createdAt));
   
   return result;
+}
+
+// ============================================================================
+// USER PREFERENCES MANAGEMENT
+// ============================================================================
+
+export async function getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user preferences: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1);
+    
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get user preferences:", error);
+    return undefined;
+  }
+}
+
+export async function upsertUserPreferences(prefs: InsertUserPreferences): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot upsert user preferences: database not available");
+    return;
+  }
+
+  try {
+    await db
+      .insert(userPreferences)
+      .values(prefs)
+      .onDuplicateKeyUpdate({
+        set: {
+          theme: prefs.theme,
+          language: prefs.language,
+          notificationsEnabled: prefs.notificationsEnabled,
+          emailNotifications: prefs.emailNotifications,
+          workflowNotifications: prefs.workflowNotifications,
+          leadNotifications: prefs.leadNotifications,
+          ticketNotifications: prefs.ticketNotifications,
+          updatedAt: new Date(),
+        }
+      });
+  } catch (error) {
+    console.error("[Database] Failed to upsert user preferences:", error);
+    throw error;
+  }
+}
+
+export async function createDefaultUserPreferences(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create default preferences: database not available");
+    return;
+  }
+
+  try {
+    await db.insert(userPreferences).values({
+      userId,
+      theme: "dark",
+      language: "en",
+      notificationsEnabled: true,
+      emailNotifications: true,
+      workflowNotifications: true,
+      leadNotifications: true,
+      ticketNotifications: true,
+    });
+  } catch (error) {
+    // Ignore duplicate key errors (preferences already exist)
+    if (!(error as any).message?.includes('Duplicate entry')) {
+      console.error("[Database] Failed to create default preferences:", error);
+    }
+  }
 }

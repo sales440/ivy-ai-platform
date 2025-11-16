@@ -1,4 +1,5 @@
 import { protectedProcedure, router } from "./_core/trpc";
+import { z } from "zod";
 import * as db from "./db";
 
 // Helper function to convert array of objects to CSV
@@ -41,9 +42,30 @@ function arrayToCSV(data: any[], headers: string[]): string {
 }
 
 export const exportRouter = router({
-  // Export leads to CSV
-  leads: protectedProcedure.query(async () => {
-    const leads = await db.getAllLeadsForExport();
+  // Export leads to CSV with optional filters
+  leads: protectedProcedure
+    .input(z.object({
+      status: z.enum(["new", "contacted", "qualified", "nurture", "converted", "lost"]).optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      let leads = await db.getAllLeadsForExport();
+      
+      // Apply filters
+      if (input) {
+        if (input.status) {
+          leads = leads.filter(lead => lead.status === input.status);
+        }
+        if (input.startDate) {
+          const startDate = new Date(input.startDate);
+          leads = leads.filter(lead => lead.createdAt && new Date(lead.createdAt) >= startDate);
+        }
+        if (input.endDate) {
+          const endDate = new Date(input.endDate);
+          leads = leads.filter(lead => lead.createdAt && new Date(lead.createdAt) <= endDate);
+        }
+      }
     
     const headers = [
       'id',
@@ -70,9 +92,34 @@ export const exportRouter = router({
     };
   }),
 
-  // Export tickets to CSV
-  tickets: protectedProcedure.query(async () => {
-    const tickets = await db.getAllTicketsForExport();
+  // Export tickets to CSV with optional filters
+  tickets: protectedProcedure
+    .input(z.object({
+      status: z.enum(["open", "in_progress", "resolved", "escalated", "closed"]).optional(),
+      priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      let tickets = await db.getAllTicketsForExport();
+      
+      // Apply filters
+      if (input) {
+        if (input.status) {
+          tickets = tickets.filter(ticket => ticket.status === input.status);
+        }
+        if (input.priority) {
+          tickets = tickets.filter(ticket => ticket.priority === input.priority);
+        }
+        if (input.startDate) {
+          const startDate = new Date(input.startDate);
+          tickets = tickets.filter(ticket => ticket.createdAt && new Date(ticket.createdAt) >= startDate);
+        }
+        if (input.endDate) {
+          const endDate = new Date(input.endDate);
+          tickets = tickets.filter(ticket => ticket.createdAt && new Date(ticket.createdAt) <= endDate);
+        }
+      }
     
     const headers = [
       'id',

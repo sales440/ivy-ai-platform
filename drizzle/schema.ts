@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { boolean, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -17,6 +17,26 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * Preferencias de usuario
+ */
+export const userPreferences = mysqlTable("userPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(), // Relación 1:1 con users
+  theme: mysqlEnum("theme", ["light", "dark", "system"]).default("dark").notNull(),
+  language: varchar("language", { length: 10 }).default("en").notNull(),
+  notificationsEnabled: boolean("notificationsEnabled").default(true).notNull(),
+  emailNotifications: boolean("emailNotifications").default(true).notNull(),
+  workflowNotifications: boolean("workflowNotifications").default(true).notNull(),
+  leadNotifications: boolean("leadNotifications").default(true).notNull(),
+  ticketNotifications: boolean("ticketNotifications").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertUserPreferences = typeof userPreferences.$inferInsert;
 
 /**
  * Notificaciones para usuarios

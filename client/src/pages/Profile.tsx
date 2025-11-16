@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,11 +20,37 @@ export default function Profile() {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
 
-  // Preferences state
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [workflowNotifications, setWorkflowNotifications] = useState(true);
-  const [leadNotifications, setLeadNotifications] = useState(true);
-  const [ticketNotifications, setTicketNotifications] = useState(true);
+  // Fetch user preferences
+  const { data: preferences, refetch: refetchPreferences } = trpc.preferences.get.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  // Update preferences mutation
+  const updatePreferences = trpc.preferences.update.useMutation({
+    onSuccess: () => {
+      toast.success('Preferences saved successfully');
+      refetchPreferences();
+    },
+    onError: (error) => {
+      toast.error(`Failed to save preferences: ${error.message}`);
+    }
+  });
+
+  // Preferences state (initialized from API)
+  const [emailNotifications, setEmailNotifications] = useState(preferences?.emailNotifications ?? true);
+  const [workflowNotifications, setWorkflowNotifications] = useState(preferences?.workflowNotifications ?? true);
+  const [leadNotifications, setLeadNotifications] = useState(preferences?.leadNotifications ?? true);
+  const [ticketNotifications, setTicketNotifications] = useState(preferences?.ticketNotifications ?? true);
+
+  // Update local state when preferences are loaded
+  useEffect(() => {
+    if (preferences) {
+      setEmailNotifications(preferences.emailNotifications);
+      setWorkflowNotifications(preferences.workflowNotifications);
+      setLeadNotifications(preferences.leadNotifications);
+      setTicketNotifications(preferences.ticketNotifications);
+    }
+  }, [preferences]);
 
   if (loading) {
     return (
@@ -51,9 +77,13 @@ export default function Profile() {
     toast.success('Profile updated successfully');
   };
 
-  const handleSavePreferences = () => {
-    // TODO: Implement preferences save
-    toast.success('Preferences saved successfully');
+  const handleSavePreferences = async () => {
+    await updatePreferences.mutateAsync({
+      emailNotifications,
+      workflowNotifications,
+      leadNotifications,
+      ticketNotifications,
+    });
   };
 
   const getInitials = (name: string) => {
@@ -237,8 +267,12 @@ export default function Profile() {
                   onCheckedChange={setTicketNotifications}
                 />
               </div>
-              <Button onClick={handleSavePreferences} className="w-full">
-                <Save className="h-4 w-4 mr-2" />
+              <Button onClick={handleSavePreferences} className="w-full" disabled={updatePreferences.isPending}>
+                {updatePreferences.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
                 Save Preferences
               </Button>
             </CardContent>

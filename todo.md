@@ -235,3 +235,26 @@
 - [x] Añadir botón "Export to CSV" en página Tickets
 - [x] Implementar descarga automática del archivo
 - [ ] Añadir filtros opcionales antes de exportar
+
+## Funcionalidades Finales
+### Notificaciones Automáticas para Eventos
+- [x] Crear notificación cuando un workflow se completa
+- [x] Crear notificación cuando un lead es calificado
+- [x] Crear notificación cuando un ticket es resuelto
+- [ ] Crear notificación cuando un agente cambia de estado
+- [x] Integrar notificaciones en los routers correspondientes
+
+### Filtros Avanzados para Exportación CSV
+- [x] Añadir selector de rango de fechas en exportación de leads
+- [x] Añadir selector de rango de fechas en exportación de tickets
+- [x] Añadir filtro por estado en exportación de leads
+- [x] Añadir filtro por estado y prioridad en exportación de tickets
+- [x] Actualizar backend para soportar filtros en exportación
+
+### Persistencia de Preferencias de Usuario
+- [x] Añadir tabla userPreferences en schema de base de datos
+- [x] Crear API backend para guardar/cargar preferencias
+- [x] Conectar página de perfil con API de preferencias
+- [x] Aplicar preferencias guardadas al cargar la aplicación
+- [x] Añadir preferencias de tema (dark/light)
+- [x] Añadir preferencias de idioma
