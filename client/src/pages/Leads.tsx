@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter } from 'lucide-react';
+import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Leads() {
@@ -49,6 +49,30 @@ export default function Leads() {
       toast.error(`Failed to create lead: ${error.message}`);
     }
   });
+
+  const exportLeads = trpc.export.leads.useQuery(undefined, {
+    enabled: false,
+  });
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportLeads.refetch();
+      if (result.data) {
+        const blob = new Blob([result.data.content], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', result.data.filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`Exported ${result.data.count} leads to CSV`);
+      }
+    } catch (error) {
+      toast.error('Failed to export leads');
+    }
+  };
 
   // Qualify lead functionality (to be implemented)
   const handleQualifyLead = (leadId: number) => {
@@ -121,13 +145,22 @@ export default function Leads() {
             Powered by Ivy-Prospect
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Lead
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button onClick={handleExportCSV} variant="outline" disabled={exportLeads.isFetching}>
+            {exportLeads.isFetching ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Export CSV
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Lead
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <form onSubmit={handleCreateLead}>
               <DialogHeader>
@@ -181,7 +214,8 @@ export default function Leads() {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}

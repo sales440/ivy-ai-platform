@@ -206,3 +206,32 @@
 - [x] Mostrar estado en tiempo real de ejecución de workflows
 - [x] Añadir badges de estado (running, completed, failed) en workflows
 - [ ] Implementar auto-refresh de métricas cada 30 segundos
+
+## Funcionalidades Avanzadas (Nuevas)
+
+### Sistema de Notificaciones en Tiempo Real
+- [x] Diseñar esquema de notificaciones en base de datos
+- [x] Implementar backend para crear y gestionar notificaciones
+- [x] Crear componente NotificationBell con badge de contador
+- [x] Implementar dropdown de notificaciones con lista
+- [x] Añadir marcado de leído/no leído
+- [x] Implementar auto-refresh cada 30 segundos
+- [ ] Crear notificaciones para eventos importantes (workflow completado, lead calificado, ticket resuelto)
+
+### Página de Perfil de Usuario
+- [x] Crear ruta /profile en App.tsx
+- [x] Diseñar página de perfil con tabs (Info, Preferences, Security)
+- [x] Implementar formulario de edición de información personal
+- [x] Añadir preferencias de notificaciones
+- [x] Implementar cambio de contraseña (si aplica)
+- [x] Añadir avatar/foto de perfil
+- [ ] Guardar preferencias en base de datos
+
+### Exportación de Datos a CSV
+- [x] Implementar endpoint backend para exportar leads a CSV
+- [x] Implementar endpoint backend para exportar tickets a CSV
+- [x] Crear función de generación de CSV con headers correctos
+- [x] Añadir botón "Export to CSV" en página Leads
+- [x] Añadir botón "Export to CSV" en página Tickets
+- [x] Implementar descarga automática del archivo
+- [ ] Añadir filtros opcionales antes de exportar

@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, AlertCircle, CheckCircle2, Clock, Filter } from 'lucide-react';
+import { Loader2, Plus, Search, AlertCircle, CheckCircle2, Clock, Filter, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Tickets() {
@@ -50,6 +50,30 @@ export default function Tickets() {
       toast.error(`Failed to create ticket: ${error.message}`);
     }
   });
+
+  const exportTickets = trpc.export.tickets.useQuery(undefined, {
+    enabled: false,
+  });
+
+  const handleExportCSV = async () => {
+    try {
+      const result = await exportTickets.refetch();
+      if (result.data) {
+        const blob = new Blob([result.data.content], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', result.data.filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`Exported ${result.data.count} tickets to CSV`);
+      }
+    } catch (error) {
+      toast.error('Failed to export tickets');
+    }
+  };
 
   const tickets = ticketsData?.tickets || [];
 
@@ -138,7 +162,16 @@ export default function Tickets() {
             Powered by Ivy-Solve
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <div className="flex gap-2">
+          <Button onClick={handleExportCSV} variant="outline" disabled={exportTickets.isFetching}>
+            {exportTickets.isFetching ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Export CSV
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
@@ -193,7 +226,8 @@ export default function Tickets() {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}

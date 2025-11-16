@@ -19,6 +19,24 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
+ * Notificaciones para usuarios
+ */
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // ID del usuario que recibe la notificación
+  title: varchar("title", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  type: mysqlEnum("type", ["info", "success", "warning", "error"]).default("info").notNull(),
+  category: mysqlEnum("category", ["workflow", "agent", "lead", "ticket", "system"]).notNull(),
+  relatedId: varchar("relatedId", { length: 64 }), // ID del objeto relacionado (workflow, lead, ticket, etc.)
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
+/**
  * Agentes Ivy.AI - Tabla principal de agentes
  */
 export const agents = mysqlTable("agents", {

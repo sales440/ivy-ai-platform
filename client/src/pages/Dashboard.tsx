@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DashboardSkeleton } from '@/components/DashboardSkeleton';
 import { WorkflowCard } from '@/components/WorkflowCard';
+import { NotificationBell } from '@/components/NotificationBell';
 import { toast } from 'sonner';
 import { 
   Bot, 
@@ -92,7 +93,8 @@ export default function Dashboard() {
             Intelligent Agent Orchestration System
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <NotificationBell />
           <Button 
             onClick={() => seedData.mutate({ 
               includeLeads: true, 

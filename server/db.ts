@@ -445,3 +445,119 @@ export async function getCommandHistory(userId: number, limit: number = 50): Pro
     .orderBy(desc(commandHistory.createdAt))
     .limit(limit);
 }
+
+// ============================================================================
+// NOTIFICATIONS
+// ============================================================================
+
+export async function getUserNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { notifications } = await import("../drizzle/schema");
+  const result = await db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(50);
+  
+  return result;
+}
+
+export async function markNotificationAsRead(notificationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const { notifications } = await import("../drizzle/schema");
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(
+      and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, userId)
+      )
+    );
+}
+
+export async function markAllNotificationsAsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const { notifications } = await import("../drizzle/schema");
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(eq(notifications.userId, userId));
+}
+
+export async function deleteNotification(notificationId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const { notifications } = await import("../drizzle/schema");
+  await db
+    .delete(notifications)
+    .where(
+      and(
+        eq(notifications.id, notificationId),
+        eq(notifications.userId, userId)
+      )
+    );
+}
+
+export async function createNotification(data: {
+  userId: number;
+  title: string;
+  message: string;
+  type: "info" | "success" | "warning" | "error";
+  category: "workflow" | "agent" | "lead" | "ticket" | "system";
+  relatedId?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const { notifications } = await import("../drizzle/schema");
+  const result = await db.insert(notifications).values({
+    userId: data.userId,
+    title: data.title,
+    message: data.message,
+    type: data.type,
+    category: data.category,
+    relatedId: data.relatedId,
+    isRead: false,
+  });
+  
+  return result;
+}
+
+// ============================================================================
+// CSV EXPORT
+// ============================================================================
+
+export async function getAllLeadsForExport() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { leads } = await import("../drizzle/schema");
+  const result = await db
+    .select()
+    .from(leads)
+    .orderBy(desc(leads.createdAt));
+  
+  return result;
+}
+
+export async function getAllTicketsForExport() {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const { tickets } = await import("../drizzle/schema");
+  const result = await db
+    .select()
+    .from(tickets)
+    .orderBy(desc(tickets.createdAt));
+  
+  return result;
+}
