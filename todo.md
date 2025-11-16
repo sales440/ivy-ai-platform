@@ -24,11 +24,11 @@
 
 ## Backend - Agentes Especializados
 - [x] Implementar Ivy-Prospect (Ventas - Generación de leads)
-- [ ] Implementar Ivy-Closer (Ventas - Negociación y cierre)
+- [x] Implementar Ivy-Closer (Ventas - Negociación y cierre)
 - [x] Implementar Ivy-Solve (Soporte - Nivel 1 y 2)
-- [ ] Implementar Ivy-Logic (Operaciones - Cadena de suministro)
-- [ ] Implementar Ivy-Talent (RRHH - Reclutamiento)
-- [ ] Implementar Ivy-Insight (Estrategia - Análisis de datos)
+- [x] Implementar Ivy-Logic (Operaciones - Cadena de suministro)
+- [x] Implementar Ivy-Talent (RRHH - Reclutamiento)
+- [x] Implementar Ivy-Insight (Estrategia - Análisis de datos)
 
 ## Backend - Funcionalidades de Agentes
 - [ ] Ivy-Prospect: Búsqueda de leads en LinkedIn
@@ -94,18 +94,18 @@
 - [x] Página: Gestión de agentes
 - [x] Página: Analytics y KPIs
 - [x] Página: Workflows
-- [ ] Página: Leads (Ivy-Prospect)
-- [ ] Página: Tickets de soporte (Ivy-Solve)
+- [x] Página: Leads (Ivy-Prospect)
+- [x] Página: Tickets de soporte (Ivy-Solve)
 - [x] Página: Estado del sistema
 
 ## Frontend - Componentes
 - [x] Componente: Chat/Consola de comandos
 - [x] Componente: Tarjeta de agente (estado, KPIs)
 - [x] Componente: Lista de agentes activos
-- [ ] Componente: Visualización de KPIs (gráficos)
+- [x] Componente: Visualización de KPIs (gráficos)
 - [ ] Componente: Timeline de workflow
-- [ ] Componente: Tabla de leads
-- [ ] Componente: Tabla de tickets
+- [x] Componente: Tabla de leads)
+- [x] Componente: Tabla de tickets
 - [ ] Componente: Creador de workflows
 - [x] Componente: Monitor de sistema en tiempo real
 
