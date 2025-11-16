@@ -258,3 +258,17 @@
 - [x] Aplicar preferencias guardadas al cargar la aplicación
 - [x] Añadir preferencias de tema (dark/light)
 - [x] Añadir preferencias de idioma
+
+### Integración de Código RBAC Externo (Feature #1)
+- [ ] Auditar código recibido del programador externo
+- [ ] Integrar schema de roles y userRoles en drizzle/schema.ts
+- [ ] Ejecutar migraciones de base de datos (pnpm db:push)
+- [ ] Integrar funciones de base de datos en server/db.ts
+- [ ] Crear archivo shared/permissions.ts con constantes de permisos
+- [ ] Integrar routers tRPC en server/routers.ts
+- [ ] Añadir import de TRPCError faltante
+- [ ] Crear interfaz frontend para gestión de roles (página /roles)
+- [ ] Crear componente de asignación de roles a usuarios
+- [ ] Testing completo del sistema RBAC
+- [ ] Corregir errores encontrados durante testing
+- [ ] Documentar sistema RBAC en README
