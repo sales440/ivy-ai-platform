@@ -182,3 +182,17 @@
 - [ ] Configurar logging y monitoreo
 - [x] Documentar proceso de deployment paso a paso
 - [x] Crear guía de troubleshooting para Railway
+
+## Auditoría de Código (Pre-Deployment)
+- [x] Auditar y corregir errores en agents/core.ts (ERROR #1: TaskInput/TaskResult exports)
+- [x] Auditar y corregir errores en todos los agentes (Prospect, Solve, Closer, Logic, Talent, Insight)
+- [x] Auditar y corregir errores en hive/orchestrator.ts (Actualizado para nuevo schema)
+- [x] Auditar y corregir errores en server/routers.ts (Sin errores encontrados)
+- [x] Auditar y corregir errores en server/db.ts (Sin errores encontrados)
+- [x] Auditar y corregir errores en drizzle/schema.ts (ERROR #2, #3, #4: agentCommunications, tickets category, knowledgeBase fields)
+- [x] Auditar y corregir errores en frontend (componentes, páginas) (Sin errores - funcionando correctamente)
+- [x] Verificar imports y exports en todos los módulos
+- [x] Verificar tipos TypeScript en todo el proyecto
+- [x] Ejecutar compilación TypeScript sin errores
+- [ ] Ejecutar tests y verificar que pasen
+- [x] Verificar que el servidor inicie correctamente

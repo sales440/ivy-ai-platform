@@ -352,13 +352,14 @@ export class HiveOrchestrator {
   private async _logCommunication(agentId: number, taskType: string, result: any): Promise<void> {
     const comm = {
       communicationId: uuidv4(),
-      fromAgentId: agentId,
-      toAgentId: null,
+      fromAgent: `agent_${agentId}`,
+      toAgent: "hive",
       messageType: taskType,
-      message: { result: result }
+      content: JSON.stringify({ result: result }),
+      status: "delivered" as const
     };
 
-    this.agentCommunications.push(comm);
+    this.agentCommunications.push(comm as any);
     await db.logAgentCommunication(comm);
   }
 

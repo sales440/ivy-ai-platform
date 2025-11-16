@@ -3,7 +3,8 @@
  * All specialized agents for the Ivy.AI platform
  */
 
-export { IvyAgent, AgentType, Department, AgentStatus, TaskInput, TaskResult } from './core';
+export { IvyAgent, AgentType, Department, AgentStatus } from './core';
+export type { TaskInput, TaskResult } from './core';
 export { IvyProspect } from './prospect';
 export { IvySolve } from './solve';
 export { IvyCloser } from './closer';

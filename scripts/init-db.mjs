@@ -46,8 +46,8 @@ async function initializeDatabase() {
         content: "To reset your password: 1. Go to login page, 2. Click 'Forgot Password', 3. Enter your email, 4. Check your inbox for reset link, 5. Follow the link and create a new password.",
         category: "account",
         tags: JSON.stringify(["password", "account", "security"]),
-        views: 0,
-        helpful: 0,
+        viewCount: 0,
+        helpfulCount: 0,
         createdBy: 0
       },
       {
@@ -56,8 +56,8 @@ async function initializeDatabase() {
         content: "Welcome to Ivy.AI! This platform provides intelligent automation through specialized AI agents. Start by exploring the dashboard, then try executing commands in the console or creating workflows.",
         category: "getting_started",
         tags: JSON.stringify(["tutorial", "basics", "introduction"]),
-        views: 0,
-        helpful: 0,
+        viewCount: 0,
+        helpfulCount: 0,
         createdBy: 0
       },
       {
@@ -66,8 +66,8 @@ async function initializeDatabase() {
         content: "Ivy.AI includes 6 specialized agents: Ivy-Prospect (sales leads), Ivy-Closer (deal closing), Ivy-Solve (customer support), Ivy-Logic (operations), Ivy-Talent (HR), and Ivy-Insight (strategy). Each agent has unique capabilities and KPIs.",
         category: "features",
         tags: JSON.stringify(["agents", "features", "capabilities"]),
-        views: 0,
-        helpful: 0,
+        viewCount: 0,
+        helpfulCount: 0,
         createdBy: 0
       },
       {
@@ -76,8 +76,8 @@ async function initializeDatabase() {
         content: "Common issues and solutions: 1. Agent not responding - Check system status, 2. Workflow stuck - Review execution logs, 3. Data not syncing - Verify database connection, 4. Performance slow - Check system metrics.",
         category: "troubleshooting",
         tags: JSON.stringify(["troubleshooting", "errors", "support"]),
-        views: 0,
-        helpful: 0,
+        viewCount: 0,
+        helpfulCount: 0,
         createdBy: 0
       },
       {
@@ -86,15 +86,15 @@ async function initializeDatabase() {
         content: "Integrate Ivy.AI with your systems using our tRPC API. Available endpoints: agents.*, workflows.*, leads.*, tickets.*, analytics.*. Authentication is handled via session cookies.",
         category: "integration",
         tags: JSON.stringify(["api", "integration", "development"]),
-        views: 0,
-        helpful: 0,
+        viewCount: 0,
+        helpfulCount: 0,
         createdBy: 0
       }
     ];
 
     for (const article of sampleArticles) {
       await connection.query(
-        `INSERT INTO knowledgeBase (articleId, title, content, category, tags, views, helpful, createdBy, createdAt, updatedAt)
+        `INSERT INTO knowledgeBase (articleId, title, content, category, tags, viewCount, helpfulCount, createdBy, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
          ON DUPLICATE KEY UPDATE
          title = VALUES(title),
@@ -107,8 +107,8 @@ async function initializeDatabase() {
           article.content,
           article.category,
           article.tags,
-          article.views,
-          article.helpful,
+          article.viewCount,
+          article.helpfulCount,
           article.createdBy
         ]
       );

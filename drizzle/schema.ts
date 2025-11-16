@@ -138,7 +138,7 @@ export const tickets = mysqlTable("tickets", {
   customerEmail: varchar("customerEmail", { length: 320 }),
   subject: varchar("subject", { length: 300 }).notNull(),
   issue: text("issue").notNull(),
-  category: mysqlEnum("category", ["login", "billing", "technical", "feature", "account", "general"]),
+  category: mysqlEnum("category", ["login", "billing", "technical", "feature_request", "account", "general"]),
   priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
   status: mysqlEnum("status", ["open", "in_progress", "resolved", "escalated", "closed"]).default("open").notNull(),
   assignedTo: int("assignedTo"), // Agent ID
@@ -182,12 +182,12 @@ export type InsertKnowledgeArticle = typeof knowledgeBase.$inferInsert;
 export const agentCommunications = mysqlTable("agentCommunications", {
   id: int("id").autoincrement().primaryKey(),
   communicationId: varchar("communicationId", { length: 64 }).notNull().unique(),
-  fromAgentId: int("fromAgentId").notNull(),
-  toAgentId: int("toAgentId"),
+  fromAgent: varchar("fromAgent", { length: 100 }).notNull(), // Agent type string
+  toAgent: varchar("toAgent", { length: 100 }).notNull(), // Agent type string
   messageType: varchar("messageType", { length: 100 }).notNull(),
-  message: json("message").$type<Record<string, any>>().notNull(),
-  workflowExecutionId: int("workflowExecutionId"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  content: text("content").notNull(), // JSON string content
+  status: mysqlEnum("status", ["pending", "delivered", "failed"]).default("pending").notNull(),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
 });
 
 export type AgentCommunication = typeof agentCommunications.$inferSelect;

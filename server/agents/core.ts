@@ -32,12 +32,12 @@ export enum AgentType {
   INSIGHT = "insight"
 }
 
-export type TaskInput = {
+export interface TaskInput {
   type: string;
   [key: string]: any;
 }
 
-export type TaskResult = {
+export interface TaskResult {
   status: "completed" | "failed";
   data?: any;
   error?: string;
@@ -45,7 +45,7 @@ export type TaskResult = {
   nextActions?: string[];
 }
 
-export type AgentKPIs = {
+export interface AgentKPIs {
   [key: string]: number;
 }
 

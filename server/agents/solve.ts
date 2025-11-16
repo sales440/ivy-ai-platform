@@ -3,7 +3,8 @@
  * Specializes in resolving customer tickets, searching knowledge base, and escalating issues
  */
 
-import { IvyAgent, AgentType, Department, TaskInput, TaskResult } from './core';
+import { IvyAgent, AgentType, Department } from './core';
+import type { TaskInput, TaskResult } from './core';
 import * as db from '../db';
 import { v4 as uuidv4 } from 'uuid';
 import { invokeLLM } from '../_core/llm';
