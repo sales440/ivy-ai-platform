@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
 import { z } from "zod";
 import { getHive } from "./hive/orchestrator";
 import { AgentType } from "./agents/core";
@@ -129,16 +130,6 @@ export const appRouter = router({
   // ============================================================================
   
   workflows: router({
-    available: protectedProcedure.query(async () => {
-      const hive = await getHive();
-      const workflows = hive.getAvailableWorkflows();
-      
-      return {
-        workflows,
-        total: workflows.length
-      };
-    }),
-
     execute: protectedProcedure
       .input(z.object({
         workflowName: z.string(),
@@ -151,9 +142,13 @@ export const appRouter = router({
         return result;
       }),
 
-    list: protectedProcedure.query(async () => {
-      const workflows = await db.getAllWorkflows();
-      return { workflows };
+    available: publicProcedure.query(async () => {
+      const predefinedWorkflows = getAllPredefinedWorkflows();
+      return { 
+        predefined: predefinedWorkflows,
+        custom: [],
+        total: predefinedWorkflows.length
+      };
     }),
   }),
 

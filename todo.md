@@ -145,3 +145,40 @@
 - [ ] Configurar secrets en Railway
 - [ ] Testing de deployment en Railway
 - [ ] Configurar dominio personalizado (opcional)
+
+## Funcionalidades Específicas de Agentes (Nuevas)
+- [ ] Ivy-Prospect: Implementar búsqueda de leads en LinkedIn/web
+- [x] Ivy-Prospect: Implementar calificación automática de leads con scoring
+- [x] Ivy-Prospect: Implementar generación de emails de outreach personalizados
+- [ ] Ivy-Closer: Implementar análisis de sentimiento en conversaciones
+- [ ] Ivy-Closer: Implementar generación de propuestas comerciales
+- [ ] Ivy-Closer: Implementar manejo de objeciones con respuestas sugeridas
+- [x] Ivy-Solve: Implementar búsqueda semántica en knowledge base
+- [x] Ivy-Solve: Implementar sistema de escalación automática
+- [x] Ivy-Solve: Implementar generación de respuestas desde KB
+- [ ] Ivy-Logic: Implementar predicción de demanda con ML
+- [ ] Ivy-Logic: Implementar optimización de inventario
+- [ ] Ivy-Logic: Implementar generación automática de órdenes de compra
+- [ ] Ivy-Talent: Implementar parsing y análisis de CVs
+- [ ] Ivy-Talent: Implementar matching de candidatos a posiciones
+- [ ] Ivy-Talent: Implementar evaluación de fit cultural
+- [ ] Ivy-Insight: Implementar análisis competitivo automatizado
+- [ ] Ivy-Insight: Implementar identificación de oportunidades de mercado
+- [ ] Ivy-Insight: Implementar generación de reportes ejecutivos
+
+## Workflows Automatizados Predefinidos (Nuevos)
+- [x] Workflow: Sales Pipeline (Prospect → Closer)
+- [x] Workflow: Support Escalation (Solve L1 → L2 → Human)
+- [x] Workflow: Employee Onboarding (Talent → Logic → System)
+- [x] Workflow: Market Analysis (Insight → Prospect → Closer)
+- [ ] Sistema de creación de workflows custom por usuario
+
+## Preparación para Railway Deployment (Nuevos)
+- [x] Verificar todas las variables de entorno necesarias
+- [x] Crear script de inicialización de base de datos
+- [x] Crear script de seed data para demo
+- [x] Optimizar Dockerfile para producción
+- [ ] Configurar health checks
+- [ ] Configurar logging y monitoreo
+- [x] Documentar proceso de deployment paso a paso
+- [x] Crear guía de troubleshooting para Railway

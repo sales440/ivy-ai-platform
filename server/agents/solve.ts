@@ -46,6 +46,10 @@ export class IvySolve extends IvyAgent {
         return await this._searchKnowledgeBase(task.query);
       case "escalate_issue":
         return await this._escalateIssue(task.ticket, task.reason);
+      case "auto_escalate":
+        return await this._autoEscalate(task.ticket);
+      case "generate_kb_response":
+        return await this._generateResponseFromKB(task.query, task.context);
       default:
         throw new Error(`Unsupported task type: ${type}`);
     }
@@ -288,6 +292,161 @@ Return the IDs of the top 3 most relevant articles and their relevance scores (0
           assigned_to: escalationPath.team,
           priority: escalationPath.priority,
           escalated_at: new Date().toISOString()
+        }
+      };
+    } catch (error: any) {
+      return {
+        status: "failed",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Auto-escalate ticket based on intelligent analysis
+   */
+  private async _autoEscalate(ticket: any): Promise<TaskResult> {
+    try {
+      const prompt = `Analyze this support ticket and determine if it should be escalated:
+
+Ticket:
+Subject: ${ticket.subject}
+Issue: ${ticket.issue}
+Priority: ${ticket.priority}
+Customer: ${ticket.customerEmail}
+
+Determine:
+- should_escalate (boolean)
+- escalation_reason (technical_issue, billing_dispute, complaint, feature_request, or none)
+- urgency_level (low, medium, high, critical)
+- recommended_team (technical_support, billing_department, customer_success, product_team)
+- estimated_resolution_time (in hours)`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are an expert support ticket triage specialist." },
+          { role: "user", content: prompt }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "escalation_analysis",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                should_escalate: { type: "boolean" },
+                escalation_reason: { type: "string" },
+                urgency_level: { type: "string", enum: ["low", "medium", "high", "critical"] },
+                recommended_team: { type: "string" },
+                estimated_resolution_time: { type: "number" }
+              },
+              required: ["should_escalate", "escalation_reason", "urgency_level", "recommended_team", "estimated_resolution_time"],
+              additionalProperties: false
+            }
+          }
+        }
+      });
+
+      const content = response.choices[0].message.content;
+      const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+      const analysis = JSON.parse(contentStr || "{}");
+
+      if (analysis.should_escalate && ticket.id) {
+        await db.updateTicketStatus(ticket.id, "escalated");
+      }
+
+      return {
+        status: "completed",
+        data: {
+          ticket_id: ticket.id,
+          should_escalate: analysis.should_escalate,
+          analysis: analysis,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error: any) {
+      return {
+        status: "failed",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Generate response from knowledge base
+   */
+  private async _generateResponseFromKB(query: string, context: any): Promise<TaskResult> {
+    try {
+      // First search KB
+      const searchResult = await this._searchKnowledgeBase(query);
+      const relevantArticles = searchResult.data?.results || [];
+
+      if (relevantArticles.length === 0) {
+        return {
+          status: "completed",
+          data: {
+            response: "I couldn't find relevant information in our knowledge base. Let me escalate this to a human agent.",
+            source: "none",
+            confidence: 0
+          }
+        };
+      }
+
+      const kbContent = relevantArticles.map((a: any) => 
+        `Article: ${a.title}\nContent: ${a.content}`
+      ).join("\n\n");
+
+      const prompt = `Generate a helpful customer support response based on this knowledge base content:
+
+Customer Query: ${query}
+
+Context: ${JSON.stringify(context, null, 2)}
+
+Knowledge Base:
+${kbContent}
+
+Provide:
+- response (clear, helpful answer to the customer)
+- confidence (0.0 to 1.0 how confident you are in this answer)
+- follow_up_actions (suggested next steps)`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a helpful customer support agent. Provide clear, accurate responses based on the knowledge base." },
+          { role: "user", content: prompt }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "kb_response",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                response: { type: "string" },
+                confidence: { type: "number" },
+                follow_up_actions: { type: "string" }
+              },
+              required: ["response", "confidence", "follow_up_actions"],
+              additionalProperties: false
+            }
+          }
+        }
+      });
+
+      const content = response.choices[0].message.content;
+      const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+      const kbResponse = JSON.parse(contentStr || "{}");
+
+      return {
+        status: "completed",
+        data: {
+          response: kbResponse.response,
+          confidence: kbResponse.confidence,
+          follow_up_actions: kbResponse.follow_up_actions,
+          sources: relevantArticles.map((a: any) => a.articleId),
+          generated_at: new Date().toISOString()
         }
       };
     } catch (error: any) {

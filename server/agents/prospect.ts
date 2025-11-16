@@ -57,6 +57,10 @@ export class IvyProspect extends IvyAgent {
         return await this._qualifyLead(task.lead_data);
       case "send_outreach":
         return await this._sendOutreach(task.lead, task.template);
+      case "score_lead":
+        return await this._scoreLead(task.lead_data, task.scoring_criteria);
+      case "generate_campaign":
+        return await this._generateOutreachCampaign(task.leads, task.campaign_goal);
       default:
         throw new Error(`Unsupported task type: ${type}`);
     }
@@ -297,6 +301,138 @@ Create a professional, personalized outreach email. Keep it concise (max 150 wor
           subject: `Connecting ${lead.company} with innovative solutions`,
           content: emailContent,
           sent_at: new Date().toISOString()
+        }
+      };
+    } catch (error: any) {
+      return {
+        status: "failed",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Advanced lead scoring with custom criteria
+   */
+  private async _scoreLead(leadData: any, scoringCriteria: any): Promise<TaskResult> {
+    try {
+      const prompt = `Score this lead using the provided criteria:
+
+Lead:
+${JSON.stringify(leadData, null, 2)}
+
+Scoring Criteria:
+${JSON.stringify(scoringCriteria, null, 2)}
+
+Provide:
+- overall_score (0-100)
+- category_scores (breakdown by criteria category)
+- strengths (key positive factors)
+- weaknesses (areas of concern)
+- priority_level ("hot", "warm", "cold")
+- estimated_deal_value (in USD)`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are an expert in lead scoring and sales prioritization." },
+          { role: "user", content: prompt }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "lead_scoring",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                overall_score: { type: "number" },
+                category_scores: { type: "string" },
+                strengths: { type: "string" },
+                weaknesses: { type: "string" },
+                priority_level: { type: "string", enum: ["hot", "warm", "cold"] },
+                estimated_deal_value: { type: "number" }
+              },
+              required: ["overall_score", "category_scores", "strengths", "weaknesses", "priority_level", "estimated_deal_value"],
+              additionalProperties: false
+            }
+          }
+        }
+      });
+
+      const content = response.choices[0].message.content;
+      const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+      const scoring = JSON.parse(contentStr || "{}");
+
+      return {
+        status: "completed",
+        data: {
+          lead_id: leadData.id || leadData.leadId,
+          scoring: scoring,
+          scored_at: new Date().toISOString()
+        }
+      };
+    } catch (error: any) {
+      return {
+        status: "failed",
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Generate personalized outreach email campaign
+   */
+  private async _generateOutreachCampaign(leads: any[], campaignGoal: string): Promise<TaskResult> {
+    try {
+      const prompt = `Create a personalized email outreach campaign for ${leads.length} leads.
+
+Campaign Goal: ${campaignGoal}
+
+Lead Segments:
+${leads.map((l, i) => `${i + 1}. ${l.name} - ${l.title} at ${l.company} (${l.industry})`).join('\n')}
+
+Provide:
+- subject_line (compelling subject)
+- email_body (personalized template with {{name}}, {{company}} placeholders)
+- follow_up_sequence (3 follow-up email templates)
+- best_send_time (recommended time to send)`;
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are an expert email marketer specializing in B2B outreach campaigns." },
+          { role: "user", content: prompt }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "email_campaign",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                subject_line: { type: "string" },
+                email_body: { type: "string" },
+                follow_up_sequence: { type: "string" },
+                best_send_time: { type: "string" }
+              },
+              required: ["subject_line", "email_body", "follow_up_sequence", "best_send_time"],
+              additionalProperties: false
+            }
+          }
+        }
+      });
+
+      const content = response.choices[0].message.content;
+      const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
+      const campaign = JSON.parse(contentStr || "{}");
+
+      return {
+        status: "completed",
+        data: {
+          campaign_id: uuidv4(),
+          target_leads: leads.length,
+          campaign: campaign,
+          created_at: new Date().toISOString()
         }
       };
     } catch (error: any) {
