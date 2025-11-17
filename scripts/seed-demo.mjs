@@ -1,6 +1,7 @@
 /**
  * Seed Demo Data Script
  * Populates the database with sample data for demonstration
+ * Updated: Fixed tickets insert to include all required columns
  */
 
 import { drizzle } from "drizzle-orm/mysql2";
