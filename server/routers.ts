@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { seedRouter } from "./seed-router";
 import { notificationsRouter } from "./notifications-router";
 import { exportRouter } from "./export-router";
+import { companiesRouter } from "./companies-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -55,6 +56,7 @@ export const appRouter = router({
   seed: seedRouter,
   notifications: notificationsRouter,
   export: exportRouter,
+  companies: companiesRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),

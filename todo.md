@@ -318,3 +318,15 @@
 - [ ] Agregar companyId a todas las tablas relevantes
 - [ ] Implementar aislamiento real de datos por empresa
 - [ ] Sistema de permisos y middleware de verificación
+
+## Admin Companies Page - CRUD Implementation
+- [x] Add companies table to database schema
+- [x] Run db:push to apply schema changes
+- [x] Create tRPC router for companies CRUD operations
+- [x] Create /admin/companies page with company list table
+- [x] Implement create company dialog with form validation
+- [x] Implement edit company functionality
+- [x] Implement delete company with confirmation
+- [x] Add admin-only route protection
+- [ ] Update CompanyContext to fetch from database instead of hardcoded list
+- [ ] Test all CRUD operations

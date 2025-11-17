@@ -19,6 +19,28 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
+ * Companies/Organizations table for multi-tenant support
+ */
+export const companies = mysqlTable("companies", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  industry: varchar("industry", { length: 100 }),
+  plan: mysqlEnum("plan", ["starter", "professional", "enterprise"]).default("starter").notNull(),
+  logo: text("logo"),
+  website: varchar("website", { length: 500 }),
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  contactPhone: varchar("contactPhone", { length: 50 }),
+  address: text("address"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;
+
+/**
  * Preferencias de usuario
  */
 export const userPreferences = mysqlTable("userPreferences", {

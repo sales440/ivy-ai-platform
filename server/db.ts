@@ -1,8 +1,10 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
   users, 
+  companies, 
+  InsertCompany,
   userPreferences,
   InsertUserPreferences,
   UserPreferences,
@@ -665,5 +667,84 @@ export async function createDefaultUserPreferences(userId: number): Promise<void
     if (!(error as any).message?.includes('Duplicate entry')) {
       console.error("[Database] Failed to create default preferences:", error);
     }
+  }
+}
+
+// ==================== Companies ====================
+
+export async function getAllCompanies() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get companies: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db.select().from(companies);
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get companies:", error);
+    return [];
+  }
+}
+
+export async function getCompanyById(id: number) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get company: database not available");
+    return undefined;
+  }
+
+  try {
+    const result = await db.select().from(companies).where(eq(companies.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  } catch (error) {
+    console.error("[Database] Failed to get company:", error);
+    return undefined;
+  }
+}
+
+export async function createCompany(data: InsertCompany) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const result = await db.insert(companies).values(data);
+    return { id: Number(result.insertId), ...data };
+  } catch (error) {
+    console.error("[Database] Failed to create company:", error);
+    throw error;
+  }
+}
+
+export async function updateCompany(id: number, data: Partial<InsertCompany>) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    await db.update(companies).set({ ...data, updatedAt: new Date() }).where(eq(companies.id, id));
+    return await getCompanyById(id);
+  } catch (error) {
+    console.error("[Database] Failed to update company:", error);
+    throw error;
+  }
+}
+
+export async function deleteCompany(id: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    await db.delete(companies).where(eq(companies.id, id));
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete company:", error);
+    throw error;
   }
 }

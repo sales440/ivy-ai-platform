@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
 import Tickets from "./pages/Tickets";
 import Analytics from "./pages/Analytics";
+import AdminCompanies from "./pages/AdminCompanies";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <Route path={"/leads"} component={Leads} />
       <Route path={"/tickets"} component={Tickets} />
       <Route path={"/analytics"} component={Analytics} />
+      <Route path={"/admin/companies"} component={AdminCompanies} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
