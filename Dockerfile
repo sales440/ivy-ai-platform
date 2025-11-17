@@ -38,8 +38,10 @@ COPY --from=builder /app/dist/index.js ./dist/
 COPY --from=builder /app/dist/public ./dist/public
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts/start-production.sh ./scripts/
+RUN chmod +x ./scripts/start-production.sh
 
 # Set environment
 ENV NODE_ENV=production
