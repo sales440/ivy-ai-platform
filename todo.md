@@ -791,13 +791,15 @@
 - [ ] Probar búsquedas con diferentes combinaciones de skills (requiere ejecución)
 
 ## Fase 14: Tracking de conversión prospect→lead
-- [ ] Agregar campo prospectSearchId (nullable) en tabla leads de schema.ts
-- [ ] Ejecutar db:push para aplicar cambios de schema
-- [ ] Modificar prospect.search para retornar searchId único
-- [ ] Actualizar handleAddProspectAsLead para guardar prospectSearchId al crear lead
-- [ ] Modificar analytics.prospectMetrics para calcular conversion rate real
-- [ ] Agregar métrica "Top Converting Queries" en dashboard
-- [ ] Probar flujo completo: buscar → agregar lead → verificar tracking
+- [x] Agregar campo prospectSearchId (nullable) en tabla leads de schema.ts
+- [x] Modificar prospect.search para retornar searchId único
+- [x] Actualizar handleAddProspectAsLead para guardar prospectSearchId al crear lead
+- [x] Guardar currentSearchId en estado cuando search succeeds
+- [x] Modificar analytics.prospectMetrics para calcular conversion rate real
+- [x] Agregar métrica "Top Converting Queries" en dashboard con bar chart
+- [x] Agregar función getLeadsByProspectSearchIds en db.ts
+- [x] Mostrar leads from searches y conversion rate en KPI cards
+- [ ] Probar flujo completo: buscar → agregar lead → verificar tracking (requiere datos reales)
 
 ## Fase 15: Sistema de guardado de búsquedas
 - [ ] Crear tabla savedSearches en schema.ts (userId, companyId, name, filters JSON)

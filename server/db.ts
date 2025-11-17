@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -1284,4 +1284,16 @@ export async function getProspectSearchMetrics(companyId: number, filters?: {
     console.error("[Database] Failed to get prospect search metrics:", error);
     return null;
   }
+}
+
+export async function getLeadsByProspectSearchIds(searchIds: number[]) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (searchIds.length === 0) return [];
+  
+  return await db
+    .select()
+    .from(leads)
+    .where(inArray(leads.prospectSearchId, searchIds));
 }

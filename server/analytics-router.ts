@@ -80,15 +80,48 @@ export const analyticsRouter = router({
         .map(([seniority, count]) => ({ seniority, count }))
         .sort((a, b) => b.count - a.count);
 
-      // TODO: Calculate conversion rate (requires tracking which searches led to leads)
-      const conversionRate = 0;
+      // Calculate conversion rate (leads created from searches / total searches)
+      const leadsFromSearches = await db.getLeadsByProspectSearchIds(
+        searches.map(s => s.id)
+      );
+      const conversionRate = totalSearches > 0 
+        ? Math.round((leadsFromSearches.length / totalSearches) * 100) 
+        : 0;
+
+      // Calculate top converting queries
+      const queryConversions = searches.reduce((acc: Record<string, { searches: number, conversions: number }>, search) => {
+        if (!acc[search.query]) {
+          acc[search.query] = { searches: 0, conversions: 0 };
+        }
+        acc[search.query].searches++;
+        
+        const leadsFromThisSearch = leadsFromSearches.filter(
+          lead => lead.prospectSearchId === search.id
+        );
+        acc[search.query].conversions += leadsFromThisSearch.length;
+        
+        return acc;
+      }, {});
+      
+      const topConvertingQueries = Object.entries(queryConversions)
+        .map(([query, data]) => ({
+          query,
+          searches: data.searches,
+          conversions: data.conversions,
+          rate: data.searches > 0 ? Math.round((data.conversions / data.searches) * 100) : 0,
+        }))
+        .filter(item => item.conversions > 0)
+        .sort((a, b) => b.rate - a.rate)
+        .slice(0, 10);
 
       return {
         totalSearches,
         avgResults,
         conversionRate,
+        totalLeadsFromSearches: leadsFromSearches.length,
         searchesByDay,
         topQueries,
+        topConvertingQueries,
         industryDistribution,
         seniorityDistribution,
       };

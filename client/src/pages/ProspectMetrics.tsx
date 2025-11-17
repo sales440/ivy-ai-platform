@@ -181,6 +181,29 @@ export default function ProspectMetrics() {
             </CardContent>
           </Card>
 
+          {/* Top Converting Queries */}
+          {metrics.topConvertingQueries && metrics.topConvertingQueries.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Converting Queries</CardTitle>
+                <CardDescription>Searches that generated the most leads</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={metrics.topConvertingQueries} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="query" type="category" width={150} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="conversions" fill="#10b981" name="Leads Created" />
+                    <Bar dataKey="rate" fill="#8b5cf6" name="Conversion Rate (%)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Distribution Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
