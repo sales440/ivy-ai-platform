@@ -298,9 +298,3 @@
 - [x] Crear script de demostración para clientes
 - [x] Crear propuesta comercial template
 - [x] Crear one-pager de marketing
-
-## Especificaciones Técnicas para Desarrollador Externo
-- [x] Crear especificaciones detalladas para landing page pública
-- [x] Crear especificaciones para calculadora de ROI interactiva
-- [x] Crear guión y especificaciones para video demo de 2 minutos
-- [x] Crear especificaciones para sección de casos de éxito/testimonios
