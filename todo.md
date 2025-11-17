@@ -710,3 +710,32 @@
 - [x] Probar visualización de matriz de permisos (viewer, analyst, member, manager, admin)
 - [x] Agregar ruta /admin/permissions en App.tsx
 - [x] Agregar enlace "Gestión de Permisos" en DashboardLayout sidebar
+
+
+## Fase 6: Conectar "Add as Lead" de Ivy-Prospect
+- [x] Verificar endpoint leads.create existente (ya existe con todos los campos necesarios)
+- [x] Modificar prospect.search en Leads.tsx para usar leads.create mutation (ya estaba implementado)
+- [x] Mapear campos de prospecto a campos de lead (nombre, email, empresa, título, etc.)
+- [x] Agregar validación de duplicados por email (evitar agregar el mismo lead dos veces)
+- [x] Mostrar toast de éxito/error al agregar lead con mensajes descriptivos
+- [x] Actualizar tabla de leads automáticamente después de agregar (refetch)
+- [x] Probar flujo completo: buscar → agregar → verificar en tabla (requiere selección de empresa)
+
+## Fase 7: Filtros avanzados en Ivy-Prospect
+- [ ] Agregar filtro de tamaño de empresa (1-10, 11-50, 51-200, 201-500, 501-1000, 1000+)
+- [ ] Agregar filtro de años de experiencia en el puesto actual
+- [ ] Mejorar filtro de ubicación con autocompletado de ciudades
+- [ ] Agregar filtro de nivel de senioridad (Entry, Mid, Senior, Executive)
+- [ ] Actualizar UI del diálogo con nuevos filtros
+- [ ] Modificar llamada a LinkedIn API para incluir nuevos parámetros
+- [ ] Probar búsquedas con diferentes combinaciones de filtros
+
+## Fase 8: Auditoría de cambios de permisos
+- [ ] Verificar si tabla auditLogs ya existe en schema.ts
+- [ ] Agregar tipo de evento "permission_change" en auditLogs
+- [ ] Modificar userCompanies.updateRole para registrar cambios en auditLog
+- [ ] Crear endpoint para listar cambios de permisos (auditLog.getPermissionChanges)
+- [ ] Agregar sección "Audit Trail" en página de Permissions
+- [ ] Mostrar tabla con: usuario modificado, rol anterior, rol nuevo, quién hizo el cambio, cuándo
+- [ ] Agregar filtros por fecha y usuario
+- [ ] Probar registro de cambios y visualización en UI

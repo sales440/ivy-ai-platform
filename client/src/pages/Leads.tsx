@@ -129,6 +129,16 @@ export default function Leads() {
       return;
     }
     
+    // Check if lead already exists by email
+    const existingLead = leadsData?.leads?.find(
+      (lead: any) => lead.email && prospect.email && lead.email.toLowerCase() === prospect.email.toLowerCase()
+    );
+    
+    if (existingLead) {
+      toast.error(`${prospect.name} is already in your leads`);
+      return;
+    }
+    
     createLead.mutate({
       companyId: selectedCompany.id,
       name: prospect.name,
@@ -139,7 +149,13 @@ export default function Leads() {
       location: prospect.location,
     }, {
       onSuccess: () => {
-        toast.success(`${prospect.name} added as lead`);
+        toast.success(`${prospect.name} added as lead successfully`);
+        refetch(); // Refresh leads table
+        // Optionally close the prospect search dialog after adding
+        // setIsProspectSearchOpen(false);
+      },
+      onError: (error) => {
+        toast.error(`Failed to add lead: ${error.message}`);
       }
     });
   };
