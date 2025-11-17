@@ -272,3 +272,17 @@
 - [ ] Testing completo del sistema RBAC
 - [ ] Corregir errores encontrados durante testing
 - [ ] Documentar sistema RBAC en README
+
+### Configuración de Entorno de Pruebas
+- [ ] Verificar ejecución de migraciones en Railway
+- [x] Confirmar estructura de base de datos en producción
+- [ ] Crear plan de pruebas completo con casos de prueba
+- [ ] Configurar scripts de testing automatizado con Vitest
+- [ ] Cargar datos de demostración en producción (26 leads, 22 tickets, 6 agentes)
+- [ ] Ejecutar pruebas de funcionalidad de leads
+- [ ] Ejecutar pruebas de funcionalidad de tickets
+- [ ] Ejecutar pruebas de sistema de notificaciones
+- [ ] Ejecutar pruebas de exportación CSV con filtros
+- [ ] Ejecutar pruebas de preferencias de usuario
+- [ ] Validar autenticación OAuth en producción
+- [ ] Documentar resultados de pruebas y crear reporte de QA
