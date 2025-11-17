@@ -802,12 +802,34 @@
 - [ ] Probar flujo completo: buscar → agregar lead → verificar tracking (requiere datos reales)
 
 ## Fase 15: Sistema de guardado de búsquedas
-- [ ] Crear tabla savedSearches en schema.ts (userId, companyId, name, filters JSON)
-- [ ] Ejecutar db:push para crear tabla
-- [ ] Crear funciones en db.ts (createSavedSearch, getSavedSearches, deleteSavedSearch)
-- [ ] Crear endpoint savedSearches.create/list/delete en nuevo router
-- [ ] Agregar botón "Save Search" en diálogo de Ivy-Prospect
-- [ ] Crear sección "Saved Searches" en Leads page con lista de búsquedas guardadas
-- [ ] Implementar botones de ejecución rápida para cada búsqueda guardada
-- [ ] Agregar tracking de uso de búsquedas guardadas
+- [x] Crear tabla savedSearches en schema.ts (id, userId, companyId, name, filters JSON, usageCount, createdAt, updatedAt)
+- [x] Ejecutar SQL para crear tabla savedSearches
+- [x] Agregar savedSearches a imports en db.ts
+- [x] Crear funciones en db.ts (createSavedSearch, getSavedSearches, updateSavedSearchUsage, deleteSavedSearch)
+- [x] Crear saved-searches-router.ts con endpoints create/list/execute/delete
+- [x] Registrar savedSearchesRouter en routers.ts
+- [x] Agregar estados showSaveSearchDialog y savedSearchName en Leads.tsx
+- [x] Crear createSavedSearch mutation y handleSaveSearch handler
+- [ ] Agregar botón "💾 Save Search" en diálogo de Ivy-Prospect
+- [ ] Crear modal para nombrar búsqueda guardada
+- [ ] Crear sección "Saved Searches" en Leads page con cards
+- [ ] Implementar botones de ejecución rápida que pre-llenan filtros
+- [ ] Incrementar usageCount al ejecutar búsqueda guardada
 - [ ] Probar guardar, ejecutar y eliminar búsquedas
+
+## Fase 16: Date range picker en analytics
+- [ ] Instalar date picker library (react-day-picker o shadcn calendar)
+- [ ] Agregar estado de dateRange en ProspectMetrics.tsx
+- [ ] Crear selector con opciones predefinidas (Last 7/30/90 days, Custom)
+- [ ] Pasar startDate/endDate a analytics.prospectMetrics query
+- [ ] Actualizar getProspectSearchMetrics en db.ts para filtrar por fechas
+- [ ] Agregar comparación vs período anterior en KPIs (% change)
+- [ ] Probar filtrado por diferentes rangos de fechas
+
+## Fase 17: Notificaciones de leads de alta calidad
+- [ ] Modificar leads.create endpoint para detectar qualificationScore > 80
+- [ ] Llamar a notifyOwner cuando se crea lead de alta calidad
+- [ ] Incluir en notificación: nombre, empresa, título, score, source
+- [ ] Agregar link directo a página de Leads en notificación
+- [ ] Probar creando lead con score alto desde Ivy-Prospect
+- [ ] Verificar que notificación llega al owner

@@ -408,3 +408,27 @@ export const prospectSearches = mysqlTable("prospectSearches", {
 
 export type ProspectSearch = typeof prospectSearches.$inferSelect;
 export type InsertProspectSearch = typeof prospectSearches.$inferInsert;
+
+/**
+ * Saved Searches - Para Ivy-Prospect
+ */
+export const savedSearches = mysqlTable("savedSearches", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  companyId: int("companyId"),
+  name: varchar("name", { length: 200 }).notNull(),
+  filters: json("filters").$type<{
+    query: string;
+    industry?: string;
+    location?: string;
+    companySize?: string;
+    seniority?: string;
+    skills?: string[];
+  }>().notNull(),
+  usageCount: int("usageCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SavedSearch = typeof savedSearches.$inferSelect;
+export type InsertSavedSearch = typeof savedSearches.$inferInsert;

@@ -50,6 +50,9 @@ import {
   prospectSearches,
   InsertProspectSearch,
   ProspectSearch,
+  savedSearches,
+  InsertSavedSearch,
+  SavedSearch,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1296,4 +1299,55 @@ export async function getLeadsByProspectSearchIds(searchIds: number[]) {
     .select()
     .from(leads)
     .where(inArray(leads.prospectSearchId, searchIds));
+}
+
+// ========== Saved Searches Functions ==========
+
+export async function createSavedSearch(data: InsertSavedSearch) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [result] = await db.insert(savedSearches).values(data);
+  return result.insertId;
+}
+
+export async function getSavedSearches(userId: number, companyId?: number | null) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(savedSearches.userId, userId)];
+  if (companyId) {
+    conditions.push(eq(savedSearches.companyId, companyId));
+  }
+  
+  return await db
+    .select()
+    .from(savedSearches)
+    .where(and(...conditions))
+    .orderBy(desc(savedSearches.usageCount), desc(savedSearches.updatedAt));
+}
+
+export async function updateSavedSearchUsage(searchId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .update(savedSearches)
+    .set({ 
+      usageCount: sql`${savedSearches.usageCount} + 1`,
+      updatedAt: new Date()
+    })
+    .where(eq(savedSearches.id, searchId));
+}
+
+export async function deleteSavedSearch(searchId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db
+    .delete(savedSearches)
+    .where(and(
+      eq(savedSearches.id, searchId),
+      eq(savedSearches.userId, userId)
+    ));
 }

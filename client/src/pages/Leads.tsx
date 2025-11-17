@@ -189,7 +189,9 @@ export default function Leads() {
   const [prospectCompanySize, setProspectCompanySize] = useState('');
   const [prospectSeniority, setProspectSeniority] = useState('');
   const [prospectSkills, setProspectSkills] = useState<string[]>([]);
-  const [currentSearchId, setCurrentSearchId] = useState<number | undefined>();
+   const [currentSearchId, setCurrentSearchId] = useState<number | null>(null);
+  const [showSaveSearchDialog, setShowSaveSearchDialog] = useState(false);
+  const [savedSearchName, setSavedSearchName] = useState('');
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
@@ -253,6 +255,37 @@ export default function Leads() {
       toast.error(`Search failed: ${error.message}`);
     }
   });
+
+  const createSavedSearch = trpc.savedSearches.create.useMutation({
+    onSuccess: () => {
+      toast.success('Search saved successfully');
+      setShowSaveSearchDialog(false);
+      setSavedSearchName('');
+    },
+    onError: (error) => {
+      toast.error(`Failed to save search: ${error.message}`);
+    }
+  });
+
+  const handleSaveSearch = () => {
+    if (!savedSearchName.trim()) {
+      toast.error('Please enter a name for this search');
+      return;
+    }
+
+    createSavedSearch.mutate({
+      companyId: selectedCompany?.id,
+      name: savedSearchName,
+      filters: {
+        query: prospectQuery,
+        industry: (prospectIndustry && prospectIndustry !== 'all') ? prospectIndustry : undefined,
+        location: prospectLocation || undefined,
+        companySize: (prospectCompanySize && prospectCompanySize !== 'all') ? prospectCompanySize : undefined,
+        seniority: (prospectSeniority && prospectSeniority !== 'all') ? prospectSeniority : undefined,
+        skills: prospectSkills.length > 0 ? prospectSkills : undefined,
+      },
+    });
+  };
 
   const handleProspectSearch = () => {
     if (!prospectQuery.trim()) {

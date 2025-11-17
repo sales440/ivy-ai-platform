@@ -10,6 +10,7 @@ import { agentConfigRouter } from "./agent-config-router";
 import { auditLogRouter } from "./audit-log-router";
 import { prospectRouter } from "./prospect-router";
 import { analyticsRouter } from "./analytics-router";
+import { savedSearchesRouter } from "./saved-searches-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -66,6 +67,7 @@ export const appRouter = router({
   agentConfig: agentConfigRouter,
   auditLog: auditLogRouter,
   analytics: analyticsRouter,
+  savedSearches: savedSearchesRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
