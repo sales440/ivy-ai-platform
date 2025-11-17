@@ -140,8 +140,8 @@ async function seedDemoData() {
 
     for (const ticket of sampleTickets) {
       await connection.query(
-        `INSERT INTO tickets (ticketId, customerId, customerEmail, subject, issue, category, priority, status, assignedTo, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO tickets (ticketId, customerId, customerEmail, subject, issue, category, priority, status, assignedTo, resolution, resolutionTime, customerSatisfaction, escalationReason, metadata, createdAt, resolvedAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, NULL, NOW(), NULL, NOW())`,
         [
           ticket.ticketId,
           ticket.customerId,
