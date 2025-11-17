@@ -495,10 +495,10 @@
 
 ### Roles Granulares por Empresa
 - [x] Extender enum de roles en schema: admin, manager, analyst, viewer
-- [ ] Crear tabla company_permissions (roleId, resource, action)
-- [ ] Definir matriz de permisos por rol (CRUD en leads, tickets, agents, config)
+- [x] Crear tabla company_permissions (roleId, resource, action)
+- [x] Definir matriz de permisos por rol (CRUD en leads, tickets, agents, config)
 - [x] Actualizar userCompanies.role para soportar nuevos roles
-- [ ] Crear middleware checkCompanyPermission en tRPC
+- [x] Crear middleware checkCompanyPermission en tRPC
 - [ ] Proteger endpoints de leads con permisos granulares
 - [ ] Proteger endpoints de tickets con permisos granulares
 - [ ] Proteger endpoints de agentConfig con permisos granulares
@@ -507,11 +507,11 @@
 
 ### Integraciones con CRM Externos
 - [x] Crear tabla crm_integrations (companyId, crmType, credentials, config)
-- [ ] Implementar conector base CRMConnector con métodos syncLeads, syncTickets
+- [x] Implementar conector base CRMConnector con métodos syncLeads, syncTickets
 - [ ] Implementar SalesforceConnector con OAuth2
-- [ ] Implementar HubSpotConnector con API key
+- [x] Implementar HubSpotConnector con API key
 - [ ] Implementar PipedriveConnector con API token
-- [ ] Crear router tRPC para gestión de integraciones
+- [x] Crear router tRPC para gestión de integraciones
 - [x] Crear página /admin/integrations para configurar CRMs
 - [ ] Implementar webhook receiver para sincronización bidireccional
 - [ ] Agregar job scheduler para sincronización periódica

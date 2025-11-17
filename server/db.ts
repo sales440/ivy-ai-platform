@@ -44,6 +44,9 @@ import {
   auditLogs,
   InsertAuditLog,
   AuditLog,
+  crmIntegrations,
+  InsertCrmIntegration,
+  CrmIntegration,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1123,4 +1126,81 @@ export async function getAllAuditLogs(filters?: {
     console.error("[Database] Failed to get audit logs:", error);
     return [];
   }
+}
+
+// ============================================================================
+// CRM Integrations
+// ============================================================================
+
+export async function getCrmIntegrations(companyId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(crmIntegrations).where(eq(crmIntegrations.companyId, companyId));
+}
+
+export async function getCrmIntegrationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(crmIntegrations).where(eq(crmIntegrations.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function upsertCrmIntegration(integration: InsertCrmIntegration & { id?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (integration.id) {
+    // Update existing
+    await db.update(crmIntegrations)
+      .set({
+        credentials: integration.credentials,
+        config: integration.config,
+        isActive: integration.isActive,
+        updatedAt: new Date(),
+      })
+      .where(eq(crmIntegrations.id, integration.id));
+    return integration.id;
+  } else {
+    // Insert new
+    const result = await db.insert(crmIntegrations).values(integration);
+    return Number(result.insertId);
+  }
+}
+
+export async function deleteCrmIntegration(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(crmIntegrations).where(eq(crmIntegrations.id, id));
+  return { success: true };
+}
+
+export async function updateCrmIntegrationSyncStatus(
+  id: number,
+  status: { lastSyncAt?: Date; syncStatus?: "idle" | "syncing" | "error"; syncError?: string | null }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(crmIntegrations)
+    .set({
+      ...status,
+      updatedAt: new Date(),
+    })
+    .where(eq(crmIntegrations.id, id));
+}
+
+export async function getUserCompanyRole(userId: number, companyId: number): Promise<"viewer" | "analyst" | "member" | "manager" | "admin" | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db
+    .select()
+    .from(userCompanies)
+    .where(and(eq(userCompanies.userId, userId), eq(userCompanies.companyId, companyId)))
+    .limit(1);
+
+  return result.length > 0 ? result[0].role : null;
 }
