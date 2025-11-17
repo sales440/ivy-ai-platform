@@ -758,12 +758,33 @@
 - [ ] Probar exportación con diferentes rangos de fechas (requiere datos de audit log)
 
 ## Fase 11: Dashboard de métricas de Ivy-Prospect
-- [ ] Crear tabla prospectSearches en schema.ts para registrar búsquedas
-- [ ] Modificar prospect.search para guardar query, filters, resultCount, userId, timestamp
-- [ ] Crear endpoint analytics.prospectMetrics para obtener estadísticas
-- [ ] Crear página /analytics/prospect-metrics
-- [ ] Agregar gráfico de búsquedas por día (line chart)
-- [ ] Agregar top 10 queries más usadas (bar chart)
-- [ ] Agregar distribución por industria y senioridad (pie charts)
-- [ ] Agregar métrica de tasa de conversión prospect→lead
+- [x] Crear tabla prospectSearches en schema.ts para registrar búsquedas
+- [x] Agregar función createProspectSearch en db.ts
+- [x] Agregar función getProspectSearchMetrics en db.ts
+- [x] Modificar prospect.search para guardar query, filters, resultCount, userId, timestamp
+- [ ] Crear analytics router con endpoint prospectMetrics
+- [ ] Crear página /analytics/prospect-metrics con layout responsive
+- [ ] Agregar cards con métricas clave (total searches, avg results, conversion rate)
+- [ ] Agregar gráfico de búsquedas por día usando recharts
+- [ ] Agregar top 10 queries más usadas con bar chart
+- [ ] Agregar distribución por industria y senioridad con pie charts
+- [ ] Agregar ruta en App.tsx y enlace en sidebar
 - [ ] Probar dashboard con datos de búsquedas reales
+
+## Fase 12: Visualización de datos enriquecidos
+- [ ] Agregar columna "Enriched" en tabla de Leads con badge
+- [ ] Crear modal/dialog para mostrar datos enriquecidos completos
+- [ ] Mostrar sección de Skills con endorsements en modal
+- [ ] Mostrar sección de Experience con timeline
+- [ ] Mostrar sección de Education con instituciones
+- [ ] Mostrar badges de LinkedIn (Top Voice, Creator, Premium)
+- [ ] Agregar botón "View Enriched Profile" en tabla de Leads
+- [ ] Probar visualización con leads enriquecidos
+
+## Fase 13: Búsqueda por skills
+- [ ] Agregar campo de skills en filtros de Ivy-Prospect
+- [ ] Implementar multi-select para skills técnicos comunes
+- [ ] Actualizar prospect.search input schema para incluir skills array
+- [ ] Modificar llamada a LinkedIn API para incluir skills en keywords
+- [ ] Agregar sección de skills en resultados de búsqueda
+- [ ] Probar búsquedas con diferentes combinaciones de skills

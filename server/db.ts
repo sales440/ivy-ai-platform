@@ -47,6 +47,9 @@ import {
   crmIntegrations,
   InsertCrmIntegration,
   CrmIntegration,
+  prospectSearches,
+  InsertProspectSearch,
+  ProspectSearch,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1235,3 +1238,50 @@ export async function getUserCompanyRole(userId: number, companyId: number): Pro
 
 
 
+
+// ============================================================================
+// PROSPECT SEARCHES
+// ============================================================================
+
+export async function createProspectSearch(search: InsertProspectSearch) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(prospectSearches).values(search);
+    return { id: Number(result.insertId), ...search };
+  } catch (error) {
+    console.error("[Database] Failed to create prospect search:", error);
+    return null;
+  }
+}
+
+export async function getProspectSearchMetrics(companyId: number, filters?: {
+  startDate?: string;
+  endDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const conditions = [eq(prospectSearches.companyId, companyId)];
+    
+    if (filters?.startDate) {
+      conditions.push(sql`${prospectSearches.createdAt} >= ${filters.startDate}`);
+    }
+    if (filters?.endDate) {
+      conditions.push(sql`${prospectSearches.createdAt} <= ${filters.endDate}`);
+    }
+
+    const searches = await db
+      .select()
+      .from(prospectSearches)
+      .where(and(...conditions))
+      .orderBy(desc(prospectSearches.createdAt));
+
+    return searches;
+  } catch (error) {
+    console.error("[Database] Failed to get prospect search metrics:", error);
+    return null;
+  }
+}

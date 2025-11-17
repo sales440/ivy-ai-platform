@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { callDataApi } from "./_core/dataApi";
+import * as db from "./db";
 
 // Helper function to calculate qualification score based on profile data
 function calculateQualificationScore(person: any, filters: any): number {
@@ -129,7 +130,7 @@ export const prospectRouter = router({
       seniority: z.string().optional(),
       limit: z.number().min(1).max(50).default(10),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       try {
         // Build search keywords from query and filters
         let searchKeywords = input.query;
@@ -186,6 +187,22 @@ export const prospectRouter = router({
             qualificationScore: calculateQualificationScore(person, input),
           };
         });
+        
+        // Log search for analytics
+        if (ctx.user && ctx.user.companyId) {
+          await db.createProspectSearch({
+            companyId: ctx.user.companyId,
+            userId: ctx.user.id,
+            query: input.query,
+            industry: input.industry || null,
+            location: input.location || null,
+            companySize: input.companySize || null,
+            seniority: input.seniority || null,
+            skills: null,
+            resultCount: searchResult.data.total || prospects.length,
+            source: 'linkedin',
+          });
+        }
         
         return {
           success: true,

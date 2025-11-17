@@ -386,3 +386,24 @@ export const crmIntegrations = mysqlTable("crmIntegrations", {
 
 export type CrmIntegration = typeof crmIntegrations.$inferSelect;
 export type InsertCrmIntegration = typeof crmIntegrations.$inferInsert;
+
+/**
+ * Prospect Searches - Track Ivy-Prospect search analytics
+ */
+export const prospectSearches = mysqlTable("prospectSearches", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  userId: int("userId").notNull(),
+  query: varchar("query", { length: 255 }).notNull(),
+  industry: varchar("industry", { length: 100 }),
+  location: varchar("location", { length: 255 }),
+  companySize: varchar("companySize", { length: 50 }),
+  seniority: varchar("seniority", { length: 50 }),
+  skills: json("skills").$type<string[]>(), // Array of skills searched
+  resultCount: int("resultCount").notNull(),
+  source: varchar("source", { length: 50 }).notNull(), // 'linkedin', 'mock', 'mock_fallback'
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProspectSearch = typeof prospectSearches.$inferSelect;
+export type InsertProspectSearch = typeof prospectSearches.$inferInsert;
