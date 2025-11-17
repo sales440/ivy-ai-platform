@@ -329,7 +329,30 @@ export async function createTicket(ticket: InsertTicket): Promise<Ticket> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(tickets).values(ticket);
+  // Usar SQL template de Drizzle para evitar problemas con valores default
+  const result: any = await db.execute(sql`
+    INSERT INTO tickets (
+      ticketId, customerId, customerEmail, subject, issue, category,
+      priority, status, assignedTo, resolution, resolutionTime,
+      customerSatisfaction, escalationReason, metadata, resolvedAt
+    ) VALUES (
+      ${ticket.ticketId},
+      ${ticket.customerId ?? null},
+      ${ticket.customerEmail ?? null},
+      ${ticket.subject},
+      ${ticket.issue},
+      ${ticket.category ?? null},
+      ${ticket.priority ?? 'medium'},
+      ${ticket.status ?? 'open'},
+      ${ticket.assignedTo ?? null},
+      ${ticket.resolution ?? null},
+      ${ticket.resolutionTime ?? null},
+      ${ticket.customerSatisfaction ?? null},
+      ${ticket.escalationReason ?? null},
+      ${ticket.metadata ? JSON.stringify(ticket.metadata) : null},
+      ${ticket.resolvedAt ?? null}
+    )
+  `);
   const insertedId = Number(result[0].insertId);
   
   const created = await db.select().from(tickets).where(eq(tickets.id, insertedId)).limit(1);
