@@ -665,3 +665,19 @@
 - [ ] Crear página /prospect-search para interfaz de búsqueda
 - [ ] Agregar botón "Enrich Lead" en página de Leads
 - [ ] Mostrar datos enriquecidos (company, title, industry, location)
+
+
+## Fase 2: Implementación de Ivy-Prospect y Permisos (Completada)
+- [x] Verificar seed data (5 leads, 5 tickets, 5 KB articles asociados a Demo Company)
+- [x] Probar funcionalidad Auto-Resolve en página de Tickets
+- [x] Implementar Ivy-Prospect: Endpoint prospect.search con datos mock de LinkedIn
+- [x] Implementar Ivy-Prospect: Endpoint prospect.enrich para enriquecimiento de leads
+- [x] Crear interfaz de búsqueda de prospectos en página Leads
+- [x] Añadir diálogo con filtros (query, industry, location, companySize)
+- [x] Mostrar resultados con información enriquecida (nombre, empresa, título, score, ubicación)
+- [x] Implementar botones "Add as Lead" y "View LinkedIn"
+- [x] Aplicar requirePermission("leads", "delete") a endpoint leads.delete
+- [x] Aplicar requirePermission("tickets", "update") a endpoint tickets.update
+- [x] Aplicar requirePermission("config", "update") a endpoint agentConfig.upsert
+- [x] Crear endpoint leads.delete con validación de companyId
+- [x] Crear endpoint tickets.update con validación de companyId y campos opcionales

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "./_core/trpc";
+import { protectedProcedure, router, requirePermission } from "./_core/trpc";
 import * as db from "./db";
 
 const agentTypeEnum = z.enum(["prospect", "closer", "solve", "logic", "talent", "insight"]);
@@ -26,6 +26,7 @@ export const agentConfigRouter = router({
 
   // Create or update agent configuration
   upsert: protectedProcedure
+    .use(requirePermission("config", "update"))
     .input(z.object({
       companyId: z.number(),
       agentType: agentTypeEnum,
@@ -36,11 +37,6 @@ export const agentConfigRouter = router({
       isActive: z.boolean().default(true)
     }))
     .mutation(async ({ input, ctx }) => {
-      // Only admins or users with admin role in the company can configure agents
-      if (ctx.user.role !== 'admin') {
-        throw new Error("Unauthorized: Admin access required");
-      }
-
       await db.upsertAgentConfiguration(input);
       return { success: true };
     }),

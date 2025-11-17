@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download } from 'lucide-react';
+import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Leads() {
@@ -44,6 +44,10 @@ export default function Leads() {
     endDate?: string;
   }>({});
   const [showExportFilters, setShowExportFilters] = useState(false);
+  const [isProspectSearchOpen, setIsProspectSearchOpen] = useState(false);
+  const [prospectQuery, setProspectQuery] = useState('');
+  const [prospectIndustry, setProspectIndustry] = useState('');
+  const [prospectLocation, setProspectLocation] = useState('');
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
@@ -90,6 +94,54 @@ export default function Leads() {
   
   const handleExportWithFilters = () => {
     setShowExportFilters(true);
+  };
+
+  const searchProspects = trpc.prospect.search.useMutation({
+    onSuccess: (data) => {
+      if (data.prospects.length === 0) {
+        toast.info('No prospects found matching your criteria');
+      } else {
+        toast.success(`Found ${data.prospects.length} prospects`);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Search failed: ${error.message}`);
+    }
+  });
+
+  const handleProspectSearch = () => {
+    if (!prospectQuery.trim()) {
+      toast.error('Please enter a search query');
+      return;
+    }
+    
+    searchProspects.mutate({
+      query: prospectQuery,
+      industry: (prospectIndustry && prospectIndustry !== 'all') ? prospectIndustry : undefined,
+      location: prospectLocation || undefined,
+      limit: 10,
+    });
+  };
+
+  const handleAddProspectAsLead = (prospect: any) => {
+    if (!selectedCompany) {
+      toast.error('Please select a company first');
+      return;
+    }
+    
+    createLead.mutate({
+      companyId: selectedCompany.id,
+      name: prospect.name,
+      email: prospect.email,
+      company: prospect.company,
+      title: prospect.title,
+      industry: prospect.industry,
+      location: prospect.location,
+    }, {
+      onSuccess: () => {
+        toast.success(`${prospect.name} added as lead`);
+      }
+    });
   };
 
   // Qualify lead functionality (to be implemented)
@@ -170,6 +222,126 @@ export default function Leads() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Dialog open={isProspectSearchOpen} onOpenChange={setIsProspectSearchOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Search Prospects
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Ivy-Prospect: Search & Enrich Leads</DialogTitle>
+                <DialogDescription>
+                  Search for potential leads using LinkedIn-style filters
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Search Query *</Label>
+                  <Input
+                    placeholder="e.g., CTO, VP Engineering, Director IT"
+                    value={prospectQuery}
+                    onChange={(e) => setProspectQuery(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Industry</Label>
+                    <Select value={prospectIndustry || undefined} onValueChange={setProspectIndustry}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="All industries" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Industries</SelectItem>
+                        <SelectItem value="Technology">Technology</SelectItem>
+                        <SelectItem value="Software">Software</SelectItem>
+                        <SelectItem value="Data Analytics">Data Analytics</SelectItem>
+                        <SelectItem value="Cloud Computing">Cloud Computing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Location</Label>
+                    <Input
+                      placeholder="e.g., San Francisco, CA"
+                      value={prospectLocation}
+                      onChange={(e) => setProspectLocation(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={handleProspectSearch}
+                  disabled={searchProspects.isPending}
+                  className="w-full"
+                >
+                  {searchProspects.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
+                  Search Prospects
+                </Button>
+
+                {searchProspects.data && searchProspects.data.prospects.length > 0 && (
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold">Results ({searchProspects.data.total})</h3>
+                    </div>
+                    <div className="space-y-3">
+                      {searchProspects.data.prospects.map((prospect: any, idx: number) => (
+                        <Card key={idx}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-4">
+                              <img
+                                src={prospect.profilePicture}
+                                alt={prospect.name}
+                                className="w-12 h-12 rounded-full"
+                              />
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-semibold">{prospect.name}</h4>
+                                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                                    Score: {prospect.qualificationScore}
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{prospect.title}</p>
+                                <p className="text-sm font-medium">{prospect.company}</p>
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                  <span>{prospect.industry}</span>
+                                  <span>•</span>
+                                  <span>{prospect.location}</span>
+                                  <span>•</span>
+                                  <span>{prospect.companySize} employees</span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleAddProspectAsLead(prospect)}
+                                    disabled={createLead.isPending}
+                                  >
+                                    <UserPlus className="h-3 w-3 mr-1" />
+                                    Add as Lead
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => window.open(prospect.linkedinUrl, '_blank')}
+                                  >
+                                    View LinkedIn
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={showExportFilters} onOpenChange={setShowExportFilters}>
             <DialogTrigger asChild>
               <Button variant="outline">
