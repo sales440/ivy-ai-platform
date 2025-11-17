@@ -15,6 +15,7 @@ export const seedRouter = router({
       includeLeads: z.boolean().default(true),
       includeTickets: z.boolean().default(true),
       includeKnowledgeBase: z.boolean().default(true),
+      companyId: z.number().optional(),
     }))
     .mutation(async ({ input }) => {
       const results = {
@@ -121,10 +122,15 @@ export const seedRouter = router({
             },
           ];
 
+          // Get first company or use provided companyId
+          const companies = await db.getAllCompanies();
+          const targetCompanyId = input.companyId || (companies.length > 0 ? companies[0].id : null);
+
           for (const lead of sampleLeads) {
             await db.createLead({
               leadId: uuidv4(),
               ...lead,
+              companyId: targetCompanyId,
               metadata: {
                 source_campaign: "Q4 2024 Outreach",
                 last_interaction: new Date().toISOString(),
@@ -224,8 +230,15 @@ export const seedRouter = router({
             },
           ];
 
+          // Get first company or use provided companyId
+          const companies = await db.getAllCompanies();
+          const targetCompanyId = input.companyId || (companies.length > 0 ? companies[0].id : null);
+
           for (const ticket of sampleTickets) {
-            await db.createTicket(ticket);
+            await db.createTicket({
+              ...ticket,
+              companyId: targetCompanyId,
+            });
             results.tickets++;
           }
         }

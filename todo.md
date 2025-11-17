@@ -584,3 +584,37 @@
 13. Optimización de queries
 14. Cache de datos frecuentes
 15. Monitoreo y alertas
+
+
+## 📚 Guías de Implementación
+
+### Archivos de Referencia
+1. **PERMISSIONS_GUIDE.md** - Guía del sistema de permisos con ejemplos de uso
+2. **IMPLEMENTATION_EXAMPLE.md** - Ejemplos antes/después de aplicar permisos a endpoints
+
+### Pasos para Aplicar Permisos
+1. Actualizar input schemas para requerir `companyId`
+2. Agregar `.use(requirePermission("resource", "action"))` a cada endpoint
+3. Actualizar llamadas del frontend para pasar `companyId` desde `useCompany`
+4. Probar con diferentes roles (viewer/analyst/member/manager/admin)
+
+### Estado Actual del Sistema
+- ✅ Matriz de permisos completa (5 roles × 6 recursos)
+- ✅ Middleware `requirePermission` implementado
+- ✅ Función `getUserCompanyRole` en db.ts
+- ⏳ Pendiente: Aplicar middleware a endpoints existentes
+- ⏳ Pendiente: Actualizar frontend para pasar companyId
+
+---
+
+## 🚀 Próximos Pasos Recomendados
+
+### Implementación Inmediata
+1. **Aplicar permisos a endpoints críticos** (leads.create, tickets.update, agentConfig.upsert)
+2. **Ejecutar seed de datos** usando el botón "Seed Demo Data" en Dashboard
+3. **Probar flujo multi-tenant** cambiando entre empresas y verificando filtrado
+
+### Desarrollo Futuro
+4. **Completar conectores CRM** (Salesforce OAuth2, Pipedrive API)
+5. **Implementar funcionalidades de agentes** (Prospect: LinkedIn search, Solve: ticket resolution)
+6. **Dashboard personalizable** con widgets drag-and-drop usando react-grid-layout
