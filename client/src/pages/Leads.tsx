@@ -188,6 +188,8 @@ export default function Leads() {
   const [prospectLocation, setProspectLocation] = useState('');
   const [prospectCompanySize, setProspectCompanySize] = useState('');
   const [prospectSeniority, setProspectSeniority] = useState('');
+  const [prospectSkills, setProspectSkills] = useState<string[]>([]);
+  const [currentSearchId, setCurrentSearchId] = useState<number | undefined>();
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
@@ -240,6 +242,7 @@ export default function Leads() {
 
   const searchProspects = trpc.prospect.search.useMutation({
     onSuccess: (data) => {
+      setCurrentSearchId(data.searchId);
       if (data.prospects.length === 0) {
         toast.info('No prospects found matching your criteria');
       } else {
@@ -263,6 +266,7 @@ export default function Leads() {
       location: prospectLocation || undefined,
       companySize: (prospectCompanySize && prospectCompanySize !== 'all') ? prospectCompanySize : undefined,
       seniority: (prospectSeniority && prospectSeniority !== 'all') ? prospectSeniority : undefined,
+      skills: prospectSkills.length > 0 ? prospectSkills : undefined,
       limit: 10,
     });
   };
@@ -310,6 +314,7 @@ export default function Leads() {
         title: prospect.title,
         industry: prospect.industry,
         location: prospect.location,
+        prospectSearchId: currentSearchId,
         metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
       }, {
         onSuccess: () => {
@@ -333,6 +338,7 @@ export default function Leads() {
         title: prospect.title,
         industry: prospect.industry,
         location: prospect.location,
+        prospectSearchId: currentSearchId,
       }, {
         onSuccess: () => {
           toast.success(`${prospect.name} added as lead (enrichment unavailable)`);
@@ -506,6 +512,34 @@ export default function Leads() {
                     </Select>
                   </div>
                 </div>
+                
+                <div className="space-y-2">
+                  <Label>Technical Skills (Optional)</Label>
+                  <div className="flex flex-wrap gap-2 p-3 border rounded-md min-h-[42px]">
+                    {['React', 'Python', 'JavaScript', 'AWS', 'SQL', 'Docker', 'Kubernetes', 'Node.js', 'TypeScript', 'Java', 'C++', 'Go', 'Rust', 'Machine Learning', 'Data Science', 'DevOps', 'Agile', 'Scrum'].map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant={prospectSkills.includes(skill) ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (prospectSkills.includes(skill)) {
+                            setProspectSkills(prospectSkills.filter(s => s !== skill));
+                          } else {
+                            setProspectSkills([...prospectSkills, skill]);
+                          }
+                        }}
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                  {prospectSkills.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Selected: {prospectSkills.join(', ')}
+                    </p>
+                  )}
+                </div>
+                
                 <Button
                   onClick={handleProspectSearch}
                   disabled={searchProspects.isPending}

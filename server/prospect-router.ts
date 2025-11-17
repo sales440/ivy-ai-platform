@@ -128,6 +128,7 @@ export const prospectRouter = router({
       location: z.string().optional(),
       companySize: z.string().optional(),
       seniority: z.string().optional(),
+      skills: z.array(z.string()).optional(),
       limit: z.number().min(1).max(50).default(10),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -139,6 +140,9 @@ export const prospectRouter = router({
         }
         if (input.seniority) {
           searchKeywords += ` ${input.seniority}`;
+        }
+        if (input.skills && input.skills.length > 0) {
+          searchKeywords += ` ${input.skills.join(' ')}`;
         }
         
         console.log('[Ivy-Prospect] Searching LinkedIn with keywords:', searchKeywords);
@@ -188,17 +192,18 @@ export const prospectRouter = router({
           };
         });
         
-        // Log search for analytics
-        if (ctx.user && ctx.user.companyId) {
-          await db.createProspectSearch({
-            companyId: ctx.user.companyId,
+         // Log search to database for analytics
+        let searchId: number | undefined;
+        if (ctx.user) {
+          searchId = await db.createProspectSearch({
             userId: ctx.user.id,
+            companyId: ctx.user.companyId || null,
             query: input.query,
             industry: input.industry || null,
             location: input.location || null,
             companySize: input.companySize || null,
             seniority: input.seniority || null,
-            skills: null,
+            skills: input.skills ? input.skills.join(', ') : null,
             resultCount: searchResult.data.total || prospects.length,
             source: 'linkedin',
           });
@@ -209,7 +214,8 @@ export const prospectRouter = router({
           prospects,
           total: searchResult.data.total || prospects.length,
           source: 'linkedin',
-        };
+          searchId,
+        };;
         
       } catch (error) {
         console.error('[Ivy-Prospect] Error calling LinkedIn API:', error);

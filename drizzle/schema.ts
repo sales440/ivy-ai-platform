@@ -196,6 +196,7 @@ export const leads = mysqlTable("leads", {
   qualificationLevel: mysqlEnum("qualificationLevel", ["A", "B", "C", "D"]),
   status: mysqlEnum("status", ["new", "contacted", "qualified", "nurture", "converted", "lost"]).default("new").notNull(),
   source: varchar("source", { length: 100 }), // linkedin, web, manual
+  prospectSearchId: int("prospectSearchId"), // Link to prospectSearches for conversion tracking
   metadata: json("metadata").$type<Record<string, any>>(),
   assignedTo: int("assignedTo"), // Agent ID
   createdBy: int("createdBy"), // Agent ID que lo generó

@@ -782,10 +782,30 @@
 - [x] Badge "View" clickable en columna Enriched abre modal
 - [ ] Probar visualización con leads enriquecidos (requiere datos reales)
 
-## Fase 13: Búsqueda por skills
-- [ ] Agregar campo de skills en filtros de Ivy-Prospect
-- [ ] Implementar multi-select para skills técnicos comunes
-- [ ] Actualizar prospect.search input schema para incluir skills array
-- [ ] Modificar llamada a LinkedIn API para incluir skills en keywords
-- [ ] Agregar sección de skills en resultados de búsqueda
-- [ ] Probar búsquedas con diferentes combinaciones de skills
+## Fase 13: Búsqueda por skills técnicos
+- [x] Crear lista de 18 skills técnicos comunes (React, Python, AWS, SQL, Docker, Kubernetes, Node.js, TypeScript, Java, C++, Go, Rust, ML, Data Science, DevOps, Agile, Scrum, JavaScript)
+- [x] Agregar campo multi-select de skills en filtros de Ivy-Prospect con badges clickables
+- [x] Actualizar prospect.search input schema para incluir skills array opcional
+- [x] Modificar prospect-router.ts para incluir skills en keywords de LinkedIn API (join con espacios)
+- [x] Actualizar estado prospectSkills y handlers en Leads.tsx para manejar skills seleccionados
+- [ ] Probar búsquedas con diferentes combinaciones de skills (requiere ejecución)
+
+## Fase 14: Tracking de conversión prospect→lead
+- [ ] Agregar campo prospectSearchId (nullable) en tabla leads de schema.ts
+- [ ] Ejecutar db:push para aplicar cambios de schema
+- [ ] Modificar prospect.search para retornar searchId único
+- [ ] Actualizar handleAddProspectAsLead para guardar prospectSearchId al crear lead
+- [ ] Modificar analytics.prospectMetrics para calcular conversion rate real
+- [ ] Agregar métrica "Top Converting Queries" en dashboard
+- [ ] Probar flujo completo: buscar → agregar lead → verificar tracking
+
+## Fase 15: Sistema de guardado de búsquedas
+- [ ] Crear tabla savedSearches en schema.ts (userId, companyId, name, filters JSON)
+- [ ] Ejecutar db:push para crear tabla
+- [ ] Crear funciones en db.ts (createSavedSearch, getSavedSearches, deleteSavedSearch)
+- [ ] Crear endpoint savedSearches.create/list/delete en nuevo router
+- [ ] Agregar botón "Save Search" en diálogo de Ivy-Prospect
+- [ ] Crear sección "Saved Searches" en Leads page con lista de búsquedas guardadas
+- [ ] Implementar botones de ejecución rápida para cada búsqueda guardada
+- [ ] Agregar tracking de uso de búsquedas guardadas
+- [ ] Probar guardar, ejecutar y eliminar búsquedas
