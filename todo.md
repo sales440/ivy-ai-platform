@@ -762,24 +762,25 @@
 - [x] Agregar función createProspectSearch en db.ts
 - [x] Agregar función getProspectSearchMetrics en db.ts
 - [x] Modificar prospect.search para guardar query, filters, resultCount, userId, timestamp
-- [ ] Crear analytics router con endpoint prospectMetrics
-- [ ] Crear página /analytics/prospect-metrics con layout responsive
-- [ ] Agregar cards con métricas clave (total searches, avg results, conversion rate)
-- [ ] Agregar gráfico de búsquedas por día usando recharts
-- [ ] Agregar top 10 queries más usadas con bar chart
-- [ ] Agregar distribución por industria y senioridad con pie charts
-- [ ] Agregar ruta en App.tsx y enlace en sidebar
-- [ ] Probar dashboard con datos de búsquedas reales
+- [x] Crear analytics router con endpoint prospectMetrics
+- [x] Crear página /analytics/prospect-metrics con layout responsive
+- [x] Agregar cards con métricas clave (total searches, avg results, conversion rate, active days)
+- [x] Agregar gráfico de búsquedas por día usando recharts (LineChart)
+- [x] Agregar top 10 queries más usadas con bar chart horizontal
+- [x] Agregar distribución por industria y senioridad con pie charts
+- [x] Agregar ruta en App.tsx y enlace "Prospect Metrics" en sidebar
+- [ ] Probar dashboard con datos de búsquedas reales (requiere ejecutar búsquedas)
 
 ## Fase 12: Visualización de datos enriquecidos
-- [ ] Agregar columna "Enriched" en tabla de Leads con badge
-- [ ] Crear modal/dialog para mostrar datos enriquecidos completos
-- [ ] Mostrar sección de Skills con endorsements en modal
-- [ ] Mostrar sección de Experience con timeline
-- [ ] Mostrar sección de Education con instituciones
-- [ ] Mostrar badges de LinkedIn (Top Voice, Creator, Premium)
-- [ ] Agregar botón "View Enriched Profile" en tabla de Leads
-- [ ] Probar visualización con leads enriquecidos
+- [x] Agregar columna "Enriched" en tabla de Leads con badge (Yes/No)
+- [x] Crear modal/dialog para mostrar datos enriquecidos completos
+- [x] Crear componente EnrichedDataView con tabs para organizar datos
+- [x] Mostrar sección de Skills con endorsements en modal
+- [x] Mostrar sección de Experience con timeline y descripciones
+- [x] Mostrar sección de Education con instituciones y grados
+- [x] Mostrar sección Other con Languages y LinkedIn badges
+- [x] Badge "View" clickable en columna Enriched abre modal
+- [ ] Probar visualización con leads enriquecidos (requiere datos reales)
 
 ## Fase 13: Búsqueda por skills
 - [ ] Agregar campo de skills en filtros de Ivy-Prospect

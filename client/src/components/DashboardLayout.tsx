@@ -22,7 +22,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { CompanySelector } from "@/components/CompanySelector";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield, TrendingUp } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -33,6 +33,7 @@ const menuItems = [
   { icon: Users, label: "Leads", path: "/leads" },
   { icon: Ticket, label: "Tickets", path: "/tickets" },
   { icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { icon: TrendingUp, label: "Prospect Metrics", path: "/analytics/prospect-metrics" },
   { icon: Terminal, label: "Console", path: "/console" },
   { icon: Workflow, label: "Workflows", path: "/workflows" },
   { icon: UserCircle, label: "Profile", path: "/profile" },

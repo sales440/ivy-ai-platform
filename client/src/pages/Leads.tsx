@@ -31,8 +31,146 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus } from 'lucide-react';
+import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus, Award, Briefcase, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+// Component to display enriched LinkedIn data
+function EnrichedDataView({ metadata }: { metadata: any }) {
+  if (!metadata || typeof metadata !== 'object') {
+    return <div className="text-muted-foreground">No enriched data available</div>;
+  }
+
+  const { skills, experience, education, languages, badges } = metadata;
+
+  return (
+    <Tabs defaultValue="skills" className="w-full">
+      <TabsList className="grid w-full grid-cols-4">
+        <TabsTrigger value="skills">Skills</TabsTrigger>
+        <TabsTrigger value="experience">Experience</TabsTrigger>
+        <TabsTrigger value="education">Education</TabsTrigger>
+        <TabsTrigger value="other">Other</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="skills" className="space-y-4">
+        <div>
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <Award className="h-4 w-4" />
+            Top Skills
+          </h3>
+          {skills && skills.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {skills.map((skill: any, index: number) => (
+                <Badge key={index} variant="secondary">
+                  {skill.name || skill}
+                  {skill.endorsements && (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      ({skill.endorsements})
+                    </span>
+                  )}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No skills data</p>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="experience" className="space-y-4">
+        <div>
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            Work Experience
+          </h3>
+          {experience && experience.length > 0 ? (
+            <div className="space-y-4">
+              {experience.map((exp: any, index: number) => (
+                <div key={index} className="border-l-2 border-primary/20 pl-4 py-2">
+                  <div className="font-medium">{exp.title || 'Position'}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {exp.company || 'Company'}
+                  </div>
+                  {exp.duration && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {exp.duration}
+                    </div>
+                  )}
+                  {exp.description && (
+                    <p className="text-sm mt-2">{exp.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No experience data</p>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="education" className="space-y-4">
+        <div>
+          <h3 className="font-semibold mb-3 flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Education
+          </h3>
+          {education && education.length > 0 ? (
+            <div className="space-y-3">
+              {education.map((edu: any, index: number) => (
+                <div key={index} className="border rounded-lg p-3">
+                  <div className="font-medium">{edu.school || 'Institution'}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {edu.degree || 'Degree'}
+                  </div>
+                  {edu.field && (
+                    <div className="text-sm mt-1">{edu.field}</div>
+                  )}
+                  {edu.years && (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {edu.years}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No education data</p>
+          )}
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="other" className="space-y-4">
+        <div>
+          <h3 className="font-semibold mb-3">Languages</h3>
+          {languages && languages.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang: any, index: number) => (
+                <Badge key={index} variant="outline">
+                  {typeof lang === 'string' ? lang : lang.name}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No language data</p>
+          )}
+        </div>
+        
+        {badges && badges.length > 0 && (
+          <div>
+            <h3 className="font-semibold mb-3">LinkedIn Badges</h3>
+            <div className="flex flex-wrap gap-2">
+              {badges.map((badge: string, index: number) => (
+                <Badge key={index} className="bg-blue-500/10 text-blue-600">
+                  {badge}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </TabsContent>
+    </Tabs>
+  );
+}
 
 export default function Leads() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -659,6 +797,7 @@ export default function Leads() {
                   <TableHead>Source</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Enriched</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -666,7 +805,7 @@ export default function Leads() {
               <TableBody>
                 {filteredLeads.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No leads found. Create your first lead to get started.
                     </TableCell>
                   </TableRow>
@@ -690,6 +829,30 @@ export default function Leads() {
                         <Badge variant="outline" className={getStatusColor(lead.status)}>
                           {lead.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {lead.metadata && Object.keys(lead.metadata).length > 0 ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 cursor-pointer">
+                                ✓ View
+                              </Badge>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Enriched Profile Data</DialogTitle>
+                                <DialogDescription>
+                                  LinkedIn profile information for {lead.name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <EnrichedDataView metadata={lead.metadata} />
+                            </DialogContent>
+                          </Dialog>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            No
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(lead.createdAt).toLocaleDateString()}
