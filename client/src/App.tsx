@@ -17,6 +17,7 @@ import AgentConfig from "./pages/AgentConfig";
 import CompanyReports from "./pages/CompanyReports";
 import AuditLog from "./pages/AuditLog";
 import Integrations from "./pages/Integrations";
+import Permissions from "./pages/Permissions";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/admin/company-reports" component={CompanyReports} />
       <Route path="/admin/audit-log" component={AuditLog} />
       <Route path="/admin/integrations" component={Integrations} />
+      <Route path="/admin/permissions" component={Permissions} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

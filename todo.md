@@ -681,3 +681,32 @@
 - [x] Aplicar requirePermission("config", "update") a endpoint agentConfig.upsert
 - [x] Crear endpoint leads.delete con validación de companyId
 - [x] Crear endpoint tickets.update con validación de companyId y campos opcionales
+
+
+## Fase 3: Implementar funciones faltantes en db.ts
+- [ ] Implementar getAllUsers() para obtener todos los usuarios
+- [ ] Implementar updateUserCompanyRole() para actualizar rol de usuario en empresa
+- [ ] Implementar getCompanyById() para obtener empresa por ID
+- [ ] Implementar createAuditLog() para crear registros de auditoría
+- [ ] Verificar que todos los errores de TypeScript se resuelvan
+
+## Fase 4: Conectar Ivy-Prospect con API real
+- [x] Investigar APIs de enriquecimiento disponibles (Apollo.io, Hunter.io, Clearbit)
+- [x] Elegir API más adecuada según funcionalidades y pricing (LinkedIn API de Manus API Hub)
+- [x] Configurar secrets para API key del servicio elegido (ya configurado en Manus API Hub)
+- [x] Implementar integración real en prospect.search con LinkedIn/search_people
+- [x] Crear prospect-router.ts modular con fallback a datos mock
+- [x] Probar búsquedas reales y validar datos retornados (208,408 resultados para "CTO")
+
+## Fase 5: Página de gestión de permisos
+- [x] Verificar esquema de permisos existente (ya existe en _core/permissions.ts)
+- [x] Endpoints backend ya existen (userCompanies.getUsers, userCompanies.updateRole)
+- [x] Crear página /admin/permissions en frontend con componentes shadcn/ui
+- [x] Implementar selector de empresa para gestionar permisos
+- [x] Implementar tabla de usuarios con roles actuales y selector de cambio de rol
+- [x] Implementar matriz de permisos visual (Create/Read/Update/Delete por recurso)
+- [x] Agregar descripciones de roles con colores distintivos
+- [x] Validación de permisos (solo admins pueden acceder a /admin/permissions)
+- [x] Probar visualización de matriz de permisos (viewer, analyst, member, manager, admin)
+- [x] Agregar ruta /admin/permissions en App.tsx
+- [x] Agregar enlace "Gestión de Permisos" en DashboardLayout sidebar

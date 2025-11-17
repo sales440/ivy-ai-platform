@@ -8,6 +8,7 @@ import { companiesRouter } from "./companies-router";
 import { userCompaniesRouter } from "./user-companies-router";
 import { agentConfigRouter } from "./agent-config-router";
 import { auditLogRouter } from "./audit-log-router";
+import { prospectRouter } from "./prospect-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -694,142 +695,7 @@ export const appRouter = router({
   // IVY-PROSPECT ROUTER
   // ============================================================================
   
-  prospect: router({
-    search: protectedProcedure
-      .input(z.object({
-        query: z.string().min(1),
-        industry: z.string().optional(),
-        location: z.string().optional(),
-        companySize: z.string().optional(),
-        limit: z.number().min(1).max(50).default(10),
-      }))
-      .mutation(async ({ input }) => {
-        // Simulación de búsqueda de prospectos (en producción, integrar con LinkedIn Sales Navigator API)
-        const mockProspects = [
-          {
-            name: "Jennifer Martinez",
-            email: "j.martinez@techventures.com",
-            company: "TechVentures Inc",
-            title: "Chief Technology Officer",
-            industry: "Technology",
-            location: "Seattle, WA",
-            companySize: "500-1000",
-            linkedinUrl: "https://linkedin.com/in/jennifer-martinez",
-            profilePicture: "https://i.pravatar.cc/150?img=5",
-            qualificationScore: 88,
-          },
-          {
-            name: "Robert Thompson",
-            email: "r.thompson@innovatecorp.io",
-            company: "InnovateCorp",
-            title: "VP of Engineering",
-            industry: "Software",
-            location: "Austin, TX",
-            companySize: "100-500",
-            linkedinUrl: "https://linkedin.com/in/robert-thompson",
-            profilePicture: "https://i.pravatar.cc/150?img=12",
-            qualificationScore: 92,
-          },
-          {
-            name: "Lisa Chen",
-            email: "lisa.chen@globaltech.com",
-            company: "GlobalTech Solutions",
-            title: "Director of IT",
-            industry: "Technology",
-            location: "San Francisco, CA",
-            companySize: "1000+",
-            linkedinUrl: "https://linkedin.com/in/lisa-chen",
-            profilePicture: "https://i.pravatar.cc/150?img=9",
-            qualificationScore: 85,
-          },
-          {
-            name: "James Wilson",
-            email: "james.w@datastream.io",
-            company: "DataStream Analytics",
-            title: "Head of Data Engineering",
-            industry: "Data Analytics",
-            location: "New York, NY",
-            companySize: "100-500",
-            linkedinUrl: "https://linkedin.com/in/james-wilson",
-            profilePicture: "https://i.pravatar.cc/150?img=15",
-            qualificationScore: 90,
-          },
-          {
-            name: "Maria Rodriguez",
-            email: "m.rodriguez@cloudnine.com",
-            company: "CloudNine Systems",
-            title: "VP of Operations",
-            industry: "Cloud Computing",
-            location: "Denver, CO",
-            companySize: "500-1000",
-            linkedinUrl: "https://linkedin.com/in/maria-rodriguez",
-            profilePicture: "https://i.pravatar.cc/150?img=20",
-            qualificationScore: 87,
-          },
-        ];
-
-        // Filtrar por criterios
-        let results = mockProspects;
-        
-        if (input.industry) {
-          results = results.filter(p => 
-            p.industry.toLowerCase().includes(input.industry!.toLowerCase())
-          );
-        }
-        
-        if (input.location) {
-          results = results.filter(p => 
-            p.location.toLowerCase().includes(input.location!.toLowerCase())
-          );
-        }
-        
-        if (input.companySize) {
-          results = results.filter(p => p.companySize === input.companySize);
-        }
-
-        // Filtrar por query (nombre, empresa, título)
-        if (input.query) {
-          const queryLower = input.query.toLowerCase();
-          results = results.filter(p =>
-            p.name.toLowerCase().includes(queryLower) ||
-            p.company.toLowerCase().includes(queryLower) ||
-            p.title.toLowerCase().includes(queryLower)
-          );
-        }
-
-        return {
-          success: true,
-          prospects: results.slice(0, input.limit),
-          total: results.length,
-        };
-      }),
-    
-    enrich: protectedProcedure
-      .input(z.object({
-        leadId: z.number(),
-        linkedinUrl: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        // Simulación de enriquecimiento de lead (en producción, usar LinkedIn API o servicios como Clearbit)
-        const enrichedData = {
-          linkedinUrl: input.linkedinUrl || "https://linkedin.com/in/prospect",
-          companyLinkedin: "https://linkedin.com/company/example",
-          employeeCount: "500-1000",
-          companyRevenue: "$10M-$50M",
-          technologies: ["React", "Node.js", "AWS", "PostgreSQL"],
-          recentNews: "Company raised $20M Series B funding",
-        };
-
-        // Actualizar lead con datos enriquecidos
-        // await db.updateLead(input.leadId, enrichedData);
-
-        return {
-          success: true,
-          message: "Lead enriched successfully",
-          data: enrichedData,
-        };
-      }),
-  }),
+  prospect: prospectRouter,
 });
 
 // ============================================================================
