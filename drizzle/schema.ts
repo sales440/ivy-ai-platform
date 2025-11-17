@@ -325,3 +325,23 @@ export const agentConfigurations = mysqlTable("agentConfigurations", {
 
 export type AgentConfiguration = typeof agentConfigurations.$inferSelect;
 export type InsertAgentConfiguration = typeof agentConfigurations.$inferInsert;
+
+/**
+ * Audit Logs - Track all critical system changes
+ */
+export const auditLogs = mysqlTable("auditLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 255 }),
+  action: varchar("action", { length: 100 }).notNull(), // e.g., "assign_user", "remove_user", "update_role", "update_config"
+  entityType: varchar("entityType", { length: 50 }).notNull(), // e.g., "user_company", "agent_config", "company"
+  entityId: int("entityId"),
+  changes: json("changes").$type<Record<string, any>>(), // Store before/after values
+  metadata: json("metadata").$type<Record<string, any>>(), // Additional context
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;

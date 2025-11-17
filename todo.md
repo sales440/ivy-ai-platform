@@ -443,3 +443,36 @@
 - [x] Mostrar descripción de cada preset
 - [x] Permitir personalización después de aplicar preset
 - [ ] Agregar botón "Restaurar Defaults" en configuración
+
+## Funcionalidades Avanzadas de Administración
+
+### Auditoría de Cambios
+- [x] Crear tabla audit_logs en schema (userId, action, entityType, entityId, changes, timestamp)
+- [x] Crear función createAuditLog en db.ts
+- [x] Agregar audit logging en assignUserToCompany
+- [x] Agregar audit logging en removeUserFromCompany
+- [x] Agregar audit logging en updateUserCompanyRole
+- [ ] Agregar audit logging en upsertAgentConfig
+- [x] Crear página /admin/audit-log con tabla de auditoría
+- [x] Implementar filtros por usuario, acción, entidad, fecha
+- [x] Agregar exportación de logs a CSV
+
+### Exportación de Configuraciones de Agentes
+- [x] Crear endpoint exportConfigurations en agent-config-router
+- [x] Implementar generación de JSON con todas las configuraciones
+- [x] Crear endpoint importConfigurations en agent-config-router
+- [x] Implementar validación de JSON importado
+- [x] Agregar botón "Exportar Configuraciones" en AgentConfig
+- [x] Agregar botón "Importar Configuraciones" con file upload
+- [x] Implementar preview de configuraciones antes de importar
+- [x] Agregar opción de sobrescribir o fusionar configuraciones
+
+### Dashboard Ejecutivo Personalizable
+- [ ] Crear tabla dashboard_widgets en schema
+- [ ] Implementar widgets predefinidos (leads, tickets, agents, revenue)
+- [ ] Crear componente WidgetSelector para agregar widgets
+- [ ] Implementar drag-and-drop para reordenar widgets
+- [ ] Agregar botón "Personalizar Dashboard" en Dashboard
+- [ ] Guardar configuración de widgets por empresa
+- [ ] Implementar modo edición vs modo vista
+- [ ] Agregar opción de resetear a layout default

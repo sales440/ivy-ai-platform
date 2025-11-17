@@ -50,6 +50,24 @@ export const userCompaniesRouter = router({
       const user = await db.getUserByOpenId(ctx.user.openId);
       const company = await db.getCompanyById(input.companyId);
       
+      // Create audit log
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || ctx.user.email,
+        action: 'assign_user',
+        entityType: 'user_company',
+        entityId: input.companyId,
+        changes: {
+          userId: input.userId,
+          companyId: input.companyId,
+          role: input.role,
+        },
+        metadata: {
+          companyName: company?.name,
+          targetUserEmail: user?.email,
+        },
+      });
+      
       if (user && company) {
         await notifyOwner({
           title: `User Assigned to Company`,
@@ -76,6 +94,23 @@ export const userCompaniesRouter = router({
       // Get user and company details for notification
       const user = await db.getUserByOpenId(ctx.user.openId);
       const company = await db.getCompanyById(input.companyId);
+      
+      // Create audit log
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || ctx.user.email,
+        action: 'remove_user',
+        entityType: 'user_company',
+        entityId: input.companyId,
+        changes: {
+          userId: input.userId,
+          companyId: input.companyId,
+        },
+        metadata: {
+          companyName: company?.name,
+          targetUserEmail: user?.email,
+        },
+      });
       
       if (user && company) {
         await notifyOwner({
@@ -131,6 +166,24 @@ export const userCompaniesRouter = router({
       // Get user and company details for notification
       const user = await db.getUserByOpenId(ctx.user.openId);
       const company = await db.getCompanyById(input.companyId);
+      
+      // Create audit log
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userName: ctx.user.name || ctx.user.email,
+        action: 'update_role',
+        entityType: 'user_company',
+        entityId: input.companyId,
+        changes: {
+          userId: input.userId,
+          companyId: input.companyId,
+          newRole: input.role,
+        },
+        metadata: {
+          companyName: company?.name,
+          targetUserEmail: user?.email,
+        },
+      });
       
       if (user && company) {
         await notifyOwner({

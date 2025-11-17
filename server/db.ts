@@ -40,7 +40,10 @@ import {
   InsertCommandHistory,
   agentConfigurations,
   InsertAgentConfiguration,
-  AgentConfiguration
+  AgentConfiguration,
+  auditLogs,
+  InsertAuditLog,
+  AuditLog,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1062,5 +1065,62 @@ export async function deleteAgentConfiguration(companyId: number, agentType: Age
   } catch (error) {
     console.error("[Database] Failed to delete agent configuration:", error);
     throw error;
+  }
+}
+
+// ============================================================================
+// AUDIT LOGS
+// ============================================================================
+
+export async function createAuditLog(log: InsertAuditLog) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.insert(auditLogs).values(log);
+    return { id: Number(result.insertId), ...log };
+  } catch (error) {
+    console.error("[Database] Failed to create audit log:", error);
+    return null;
+  }
+}
+
+export async function getAllAuditLogs(filters?: {
+  userId?: number;
+  action?: string;
+  entityType?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const conditions = [];
+    
+    if (filters?.userId) {
+      conditions.push(eq(auditLogs.userId, filters.userId));
+    }
+    if (filters?.action) {
+      conditions.push(eq(auditLogs.action, filters.action));
+    }
+    if (filters?.entityType) {
+      conditions.push(eq(auditLogs.entityType, filters.entityType));
+    }
+    if (filters?.startDate) {
+      conditions.push(sql`${auditLogs.createdAt} >= ${filters.startDate}`);
+    }
+    if (filters?.endDate) {
+      conditions.push(sql`${auditLogs.createdAt} <= ${filters.endDate}`);
+    }
+
+    if (conditions.length > 0) {
+      return await db.select().from(auditLogs).where(and(...conditions)).orderBy(desc(auditLogs.createdAt));
+    }
+    
+    return await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get audit logs:", error);
+    return [];
   }
 }

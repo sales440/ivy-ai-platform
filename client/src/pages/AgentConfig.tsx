@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Loader2, Settings, Bot, Trash2, Plus } from 'lucide-react';
+import { Loader2, Settings, Bot, Trash2, Plus, Download, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/DashboardLayout';
 
@@ -59,6 +59,8 @@ export default function AgentConfig() {
   const { selectedCompany } = useCompany();
   const [editingAgent, setEditingAgent] = useState<any>(null);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importData, setImportData] = useState<any>(null);
 
   const { data: configurationsData, isLoading, refetch } = trpc.agentConfig.listByCompany.useQuery(
     { companyId: Number(selectedCompany?.id) },
@@ -79,12 +81,29 @@ export default function AgentConfig() {
 
   const deleteConfig = trpc.agentConfig.delete.useMutation({
     onSuccess: () => {
-      toast.success('Configuration deleted, agent will use defaults');
+      toast.success('Configuration deleted successfully');
       refetch();
     },
     onError: (error) => {
-      toast.error(`Failed to delete configuration: ${error.message}`);
-    }
+      toast.error(error.message);
+    },
+  });
+
+  const exportConfigs = trpc.agentConfig.export.useQuery(
+    { companyId: Number(selectedCompany?.id) },
+    { enabled: false }
+  );
+
+  const importConfigs = trpc.agentConfig.import.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Imported ${data.imported} configurations, skipped ${data.skipped}`);
+      setImportDialogOpen(false);
+      setImportData(null);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
   const configurations = configurationsData?.configurations || [];
@@ -168,6 +187,54 @@ export default function AgentConfig() {
             <p className="text-muted-foreground mt-1">
               Customize agent behavior for {selectedCompany.name}
             </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                const result = await exportConfigs.refetch();
+                if (result.data) {
+                  const blob = new Blob([JSON.stringify(result.data.exportData, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `agent-configs-${selectedCompany.name}-${new Date().toISOString().split('T')[0]}.json`;
+                  link.click();
+                  toast.success('Configurations exported successfully');
+                }
+              }}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json';
+                input.onchange = (e: any) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      try {
+                        const data = JSON.parse(event.target?.result as string);
+                        setImportData(data);
+                        setImportDialogOpen(true);
+                      } catch (error) {
+                        toast.error('Invalid JSON file');
+                      }
+                    };
+                    reader.readAsText(file);
+                  }
+                };
+                input.click();
+              }}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
           </div>
         </div>
 
@@ -426,6 +493,80 @@ export default function AgentConfig() {
                 </DialogFooter>
               </form>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Import Dialog */}
+        <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Import Agent Configurations</DialogTitle>
+              <DialogDescription>
+                Preview and confirm the configurations to import
+              </DialogDescription>
+            </DialogHeader>
+            
+            {importData && (
+              <div className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <div className="text-sm">
+                    <span className="font-medium">Source:</span> {importData.companyName || 'Unknown'}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Exported:</span> {new Date(importData.exportedAt).toLocaleString()}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">Configurations:</span> {importData.configurations?.length || 0}
+                  </div>
+                </div>
+
+                <div className="max-h-[300px] overflow-auto">
+                  <div className="space-y-2">
+                    {importData.configurations?.map((config: any) => (
+                      <div key={config.agentType} className="border rounded-lg p-3">
+                        <div className="font-medium capitalize">{config.agentType}</div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          Temperature: {config.temperature}% • Max Tokens: {config.maxTokens}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="overwrite"
+                    className="rounded border-input"
+                  />
+                  <Label htmlFor="overwrite" className="text-sm font-normal">
+                    Overwrite existing configurations
+                  </Label>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (importData && selectedCompany) {
+                    const overwrite = (document.getElementById('overwrite') as HTMLInputElement)?.checked || false;
+                    importConfigs.mutate({
+                      companyId: Number(selectedCompany.id),
+                      configurations: importData.configurations,
+                      overwrite,
+                    });
+                  }
+                }}
+                disabled={importConfigs.isPending}
+              >
+                {importConfigs.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Import
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
