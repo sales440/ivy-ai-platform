@@ -10,18 +10,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Building2, TrendingUp, TrendingDown, Download, BarChart3 } from 'lucide-react';
+import { Loader2, Building2, TrendingUp, TrendingDown, Download, BarChart3, Calendar, X } from 'lucide-react';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function CompanyReports() {
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [dateFilterActive, setDateFilterActive] = useState(false);
+
   const { data: companiesData, isLoading: companiesLoading } = trpc.companies.list.useQuery();
   const companies = companiesData?.companies || [];
 
   // Fetch metrics for all companies
   const companyMetrics = companies.map(company => {
-    const { data } = trpc.analytics.companyMetrics.useQuery({ companyId: company.id });
+    const { data } = trpc.analytics.companyMetrics.useQuery({
+      companyId: company.id,
+      startDate: dateFilterActive && startDate ? startDate : undefined,
+      endDate: dateFilterActive && endDate ? endDate : undefined,
+    });
     return { company, metrics: data };
   });
 
@@ -77,6 +87,26 @@ export default function CompanyReports() {
     toast.success('Report exported successfully');
   };
 
+  const handleApplyFilters = () => {
+    if (!startDate && !endDate) {
+      toast.error('Please select at least one date');
+      return;
+    }
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      toast.error('Start date must be before end date');
+      return;
+    }
+    setDateFilterActive(true);
+    toast.success('Date filters applied');
+  };
+
+  const handleClearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setDateFilterActive(false);
+    toast.success('Filters cleared');
+  };
+
   const getPlanColor = (plan: string) => {
     switch (plan) {
       case 'enterprise': return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
@@ -105,6 +135,11 @@ export default function CompanyReports() {
             <h1 className="text-3xl font-bold">Company Reports</h1>
             <p className="text-muted-foreground mt-1">
               Comparative analytics across all companies
+              {dateFilterActive && (
+                <span className="ml-2 text-sm font-medium text-primary">
+                  ({startDate || 'Start'} → {endDate || 'End'})
+                </span>
+              )}
             </p>
           </div>
           <Button onClick={handleExportReport}>
@@ -112,6 +147,55 @@ export default function CompanyReports() {
             Export CSV
           </Button>
         </div>
+
+        {/* Date Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Date Range Filter
+            </CardTitle>
+            <CardDescription>
+              Filter metrics by date range to analyze trends over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleApplyFilters}>
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Apply Filters
+                </Button>
+                {dateFilterActive && (
+                  <Button variant="outline" onClick={handleClearFilters}>
+                    <X className="h-4 w-4 mr-2" />
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Summary Stats */}
         <div className="grid gap-4 md:grid-cols-4">

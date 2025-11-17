@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { notifyOwner } from "./_core/notification";
 
 export const userCompaniesRouter = router({
   // Get all companies assigned to current user
@@ -44,6 +45,18 @@ export const userCompaniesRouter = router({
       }
       
       const assignment = await db.assignUserToCompany(input);
+      
+      // Get user and company details for notification
+      const user = await db.getUserByOpenId(ctx.user.openId);
+      const company = await db.getCompanyById(input.companyId);
+      
+      if (user && company) {
+        await notifyOwner({
+          title: `User Assigned to Company`,
+          content: `${user.name || user.email} has been assigned to ${company.name} with role: ${input.role}`
+        });
+      }
+      
       return { success: true, assignment };
     }),
 
@@ -59,6 +72,18 @@ export const userCompaniesRouter = router({
       }
       
       await db.removeUserFromCompany(input.userId, input.companyId);
+      
+      // Get user and company details for notification
+      const user = await db.getUserByOpenId(ctx.user.openId);
+      const company = await db.getCompanyById(input.companyId);
+      
+      if (user && company) {
+        await notifyOwner({
+          title: `User Removed from Company`,
+          content: `${user.name || user.email} has been removed from ${company.name}`
+        });
+      }
+      
       return { success: true };
     }),
 
@@ -102,6 +127,18 @@ export const userCompaniesRouter = router({
       }
       
       await db.updateUserCompanyRole(input.userId, input.companyId, input.role);
+      
+      // Get user and company details for notification
+      const user = await db.getUserByOpenId(ctx.user.openId);
+      const company = await db.getCompanyById(input.companyId);
+      
+      if (user && company) {
+        await notifyOwner({
+          title: `User Role Updated`,
+          content: `${user.name || user.email}'s role in ${company.name} has been changed to: ${input.role}`
+        });
+      }
+      
       return { success: true };
     }),
 });

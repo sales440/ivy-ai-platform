@@ -417,3 +417,29 @@
 - [x] Agregar exportación de reportes a PDF
 - [x] Proteger ruta solo para admins
 - [x] Agregar gráfico de distribución de agentes por empresa
+
+## Mejoras Finales Multi-Tenant
+
+### Filtros de Fecha en Reportes
+- [x] Agregar selectores de fecha inicio/fin en CompanyReports
+- [x] Actualizar función getCompanyMetrics para aceptar rango de fechas
+- [x] Filtrar leads por createdAt dentro del rango
+- [x] Filtrar tickets por createdAt dentro del rango
+- [x] Agregar botón "Aplicar Filtros" y "Limpiar Filtros"
+- [x] Mostrar rango de fechas activo en el título de la página
+
+### Notificaciones de Asignaciones
+- [x] Crear función notifyUserAssignment en notification-helper
+- [x] Enviar notificación cuando usuario es asignado a empresa
+- [x] Enviar notificación cuando usuario es removido de empresa
+- [x] Enviar notificación cuando rol de usuario cambia
+- [x] Incluir detalles de empresa y rol en notificación
+- [x] Agregar link directo a la empresa en notificación
+
+### Templates de Configuración de Agentes
+- [x] Crear constantes de presets (conservador/balanceado/creativo)
+- [x] Agregar selector de template en diálogo de configuración
+- [x] Implementar aplicación de preset al seleccionar template
+- [x] Mostrar descripción de cada preset
+- [x] Permitir personalización después de aplicar preset
+- [ ] Agregar botón "Restaurar Defaults" en configuración

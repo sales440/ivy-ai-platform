@@ -896,18 +896,36 @@ export async function isUserAssignedToCompany(userId: number, companyId: number)
 // COMPANY METRICS
 // ============================================================================
 
-export async function getCompanyMetrics(companyId: number) {
+export async function getCompanyMetrics(companyId: number, startDate?: string, endDate?: string) {
   const db = await getDb();
   if (!db) return null;
 
   try {
-    // Get leads metrics
-    const companyLeads = await db.select().from(leads).where(eq(leads.companyId, companyId));
+    // Build date filter conditions
+    const dateConditions = [];
+    if (startDate) {
+      dateConditions.push(sql`${leads.createdAt} >= ${startDate}`);
+    }
+    if (endDate) {
+      dateConditions.push(sql`${leads.createdAt} <= ${endDate}`);
+    }
+
+    // Get leads metrics with date filter
+    const leadsConditions = [eq(leads.companyId, companyId), ...dateConditions];
+    const companyLeads = await db.select().from(leads).where(and(...leadsConditions));
     const qualifiedLeads = companyLeads.filter(l => l.status === 'qualified' || l.status === 'converted');
     const convertedLeads = companyLeads.filter(l => l.status === 'converted');
     
-    // Get tickets metrics
-    const companyTickets = await db.select().from(tickets).where(eq(tickets.companyId, companyId));
+    // Get tickets metrics with date filter
+    const ticketDateConditions = [];
+    if (startDate) {
+      ticketDateConditions.push(sql`${tickets.createdAt} >= ${startDate}`);
+    }
+    if (endDate) {
+      ticketDateConditions.push(sql`${tickets.createdAt} <= ${endDate}`);
+    }
+    const ticketsConditions = [eq(tickets.companyId, companyId), ...ticketDateConditions];
+    const companyTickets = await db.select().from(tickets).where(and(...ticketsConditions));
     const openTickets = companyTickets.filter(t => t.status === 'open' || t.status === 'in_progress');
     const resolvedTickets = companyTickets.filter(t => t.status === 'resolved' || t.status === 'closed');
     

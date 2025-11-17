@@ -31,6 +31,30 @@ const AGENT_TYPES = [
   { type: 'insight', name: 'Ivy-Insight', department: 'Strategy', icon: '📊' },
 ] as const;
 
+const CONFIG_PRESETS = {
+  conservative: {
+    name: 'Conservative',
+    description: 'Focused and deterministic responses with minimal creativity',
+    temperature: 20,
+    maxTokens: 1000,
+    icon: '🛡️',
+  },
+  balanced: {
+    name: 'Balanced',
+    description: 'Good balance between consistency and creativity',
+    temperature: 50,
+    maxTokens: 2000,
+    icon: '⚖️',
+  },
+  creative: {
+    name: 'Creative',
+    description: 'Highly creative and exploratory responses',
+    temperature: 85,
+    maxTokens: 3000,
+    icon: '🎨',
+  },
+} as const;
+
 export default function AgentConfig() {
   const { selectedCompany } = useCompany();
   const [editingAgent, setEditingAgent] = useState<any>(null);
@@ -281,6 +305,38 @@ export default function AgentConfig() {
                 <input type="hidden" name="agentType" value={editingAgent.type} />
                 
                 <div className="grid gap-6 py-4">
+                  {/* Configuration Presets */}
+                  <div className="grid gap-3">
+                    <Label>Quick Presets</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(CONFIG_PRESETS).map(([key, preset]) => (
+                        <Button
+                          key={key}
+                          type="button"
+                          variant="outline"
+                          className="flex flex-col items-center gap-2 h-auto py-3"
+                          onClick={() => {
+                            setEditingAgent({
+                              ...editingAgent,
+                              config: {
+                                ...editingAgent.config,
+                                temperature: preset.temperature,
+                                maxTokens: preset.maxTokens,
+                              }
+                            });
+                            toast.success(`Applied ${preset.name} preset`);
+                          }}
+                        >
+                          <span className="text-2xl">{preset.icon}</span>
+                          <div className="text-center">
+                            <div className="font-medium text-sm">{preset.name}</div>
+                            <div className="text-xs text-muted-foreground">{preset.description}</div>
+                          </div>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid gap-3">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="temperature">Temperature: {editingAgent.config.temperature}%</Label>

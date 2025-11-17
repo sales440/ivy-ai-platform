@@ -526,9 +526,17 @@ export const appRouter = router({
       }),
 
     companyMetrics: protectedProcedure
-      .input(z.object({ companyId: z.number() }))
+      .input(z.object({ 
+        companyId: z.number(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
       .query(async ({ input }) => {
-        const metrics = await db.getCompanyMetrics(input.companyId);
+        const metrics = await db.getCompanyMetrics(
+          input.companyId, 
+          input.startDate, 
+          input.endDate
+        );
         return metrics;
       }),
 
