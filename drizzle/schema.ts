@@ -49,7 +49,7 @@ export const userCompanies = mysqlTable("userCompanies", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   companyId: int("companyId").notNull(),
-  role: mysqlEnum("role", ["viewer", "member", "admin"]).default("member").notNull(),
+  role: mysqlEnum("role", ["viewer", "analyst", "member", "manager", "admin"]).default("member").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -345,3 +345,44 @@ export const auditLogs = mysqlTable("auditLogs", {
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+/**
+ * Dashboard Widgets - Customizable dashboard layout per company
+ */
+export const dashboardWidgets = mysqlTable("dashboardWidgets", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  widgetType: mysqlEnum("widgetType", ["leads_summary", "tickets_summary", "conversion_chart", "revenue_chart", "agents_status", "recent_activity"]).notNull(),
+  position: int("position").notNull(), // Order in the grid
+  gridX: int("gridX").default(0).notNull(), // Grid column position
+  gridY: int("gridY").default(0).notNull(), // Grid row position
+  gridW: int("gridW").default(4).notNull(), // Grid width (columns)
+  gridH: int("gridH").default(2).notNull(), // Grid height (rows)
+  config: json("config").$type<Record<string, any>>(), // Widget-specific configuration
+  isVisible: boolean("isVisible").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DashboardWidget = typeof dashboardWidgets.$inferSelect;
+export type InsertDashboardWidget = typeof dashboardWidgets.$inferInsert;
+
+/**
+ * CRM Integrations - External CRM connections per company
+ */
+export const crmIntegrations = mysqlTable("crmIntegrations", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  crmType: mysqlEnum("crmType", ["salesforce", "hubspot", "pipedrive"]).notNull(),
+  credentials: json("credentials").$type<Record<string, any>>().notNull(), // Encrypted API keys, tokens, etc.
+  config: json("config").$type<Record<string, any>>(), // Field mappings, sync settings
+  isActive: boolean("isActive").default(true).notNull(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  syncStatus: mysqlEnum("syncStatus", ["idle", "syncing", "error"]).default("idle").notNull(),
+  syncError: text("syncError"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CrmIntegration = typeof crmIntegrations.$inferSelect;
+export type InsertCrmIntegration = typeof crmIntegrations.$inferInsert;

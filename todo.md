@@ -476,3 +476,44 @@
 - [ ] Guardar configuración de widgets por empresa
 - [ ] Implementar modo edición vs modo vista
 - [ ] Agregar opción de resetear a layout default
+
+## Funcionalidades Empresariales Avanzadas
+
+### Dashboard Personalizable por Empresa
+- [x] Crear tabla dashboard_widgets en schema (companyId, widgetType, position, config)
+- [ ] Definir tipos de widgets predefinidos (leads_summary, tickets_summary, conversion_chart, revenue_chart)
+- [ ] Crear componente Widget base con props genéricas
+- [ ] Implementar LeadsSummaryWidget
+- [ ] Implementar TicketsSummaryWidget
+- [ ] Implementar ConversionChartWidget
+- [ ] Implementar RevenueChartWidget
+- [ ] Instalar y configurar react-grid-layout para drag-and-drop
+- [ ] Crear componente DashboardEditor con modo edición
+- [ ] Agregar botón "Personalizar Dashboard" en Dashboard
+- [ ] Implementar guardado de layout en base de datos
+- [ ] Agregar botón "Restaurar Layout Default"
+
+### Roles Granulares por Empresa
+- [x] Extender enum de roles en schema: admin, manager, analyst, viewer
+- [ ] Crear tabla company_permissions (roleId, resource, action)
+- [ ] Definir matriz de permisos por rol (CRUD en leads, tickets, agents, config)
+- [x] Actualizar userCompanies.role para soportar nuevos roles
+- [ ] Crear middleware checkCompanyPermission en tRPC
+- [ ] Proteger endpoints de leads con permisos granulares
+- [ ] Proteger endpoints de tickets con permisos granulares
+- [ ] Proteger endpoints de agentConfig con permisos granulares
+- [ ] Actualizar UI para mostrar/ocultar acciones según permisos
+- [ ] Crear página /admin/roles para gestionar permisos
+
+### Integraciones con CRM Externos
+- [x] Crear tabla crm_integrations (companyId, crmType, credentials, config)
+- [ ] Implementar conector base CRMConnector con métodos syncLeads, syncTickets
+- [ ] Implementar SalesforceConnector con OAuth2
+- [ ] Implementar HubSpotConnector con API key
+- [ ] Implementar PipedriveConnector con API token
+- [ ] Crear router tRPC para gestión de integraciones
+- [x] Crear página /admin/integrations para configurar CRMs
+- [ ] Implementar webhook receiver para sincronización bidireccional
+- [ ] Agregar job scheduler para sincronización periódica
+- [ ] Implementar mapeo de campos customizable por empresa
+- [ ] Agregar logs de sincronización y manejo de errores

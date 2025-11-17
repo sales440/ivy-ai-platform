@@ -22,7 +22,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { CompanySelector } from "@/components/CompanySelector";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -41,6 +41,7 @@ const menuItems = [
   { icon: Settings, label: "Configuración de Agentes", path: "/admin/agent-config", adminOnly: true },
   { icon: BarChart3, label: "Reportes Comparativos", path: "/admin/company-reports", adminOnly: true },
   { icon: FileText, label: "Auditoría de Cambios", path: "/admin/audit-log", adminOnly: true },
+  { icon: Plug, label: "Integraciones CRM", path: "/admin/integrations", adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

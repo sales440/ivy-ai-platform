@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS dashboardWidgets (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  companyId INT NOT NULL,\n  widgetType ENUM('leads_summary', 'tickets_summary', 'conversion_chart', 'revenue_chart', 'agents_status', 'recent_activity') NOT NULL,\n  position INT NOT NULL,\n  gridX INT DEFAULT 0 NOT NULL,\n  gridY INT DEFAULT 0 NOT NULL,\n  gridW INT DEFAULT 4 NOT NULL,\n  gridH INT DEFAULT 2 NOT NULL,\n  config JSON,\n  isVisible BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS dashboardWidgets (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  companyId INT NOT NULL,\n  widgetType ENUM('leads_summary', 'tickets_summary', 'conversion_chart', 'revenue_chart', 'agents_status', 'recent_activity') NOT NULL,\n  position INT NOT NULL,\n  gridX INT DEFAULT 0 NOT NULL,\n  gridY INT DEFAULT 0 NOT NULL,\n  gridW INT DEFAULT 4 NOT NULL,\n  gridH INT DEFAULT 2 NOT NULL,\n  config JSON,\n  isVisible BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 275
+}
