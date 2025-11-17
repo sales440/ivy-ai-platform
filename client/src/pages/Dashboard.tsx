@@ -7,6 +7,7 @@ import { CommandConsole } from '@/components/CommandConsole';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DashboardSkeleton } from '@/components/DashboardSkeleton';
+import DashboardLayout from '@/components/DashboardLayout';
 import { WorkflowCard } from '@/components/WorkflowCard';
 import { NotificationBell } from '@/components/NotificationBell';
 import { toast } from 'sonner';
@@ -77,14 +78,15 @@ export default function Dashboard() {
 
   if (agentsLoading || statusLoading) {
     return (
-      <div className="container py-6">
+      <DashboardLayout>
         <DashboardSkeleton />
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="container py-6 space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -308,6 +310,7 @@ export default function Dashboard() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

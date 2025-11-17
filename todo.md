@@ -298,3 +298,23 @@
 - [x] Crear script de demostración para clientes
 - [x] Crear propuesta comercial template
 - [x] Crear one-pager de marketing
+
+## Gestión de Clientes - Enfoque Pragmático
+### Fase 1: Selector Simple
+- [x] Crear contexto React para empresa seleccionada
+- [x] Agregar selector de empresa en header del dashboard
+- [x] Implementar filtrado de datos por empresa (en memoria)
+- [x] Agregar empresas demo hardcodeadas
+
+### Fase 2: Página de Administración
+- [ ] Crear tabla `companies` en schema (sin afectar otras tablas)
+- [ ] Crear funciones CRUD en db.ts para companies
+- [ ] Crear página /admin/companies con lista de empresas
+- [ ] Implementar formulario de creación de empresa
+- [ ] Implementar edición y eliminación de empresas
+- [ ] Agregar ruta protegida solo para admin
+
+### Fase 3: Integración Completa (Futuro)
+- [ ] Agregar companyId a todas las tablas relevantes
+- [ ] Implementar aislamiento real de datos por empresa
+- [ ] Sistema de permisos y middleware de verificación
