@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export interface Company {
   id: string;
@@ -8,38 +10,6 @@ export interface Company {
   plan: "starter" | "professional" | "enterprise";
   logo?: string;
 }
-
-// Empresas demo hardcodeadas (Fase 1)
-const DEMO_COMPANIES: Company[] = [
-  {
-    id: "demo-1",
-    name: "Demo Company",
-    slug: "demo-company",
-    industry: "Technology",
-    plan: "professional",
-  },
-  {
-    id: "acme-corp",
-    name: "Acme Corporation",
-    slug: "acme-corp",
-    industry: "Manufacturing",
-    plan: "enterprise",
-  },
-  {
-    id: "startup-inc",
-    name: "Startup Inc",
-    slug: "startup-inc",
-    industry: "SaaS",
-    plan: "starter",
-  },
-  {
-    id: "global-services",
-    name: "Global Services LLC",
-    slug: "global-services",
-    industry: "Consulting",
-    plan: "professional",
-  },
-];
 
 interface CompanyContextType {
   selectedCompany: Company | null;
@@ -51,20 +21,51 @@ interface CompanyContextType {
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  // Por defecto seleccionar la primera empresa
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(
-    DEMO_COMPANIES[0]
-  );
+  const { user } = useAuth();
+  const { data: companiesData, isLoading } = trpc.companies.list.useQuery();
+  
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
-  // TODO: En Fase 3, obtener isAdmin del contexto de auth
-  const isAdmin = true; // Por ahora todos son admin
+  // Determinar si el usuario es admin (puede ver todas las empresas)
+  const isAdmin = user?.role === "admin";
+
+  // Convertir companies de la DB al formato del contexto
+  const companies: Company[] = companiesData?.map(c => ({
+    id: c.id.toString(),
+    name: c.name,
+    slug: c.slug,
+    industry: c.industry || undefined,
+    plan: c.plan,
+    logo: c.logo || undefined,
+  })) || [];
+
+  // Seleccionar empresa inicial cuando se cargan los datos
+  useEffect(() => {
+    if (!selectedCompany && companies.length > 0) {
+      // Si el usuario tiene companyId asignado, seleccionar esa empresa
+      if (user?.companyId) {
+        const userCompany = companies.find(c => c.id === user.companyId.toString());
+        if (userCompany) {
+          setSelectedCompany(userCompany);
+          return;
+        }
+      }
+      // Si no, seleccionar la primera empresa disponible
+      setSelectedCompany(companies[0]);
+    }
+  }, [companies, selectedCompany, user]);
+
+  // Mostrar loading mientras se cargan las empresas
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <CompanyContext.Provider
       value={{
         selectedCompany,
         setSelectedCompany,
-        companies: DEMO_COMPANIES,
+        companies,
         isAdmin,
       }}
     >

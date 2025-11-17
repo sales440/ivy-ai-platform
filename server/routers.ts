@@ -232,15 +232,20 @@ export const appRouter = router({
   // ============================================================================
   
   leads: router({
-    list: protectedProcedure.query(async () => {
-      const leads = await db.getAllLeads();
-      return { leads };
-    }),
+    list: protectedProcedure
+      .input(z.object({ companyId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const leads = await db.getAllLeads(input?.companyId);
+        return { leads };
+      }),
 
     byStatus: protectedProcedure
-      .input(z.object({ status: z.enum(["new", "contacted", "qualified", "nurture", "converted", "lost"]) }))
+      .input(z.object({ 
+        status: z.enum(["new", "contacted", "qualified", "nurture", "converted", "lost"]),
+        companyId: z.number().optional()
+      }))
       .query(async ({ input }) => {
-        const leads = await db.getLeadsByStatus(input.status);
+        const leads = await db.getLeadsByStatus(input.status, input.companyId);
         return { leads };
       }),
 
@@ -285,15 +290,20 @@ export const appRouter = router({
   // ============================================================================
   
   tickets: router({
-    list: protectedProcedure.query(async () => {
-      const tickets = await db.getAllTickets();
-      return { tickets };
-    }),
+    list: protectedProcedure
+      .input(z.object({ companyId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const tickets = await db.getAllTickets(input?.companyId);
+        return { tickets };
+      }),
 
     byStatus: protectedProcedure
-      .input(z.object({ status: z.enum(["open", "in_progress", "resolved", "escalated", "closed"]) }))
+      .input(z.object({ 
+        status: z.enum(["open", "in_progress", "resolved", "escalated", "closed"]),
+        companyId: z.number().optional()
+      }))
       .query(async ({ input }) => {
-        const tickets = await db.getTicketsByStatus(input.status);
+        const tickets = await db.getTicketsByStatus(input.status, input.companyId);
         return { tickets };
       }),
 

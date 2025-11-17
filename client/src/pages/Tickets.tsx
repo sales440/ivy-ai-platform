@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,10 @@ export default function Tickets() {
   }>({});
   const [showExportFilters, setShowExportFilters] = useState(false);
 
-  const { data: ticketsData, isLoading, refetch } = trpc.tickets.list.useQuery();
+  const { selectedCompany } = useCompany();
+  const { data: ticketsData, isLoading, refetch } = trpc.tickets.list.useQuery(
+    selectedCompany ? { companyId: selectedCompany.id } : undefined
+  );
   const createTicket = trpc.tickets.create.useMutation({
     onSuccess: () => {
       toast.success('Ticket created successfully');

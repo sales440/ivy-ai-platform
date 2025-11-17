@@ -5,6 +5,7 @@ import { boolean, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } f
  */
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId"),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -83,6 +84,7 @@ export type InsertNotification = typeof notifications.$inferInsert;
  */
 export const agents = mysqlTable("agents", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId"),
   agentId: varchar("agentId", { length: 64 }).notNull().unique(), // UUID del agente
   name: varchar("name", { length: 100 }).notNull(),
   type: mysqlEnum("type", ["prospect", "closer", "solve", "logic", "talent", "insight"]).notNull(),
@@ -166,6 +168,7 @@ export type InsertWorkflowExecution = typeof workflowExecutions.$inferInsert;
  */
 export const leads = mysqlTable("leads", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId"),
   leadId: varchar("leadId", { length: 64 }).notNull().unique(),
   name: varchar("name", { length: 200 }).notNull(),
   email: varchar("email", { length: 320 }),
@@ -193,6 +196,7 @@ export type InsertLead = typeof leads.$inferInsert;
  */
 export const tickets = mysqlTable("tickets", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId"),
   ticketId: varchar("ticketId", { length: 64 }).notNull().unique(),
   customerId: int("customerId"), // User ID del cliente
   customerEmail: varchar("customerEmail", { length: 320 }),

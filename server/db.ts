@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
@@ -302,17 +302,23 @@ export async function getLeadById(id: number): Promise<Lead | undefined> {
   return result[0];
 }
 
-export async function getAllLeads(): Promise<Lead[]> {
+export async function getAllLeads(companyId?: number): Promise<Lead[]> {
   const db = await getDb();
   if (!db) return [];
 
+  if (companyId) {
+    return await db.select().from(leads).where(eq(leads.companyId, companyId)).orderBy(desc(leads.createdAt));
+  }
   return await db.select().from(leads).orderBy(desc(leads.createdAt));
 }
 
-export async function getLeadsByStatus(status: Lead["status"]): Promise<Lead[]> {
+export async function getLeadsByStatus(status: Lead["status"], companyId?: number): Promise<Lead[]> {
   const db = await getDb();
   if (!db) return [];
 
+  if (companyId) {
+    return await db.select().from(leads).where(and(eq(leads.status, status), eq(leads.companyId, companyId))).orderBy(desc(leads.createdAt));
+  }
   return await db.select().from(leads).where(eq(leads.status, status)).orderBy(desc(leads.createdAt));
 }
 
@@ -369,17 +375,23 @@ export async function getTicketById(id: number): Promise<Ticket | undefined> {
   return result[0];
 }
 
-export async function getAllTickets(): Promise<Ticket[]> {
+export async function getAllTickets(companyId?: number): Promise<Ticket[]> {
   const db = await getDb();
   if (!db) return [];
 
+  if (companyId) {
+    return await db.select().from(tickets).where(eq(tickets.companyId, companyId)).orderBy(desc(tickets.createdAt));
+  }
   return await db.select().from(tickets).orderBy(desc(tickets.createdAt));
 }
 
-export async function getTicketsByStatus(status: Ticket["status"]): Promise<Ticket[]> {
+export async function getTicketsByStatus(status: Ticket["status"], companyId?: number): Promise<Ticket[]> {
   const db = await getDb();
   if (!db) return [];
 
+  if (companyId) {
+    return await db.select().from(tickets).where(and(eq(tickets.status, status), eq(tickets.companyId, companyId))).orderBy(desc(tickets.createdAt));
+  }
   return await db.select().from(tickets).where(eq(tickets.status, status)).orderBy(desc(tickets.createdAt));
 }
 

@@ -328,5 +328,30 @@
 - [x] Implement edit company functionality
 - [x] Implement delete company with confirmation
 - [x] Add admin-only route protection
-- [ ] Update CompanyContext to fetch from database instead of hardcoded list
+- [x] Update CompanyContext to fetch from database instead of hardcoded list
 - [ ] Test all CRUD operations
+
+## Paso 1: Conectar Selector de Empresa al Filtrado de Datos
+- [ ] Agregar companyId a tabla leads en schema
+- [ ] Agregar companyId a tabla tickets en schema
+- [ ] Agregar companyId a tabla agents en schema
+- [ ] Ejecutar migraciones de base de datos
+- [ ] Actualizar seed-router para asignar companyId a datos demo
+- [ ] Actualizar queries de leads para filtrar por companyId
+- [ ] Actualizar queries de tickets para filtrar por companyId
+- [ ] Actualizar queries de agents para filtrar por companyId
+- [ ] Conectar CompanyContext con queries de datos
+
+## Paso 2: Agregar Navegación a Admin
+- [ ] Agregar link "Gestión de Empresas" en sidebar del DashboardLayout
+- [ ] Crear sección "Admin" en navegación
+- [ ] Agregar icono Building2 al link
+- [ ] Proteger ruta solo para usuarios admin
+
+## Paso 3: Asignación Usuario-Empresa
+- [ ] Agregar companyId a tabla users en schema
+- [ ] Crear función assignUserToCompany en db.ts
+- [ ] Crear endpoint tRPC para asignar usuarios a empresas
+- [ ] Agregar selector de empresa en página de perfil de usuario
+- [ ] Implementar middleware para verificar acceso por empresa
+- [ ] Actualizar CompanyContext para cargar empresa del usuario actual

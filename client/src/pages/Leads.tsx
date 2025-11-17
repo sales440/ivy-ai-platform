@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,7 +45,10 @@ export default function Leads() {
   }>({});
   const [showExportFilters, setShowExportFilters] = useState(false);
 
-  const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery();
+  const { selectedCompany } = useCompany();
+  const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
+    selectedCompany ? { companyId: selectedCompany.id } : undefined
+  );
   const createLead = trpc.leads.create.useMutation({
     onSuccess: () => {
       toast.success('Lead created successfully');
