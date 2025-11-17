@@ -288,8 +288,10 @@
 - [ ] Documentar resultados de pruebas y crear reporte de QA
 
 ## Bug Fixes
-- [ ] Implementar comando help en consola de comandos
-- [ ] Agregar lista de comandos disponibles cuando se ejecuta help
+- [x] Implementar comando help en consola de comandos
+- [x] Agregar lista de comandos disponibles cuando se ejecuta help
+- [x] Permitir comandos sin barra diagonal (help funciona igual que /help)
+- [x] Agregar comando /clear para limpiar consola
 
 ## Documentación de Ventas
 - [x] Crear guía completa de ventas (pitch, casos de uso, ROI)

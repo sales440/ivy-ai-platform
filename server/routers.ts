@@ -24,7 +24,12 @@ interface ParsedCommand {
 
 function parseCommand(input: string): ParsedCommand {
   const parts = input.trim().split(/\s+/);
-  const command = parts[0];
+  let command = parts[0];
+  
+  // Add leading slash if not present
+  if (!command.startsWith('/')) {
+    command = '/' + command;
+  }
   const subcommand = parts[1];
   const args: Record<string, any> = {};
 
@@ -385,6 +390,23 @@ export const appRouter = router({
 
           // Route command to appropriate handler
           switch (parsed.command) {
+            case "/help":
+              result = {
+                type: "help",
+                message: "Available commands:",
+                commands: [
+                  { name: "/help", description: "Show this help message" },
+                  { name: "/agents", description: "List all agents and their status" },
+                  { name: "/agent <name>", description: "Get details about a specific agent" },
+                  { name: "/workflows", description: "List all workflows" },
+                  { name: "/workflow <id>", description: "Get details about a specific workflow" },
+                  { name: "/kpis", description: "Show key performance indicators" },
+                  { name: "/analytics", description: "Show analytics dashboard" },
+                  { name: "/system", description: "Show system status" },
+                  { name: "/clear", description: "Clear console history" }
+                ]
+              };
+              break;
             case "/agents":
               result = await handleAgentsCommand(parsed);
               break;
@@ -406,8 +428,14 @@ export const appRouter = router({
             case "/system":
               result = await handleSystemCommand(parsed);
               break;
+            case "/clear":
+              result = {
+                type: "clear",
+                message: "Console cleared"
+              };
+              break;
             default:
-              throw new Error(`Unknown command: ${parsed.command}`);
+              throw new Error(`Unknown command: ${parsed.command}. Type /help for available commands.`);
           }
 
           // Log command
