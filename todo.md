@@ -286,3 +286,13 @@
 - [ ] Ejecutar pruebas de preferencias de usuario
 - [ ] Validar autenticación OAuth en producción
 - [ ] Documentar resultados de pruebas y crear reporte de QA
+
+## Bug Fixes
+- [ ] Implementar comando help en consola de comandos
+- [ ] Agregar lista de comandos disponibles cuando se ejecuta help
+
+## Documentación de Ventas
+- [x] Crear guía completa de ventas (pitch, casos de uso, ROI)
+- [x] Crear script de demostración para clientes
+- [x] Crear propuesta comercial template
+- [x] Crear one-pager de marketing
