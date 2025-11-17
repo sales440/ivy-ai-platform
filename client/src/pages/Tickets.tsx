@@ -49,7 +49,7 @@ export default function Tickets() {
 
   const { selectedCompany } = useCompany();
   const { data: ticketsData, isLoading, refetch } = trpc.tickets.list.useQuery(
-    selectedCompany ? { companyId: selectedCompany.id } : undefined
+    selectedCompany ? { companyId: Number(selectedCompany.id) } : undefined
   );
   const createTicket = trpc.tickets.create.useMutation({
     onSuccess: () => {

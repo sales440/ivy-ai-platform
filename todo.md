@@ -355,3 +355,32 @@
 - [ ] Agregar selector de empresa en página de perfil de usuario
 - [ ] Implementar middleware para verificar acceso por empresa
 - [ ] Actualizar CompanyContext para cargar empresa del usuario actual
+
+## Sistema Multi-Tenant Avanzado
+
+### Asignación Usuario-Empresa
+- [x] Crear tabla user_companies en schema para relación many-to-many
+- [x] Añadir función getUserCompanies() en db.ts
+- [x] Añadir función assignUserToCompany() en db.ts
+- [x] Crear router tRPC para gestión de asignaciones
+- [x] Actualizar CompanySelector para mostrar solo empresas asignadas al usuario
+- [ ] Implementar página de administración de asignaciones en /admin/user-companies
+- [x] Añadir restricción: usuarios solo ven empresas asignadas (excepto admins)
+
+### Agentes Personalizados por Empresa
+- [x] Añadir columna companyId a tabla agents en schema
+- [x] Actualizar función getAllAgents() para filtrar por companyId
+- [ ] Crear función createCompanyAgent() en db.ts
+- [x] Actualizar router de agentes para soportar filtrado por empresa
+- [x] Modificar Dashboard para mostrar solo agentes de empresa seleccionada
+- [ ] Implementar página de configuración de agentes por empresa
+- [ ] Permitir personalización de parámetros de agentes por empresa
+
+### Dashboard y Métricas por Empresa
+- [x] Crear función getCompanyMetrics() en db.ts
+- [x] Implementar cálculo de KPIs específicos por empresa
+- [x] Actualizar página Analytics para filtrar por empresa seleccionada
+- [ ] Añadir gráficos de tendencias por empresa
+- [x] Implementar comparación de métricas entre empresas (solo admins)
+- [x] Crear widget de resumen ejecutivo por empresa en Dashboard
+- [ ] Añadir exportación de reportes por empresa

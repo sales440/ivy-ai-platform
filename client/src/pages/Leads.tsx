@@ -47,7 +47,7 @@ export default function Leads() {
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
-    selectedCompany ? { companyId: selectedCompany.id } : undefined
+    selectedCompany ? { companyId: Number(selectedCompany.id) } : undefined
   );
   const createLead = trpc.leads.create.useMutation({
     onSuccess: () => {

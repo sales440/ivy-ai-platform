@@ -5,6 +5,7 @@ import { seedRouter } from "./seed-router";
 import { notificationsRouter } from "./notifications-router";
 import { exportRouter } from "./export-router";
 import { companiesRouter } from "./companies-router";
+import { userCompaniesRouter } from "./user-companies-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -57,6 +58,7 @@ export const appRouter = router({
   notifications: notificationsRouter,
   export: exportRouter,
   companies: companiesRouter,
+  userCompanies: userCompaniesRouter,
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -126,15 +128,27 @@ export const appRouter = router({
   // ============================================================================
   
   agents: router({
-    list: protectedProcedure.query(async () => {
-      const hive = await getHive();
-      const agents = hive.getAllAgents();
-      
-      return {
-        agents: agents.map(a => a.getInfo()),
-        total: agents.length
-      };
-    }),
+    list: protectedProcedure
+      .input(z.object({ companyId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        // Get agents from database filtered by companyId
+        const dbAgents = await db.getAllAgents(input?.companyId);
+        
+        // If no company-specific agents, return global Hive agents
+        if (dbAgents.length === 0) {
+          const hive = await getHive();
+          const agents = hive.getAllAgents();
+          return {
+            agents: agents.map(a => a.getInfo()),
+            total: agents.length
+          };
+        }
+        
+        return {
+          agents: dbAgents,
+          total: dbAgents.length
+        };
+      }),
 
     status: protectedProcedure
       .input(z.object({ agentType: z.string() }))
@@ -508,6 +522,22 @@ export const appRouter = router({
         const metrics = await db.getMetricsByAgent(input.agentId);
         return { metrics };
       }),
+
+    companyMetrics: protectedProcedure
+      .input(z.object({ companyId: z.number() }))
+      .query(async ({ input }) => {
+        const metrics = await db.getCompanyMetrics(input.companyId);
+        return metrics;
+      }),
+
+    allCompaniesMetrics: protectedProcedure.query(async ({ ctx }) => {
+      // Only admins can see all companies metrics
+      if (ctx.user.role !== 'admin') {
+        throw new Error("Unauthorized: Admin access required");
+      }
+      const metrics = await db.getAllCompaniesMetrics();
+      return { companies: metrics };
+    }),
   }),
 });
 

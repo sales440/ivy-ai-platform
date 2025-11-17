@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentCard } from '@/components/AgentCard';
@@ -10,6 +11,7 @@ import { DashboardSkeleton } from '@/components/DashboardSkeleton';
 import DashboardLayout from '@/components/DashboardLayout';
 import { WorkflowCard } from '@/components/WorkflowCard';
 import { NotificationBell } from '@/components/NotificationBell';
+import { CompanyMetricsWidget } from '@/components/CompanyMetricsWidget';
 import { toast } from 'sonner';
 import { 
   Bot, 
@@ -25,8 +27,11 @@ import {
 
 export default function Dashboard() {
   const [selectedTab, setSelectedTab] = useState('overview');
+  const { selectedCompany } = useCompany();
 
-  const { data: agentsData, isLoading: agentsLoading, refetch: refetchAgents } = trpc.agents.list.useQuery();
+  const { data: agentsData, isLoading: agentsLoading, refetch: refetchAgents } = trpc.agents.list.useQuery(
+    selectedCompany ? { companyId: Number(selectedCompany.id) } : undefined
+  );
   const { data: systemStatus, isLoading: statusLoading } = trpc.analytics.systemStatus.useQuery();
   const { data: kpisData } = trpc.agents.kpis.useQuery();
   
@@ -69,7 +74,7 @@ export default function Dashboard() {
     }
     acc[agent.department].push(agent);
     return acc;
-  }, {} as Record<string, typeof agents>);
+  }, {} as Record<string, any[]>);
 
   const handleExecuteAgent = (agentType: string) => {
     console.log('Execute agent:', agentType);
@@ -120,6 +125,14 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Company Metrics Widget */}
+      {selectedCompany && (
+        <CompanyMetricsWidget 
+          companyId={Number(selectedCompany.id)} 
+          companyName={selectedCompany.name} 
+        />
+      )}
 
       {/* System Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

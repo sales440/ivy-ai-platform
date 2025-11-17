@@ -1,4 +1,5 @@
 import { trpc } from '@/lib/trpc';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -22,9 +23,12 @@ import {
 const COLORS = ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'];
 
 export default function Analytics() {
+  const { selectedCompany } = useCompany();
   const { data: kpisData, isLoading: kpisLoading } = trpc.agents.kpis.useQuery();
   const { data: systemStatus, isLoading: statusLoading } = trpc.analytics.systemStatus.useQuery();
-  const { data: agentsData } = trpc.agents.list.useQuery();
+  const { data: agentsData } = trpc.agents.list.useQuery(
+    selectedCompany ? { companyId: Number(selectedCompany.id) } : undefined
+  );
 
   const agents = agentsData?.agents || [];
   const kpis = kpisData?.kpis || [];

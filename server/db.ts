@@ -1,10 +1,13 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { 
   InsertUser, 
   users, 
   companies, 
   InsertCompany,
+  userCompanies,
+  InsertUserCompany,
+  UserCompany,
   userPreferences,
   InsertUserPreferences,
   UserPreferences,
@@ -159,10 +162,13 @@ export async function getAgentByAgentId(agentId: string): Promise<Agent | undefi
   return result[0];
 }
 
-export async function getAllAgents(): Promise<Agent[]> {
+export async function getAllAgents(companyId?: number): Promise<Agent[]> {
   const db = await getDb();
   if (!db) return [];
 
+  if (companyId) {
+    return await db.select().from(agents).where(eq(agents.companyId, companyId)).orderBy(desc(agents.createdAt));
+  }
   return await db.select().from(agents).orderBy(desc(agents.createdAt));
 }
 
@@ -724,7 +730,7 @@ export async function createCompany(data: InsertCompany) {
 
   try {
     const result = await db.insert(companies).values(data);
-    return { id: Number(result.insertId), ...data };
+    return { id: Number(result[0].insertId), ...data };
   } catch (error) {
     console.error("[Database] Failed to create company:", error);
     throw error;
@@ -758,5 +764,189 @@ export async function deleteCompany(id: number) {
   } catch (error) {
     console.error("[Database] Failed to delete company:", error);
     throw error;
+  }
+}
+
+// ============================================================================
+// USER-COMPANY ASSIGNMENTS
+// ============================================================================
+
+export async function getUserCompanies(userId: number): Promise<UserCompany[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db.select().from(userCompanies).where(eq(userCompanies.userId, userId));
+  } catch (error) {
+    console.error("[Database] Failed to get user companies:", error);
+    return [];
+  }
+}
+
+export async function getCompanyUsers(companyId: number): Promise<UserCompany[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db.select().from(userCompanies).where(eq(userCompanies.companyId, companyId));
+  } catch (error) {
+    console.error("[Database] Failed to get company users:", error);
+    return [];
+  }
+}
+
+export async function assignUserToCompany(data: InsertUserCompany) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    const result = await db.insert(userCompanies).values(data);
+    return { id: Number(result[0].insertId), ...data };
+  } catch (error) {
+    console.error("[Database] Failed to assign user to company:", error);
+    throw error;
+  }
+}
+
+export async function removeUserFromCompany(userId: number, companyId: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    await db.delete(userCompanies).where(
+      and(
+        eq(userCompanies.userId, userId),
+        eq(userCompanies.companyId, companyId)
+      )
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to remove user from company:", error);
+    throw error;
+  }
+}
+
+export async function updateUserCompanyRole(
+  userId: number, 
+  companyId: number, 
+  role: "viewer" | "member" | "admin"
+) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    await db.update(userCompanies)
+      .set({ role })
+      .where(
+        and(
+          eq(userCompanies.userId, userId),
+          eq(userCompanies.companyId, companyId)
+        )
+      );
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to update user company role:", error);
+    throw error;
+  }
+}
+
+export async function isUserAssignedToCompany(userId: number, companyId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  try {
+    const result = await db.select().from(userCompanies).where(
+      and(
+        eq(userCompanies.userId, userId),
+        eq(userCompanies.companyId, companyId)
+      )
+    ).limit(1);
+    return result.length > 0;
+  } catch (error) {
+    console.error("[Database] Failed to check user company assignment:", error);
+    return false;
+  }
+}
+
+// ============================================================================
+// COMPANY METRICS
+// ============================================================================
+
+export async function getCompanyMetrics(companyId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    // Get leads metrics
+    const companyLeads = await db.select().from(leads).where(eq(leads.companyId, companyId));
+    const qualifiedLeads = companyLeads.filter(l => l.status === 'qualified' || l.status === 'converted');
+    const convertedLeads = companyLeads.filter(l => l.status === 'converted');
+    
+    // Get tickets metrics
+    const companyTickets = await db.select().from(tickets).where(eq(tickets.companyId, companyId));
+    const openTickets = companyTickets.filter(t => t.status === 'open' || t.status === 'in_progress');
+    const resolvedTickets = companyTickets.filter(t => t.status === 'resolved' || t.status === 'closed');
+    
+    // Get agents metrics
+    const companyAgents = await db.select().from(agents).where(eq(agents.companyId, companyId));
+    const activeAgents = companyAgents.filter(a => a.status === 'active');
+    
+    // Calculate average qualification score
+    const avgQualificationScore = companyLeads.length > 0
+      ? companyLeads.reduce((sum, l) => sum + (l.qualificationScore || 0), 0) / companyLeads.length
+      : 0;
+    
+    // Calculate average resolution time (in hours)
+    const ticketsWithResolutionTime = companyTickets.filter(t => t.resolutionTime !== null);
+    const avgResolutionTime = ticketsWithResolutionTime.length > 0
+      ? ticketsWithResolutionTime.reduce((sum, t) => sum + (t.resolutionTime || 0), 0) / ticketsWithResolutionTime.length
+      : 0;
+    
+    return {
+      companyId,
+      leads: {
+        total: companyLeads.length,
+        qualified: qualifiedLeads.length,
+        converted: convertedLeads.length,
+        conversionRate: companyLeads.length > 0 ? (convertedLeads.length / companyLeads.length) * 100 : 0,
+        avgQualificationScore: Math.round(avgQualificationScore),
+      },
+      tickets: {
+        total: companyTickets.length,
+        open: openTickets.length,
+        resolved: resolvedTickets.length,
+        resolutionRate: companyTickets.length > 0 ? (resolvedTickets.length / companyTickets.length) * 100 : 0,
+        avgResolutionTime: Math.round(avgResolutionTime),
+      },
+      agents: {
+        total: companyAgents.length,
+        active: activeAgents.length,
+      },
+    };
+  } catch (error) {
+    console.error("[Database] Failed to get company metrics:", error);
+    return null;
+  }
+}
+
+export async function getAllCompaniesMetrics() {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const allCompanies = await db.select().from(companies);
+    const metricsPromises = allCompanies.map(company => getCompanyMetrics(company.id));
+    const metrics = await Promise.all(metricsPromises);
+    
+    return metrics.filter(m => m !== null);
+  } catch (error) {
+    console.error("[Database] Failed to get all companies metrics:", error);
+    return [];
   }
 }

@@ -42,6 +42,21 @@ export type Company = typeof companies.$inferSelect;
 export type InsertCompany = typeof companies.$inferInsert;
 
 /**
+ * User-Company assignments (many-to-many relationship)
+ * Allows users to be assigned to specific companies they can access
+ */
+export const userCompanies = mysqlTable("userCompanies", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  companyId: int("companyId").notNull(),
+  role: mysqlEnum("role", ["viewer", "member", "admin"]).default("member").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type UserCompany = typeof userCompanies.$inferSelect;
+export type InsertUserCompany = typeof userCompanies.$inferInsert;
+
+/**
  * Preferencias de usuario
  */
 export const userPreferences = mysqlTable("userPreferences", {

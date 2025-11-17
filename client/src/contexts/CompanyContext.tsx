@@ -22,7 +22,8 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { data: companiesData, isLoading } = trpc.companies.list.useQuery();
+  // Use userCompanies.myCompanies which filters by user assignments (or returns all for admins)
+  const { data: companiesData, isLoading } = trpc.userCompanies.myCompanies.useQuery();
   
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
@@ -30,7 +31,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === "admin";
 
   // Convertir companies de la DB al formato del contexto
-  const companies: Company[] = companiesData?.map(c => ({
+  const companies: Company[] = companiesData?.companies?.map((c: any) => ({
     id: c.id.toString(),
     name: c.name,
     slug: c.slug,
@@ -44,7 +45,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (!selectedCompany && companies.length > 0) {
       // Si el usuario tiene companyId asignado, seleccionar esa empresa
       if (user?.companyId) {
-        const userCompany = companies.find(c => c.id === user.companyId.toString());
+        const userCompany = companies.find(c => c.id === user.companyId?.toString());
         if (userCompany) {
           setSelectedCompany(userCompany);
           return;
