@@ -12,6 +12,9 @@ import Leads from "./pages/Leads";
 import Tickets from "./pages/Tickets";
 import Analytics from "./pages/Analytics";
 import AdminCompanies from "./pages/AdminCompanies";
+import UserCompanies from "./pages/UserCompanies";
+import AgentConfig from "./pages/AgentConfig";
+import CompanyReports from "./pages/CompanyReports";
 
 function Router() {
   return (
@@ -23,6 +26,9 @@ function Router() {
       <Route path={"/tickets"} component={Tickets} />
       <Route path={"/analytics"} component={Analytics} />
       <Route path={"/admin/companies"} component={AdminCompanies} />
+      <Route path={"/admin/user-companies"} component={UserCompanies} />
+      <Route path={"/admin/agent-config"} component={AgentConfig} />
+      <Route path={"/admin/company-reports"} component={CompanyReports} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

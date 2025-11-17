@@ -62,6 +62,33 @@ export const userCompaniesRouter = router({
       return { success: true };
     }),
 
+  // Get all assignments (admin only)
+  listAll: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== 'admin') {
+      throw new Error("Unauthorized: Admin access required");
+    }
+    
+    const allCompanies = await db.getAllCompanies();
+    const allAssignments = [];
+    
+    for (const company of allCompanies) {
+      const companyAssignments = await db.getCompanyUsers(company.id);
+      allAssignments.push(...companyAssignments);
+    }
+    
+    return { assignments: allAssignments };
+  }),
+
+  // Get all users in the system (admin only)
+  allUsers: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== 'admin') {
+      throw new Error("Unauthorized: Admin access required");
+    }
+    
+    const users = await db.getAllUsers();
+    return { users };
+  }),
+
   // Update user role in company (admin only)
   updateRole: protectedProcedure
     .input(z.object({

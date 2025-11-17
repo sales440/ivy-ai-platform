@@ -37,6 +37,9 @@ const menuItems = [
   { icon: Workflow, label: "Workflows", path: "/workflows" },
   { icon: UserCircle, label: "Profile", path: "/profile" },
   { icon: Building2, label: "Gestión de Empresas", path: "/admin/companies", adminOnly: true },
+  { icon: Users, label: "Asignaciones Usuario-Empresa", path: "/admin/user-companies", adminOnly: true },
+  { icon: Settings, label: "Configuración de Agentes", path: "/admin/agent-config", adminOnly: true },
+  { icon: BarChart3, label: "Reportes Comparativos", path: "/admin/company-reports", adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

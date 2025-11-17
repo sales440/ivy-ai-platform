@@ -384,3 +384,36 @@
 - [x] Implementar comparación de métricas entre empresas (solo admins)
 - [x] Crear widget de resumen ejecutivo por empresa en Dashboard
 - [ ] Añadir exportación de reportes por empresa
+
+## Funcionalidades Avanzadas Multi-Tenant
+
+### Página de Administración de Asignaciones Usuario-Empresa
+- [x] Crear página /admin/user-companies con tabla de asignaciones
+- [x] Implementar formulario para asignar usuarios a empresas
+- [x] Agregar selector de rol (viewer/member/admin) por asignación
+- [x] Implementar edición de rol de usuario en empresa
+- [x] Implementar eliminación de asignación usuario-empresa
+- [x] Agregar filtros por empresa y por usuario
+- [x] Mostrar lista de usuarios asignados a cada empresa
+- [x] Proteger ruta solo para admins
+
+### Configuración de Agentes por Empresa
+- [x] Crear página /admin/agent-config para configuración de agentes
+- [x] Implementar formulario de personalización de parámetros de agentes
+- [x] Agregar campos: temperatura, max_tokens, system_prompt personalizado
+- [x] Crear tabla agent_configurations en schema
+- [x] Implementar funciones CRUD para configuraciones de agentes
+- [x] Crear router tRPC para agent configurations
+- [x] Permitir que cada empresa tenga configuraciones únicas por agente
+- [x] Agregar preview de configuración antes de guardar
+
+### Reportes Comparativos entre Empresas
+- [x] Crear página /admin/company-reports con gráficos comparativos
+- [x] Implementar gráfico de barras comparando leads por empresa
+- [x] Implementar gráfico de barras comparando tickets por empresa
+- [x] Implementar gráfico de líneas con tendencias de conversión
+- [x] Agregar tabla comparativa de KPIs entre empresas
+- [ ] Implementar filtros por rango de fechas
+- [x] Agregar exportación de reportes a PDF
+- [x] Proteger ruta solo para admins
+- [x] Agregar gráfico de distribución de agentes por empresa

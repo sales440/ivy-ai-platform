@@ -37,7 +37,10 @@ import {
   systemMetrics,
   InsertSystemMetric,
   commandHistory,
-  InsertCommandHistory
+  InsertCommandHistory,
+  agentConfigurations,
+  InsertAgentConfiguration,
+  AgentConfiguration
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -129,6 +132,21 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get users: database not available");
+    return [];
+  }
+
+  try {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  } catch (error) {
+    console.error("[Database] Failed to get users:", error);
+    return [];
+  }
 }
 
 // ============================================================================
@@ -948,5 +966,83 @@ export async function getAllCompaniesMetrics() {
   } catch (error) {
     console.error("[Database] Failed to get all companies metrics:", error);
     return [];
+  }
+}
+
+// ============================================================================
+// AGENT CONFIGURATIONS
+// ============================================================================
+
+export async function getAgentConfiguration(companyId: number, agentType: AgentConfiguration["agentType"]) {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const result = await db.select().from(agentConfigurations).where(
+      and(
+        eq(agentConfigurations.companyId, companyId),
+        eq(agentConfigurations.agentType, agentType)
+      )
+    ).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get agent configuration:", error);
+    return null;
+  }
+}
+
+export async function getAllAgentConfigurations(companyId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    return await db.select().from(agentConfigurations).where(eq(agentConfigurations.companyId, companyId));
+  } catch (error) {
+    console.error("[Database] Failed to get agent configurations:", error);
+    return [];
+  }
+}
+
+export async function upsertAgentConfiguration(data: InsertAgentConfiguration) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    await db.insert(agentConfigurations).values(data).onDuplicateKeyUpdate({
+      set: {
+        temperature: data.temperature,
+        maxTokens: data.maxTokens,
+        systemPrompt: data.systemPrompt,
+        customInstructions: data.customInstructions,
+        isActive: data.isActive,
+        updatedAt: new Date(),
+      }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to upsert agent configuration:", error);
+    throw error;
+  }
+}
+
+export async function deleteAgentConfiguration(companyId: number, agentType: AgentConfiguration["agentType"]) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  try {
+    await db.delete(agentConfigurations).where(
+      and(
+        eq(agentConfigurations.companyId, companyId),
+        eq(agentConfigurations.agentType, agentType)
+      )
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("[Database] Failed to delete agent configuration:", error);
+    throw error;
   }
 }

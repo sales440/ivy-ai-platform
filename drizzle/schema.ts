@@ -306,3 +306,22 @@ export const commandHistory = mysqlTable("commandHistory", {
 
 export type CommandHistory = typeof commandHistory.$inferSelect;
 export type InsertCommandHistory = typeof commandHistory.$inferInsert;
+
+/**
+ * Agent Configurations - Personalized settings per company per agent type
+ */
+export const agentConfigurations = mysqlTable("agentConfigurations", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  agentType: mysqlEnum("agentType", ["prospect", "closer", "solve", "logic", "talent", "insight"]).notNull(),
+  temperature: int("temperature").default(70).notNull(), // 0-100 scale
+  maxTokens: int("maxTokens").default(2000).notNull(),
+  systemPrompt: text("systemPrompt"),
+  customInstructions: text("customInstructions"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AgentConfiguration = typeof agentConfigurations.$inferSelect;
+export type InsertAgentConfiguration = typeof agentConfigurations.$inferInsert;
