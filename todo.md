@@ -810,12 +810,17 @@
 - [x] Registrar savedSearchesRouter en routers.ts
 - [x] Agregar estados showSaveSearchDialog y savedSearchName en Leads.tsx
 - [x] Crear createSavedSearch mutation y handleSaveSearch handler
-- [ ] Agregar botón "💾 Save Search" en diálogo de Ivy-Prospect
-- [ ] Crear modal para nombrar búsqueda guardada
-- [ ] Crear sección "Saved Searches" en Leads page con cards
-- [ ] Implementar botones de ejecución rápida que pre-llenan filtros
-- [ ] Incrementar usageCount al ejecutar búsqueda guardada
-- [ ] Probar guardar, ejecutar y eliminar búsquedas
+- [x] Agregar botón "💾 Save Search" junto a "Search Prospects" en diálogo Ivy-Prospect
+- [x] Crear Dialog para nombrar búsqueda guardada con input y botón Save
+- [x] Crear sección "Saved Searches" arriba de tabla de Leads con query savedSearches.list
+- [x] Mostrar cards con nombre + filtros aplicados + usageCount + fecha
+- [x] Implementar botón "Execute" que pre-llena filtros y abre diálogo Ivy-Prospect
+- [x] Agregar botón de eliminar (🗑️) en cada card con confirmación
+- [x] Incrementar usageCount al ejecutar búsqueda guardada (mutation execute)
+- [x] Crear componente SavedSearchesSection con grid de cards
+- [x] Implementar handleExecuteSavedSearch para pre-llenar filtros
+- [x] Agregar imports de Bookmark y Play icons
+- [ ] Probar flujo completo: guardar → ejecutar → eliminar búsquedas
 
 ## Fase 16: Date range picker en analytics
 - [ ] Instalar date picker library (react-day-picker o shadcn calendar)

@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus, Award, Briefcase, GraduationCap } from 'lucide-react';
+import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus, Award, Briefcase, GraduationCap, Bookmark, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -285,6 +285,17 @@ export default function Leads() {
         skills: prospectSkills.length > 0 ? prospectSkills : undefined,
       },
     });
+  };
+
+  const handleExecuteSavedSearch = (filters: any) => {
+    // Pre-fill the Ivy-Prospect dialog with saved search filters
+    setProspectQuery(filters.query || '');
+    setProspectIndustry(filters.industry || '');
+    setProspectLocation(filters.location || '');
+    setProspectCompanySize(filters.companySize || '');
+    setProspectSeniority(filters.seniority || '');
+    setProspectSkills(filters.skills || []);
+    setIsProspectSearchOpen(true);
   };
 
   const handleProspectSearch = () => {
@@ -573,18 +584,28 @@ export default function Leads() {
                   )}
                 </div>
                 
-                <Button
-                  onClick={handleProspectSearch}
-                  disabled={searchProspects.isPending}
-                  className="w-full"
-                >
-                  {searchProspects.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4 mr-2" />
-                  )}
-                  Search Prospects
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleProspectSearch}
+                    disabled={searchProspects.isPending}
+                    className="flex-1"
+                  >
+                    {searchProspects.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4 mr-2" />
+                    )}
+                    Search Prospects
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSaveSearchDialog(true)}
+                    disabled={!prospectQuery.trim()}
+                  >
+                    💾 Save Search
+                  </Button>
+                </div>
 
                 {searchProspects.data && searchProspects.data.prospects.length > 0 && (
                   <div className="mt-6 space-y-4">
@@ -645,6 +666,71 @@ export default function Leads() {
               </div>
             </DialogContent>
           </Dialog>
+          
+          {/* Save Search Dialog */}
+          <Dialog open={showSaveSearchDialog} onOpenChange={setShowSaveSearchDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Save Search</DialogTitle>
+                <DialogDescription>
+                  Give this search a name to quickly execute it later
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label htmlFor="search-name">Search Name</Label>
+                  <Input
+                    id="search-name"
+                    placeholder="e.g., Senior CTOs in Tech 1000+"
+                    value={savedSearchName}
+                    onChange={(e) => setSavedSearchName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && savedSearchName.trim()) {
+                        handleSaveSearch();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium mb-1">Current filters:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Query: {prospectQuery}</li>
+                    {prospectIndustry && prospectIndustry !== 'all' && (
+                      <li>Industry: {prospectIndustry}</li>
+                    )}
+                    {prospectLocation && <li>Location: {prospectLocation}</li>}
+                    {prospectCompanySize && prospectCompanySize !== 'all' && (
+                      <li>Company Size: {prospectCompanySize}</li>
+                    )}
+                    {prospectSeniority && prospectSeniority !== 'all' && (
+                      <li>Seniority: {prospectSeniority}</li>
+                    )}
+                    {prospectSkills.length > 0 && (
+                      <li>Skills: {prospectSkills.join(', ')}</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSaveSearchDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveSearch}
+                  disabled={!savedSearchName.trim() || createSavedSearch.isPending}
+                >
+                  {createSavedSearch.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
           <Dialog open={showExportFilters} onOpenChange={setShowExportFilters}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -777,6 +863,12 @@ export default function Leads() {
           </Dialog>
         </div>
       </div>
+
+      {/* Saved Searches */}
+      <SavedSearchesSection
+        selectedCompany={selectedCompany}
+        onExecuteSearch={handleExecuteSavedSearch}
+      />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -944,5 +1036,126 @@ export default function Leads() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Saved Searches Section Component
+function SavedSearchesSection({
+  selectedCompany,
+  onExecuteSearch,
+}: {
+  selectedCompany: any;
+  onExecuteSearch: (filters: any) => void;
+}) {
+  const { data: savedSearchesData } = trpc.savedSearches.list.useQuery(
+    selectedCompany ? { companyId: Number(selectedCompany.id) } : undefined,
+    { enabled: !!selectedCompany }
+  );
+
+  const executeSavedSearch = trpc.savedSearches.execute.useMutation({
+    onSuccess: (data) => {
+      onExecuteSearch(data.filters);
+      toast.success('Search filters loaded');
+    },
+    onError: (error) => {
+      toast.error(`Failed to execute search: ${error.message}`);
+    },
+  });
+
+  const deleteSavedSearch = trpc.savedSearches.delete.useMutation({
+    onSuccess: () => {
+      toast.success('Search deleted');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete search: ${error.message}`);
+    },
+  });
+
+  const handleExecute = (searchId: number) => {
+    executeSavedSearch.mutate({ searchId });
+  };
+
+  const handleDelete = (searchId: number, searchName: string) => {
+    if (confirm(`Are you sure you want to delete "${searchName}"?`)) {
+      deleteSavedSearch.mutate({ searchId });
+    }
+  };
+
+  if (!savedSearchesData?.searches || savedSearchesData.searches.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bookmark className="h-5 w-5" />
+          Saved Searches
+        </CardTitle>
+        <CardDescription>
+          Quick access to your frequently used search filters
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {savedSearchesData.searches.map((search: any) => (
+            <Card key={search.id} className="relative">
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <h4 className="font-semibold text-sm">{search.name}</h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(search.id, search.name)}
+                    >
+                      🗑️
+                    </Button>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p><strong>Query:</strong> {search.filters.query}</p>
+                    {search.filters.industry && (
+                      <p><strong>Industry:</strong> {search.filters.industry}</p>
+                    )}
+                    {search.filters.location && (
+                      <p><strong>Location:</strong> {search.filters.location}</p>
+                    )}
+                    {search.filters.companySize && (
+                      <p><strong>Company Size:</strong> {search.filters.companySize}</p>
+                    )}
+                    {search.filters.seniority && (
+                      <p><strong>Seniority:</strong> {search.filters.seniority}</p>
+                    )}
+                    {search.filters.skills && search.filters.skills.length > 0 && (
+                      <p><strong>Skills:</strong> {search.filters.skills.join(', ')}</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-xs text-muted-foreground">
+                      Used {search.usageCount || 0} times
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => handleExecute(search.id)}
+                      disabled={executeSavedSearch.isPending}
+                    >
+                      {executeSavedSearch.isPending ? (
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                      ) : (
+                        <Play className="h-3 w-3 mr-1" />
+                      )}
+                      Execute
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
