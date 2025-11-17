@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Search, AlertCircle, CheckCircle2, Clock, Filter, Download } from 'lucide-react';
+import { Loader2, Plus, Search, AlertCircle, CheckCircle2, Clock, Filter, Download, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Tickets() {
@@ -46,6 +46,13 @@ export default function Tickets() {
     endDate?: string;
   }>({});
   const [showExportFilters, setShowExportFilters] = useState(false);
+  const [autoResolveDialogOpen, setAutoResolveDialogOpen] = useState(false);
+  const [autoResolveResult, setAutoResolveResult] = useState<{
+    success: boolean;
+    resolution?: string;
+    message?: string;
+    articlesUsed?: number;
+  } | null>(null);
 
   const { selectedCompany } = useCompany();
   const { data: ticketsData, isLoading, refetch } = trpc.tickets.list.useQuery(
@@ -123,6 +130,35 @@ export default function Tickets() {
 
   const handleResolveTicket = (ticketId: number) => {
     toast.info('Resolve functionality coming soon');
+  };
+
+  const autoResolveMutation = trpc.tickets.autoResolve.useMutation({
+    onSuccess: (data) => {
+      setAutoResolveResult(data);
+      setAutoResolveDialogOpen(true);
+      if (data.success) {
+        utils.tickets.list.invalidate();
+        toast.success('Ticket auto-resolved successfully!');
+      } else {
+        toast.warning(data.message || 'Could not auto-resolve ticket');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Auto-resolve failed: ${error.message}`);
+    },
+  });
+
+  const utils = trpc.useUtils();
+
+  const handleAutoResolve = (ticketId: number) => {
+    if (!selectedCompany) {
+      toast.error('Please select a company first');
+      return;
+    }
+    autoResolveMutation.mutate({ 
+      ticketId, 
+      companyId: selectedCompany.id 
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -474,13 +510,23 @@ export default function Tickets() {
                       </TableCell>
                       <TableCell className="text-right">
                         {ticket.status === 'open' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleResolveTicket(ticket.id!)}
-                          >
-                            Resolve
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAutoResolve(ticket.id!)}
+                            >
+                              <Sparkles className="h-4 w-4 mr-1" />
+                              Auto-Resolve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleResolveTicket(ticket.id!)}
+                            >
+                              Resolve
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -491,6 +537,48 @@ export default function Tickets() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Auto-Resolve Result Dialog */}
+      <Dialog open={autoResolveDialogOpen} onOpenChange={setAutoResolveDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {autoResolveResult?.success ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Ticket Auto-Resolved
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-5 w-5 text-yellow-600" />
+                  Auto-Resolve Failed
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {autoResolveResult?.success 
+                ? `Resolution generated using ${autoResolveResult.articlesUsed} knowledge base article(s)`
+                : autoResolveResult?.message
+              }
+            </DialogDescription>
+          </DialogHeader>
+          {autoResolveResult?.success && autoResolveResult.resolution && (
+            <div className="space-y-4">
+              <div>
+                <Label>Generated Resolution</Label>
+                <div className="mt-2 p-4 bg-muted rounded-lg text-sm whitespace-pre-wrap">
+                  {autoResolveResult.resolution}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setAutoResolveDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

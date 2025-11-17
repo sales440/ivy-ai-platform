@@ -641,3 +641,27 @@
 - [x] Implementar lógica: buscar KB → generar respuesta con LLM → actualizar ticket
 - [ ] Agregar botón "Auto-Resolve" en UI de tickets
 - [ ] Probar con tickets de ejemplo
+
+
+## Tareas Finales de Implementación
+
+### Paso 4: UI de Auto-Resolución
+- [x] Agregar botón "Auto-Resolve" en página de Tickets
+- [x] Crear diálogo de confirmación antes de auto-resolver
+- [x] Mostrar resolución generada en diálogo de resultado
+- [x] Agregar indicador de loading durante generación
+- [x] Mostrar artículos de KB utilizados
+
+### Paso 5: Integrar CompanyContext en Formularios
+- [ ] Actualizar formulario de creación de leads para incluir companyId
+- [ ] Actualizar formulario de creación de tickets para incluir companyId
+- [ ] Obtener companyId automáticamente del CompanyContext
+- [ ] Validar que companyId esté presente antes de enviar
+
+### Paso 6: Implementar Ivy-Prospect
+- [ ] Crear endpoint agents.prospectSearch en router
+- [ ] Implementar búsqueda simulada de prospectos (LinkedIn-style)
+- [ ] Agregar función enrichLead en db.ts
+- [ ] Crear página /prospect-search para interfaz de búsqueda
+- [ ] Agregar botón "Enrich Lead" en página de Leads
+- [ ] Mostrar datos enriquecidos (company, title, industry, location)
