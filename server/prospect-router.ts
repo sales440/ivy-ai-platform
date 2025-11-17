@@ -126,6 +126,7 @@ export const prospectRouter = router({
       industry: z.string().optional(),
       location: z.string().optional(),
       companySize: z.string().optional(),
+      seniority: z.string().optional(),
       limit: z.number().min(1).max(50).default(10),
     }))
     .mutation(async ({ input }) => {
@@ -134,6 +135,9 @@ export const prospectRouter = router({
         let searchKeywords = input.query;
         if (input.industry) {
           searchKeywords += ` ${input.industry}`;
+        }
+        if (input.seniority) {
+          searchKeywords += ` ${input.seniority}`;
         }
         
         console.log('[Ivy-Prospect] Searching LinkedIn with keywords:', searchKeywords);

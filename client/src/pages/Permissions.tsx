@@ -88,6 +88,57 @@ const ROLE_DESCRIPTIONS = {
   admin: "Complete system access including user and configuration management",
 };
 
+// Recent Changes Component
+function RecentChanges({ companyId }: { companyId: number }) {
+  const { data, isLoading } = trpc.userCompanies.getPermissionChanges.useQuery(
+    { companyId, limit: 20 },
+    { enabled: !!companyId }
+  );
+
+  if (isLoading) {
+    return <div className="text-center py-4 text-muted-foreground">Loading changes...</div>;
+  }
+
+  const changes = data?.changes || [];
+
+  if (changes.length === 0) {
+    return <div className="text-center py-4 text-muted-foreground">No recent changes</div>;
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>User</TableHead>
+          <TableHead>Old Role</TableHead>
+          <TableHead>New Role</TableHead>
+          <TableHead>Modified By</TableHead>
+          <TableHead>Date</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {changes.map((change: any) => (
+          <TableRow key={change.id}>
+            <TableCell>{change.metadata?.targetUserEmail || 'Unknown'}</TableCell>
+            <TableCell>
+              <Badge variant="outline">{change.changes?.oldRole || 'N/A'}</Badge>
+            </TableCell>
+            <TableCell>
+              <Badge className={ROLE_COLORS[change.changes?.newRole as keyof typeof ROLE_COLORS] || ''}>
+                {change.changes?.newRole || 'N/A'}
+              </Badge>
+            </TableCell>
+            <TableCell>{change.userName}</TableCell>
+            <TableCell className="text-sm text-muted-foreground">
+              {new Date(change.createdAt).toLocaleString()}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
 export default function Permissions() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [showMatrixDialog, setShowMatrixDialog] = useState(false);
@@ -239,6 +290,19 @@ export default function Permissions() {
                 No users found for this company
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Changes */}
+      {selectedCompanyId && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Permission Changes</CardTitle>
+            <CardDescription>Audit trail of role modifications</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RecentChanges companyId={selectedCompanyId} />
           </CardContent>
         </Card>
       )}

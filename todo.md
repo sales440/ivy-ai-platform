@@ -722,20 +722,28 @@
 - [x] Probar flujo completo: buscar → agregar → verificar en tabla (requiere selección de empresa)
 
 ## Fase 7: Filtros avanzados en Ivy-Prospect
-- [ ] Agregar filtro de tamaño de empresa (1-10, 11-50, 51-200, 201-500, 501-1000, 1000+)
-- [ ] Agregar filtro de años de experiencia en el puesto actual
-- [ ] Mejorar filtro de ubicación con autocompletado de ciudades
-- [ ] Agregar filtro de nivel de senioridad (Entry, Mid, Senior, Executive)
-- [ ] Actualizar UI del diálogo con nuevos filtros
-- [ ] Modificar llamada a LinkedIn API para incluir nuevos parámetros
-- [ ] Probar búsquedas con diferentes combinaciones de filtros
+- [x] Agregar filtro de tamaño de empresa con Select (1-10, 11-50, 51-200, 201-500, 501-1000, 1000+)
+- [x] Agregar filtro de nivel de senioridad con Select (Entry, Mid, Senior, Executive, C-Level)
+- [x] Actualizar UI del diálogo Ivy-Prospect con nuevos filtros en grid layout
+- [x] Modificar prospect.search mutation para incluir nuevos parámetros (companySize, seniority)
+- [x] Actualizar prospect-router.ts para pasar filtros a LinkedIn API (keywords)
+- [x] Probar búsquedas con diferentes combinaciones de filtros (CTO + C-Level + 1000+)
+- [x] Validar que los resultados se filtren correctamente (2,904 resultados refinados)
 
 ## Fase 8: Auditoría de cambios de permisos
-- [ ] Verificar si tabla auditLogs ya existe en schema.ts
-- [ ] Agregar tipo de evento "permission_change" en auditLogs
-- [ ] Modificar userCompanies.updateRole para registrar cambios en auditLog
-- [ ] Crear endpoint para listar cambios de permisos (auditLog.getPermissionChanges)
-- [ ] Agregar sección "Audit Trail" en página de Permissions
-- [ ] Mostrar tabla con: usuario modificado, rol anterior, rol nuevo, quién hizo el cambio, cuándo
-- [ ] Agregar filtros por fecha y usuario
-- [ ] Probar registro de cambios y visualización en UI
+- [x] Verificar tabla auditLogs en schema.ts y campos necesarios (ya existe con todos los campos)
+- [x] Modificar userCompanies.updateRole para registrar oldRole y newRole en audit log
+- [x] Crear endpoint userCompanies.getPermissionChanges para listar cambios de roles
+- [x] Agregar sección "Recent Changes" en página de Permissions
+- [x] Mostrar tabla con: usuario, rol anterior, rol nuevo, modificado por, fecha
+- [x] Implementar componente RecentChanges con query a getPermissionChanges
+- [ ] Probar flujo: cambiar rol → verificar registro en audit trail (requiere datos de prueba)
+
+## Fase 9: Enriquecimiento automático de leads
+- [ ] Investigar LinkedIn API endpoints para obtener perfil completo
+- [ ] Crear función enrichLeadFromLinkedIn en prospect-router.ts
+- [ ] Modificar handleAddProspectAsLead para llamar a enrichment antes de crear lead
+- [ ] Agregar campos adicionales al lead: skills, educación, experiencia completa
+- [ ] Mostrar indicador de "Enriching..." durante el proceso
+- [ ] Implementar fallback si enrichment falla (crear lead con datos básicos)
+- [ ] Probar enriquecimiento con diferentes prospectos

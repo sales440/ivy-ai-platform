@@ -48,6 +48,8 @@ export default function Leads() {
   const [prospectQuery, setProspectQuery] = useState('');
   const [prospectIndustry, setProspectIndustry] = useState('');
   const [prospectLocation, setProspectLocation] = useState('');
+  const [prospectCompanySize, setProspectCompanySize] = useState('');
+  const [prospectSeniority, setProspectSeniority] = useState('');
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
@@ -119,6 +121,8 @@ export default function Leads() {
       query: prospectQuery,
       industry: (prospectIndustry && prospectIndustry !== 'all') ? prospectIndustry : undefined,
       location: prospectLocation || undefined,
+      companySize: (prospectCompanySize && prospectCompanySize !== 'all') ? prospectCompanySize : undefined,
+      seniority: (prospectSeniority && prospectSeniority !== 'all') ? prospectSeniority : undefined,
       limit: 10,
     });
   };
@@ -284,6 +288,41 @@ export default function Leads() {
                       value={prospectLocation}
                       onChange={(e) => setProspectLocation(e.target.value)}
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Company Size</Label>
+                    <Select value={prospectCompanySize || undefined} onValueChange={setProspectCompanySize}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Any size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Any Size</SelectItem>
+                        <SelectItem value="1-10">1-10 employees</SelectItem>
+                        <SelectItem value="11-50">11-50 employees</SelectItem>
+                        <SelectItem value="51-200">51-200 employees</SelectItem>
+                        <SelectItem value="201-500">201-500 employees</SelectItem>
+                        <SelectItem value="501-1000">501-1000 employees</SelectItem>
+                        <SelectItem value="1000+">1000+ employees</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Seniority Level</Label>
+                    <Select value={prospectSeniority || undefined} onValueChange={setProspectSeniority}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Any level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Any Level</SelectItem>
+                        <SelectItem value="Entry">Entry Level</SelectItem>
+                        <SelectItem value="Mid">Mid Level</SelectItem>
+                        <SelectItem value="Senior">Senior Level</SelectItem>
+                        <SelectItem value="Executive">Executive</SelectItem>
+                        <SelectItem value="C-Level">C-Level</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <Button

@@ -161,13 +161,18 @@ export const userCompaniesRouter = router({
         throw new Error("Unauthorized: Admin access required");
       }
       
+      // Get current role before updating
+      const userCompanies = await db.getUserCompanies(input.userId);
+      const currentUserCompany = userCompanies.find(uc => uc.companyId === input.companyId);
+      const oldRole = currentUserCompany?.role || 'unknown';
+      
       await db.updateUserCompanyRole(input.userId, input.companyId, input.role);
       
       // Get user and company details for notification
       const user = await db.getUserByOpenId(ctx.user.openId);
       const company = await db.getCompanyById(input.companyId);
       
-      // Create audit log
+      // Create audit log with before/after values
       await db.createAuditLog({
         userId: ctx.user.id,
         userName: ctx.user.name || ctx.user.email,
@@ -177,6 +182,7 @@ export const userCompaniesRouter = router({
         changes: {
           userId: input.userId,
           companyId: input.companyId,
+          oldRole,
           newRole: input.role,
         },
         metadata: {
@@ -193,5 +199,29 @@ export const userCompaniesRouter = router({
       }
       
       return { success: true };
+    }),
+
+  // Get permission changes audit log
+  getPermissionChanges: protectedProcedure
+    .input(z.object({
+      companyId: z.number(),
+      limit: z.number().min(1).max(100).default(50),
+    }))
+    .query(async ({ input, ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new Error("Unauthorized: Admin access required");
+      }
+      
+      const allChanges = await db.getAllAuditLogs({
+        entityType: 'user_company',
+        action: 'update_role',
+      });
+      
+      // Filter by companyId and limit
+      const changes = allChanges
+        .filter(log => log.entityId === input.companyId)
+        .slice(0, input.limit);
+      
+      return { changes };
     }),
 });
