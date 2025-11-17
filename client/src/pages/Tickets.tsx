@@ -118,9 +118,16 @@ export default function Tickets() {
 
   const handleCreateTicket = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!selectedCompany) {
+      toast.error('Please select a company first');
+      return;
+    }
+    
     const formData = new FormData(e.currentTarget);
     
     createTicket.mutate({
+      companyId: selectedCompany.id,
       subject: formData.get('subject') as string,
       issue: formData.get('description') as string,
       priority: formData.get('priority') as any,

@@ -653,10 +653,10 @@
 - [x] Mostrar artículos de KB utilizados
 
 ### Paso 5: Integrar CompanyContext en Formularios
-- [ ] Actualizar formulario de creación de leads para incluir companyId
-- [ ] Actualizar formulario de creación de tickets para incluir companyId
-- [ ] Obtener companyId automáticamente del CompanyContext
-- [ ] Validar que companyId esté presente antes de enviar
+- [x] Actualizar formulario de creación de leads para incluir companyId
+- [x] Actualizar formulario de creación de tickets para incluir companyId
+- [x] Obtener companyId automáticamente del CompanyContext
+- [x] Validar que companyId esté presente antes de enviar
 
 ### Paso 6: Implementar Ivy-Prospect
 - [ ] Crear endpoint agents.prospectSearch en router

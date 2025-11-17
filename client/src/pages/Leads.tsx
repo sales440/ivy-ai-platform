@@ -116,13 +116,19 @@ export default function Leads() {
 
   const handleCreateLead = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!selectedCompany) {
+      toast.error('Please select a company first');
+      return;
+    }
+    
     const formData = new FormData(e.currentTarget);
     
     createLead.mutate({
+      companyId: selectedCompany.id,
       name: formData.get('contactName') as string,
       email: formData.get('email') as string,
       company: formData.get('company') as string,
-
     });
   };
 
