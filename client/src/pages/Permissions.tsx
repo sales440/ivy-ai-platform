@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Users, CheckCircle2, XCircle, Info } from "lucide-react";
+import { Shield, Users, CheckCircle2, XCircle, Info, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -94,6 +94,25 @@ function RecentChanges({ companyId }: { companyId: number }) {
     { companyId, limit: 20 },
     { enabled: !!companyId }
   );
+  
+  const { data: exportData, refetch: exportChanges, isFetching: isExporting } = 
+    trpc.userCompanies.exportPermissionChanges.useQuery(
+      { companyId },
+      { enabled: false }
+    );
+
+  const handleExport = async () => {
+    const result = await exportChanges();
+    if (result.data?.success && result.data.csv) {
+      // Create blob and download
+      const blob = new Blob([result.data.csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = result.data.filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    }
+  };
 
   if (isLoading) {
     return <div className="text-center py-4 text-muted-foreground">Loading changes...</div>;
@@ -106,7 +125,22 @@ function RecentChanges({ companyId }: { companyId: number }) {
   }
 
   return (
-    <Table>
+    <div>
+      <div className="flex justify-end mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Exporting...</>
+          ) : (
+            <><Download className="h-4 w-4 mr-2" /> Export to CSV</>
+          )}
+        </Button>
+      </div>
+      <Table>
       <TableHeader>
         <TableRow>
           <TableHead>User</TableHead>
@@ -136,6 +170,7 @@ function RecentChanges({ companyId }: { companyId: number }) {
         ))}
       </TableBody>
     </Table>
+    </div>
   );
 }
 

@@ -740,10 +740,30 @@
 - [ ] Probar flujo: cambiar rol → verificar registro en audit trail (requiere datos de prueba)
 
 ## Fase 9: Enriquecimiento automático de leads
-- [ ] Investigar LinkedIn API endpoints para obtener perfil completo
-- [ ] Crear función enrichLeadFromLinkedIn en prospect-router.ts
-- [ ] Modificar handleAddProspectAsLead para llamar a enrichment antes de crear lead
-- [ ] Agregar campos adicionales al lead: skills, educación, experiencia completa
-- [ ] Mostrar indicador de "Enriching..." durante el proceso
-- [ ] Implementar fallback si enrichment falla (crear lead con datos básicos)
-- [ ] Probar enriquecimiento con diferentes prospectos
+- [x] Investigar LinkedIn API endpoint get_user_profile_by_username para perfil completo
+- [x] Crear endpoint prospect.enrich en prospect-router.ts con LinkedIn API
+- [x] Modificar handleAddProspectAsLead para llamar a prospect.enrich antes de leads.create
+- [x] Extraer skills (top 10), educación, experiencia, languages, badges del perfil
+- [x] Guardar datos enriquecidos en metadata del lead (JSON)
+- [x] Mostrar indicador de "Enriching profile from LinkedIn..." durante el proceso
+- [x] Implementar fallback si enrichment falla (crear lead con datos básicos)
+- [ ] Probar enriquecimiento con diferentes prospectos (requiere datos reales)
+
+## Fase 10: Exportación de audit logs
+- [x] Crear endpoint userCompanies.exportPermissionChanges para generar CSV
+- [x] Agregar botón "Export to CSV" en sección Recent Changes
+- [x] Implementar generación de CSV con columnas: User, Old Role, New Role, Modified By, Date, Company
+- [x] Implementar descarga automática del archivo CSV con blob
+- [ ] Agregar filtros de fecha (date range picker) en Recent Changes (opcional)
+- [ ] Probar exportación con diferentes rangos de fechas (requiere datos de audit log)
+
+## Fase 11: Dashboard de métricas de Ivy-Prospect
+- [ ] Crear tabla prospectSearches en schema.ts para registrar búsquedas
+- [ ] Modificar prospect.search para guardar query, filters, resultCount, userId, timestamp
+- [ ] Crear endpoint analytics.prospectMetrics para obtener estadísticas
+- [ ] Crear página /analytics/prospect-metrics
+- [ ] Agregar gráfico de búsquedas por día (line chart)
+- [ ] Agregar top 10 queries más usadas (bar chart)
+- [ ] Agregar distribución por industria y senioridad (pie charts)
+- [ ] Agregar métrica de tasa de conversión prospect→lead
+- [ ] Probar dashboard con datos de búsquedas reales

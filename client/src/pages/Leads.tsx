@@ -65,6 +65,8 @@ export default function Leads() {
       toast.error(`Failed to create lead: ${error.message}`);
     }
   });
+  
+  const enrichProspect = trpc.prospect.enrich.useMutation();
 
   const exportLeads = trpc.export.leads.useQuery(
     exportFilters.status || exportFilters.startDate || exportFilters.endDate
@@ -127,7 +129,7 @@ export default function Leads() {
     });
   };
 
-  const handleAddProspectAsLead = (prospect: any) => {
+  const handleAddProspectAsLead = async (prospect: any) => {
     if (!selectedCompany) {
       toast.error('Please select a company first');
       return;
@@ -143,25 +145,66 @@ export default function Leads() {
       return;
     }
     
-    createLead.mutate({
-      companyId: selectedCompany.id,
-      name: prospect.name,
-      email: prospect.email,
-      company: prospect.company,
-      title: prospect.title,
-      industry: prospect.industry,
-      location: prospect.location,
-    }, {
-      onSuccess: () => {
-        toast.success(`${prospect.name} added as lead successfully`);
-        refetch(); // Refresh leads table
-        // Optionally close the prospect search dialog after adding
-        // setIsProspectSearchOpen(false);
-      },
-      onError: (error) => {
-        toast.error(`Failed to add lead: ${error.message}`);
+    // Show enriching toast
+    const enrichToast = toast.loading('Enriching profile from LinkedIn...');
+    
+    try {
+      // Enrich prospect profile from LinkedIn
+      const enrichResult = await enrichProspect.mutateAsync({
+        linkedinUrl: prospect.linkedinUrl,
+      });
+      
+      // Prepare metadata with enriched data
+      const metadata: any = {};
+      if (enrichResult.success && enrichResult.data) {
+        metadata.enrichedData = enrichResult.data;
+        metadata.enrichedAt = new Date().toISOString();
       }
-    });
+      
+      toast.dismiss(enrichToast);
+      
+      // Create lead with enriched data
+      createLead.mutate({
+        companyId: selectedCompany.id,
+        name: prospect.name,
+        email: prospect.email,
+        company: prospect.company,
+        title: prospect.title,
+        industry: prospect.industry,
+        location: prospect.location,
+        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      }, {
+        onSuccess: () => {
+          toast.success(`${prospect.name} added as lead with enriched profile`);
+          refetch(); // Refresh leads table
+        },
+        onError: (error) => {
+          toast.error(`Failed to add lead: ${error.message}`);
+        }
+      });
+    } catch (error) {
+      // If enrichment fails, create lead with basic data
+      toast.dismiss(enrichToast);
+      console.warn('Enrichment failed, creating lead with basic data:', error);
+      
+      createLead.mutate({
+        companyId: selectedCompany.id,
+        name: prospect.name,
+        email: prospect.email,
+        company: prospect.company,
+        title: prospect.title,
+        industry: prospect.industry,
+        location: prospect.location,
+      }, {
+        onSuccess: () => {
+          toast.success(`${prospect.name} added as lead (enrichment unavailable)`);
+          refetch(); // Refresh leads table
+        },
+        onError: (error) => {
+          toast.error(`Failed to add lead: ${error.message}`);
+        }
+      });
+    }
   };
 
   // Qualify lead functionality (to be implemented)

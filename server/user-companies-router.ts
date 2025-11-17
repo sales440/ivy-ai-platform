@@ -224,4 +224,48 @@ export const userCompaniesRouter = router({
       
       return { changes };
     }),
+
+  // Export permission changes to CSV
+  exportPermissionChanges: protectedProcedure
+    .input(z.object({
+      companyId: z.number(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }))
+    .query(async ({ input, ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new Error("Unauthorized: Admin access required");
+      }
+      
+      const allChanges = await db.getAllAuditLogs({
+        entityType: 'user_company',
+        action: 'update_role',
+        startDate: input.startDate,
+        endDate: input.endDate,
+      });
+      
+      // Filter by companyId
+      const changes = allChanges.filter(log => log.entityId === input.companyId);
+      
+      // Generate CSV content
+      const csvHeader = 'User,Old Role,New Role,Modified By,Date,Company\n';
+      const csvRows = changes.map(change => {
+        const user = change.metadata?.targetUserEmail || 'Unknown';
+        const oldRole = change.changes?.oldRole || 'N/A';
+        const newRole = change.changes?.newRole || 'N/A';
+        const modifiedBy = change.userName || 'Unknown';
+        const date = new Date(change.createdAt).toLocaleString();
+        const company = change.metadata?.companyName || 'Unknown';
+        
+        return `"${user}","${oldRole}","${newRole}","${modifiedBy}","${date}","${company}"`;
+      }).join('\n');
+      
+      const csvContent = csvHeader + csvRows;
+      
+      return {
+        success: true,
+        csv: csvContent,
+        filename: `permission-changes-${input.companyId}-${new Date().toISOString().split('T')[0]}.csv`,
+      };
+    }),
 });

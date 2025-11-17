@@ -210,27 +210,109 @@ export const prospectRouter = router({
   
   enrich: protectedProcedure
     .input(z.object({
-      leadId: z.number(),
+      linkedinUsername: z.string().optional(),
       linkedinUrl: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      // Simulación de enriquecimiento de lead (en producción, usar LinkedIn API o servicios como Clearbit)
-      const enrichedData = {
-        linkedinUrl: input.linkedinUrl || "https://linkedin.com/in/prospect",
-        companyLinkedin: "https://linkedin.com/company/example",
-        employeeCount: "500-1000",
-        companyRevenue: "$10M-$50M",
-        technologies: ["React", "Node.js", "AWS", "PostgreSQL"],
-        recentNews: "Company raised $20M Series B funding",
-      };
+      try {
+        // Extract username from LinkedIn URL if provided
+        let username = input.linkedinUsername;
+        if (!username && input.linkedinUrl) {
+          const urlMatch = input.linkedinUrl.match(/linkedin\.com\/in\/([^\/\?]+)/);
+          if (urlMatch) {
+            username = urlMatch[1];
+          }
+        }
 
-      // Actualizar lead con datos enriquecidos
-      // await db.updateLead(input.leadId, enrichedData);
+        if (!username) {
+          return {
+            success: false,
+            message: "LinkedIn username or URL is required",
+            data: null,
+          };
+        }
 
-      return {
-        success: true,
-        message: "Lead enriched successfully",
-        data: enrichedData,
-      };
+        console.log('[Ivy-Prospect] Enriching profile for username:', username);
+
+        // Call LinkedIn profile API
+        const profileResult = await callDataApi('LinkedIn/get_user_profile_by_username', {
+          query: { username }
+        });
+
+        if (!profileResult || !profileResult.id) {
+          console.warn('[Ivy-Prospect] LinkedIn API returned no profile data');
+          return {
+            success: false,
+            message: "Failed to fetch LinkedIn profile",
+            data: null,
+          };
+        }
+
+        // Extract enriched data from profile
+        const enrichedData = {
+          // Basic info
+          firstName: profileResult.firstName || '',
+          lastName: profileResult.lastName || '',
+          headline: profileResult.headline || '',
+          summary: profileResult.summary || '',
+          location: profileResult.geo?.full || '',
+          profilePicture: profileResult.profilePicture || '',
+          linkedinUrl: `https://linkedin.com/in/${username}`,
+          
+          // Skills (top 10 by endorsements)
+          skills: (profileResult.skills || [])
+            .sort((a: any, b: any) => (b.endorsementsCount || 0) - (a.endorsementsCount || 0))
+            .slice(0, 10)
+            .map((skill: any) => ({
+              name: skill.name,
+              endorsements: skill.endorsementsCount || 0,
+            })),
+          
+          // Experience (current and previous positions)
+          experience: (profileResult.position || []).map((pos: any) => ({
+            title: pos.title || '',
+            company: pos.companyName || '',
+            companyLinkedin: pos.companyURL || '',
+            startDate: pos.start ? `${pos.start.year}-${pos.start.month || 1}` : '',
+            endDate: pos.end && pos.end.year ? `${pos.end.year}-${pos.end.month || 1}` : 'Present',
+            description: pos.description || '',
+          })),
+          
+          // Education
+          education: (profileResult.educations || []).map((edu: any) => ({
+            school: edu.schoolName || '',
+            degree: edu.degree || '',
+            field: edu.fieldOfStudy || '',
+            startYear: edu.start?.year || null,
+            endYear: edu.end?.year || null,
+          })),
+          
+          // Languages
+          languages: (profileResult.languages || []).map((lang: any) => lang.name),
+          
+          // Badges
+          badges: {
+            isTopVoice: profileResult.isTopVoice || false,
+            isCreator: profileResult.isCreator || false,
+            isPremium: profileResult.isPremium || false,
+          },
+        };
+
+        console.log('[Ivy-Prospect] Successfully enriched profile');
+
+        return {
+          success: true,
+          message: "Profile enriched successfully",
+          data: enrichedData,
+        };
+        
+      } catch (error) {
+        console.error('[Ivy-Prospect] Error enriching profile:', error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          data: null,
+        };
+      }
     }),
 });
