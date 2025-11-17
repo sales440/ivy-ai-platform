@@ -453,14 +453,42 @@ export async function createKnowledgeArticle(article: InsertKnowledgeArticle): P
   return created[0];
 }
 
-export async function searchKnowledgeBase(query: string): Promise<KnowledgeArticle[]> {
+export async function searchKnowledgeBase(query: string, category?: string): Promise<KnowledgeArticle[]> {
   const db = await getDb();
   if (!db) return [];
 
-  // Simple search - in production, use full-text search
-  return await db.select().from(knowledgeBase)
-    .where(eq(knowledgeBase.isPublished, true))
-    .orderBy(desc(knowledgeBase.helpfulCount));
+  try {
+    let baseQuery = db.select().from(knowledgeBase).where(eq(knowledgeBase.isPublished, true));
+
+    if (category) {
+      baseQuery = baseQuery.where(eq(knowledgeBase.category, category));
+    }
+
+    const articles = await baseQuery;
+
+    // Simple keyword matching (in production, use vector search or full-text search)
+    const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3);
+    
+    const scored = articles.map(article => {
+      const content = `${article.title} ${article.content} ${article.tags?.join(' ') || ''}`.toLowerCase();
+      const score = keywords.reduce((acc, keyword) => {
+        const count = (content.match(new RegExp(keyword, 'g')) || []).length;
+        return acc + count;
+      }, 0);
+      
+      return { article, score };
+    });
+
+    // Return top 3 most relevant articles
+    return scored
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(s => s.article);
+  } catch (error) {
+    console.error("[Database] Failed to search knowledge base:", error);
+    return [];
+  }
 }
 
 // ============================================================================
@@ -1204,3 +1232,6 @@ export async function getUserCompanyRole(userId: number, companyId: number): Pro
 
   return result.length > 0 ? result[0].role : null;
 }
+
+
+

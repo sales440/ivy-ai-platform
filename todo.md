@@ -618,3 +618,26 @@
 4. **Completar conectores CRM** (Salesforce OAuth2, Pipedrive API)
 5. **Implementar funcionalidades de agentes** (Prospect: LinkedIn search, Solve: ticket resolution)
 6. **Dashboard personalizable** con widgets drag-and-drop usando react-grid-layout
+
+
+## Tareas Actuales en Progreso
+
+### Paso 1: Poblar Datos Demo
+- [x] Verificar que seed funciona correctamente
+- [x] Probar botón "Seed Demo Data" en Dashboard
+- [x] Verificar que leads/tickets se asignan a empresa correcta
+
+### Paso 2: Refactorizar Endpoints con Permisos
+- [x] Aplicar requirePermission a leads.create
+- [ ] Aplicar requirePermission a leads.delete
+- [x] Aplicar requirePermission a tickets.create
+- [x] Aplicar requirePermission a tickets.update (resolve)
+- [ ] Aplicar requirePermission a agentConfig.upsert
+- [ ] Actualizar frontend para pasar companyId en todas las llamadas
+
+### Paso 3: Implementar Ivy-Solve (Resolución Automática)
+- [x] Crear función searchKnowledgeBase en db.ts
+- [x] Crear endpoint tickets.autoResolve en router
+- [x] Implementar lógica: buscar KB → generar respuesta con LLM → actualizar ticket
+- [ ] Agregar botón "Auto-Resolve" en UI de tickets
+- [ ] Probar con tickets de ejemplo

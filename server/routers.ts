@@ -9,7 +9,7 @@ import { userCompaniesRouter } from "./user-companies-router";
 import { agentConfigRouter } from "./agent-config-router";
 import { auditLogRouter } from "./audit-log-router";
 import * as notificationHelper from "./notification-helper";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
 import { z } from "zod";
 import { getHive } from "./hive/orchestrator";
@@ -268,7 +268,9 @@ export const appRouter = router({
       }),
 
     create: protectedProcedure
+      .use(requirePermission("leads", "create"))
       .input(z.object({
+        companyId: z.number(),
         name: z.string(),
         email: z.string().optional(),
         company: z.string().optional(),
@@ -280,6 +282,7 @@ export const appRouter = router({
         const { v4: uuidv4 } = await import('uuid');
         const lead = await db.createLead({
           leadId: uuidv4(),
+          companyId: input.companyId,
           name: input.name,
           email: input.email,
           company: input.company,
@@ -326,7 +329,9 @@ export const appRouter = router({
       }),
 
     create: protectedProcedure
+      .use(requirePermission("tickets", "create"))
       .input(z.object({
+        companyId: z.number(),
         subject: z.string(),
         issue: z.string(),
         customerEmail: z.string().optional(),
@@ -336,6 +341,7 @@ export const appRouter = router({
         const { v4: uuidv4 } = await import('uuid');
         const ticket = await db.createTicket({
           ticketId: uuidv4(),
+          companyId: input.companyId,
           ...input,
           customerId: ctx.user?.id,
           status: "open",
@@ -345,7 +351,9 @@ export const appRouter = router({
       }),
 
     resolve: protectedProcedure
+      .use(requirePermission("tickets", "update"))
       .input(z.object({
+        companyId: z.number(),
         ticketId: z.number(),
         resolution: z.string()
       }))
@@ -370,6 +378,77 @@ export const appRouter = router({
         }
         
         return { success: true };
+      }),
+
+    autoResolve: protectedProcedure
+      .use(requirePermission("tickets", "update"))
+      .input(z.object({
+        companyId: z.number(),
+        ticketId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { invokeLLM } = await import('./_core/llm');
+        
+        // Get ticket details
+        const ticket = await db.getTicketById(input.ticketId);
+        if (!ticket) {
+          throw new Error('Ticket not found');
+        }
+
+        // Search knowledge base for relevant articles
+        const query = `${ticket.subject} ${ticket.issue}`;
+        const articles = await db.searchKnowledgeBase(query, ticket.category || undefined);
+
+        if (articles.length === 0) {
+          return { 
+            success: false, 
+            message: 'No relevant knowledge base articles found. Manual resolution required.' 
+          };
+        }
+
+        // Build context from KB articles
+        const kbContext = articles.map(a => 
+          `Title: ${a.title}\nContent: ${a.content}`
+        ).join('\n\n---\n\n');
+
+        // Generate resolution using LLM
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are Ivy-Solve, a customer support AI agent. Your job is to resolve customer tickets using the knowledge base. Provide clear, helpful, and professional responses.'
+            },
+            {
+              role: 'user',
+              content: `Customer Issue:\nSubject: ${ticket.subject}\nIssue: ${ticket.issue}\n\nRelevant Knowledge Base Articles:\n${kbContext}\n\nPlease provide a resolution for this customer issue based on the knowledge base articles above.`
+            }
+          ]
+        });
+
+        const resolution = response.choices[0].message.content;
+
+        // Update ticket status
+        await db.updateTicketStatus(input.ticketId, 'resolved', resolution);
+
+        // Create notification
+        if (ctx.user) {
+          const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+          const resolvedAt = new Date();
+          const resolutionTime = Math.round((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60));
+          
+          await notificationHelper.notifyTicketResolved(
+            ticket.ticketId,
+            ticket.subject,
+            ctx.user.id,
+            `${resolutionTime} minutes (Auto-resolved by Ivy-Solve)`
+          );
+        }
+
+        return { 
+          success: true, 
+          resolution,
+          articlesUsed: articles.length
+        };
       }),
   }),
 
