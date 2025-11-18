@@ -63,8 +63,12 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
+  server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
+    
+    // Start scheduled tasks processor
+    const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
+    startScheduledTasksProcessor();
   });
 }
 

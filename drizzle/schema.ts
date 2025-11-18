@@ -510,3 +510,32 @@ export const emailLogs = mysqlTable("emailLogs", {
 
 export type EmailLog = typeof emailLogs.$inferSelect;
 export type InsertEmailLog = typeof emailLogs.$inferInsert;
+
+/**
+ * Scheduled Tasks - Queue for delayed task execution
+ */
+export const scheduledTasks = mysqlTable("scheduledTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  taskType: mysqlEnum("taskType", ["send-email", "update-lead-score", "send-notification", "custom"]).notNull(),
+  taskData: json("taskData").$type<{
+    leadId?: number;
+    callId?: number;
+    emailSubject?: string;
+    emailBody?: string;
+    outcome?: string;
+    [key: string]: any;
+  }>().notNull(),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed", "cancelled"]).default("pending").notNull(),
+  scheduledFor: timestamp("scheduledFor").notNull(), // When to execute
+  executedAt: timestamp("executedAt"),
+  error: text("error"),
+  retryCount: int("retryCount").default(0).notNull(),
+  maxRetries: int("maxRetries").default(3).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScheduledTask = typeof scheduledTasks.$inferSelect;
+export type InsertScheduledTask = typeof scheduledTasks.$inferInsert;

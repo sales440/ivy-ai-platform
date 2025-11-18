@@ -1096,3 +1096,38 @@
 - [x] Recent changes list con últimos 5 cambios
 - [x] Stats: positive changes count, negative changes count
 - [ ] Agregar en página de lead details o modal (pendiente integración)
+
+## Fase 30: Integrar ScoreEvolutionChart en Lead Details Modal
+- [x] Crear nuevo modal de lead details en Leads.tsx
+- [x] Agregar botón "View" en Actions column de tabla
+- [x] Agregar estados detailsDialogOpen y selectedLead
+- [x] Crear Dialog con 3 tabs: Overview, Enriched Data, Score History
+- [x] Tab Overview muestra información básica del lead
+- [x] Tab Enriched Data muestra EnrichedDataView component
+- [x] Tab Score History renderiza ScoreEvolutionChart con scoreHistory
+- [x] ScoreEvolutionChart maneja caso vacío automáticamente
+- [x] Badges VIP y Auto-Enriched en título del modal
+
+## Fase 31: Documentar Configuración de Telnyx
+- [x] Crear documento TELNYX_SETUP.md con pasos detallados
+- [x] Documentar cómo crear cuenta y obtener API Key
+- [x] Documentar cómo comprar número de teléfono (local/toll-free/internacional)
+- [x] Documentar configuración de Outbound Voice Profile
+- [x] Documentar cómo configurar webhook URL
+- [x] Documentar cómo actualizar secrets en Management Dashboard
+- [x] Agregar sección de troubleshooting con 4 problemas comunes
+- [x] Incluir tabla de costos estimados
+- [x] Agregar mejores prácticas y recursos adicionales
+
+## Fase 32: Implementar Scheduled Tasks con Delay 24h
+- [x] Crear tabla scheduledTasks en schema con campos completos
+- [x] Implementar processScheduledTasks en server/scheduled-tasks-processor.ts
+- [x] Crear cron job que ejecuta cada 5 minutos
+- [x] Implementar executeTask con soporte para send-email, update-lead-score, send-notification
+- [x] Crear helper scheduleFollowUpEmail en server/schedule-helpers.ts
+- [x] Crear helper scheduleLeadScoreUpdate en server/schedule-helpers.ts
+- [x] Crear helper cancelScheduledTask en server/schedule-helpers.ts
+- [x] Integrar processor startup en server/_core/index.ts
+- [x] Sistema de retry automático (max 3 intentos, retry cada 1 hora)
+- [ ] Modificar webhook Telnyx para usar scheduleFollowUpEmail (pendiente)
+- [ ] Agregar mutation para listar/cancelar scheduled tasks via tRPC (pendiente)

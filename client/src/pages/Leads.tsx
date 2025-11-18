@@ -198,6 +198,8 @@ export default function Leads() {
   const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
   const [callDialogOpen, setCallDialogOpen] = useState(false);
   const [selectedCallLead, setSelectedCallLead] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
@@ -1174,6 +1176,17 @@ export default function Leads() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setDetailsDialogOpen(true);
+                            }}
+                            title="View lead details"
+                          >
+                            View
+                          </Button>
                           {lead.status === 'new' && (
                             <Button
                               size="sm"
@@ -1223,6 +1236,102 @@ export default function Leads() {
             });
           }}
         />
+      )}
+
+      {/* Lead Details Dialog */}
+      {selectedLead && (
+        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedLead.name}
+                {selectedLead.qualificationScore > 80 && (
+                  <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+                    🌟 VIP
+                  </Badge>
+                )}
+                {selectedLead.metadata && (
+                  <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                    ⚡ Auto-Enriched
+                  </Badge>
+                )}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedLead.title} at {selectedLead.company}
+              </DialogDescription>
+            </DialogHeader>
+
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="enriched">Enriched Data</TabsTrigger>
+                <TabsTrigger value="score">Score History</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                    <p className="text-sm">{selectedLead.email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Company</Label>
+                    <p className="text-sm">{selectedLead.company}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Industry</Label>
+                    <p className="text-sm">{selectedLead.industry || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Location</Label>
+                    <p className="text-sm">{selectedLead.location || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Company Size</Label>
+                    <p className="text-sm">{selectedLead.companySize || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                    <Badge variant="outline">{selectedLead.status}</Badge>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Qualification Score</Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">{selectedLead.qualificationScore}</span>
+                      <Badge variant="outline">{selectedLead.qualificationLevel}</Badge>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Source</Label>
+                    <p className="text-sm">{selectedLead.source || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                  <p className="text-sm">{new Date(selectedLead.createdAt).toLocaleString()}</p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="enriched">
+                {selectedLead.metadata ? (
+                  <EnrichedDataView metadata={selectedLead.metadata} />
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-muted-foreground">
+                    <p>No enriched data available for this lead</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="score">
+                <ScoreEvolutionChart
+                  scoreHistory={selectedLead.scoreHistory}
+                  currentScore={selectedLead.qualificationScore}
+                />
+              </TabsContent>
+            </Tabs>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
