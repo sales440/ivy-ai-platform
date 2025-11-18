@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus, Award, Briefcase, GraduationCap, Bookmark, Play } from 'lucide-react';
 import { CallDialog } from '@/components/CallDialog';
+import { ScoreEvolutionChart } from '@/components/ScoreEvolutionChart';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 

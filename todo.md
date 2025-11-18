@@ -1068,3 +1068,31 @@
 - [ ] Agregar badge de score change en tabla Leads (UI)
 - [ ] Crear gráfico de score evolution en lead details (UI)
 - [ ] Implementar threshold alerts (score > 90 = hot lead)
+
+## Fase 27: Send Follow-up Button en Call History
+- [x] Crear componente SendEmailDialog.tsx con template editor
+- [x] Pre-seleccionar template según call outcome (callback, interested, notInterested, voicemail)
+- [x] Permitir editar subject y body antes de enviar
+- [x] Agregar botón "Send Follow-up" en cada fila de Call History
+- [x] Integrar con trpc.emails.sendFollowUp mutation
+- [x] Mostrar loading state y toast de confirmación
+- [x] Deshabilitar botón si call no tiene outcome (no-answer, wrong-number)
+
+## Fase 28: Workflow Automático Post-Llamada (Simplified)
+- [x] Implementar auto-follow-up en webhook de Telnyx
+- [x] Trigger automático después de completar llamada
+- [x] Solo para outcomes: callback, interested
+- [x] Envío inmediato (sin delay de 24h para MVP)
+- [ ] Nota: Para delay de 24h, integrar con scheduled tasks o cron jobs
+- [ ] Nota: Para producción, usar servicio como BullMQ o AWS SQS
+
+## Fase 29: Score Evolution Chart en Lead Details
+- [x] Crear componente ScoreEvolutionChart.tsx con Recharts
+- [x] Parsear scoreHistory para datos del gráfico
+- [x] Line chart con eje X (timestamp) y eje Y (score 0-100)
+- [x] Tooltips mostrando reason, change (+10, -5, etc.), date y time
+- [x] Color coding: verde para positivo, rojo para negativo en borders
+- [x] KPI cards: initial score, current score, total change con trending icons
+- [x] Recent changes list con últimos 5 cambios
+- [x] Stats: positive changes count, negative changes count
+- [ ] Agregar en página de lead details o modal (pendiente integración)

@@ -6,17 +6,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Phone, PhoneOff, Clock, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Phone, PhoneOff, Clock, TrendingUp, TrendingDown, Minus, Mail } from "lucide-react";
+import { SendEmailDialog } from "@/components/SendEmailDialog";
+import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 export default function CallHistory() {
   const { selectedCompany } = useCompany();
   const [selectedCall, setSelectedCall] = useState<any>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedCallForEmail, setSelectedCallForEmail] = useState<any>(null);
 
   const { data: callsData, isLoading } = trpc.calls.list.useQuery(
     selectedCompany ? { companyId: Number(selectedCompany.id) } : { companyId: 0 },
     { enabled: !!selectedCompany }
   );
+
+  const sendFollowUp = trpc.emails.sendFollowUp.useMutation();
 
   const calls = callsData?.calls || [];
 
@@ -233,16 +239,30 @@ export default function CallHistory() {
                         {new Date(call.createdAt).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setSelectedCall(call)}
-                            >
-                              View Details
-                            </Button>
-                          </DialogTrigger>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedCallForEmail(call);
+                              setEmailDialogOpen(true);
+                            }}
+                            disabled={!call.outcome || call.outcome === 'no-answer' || call.outcome === 'wrong-number'}
+                            title={!call.outcome ? "No outcome set" : "Send follow-up email"}
+                          >
+                            <Mail className="h-3 w-3 mr-1" />
+                            Follow-up
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedCall(call)}
+                              >
+                                View Details
+                              </Button>
+                            </DialogTrigger>
                           <DialogContent className="max-w-2xl">
                             <DialogHeader>
                               <DialogTitle>Call Details</DialogTitle>
@@ -304,6 +324,7 @@ export default function CallHistory() {
                             </div>
                           </DialogContent>
                         </Dialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -313,6 +334,33 @@ export default function CallHistory() {
           )}
         </CardContent>
       </Card>
+
+      {/* Send Email Dialog */}
+      {selectedCallForEmail && (
+        <SendEmailDialog
+          open={emailDialogOpen}
+          onOpenChange={setEmailDialogOpen}
+          leadName={selectedCallForEmail.leadId ? `Lead #${selectedCallForEmail.leadId}` : 'Unknown'}
+          leadCompany="Company"
+          leadEmail={selectedCallForEmail.phoneNumber}
+          callOutcome={selectedCallForEmail.outcome}
+          onSend={async (subject, body) => {
+            try {
+              await sendFollowUp.mutateAsync({
+                leadId: selectedCallForEmail.leadId,
+                callId: selectedCallForEmail.id,
+                outcome: selectedCallForEmail.outcome as any,
+                customSubject: subject,
+                customBody: body,
+              });
+              toast.success('Follow-up email sent successfully!');
+            } catch (error: any) {
+              toast.error(`Failed to send email: ${error.message}`);
+              throw error;
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
