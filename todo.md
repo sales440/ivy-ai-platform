@@ -1131,3 +1131,31 @@
 - [x] Sistema de retry automático (max 3 intentos, retry cada 1 hora)
 - [ ] Modificar webhook Telnyx para usar scheduleFollowUpEmail (pendiente)
 - [ ] Agregar mutation para listar/cancelar scheduled tasks via tRPC (pendiente)
+
+## Fase 33: Completar Migración de Scheduled Tasks
+- [ ] Ejecutar pnpm drizzle-kit push manualmente
+- [ ] Confirmar creación de scheduledTasks table
+- [ ] Verificar que processor puede consultar la tabla sin errores
+
+## Fase 34: Agregar tRPC Mutations para Scheduled Tasks
+- [x] Crear router scheduledTasks en server/scheduled-tasks-router.ts
+- [x] Implementar query list (con filtros por status, taskType, limit)
+- [x] Implementar mutation cancel para cancelar task pendiente
+- [x] Implementar mutation retry para reintentar task fallido
+- [x] Implementar mutation bulkCancel para cancelar múltiples tasks
+- [x] Implementar query getById para ver detalles de task
+- [x] Implementar query stats para estadísticas (total, pending, completed, failed, by type)
+- [x] Agregar scheduledTasksRouter a appRouter principal
+
+## Fase 35: Página de Scheduled Tasks Management
+- [x] Crear página ScheduledTasksManagement.tsx
+- [x] Agregar ruta /scheduled-tasks en App.tsx
+- [x] Mostrar tabla con tasks (id, type, status, scheduledFor, retryCount)
+- [x] Agregar filtros por status y taskType con Select components
+- [x] Implementar botón Cancel para tasks pendientes con mutation
+- [x] Implementar botón Retry para tasks fallidos con mutation
+- [x] Mostrar error details con botón de AlertCircle
+- [x] Agregar 4 KPI cards: pending, completed today, failed, total
+- [x] Agregar navegación "Scheduled Tasks" en DashboardLayout sidebar
+- [x] Badges con iconos para cada status (pending, processing, completed, failed, cancelled)
+- [x] Task type labels con emojis (📧 Send Email, 📊 Update Score, etc.)

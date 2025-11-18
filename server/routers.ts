@@ -13,6 +13,7 @@ import { analyticsRouter } from "./analytics-router";
 import { savedSearchesRouter } from "./saved-searches-router";
 import { callsRouter } from "./calls-router";
 import { emailsRouter } from "./emails-router";
+import { scheduledTasksRouter } from "./scheduled-tasks-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -62,6 +63,7 @@ function parseCommand(input: string): ParsedCommand {
 export const appRouter = router({
   calls: callsRouter,
   emails: emailsRouter,
+  scheduledTasks: scheduledTasksRouter,
   system: systemRouter,
   seed: seedRouter,
   notifications: notificationsRouter,

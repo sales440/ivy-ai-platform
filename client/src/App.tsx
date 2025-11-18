@@ -21,6 +21,7 @@ import Permissions from "./pages/Permissions";
 import ProspectMetrics from "./pages/ProspectMetrics";
 import PipelineDashboard from "@/pages/PipelineDashboard";
 import CallHistory from "@/pages/CallHistory";
+import ScheduledTasksManagement from "@/pages/ScheduledTasksManagement";
 
 function Router() {
   return (
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/analytics/prospect-metrics" component={ProspectMetrics} />
       <Route path="/analytics/pipeline" component={PipelineDashboard} />
       <Route path="/calls" component={CallHistory} />
+      <Route path="/scheduled-tasks" component={ScheduledTasksManagement} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
