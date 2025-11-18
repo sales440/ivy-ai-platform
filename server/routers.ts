@@ -11,6 +11,7 @@ import { auditLogRouter } from "./audit-log-router";
 import { prospectRouter } from "./prospect-router";
 import { analyticsRouter } from "./analytics-router";
 import { savedSearchesRouter } from "./saved-searches-router";
+import { callsRouter } from "./calls-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -58,6 +59,7 @@ function parseCommand(input: string): ParsedCommand {
 // ============================================================================
 
 export const appRouter = router({
+  calls: callsRouter,
   system: systemRouter,
   seed: seedRouter,
   notifications: notificationsRouter,
@@ -398,6 +400,31 @@ export const appRouter = router({
         await db.deleteLead(input.leadId);
         
         return { success: true };
+      }),
+
+    bulkUpdateStatus: protectedProcedure
+      .use(requirePermission("leads", "update"))
+      .input(z.object({
+        ids: z.array(z.number()),
+        status: z.enum(["new", "contacted", "qualified", "converted", "lost"]),
+      }))
+      .mutation(async ({ input }) => {
+        for (const id of input.ids) {
+          await db.updateLeadStatus(id, input.status);
+        }
+        return { success: true, updated: input.ids.length };
+      }),
+
+    bulkDelete: protectedProcedure
+      .use(requirePermission("leads", "delete"))
+      .input(z.object({
+        ids: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        for (const id of input.ids) {
+          await db.deleteLead(id);
+        }
+        return { success: true, deleted: input.ids.length };
       }),
   }),
 

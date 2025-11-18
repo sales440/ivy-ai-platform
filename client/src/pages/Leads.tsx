@@ -193,11 +193,35 @@ export default function Leads() {
    const [currentSearchId, setCurrentSearchId] = useState<number | null>(null);
   const [showSaveSearchDialog, setShowSaveSearchDialog] = useState(false);
   const [savedSearchName, setSavedSearchName] = useState('');
+  const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
     selectedCompany ? { companyId: Number(selectedCompany.id) } : undefined
   );
+
+  // Bulk actions
+  const bulkUpdateStatus = trpc.leads.bulkUpdateStatus.useMutation({
+    onSuccess: () => {
+      toast.success(`Updated ${selectedLeads.length} leads`);
+      setSelectedLeads([]);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update leads: ${error.message}`);
+    }
+  });
+
+  const bulkDelete = trpc.leads.bulkDelete.useMutation({
+    onSuccess: () => {
+      toast.success(`Deleted ${selectedLeads.length} leads`);
+      setSelectedLeads([]);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete leads: ${error.message}`);
+    }
+  });
   const createLead = trpc.leads.create.useMutation({
     onSuccess: () => {
       toast.success('Lead created successfully');
@@ -956,10 +980,88 @@ export default function Leads() {
             </Button>
           </div>
 
+          {/* Bulk Actions Bar */}
+          {selectedLeads.length > 0 && (
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">{selectedLeads.length} lead{selectedLeads.length > 1 ? 's' : ''} selected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select onValueChange={(value) => {
+                  if (confirm(`Update ${selectedLeads.length} leads to status "${value}"?`)) {
+                    bulkUpdateStatus.mutate({ ids: selectedLeads, status: value as any });
+                  }
+                }}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Update Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="new">New</SelectItem>
+                    <SelectItem value="contacted">Contacted</SelectItem>
+                    <SelectItem value="qualified">Qualified</SelectItem>
+                    <SelectItem value="converted">Converted</SelectItem>
+                    <SelectItem value="lost">Lost</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const leadsToExport = filteredLeads.filter(l => selectedLeads.includes(l.id));
+                    const csv = [
+                      ['Company', 'Name', 'Email', 'Title', 'Status', 'Score', 'Created'].join(','),
+                      ...leadsToExport.map(l => [
+                        l.company || '',
+                        l.name,
+                        l.email || '',
+                        l.title || '',
+                        l.status,
+                        l.qualificationScore || 0,
+                        new Date(l.createdAt).toLocaleDateString()
+                      ].join(','))
+                    ].join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+                    a.click();
+                    toast.success(`Exported ${selectedLeads.length} leads`);
+                  }}
+                >
+                  Export Selected
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm(`Delete ${selectedLeads.length} leads? This action cannot be undone.`)) {
+                      bulkDelete.mutate({ ids: selectedLeads });
+                    }
+                  }}
+                >
+                  Delete Selected
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <input
+                      type="checkbox"
+                      checked={selectedLeads.length === filteredLeads.length && filteredLeads.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedLeads(filteredLeads.map(l => l.id));
+                        } else {
+                          setSelectedLeads([]);
+                        }
+                      }}
+                      className="cursor-pointer"
+                    />
+                  </TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Source</TableHead>
@@ -979,7 +1081,21 @@ export default function Leads() {
                   </TableRow>
                 ) : (
                   filteredLeads.map((lead) => (
-                    <TableRow key={lead.id}>
+                    <TableRow key={lead.id} className={selectedLeads.includes(lead.id) ? "bg-muted/50" : ""}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedLeads.includes(lead.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedLeads([...selectedLeads, lead.id]);
+                            } else {
+                              setSelectedLeads(selectedLeads.filter(id => id !== lead.id));
+                            }
+                          }}
+                          className="cursor-pointer"
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {lead.company}
@@ -1042,15 +1158,29 @@ export default function Leads() {
                         {new Date(lead.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        {lead.status === 'new' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleQualifyLead(lead.id!)}
-                          >
-                            Qualify
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {lead.status === 'new' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleQualifyLead(lead.id!)}
+                            >
+                              Qualify
+                            </Button>
+                          )}
+                          {lead.email && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                toast.info("📞 Call feature coming soon!");
+                              }}
+                              title="Call this lead"
+                            >
+                              📞 Call
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

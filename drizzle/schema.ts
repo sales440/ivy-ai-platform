@@ -432,3 +432,28 @@ export const savedSearches = mysqlTable("savedSearches", {
 
 export type SavedSearch = typeof savedSearches.$inferSelect;
 export type InsertSavedSearch = typeof savedSearches.$inferInsert;
+
+/**
+ * Calls - Para Ivy-Call (Telnyx integration)
+ */
+export const calls = mysqlTable("calls", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  companyId: int("companyId").notNull(),
+  userId: int("userId").notNull(), // Who initiated the call
+  telnyxCallId: varchar("telnyxCallId", { length: 255 }), // Telnyx call control ID
+  phoneNumber: varchar("phoneNumber", { length: 50 }).notNull(),
+  status: mysqlEnum("status", ["initiated", "ringing", "answered", "completed", "failed", "no-answer"]).default("initiated").notNull(),
+  duration: int("duration"), // Duration in seconds
+  transcript: text("transcript"),
+  recordingUrl: varchar("recordingUrl", { length: 500 }),
+  sentiment: mysqlEnum("sentiment", ["positive", "neutral", "negative"]),
+  outcome: mysqlEnum("outcome", ["interested", "callback", "not-interested", "voicemail", "no-answer", "wrong-number"]),
+  notes: text("notes"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type Call = typeof calls.$inferSelect;
+export type InsertCall = typeof calls.$inferInsert;

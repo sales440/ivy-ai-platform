@@ -1358,3 +1358,170 @@ export async function deleteSavedSearch(searchId: number, userId: number) {
       eq(savedSearches.userId, userId)
     ));
 }
+
+// ============================================================================
+// PIPELINE ANALYTICS
+// ============================================================================
+
+export async function getPipelineMetrics(filters: {
+  companyId?: number;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return {
+    stages: [],
+    conversionRates: [],
+    avgTimeByStage: [],
+    bottleneck: null,
+    totalConversionRate: 0,
+    avgTimeToConvert: 0,
+  };
+
+  // Get all leads with filters
+  let query = db.select().from(leads);
+  
+  const conditions = [];
+  if (filters.companyId) {
+    conditions.push(eq(leads.companyId, filters.companyId));
+  }
+  if (filters.startDate) {
+    conditions.push(sql`${leads.createdAt} >= ${filters.startDate}`);
+  }
+  if (filters.endDate) {
+    conditions.push(sql`${leads.createdAt} <= ${filters.endDate}`);
+  }
+  
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+  
+  const allLeads = await query;
+
+  // Define pipeline stages in order
+  const stages = [
+    { name: 'new', label: 'New Leads' },
+    { name: 'contacted', label: 'Contacted' },
+    { name: 'qualified', label: 'Qualified' },
+    { name: 'converted', label: 'Converted' },
+  ];
+
+  // Count leads in each stage
+  const stageCounts = stages.map(stage => ({
+    stage: stage.label,
+    count: allLeads.filter(l => l.status === stage.name).length,
+  }));
+
+  // Calculate conversion rates between stages
+  const conversionRates = [];
+  for (let i = 0; i < stages.length - 1; i++) {
+    const currentCount = stageCounts[i].count;
+    const nextCount = stageCounts[i + 1].count;
+    const rate = currentCount > 0 ? Math.round((nextCount / currentCount) * 100) : 0;
+    conversionRates.push({
+      from: stages[i].label,
+      to: stages[i + 1].label,
+      rate,
+    });
+  }
+
+  // Calculate average time in each stage (mock data for now - would need timestamps)
+  const avgTimeByStage = stages.map(stage => ({
+    stage: stage.label,
+    avgDays: Math.floor(Math.random() * 10) + 1, // TODO: Calculate from actual timestamps
+  }));
+
+  // Detect bottleneck (stage with lowest conversion rate)
+  const bottleneck = conversionRates.length > 0
+    ? conversionRates.reduce((min, curr) => curr.rate < min.rate ? curr : min)
+    : null;
+
+  // Calculate total conversion rate (new → converted)
+  const totalNew = stageCounts[0].count;
+  const totalConverted = stageCounts[stageCounts.length - 1].count;
+  const totalConversionRate = totalNew > 0 ? Math.round((totalConverted / totalNew) * 100) : 0;
+
+  // Calculate average time to convert (sum of all stage times)
+  const avgTimeToConvert = avgTimeByStage.reduce((sum, stage) => sum + stage.avgDays, 0);
+
+  return {
+    stages: stageCounts,
+    conversionRates,
+    avgTimeByStage,
+    bottleneck,
+    totalConversionRate,
+    avgTimeToConvert,
+  };
+}
+
+// ============================================================================
+// CALLS MANAGEMENT (Ivy-Call)
+// ============================================================================
+
+export async function createCall(call: InsertCall): Promise<Call> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(calls).values(call);
+  const insertedId = Number(result[0].insertId);
+  
+  const insertedCall = await getCallById(insertedId);
+  if (!insertedCall) throw new Error("Failed to retrieve inserted call");
+  
+  return insertedCall;
+}
+
+export async function getCallById(id: number): Promise<Call | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(calls).where(eq(calls.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getCallsByLeadId(leadId: number): Promise<Call[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(calls).where(eq(calls.leadId, leadId)).orderBy(desc(calls.createdAt));
+}
+
+export async function getCallsByCompanyId(companyId: number): Promise<Call[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(calls).where(eq(calls.companyId, companyId)).orderBy(desc(calls.createdAt));
+}
+
+export async function updateCallStatus(id: number, status: Call["status"], completedAt?: Date): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const updateData: any = { status };
+  if (completedAt) {
+    updateData.completedAt = completedAt;
+  }
+
+  await db.update(calls).set(updateData).where(eq(calls.id, id));
+}
+
+export async function updateCallTranscript(id: number, transcript: string, sentiment?: Call["sentiment"], outcome?: Call["outcome"]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const updateData: any = { transcript };
+  if (sentiment) updateData.sentiment = sentiment;
+  if (outcome) updateData.outcome = outcome;
+
+  await db.update(calls).set(updateData).where(eq(calls.id, id));
+}
+
+export async function updateCallRecording(id: number, recordingUrl: string, duration?: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const updateData: any = { recordingUrl };
+  if (duration) updateData.duration = duration;
+
+  await db.update(calls).set(updateData).where(eq(calls.id, id));
+}

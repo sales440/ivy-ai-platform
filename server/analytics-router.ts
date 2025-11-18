@@ -126,4 +126,19 @@ export const analyticsRouter = router({
         seniorityDistribution,
       };
     }),
+
+  pipelineMetrics: protectedProcedure
+    .input(z.object({
+      companyId: z.number().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const pipelineData = await db.getPipelineMetrics({
+        companyId: input.companyId,
+        startDate: input.startDate,
+        endDate: input.endDate,
+      });
+      return pipelineData;
+    }),
 });

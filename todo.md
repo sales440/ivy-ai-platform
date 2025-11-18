@@ -972,3 +972,46 @@
 - [x] Agregar logs de auto-enrichment con console.log
 - [x] Agregar badge "⚡ Auto-Enriched" en tabla de leads para VIP con metadata
 - [ ] Probar creando lead VIP y verificar enrichment automático (MANUAL)
+
+## Fase 20: Dashboard de Conversión de Pipeline
+- [x] Crear página PipelineDashboard.tsx
+- [x] Agregar ruta /analytics/pipeline en App.tsx
+- [x] Crear backend analytics.pipelineMetrics query
+- [x] Calcular métricas: total por etapa, tasas de conversión, tiempo promedio
+- [x] Implementar funnel chart con Recharts (new → contacted → qualified → converted)
+- [x] Agregar gráfico de tiempo promedio por etapa (bar chart)
+- [x] Mostrar tasas de conversión entre etapas (%)
+- [x] Detectar y mostrar bottlenecks (etapa con menor conversión)
+- [x] Agregar filtro por date range
+- [x] Agregar KPI cards: conversion rate total, avg time to convert, bottleneck stage
+- [x] Agregar navegación en DashboardLayout sidebar
+- [x] Crear función getPipelineMetrics en server/db.ts
+
+## Fase 21: Bulk Actions en Leads
+- [x] Agregar checkboxes en tabla de Leads para selección múltiple
+- [x] Crear estado selectedLeads para tracking de selección
+- [x] Agregar checkbox "Select All" en table header
+- [x] Crear barra de acciones cuando hay leads seleccionados
+- [x] Implementar "Bulk Update Status" con dropdown y confirmación
+- [x] Implementar "Export Selected" para leads seleccionados (CSV)
+- [x] Implementar "Delete Selected" con confirmación
+- [x] Crear mutation leads.bulkUpdateStatus en backend
+- [x] Crear mutation leads.bulkDelete en backend
+- [x] Mostrar contador de leads seleccionados en barra
+- [x] Agregar feedback visual de selección (bg-muted/50 en row)
+
+## Fase 22: Ivy-Call con Telnyx
+- [x] Investigar y documentar Telnyx Voice API endpoints
+- [x] Obtener TELNYX_API_KEY del usuario
+- [x] Crear tabla calls en schema (leadId, status, duration, transcript, recording, sentiment, outcome)
+- [x] Crear helper server/_core/telnyx.ts con funciones initiateCall, getCallStatus, hangupCall, speakText
+- [x] Implementar calls router con initiate, list, listByLead, get, analyze, updateNotes
+- [x] Crear funciones de base de datos: createCall, getCallById, getCallsByLeadId, updateCallStatus, updateCallTranscript
+- [x] Agregar calls router a appRouter principal
+- [x] Agregar botón "📞 Call" en tabla de Leads (placeholder)
+- [x] Implementar análisis de transcripción con LLM (sentiment, outcome, keyPoints, nextSteps)
+- [ ] Completar migración de base de datos (tabla calls)
+- [ ] Implementar webhook endpoint /api/calls/webhook para eventos Telnyx
+- [ ] Crear diálogo CallLead funcional con script y Start Call
+- [ ] Crear página CallHistory.tsx para ver historial completo
+- [ ] Integrar actualización automática de lead status según outcome
