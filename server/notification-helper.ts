@@ -24,6 +24,23 @@ export async function notifyLeadQualified(leadName: string, company: string, sco
   });
 }
 
+export async function notifyVIPLead(leadName: string, company: string, score: number, title: string | undefined, email: string | undefined, leadId: number, userId: number) {
+  const details = [
+    title && `Title: ${title}`,
+    email && `Email: ${email}`,
+    `Score: ${score}/100`
+  ].filter(Boolean).join(' | ');
+  
+  await db.createNotification({
+    userId,
+    type: 'success',
+    category: 'lead',
+    title: '🌟 VIP Lead Detected!',
+    message: `High-quality lead ${leadName} from ${company}. ${details}. Immediate follow-up recommended.`,
+    actionUrl: `/leads?highlight=${leadId}`,
+  });
+}
+
 export async function notifyTicketResolved(ticketId: string, subject: string, userId: number, resolutionTime?: string) {
   await db.createNotification({
     userId,

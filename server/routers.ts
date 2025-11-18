@@ -297,8 +297,20 @@ export const appRouter = router({
           status: "new"
         });
         
-        // If lead is qualified (score >= 70), create notification
-        if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore >= 70) {
+        // If lead is VIP (score > 80), create VIP notification
+        if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore > 80) {
+          await notificationHelper.notifyVIPLead(
+            lead.name,
+            lead.company || 'Unknown Company',
+            lead.qualificationScore,
+            lead.title,
+            lead.email,
+            lead.id,
+            ctx.user.id
+          );
+        }
+        // Otherwise if qualified (score >= 70), create standard notification
+        else if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore >= 70) {
           await notificationHelper.notifyLeadQualified(
             lead.name,
             lead.company || 'Unknown Company',

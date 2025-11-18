@@ -2,6 +2,8 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, TrendingUp, Search, Target } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import { DateRangePicker } from "@/components/DateRangePicker";
 import {
   Select,
   SelectContent,
@@ -29,6 +31,7 @@ const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'
 
 export default function ProspectMetrics() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch companies
   const { data: companiesData } = trpc.companies.list.useQuery();
@@ -36,7 +39,11 @@ export default function ProspectMetrics() {
 
   // Fetch metrics
   const { data: metrics, isLoading } = trpc.analytics.prospectMetrics.useQuery(
-    { companyId: selectedCompanyId! },
+    { 
+      companyId: selectedCompanyId!,
+      startDate: dateRange?.from?.toISOString(),
+      endDate: dateRange?.to?.toISOString(),
+    },
     { enabled: !!selectedCompanyId }
   );
 
@@ -49,21 +56,27 @@ export default function ProspectMetrics() {
             Track search performance and prospect discovery metrics
           </p>
         </div>
-        <Select
-          value={selectedCompanyId?.toString() || ""}
-          onValueChange={(value) => setSelectedCompanyId(Number(value))}
-        >
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Select company" />
-          </SelectTrigger>
-          <SelectContent>
-            {companies.map((company) => (
-              <SelectItem key={company.id} value={company.id.toString()}>
-                {company.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+          />
+          <Select
+            value={selectedCompanyId?.toString() || ""}
+            onValueChange={(value) => setSelectedCompanyId(Number(value))}
+          >
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Select company" />
+            </SelectTrigger>
+            <SelectContent>
+              {companies.map((company) => (
+                <SelectItem key={company.id} value={company.id.toString()}>
+                  {company.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {!selectedCompanyId ? (

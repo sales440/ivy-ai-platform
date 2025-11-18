@@ -838,3 +838,127 @@
 - [ ] Agregar link directo a página de Leads en notificación
 - [ ] Probar creando lead con score alto desde Ivy-Prospect
 - [ ] Verificar que notificación llega al owner
+
+## Fase 18: Ivy-Call - Agente de llamadas automáticas con Bland.ai
+### Backend - Database Schema
+- [ ] Crear tabla calls en schema.ts (id, leadId, companyId, userId, phoneNumber, status, duration, startedAt, endedAt, transcript, recording_url, sentiment, outcome, notes, metadata, createdAt, updatedAt)
+- [ ] Agregar campo lastCallId a tabla leads para tracking
+- [ ] Agregar campo callCount a tabla leads
+- [ ] Ejecutar migraciones de base de datos
+
+### Backend - Bland.ai Integration
+- [ ] Crear archivo server/_core/blandai.ts para integración con API
+- [ ] Implementar función initiateBlandCall(phoneNumber, prompt, options)
+- [ ] Implementar función getBlandCallStatus(callId)
+- [ ] Implementar función getBlandCallTranscript(callId)
+- [ ] Implementar función analyzeBlandCallRecording(callId)
+- [ ] Configurar webhook endpoint para recibir eventos de Bland.ai
+- [ ] Agregar BLAND_AI_API_KEY a secrets
+
+### Backend - Ivy-Call Agent
+- [ ] Crear archivo agents/ivy-call.ts extendiendo IvyAgent
+- [ ] Implementar método initiateCall(leadId, scriptTemplate)
+- [ ] Implementar método getCallHistory(leadId)
+- [ ] Implementar método analyzeCallOutcome(callId) usando LLM
+- [ ] Implementar método scheduleFollowUp(callId, outcome)
+- [ ] Crear templates de scripts por objetivo (discovery, demo, follow-up, closing)
+
+### Backend - Database Functions
+- [ ] Crear función createCall en db.ts
+- [ ] Crear función getCallById en db.ts
+- [ ] Crear función getCallsByLeadId en db.ts
+- [ ] Crear función getCallsByCompanyId en db.ts
+- [ ] Crear función updateCallStatus en db.ts
+- [ ] Crear función updateCallTranscript en db.ts
+- [ ] Crear función getCallAnalytics en db.ts (success rate, avg duration, outcomes)
+
+### Backend - tRPC Router
+- [ ] Crear server/routers/calls-router.ts
+- [ ] Endpoint: calls.initiate (leadId, scriptTemplate) con requirePermission("calls", "create")
+- [ ] Endpoint: calls.list (companyId, filters) con requirePermission("calls", "read")
+- [ ] Endpoint: calls.byLead (leadId) para historial de llamadas
+- [ ] Endpoint: calls.getTranscript (callId)
+- [ ] Endpoint: calls.analyze (callId) para análisis con LLM
+- [ ] Endpoint: calls.analytics (companyId, dateRange) para métricas
+- [ ] Registrar callsRouter en routers.ts
+
+### Frontend - Call UI in Leads Page
+- [ ] Agregar botón "📞 Call Lead" en cada fila de la tabla de Leads
+- [ ] Crear diálogo CallLeadDialog con selector de script template
+- [ ] Mostrar preview del script con variables ({{name}}, {{company}})
+- [ ] Implementar mutation calls.initiate con loading state
+- [ ] Agregar columna "Last Call" en tabla de Leads mostrando fecha/outcome
+- [ ] Crear diálogo CallHistoryDialog para ver historial de llamadas de un lead
+- [ ] Mostrar lista de llamadas con fecha, duración, outcome, botón "View Transcript"
+- [ ] Crear diálogo CallTranscriptDialog para ver transcripción completa
+
+### Frontend - Call Analytics Dashboard
+- [ ] Crear página client/src/pages/CallAnalytics.tsx
+- [ ] Agregar ruta /call-analytics en App.tsx
+- [ ] Agregar "Call Analytics" al sidebar navigation
+- [ ] Implementar KPI cards (Total Calls, Success Rate, Avg Duration, Conversion Rate)
+- [ ] Crear gráfico de línea: Calls over time
+- [ ] Crear gráfico de barras: Outcomes distribution (connected, voicemail, no-answer, busy)
+- [ ] Crear gráfico de pie: Sentiment analysis (positive, neutral, negative)
+- [ ] Mostrar tabla de Recent Calls con filtros
+- [ ] Agregar selector de date range para filtrar analytics
+
+### Backend - Call Automation Features
+- [ ] Implementar función scheduleCall(leadId, scheduledTime) para llamadas programadas
+- [ ] Implementar función bulkInitiateCalls(leadIds[], scriptTemplate) para llamadas masivas
+- [ ] Crear función autoFollowUp que crea ticket/tarea según outcome de llamada
+- [ ] Implementar actualización automática de lead status según call outcome
+- [ ] Crear notificación al owner cuando call tiene outcome positivo (interested, meeting_scheduled)
+
+### Frontend - Advanced Call Features
+- [ ] Crear página /admin/call-scripts para gestionar templates de scripts
+- [ ] Implementar CRUD de call scripts con editor de texto
+- [ ] Agregar variables dinámicas ({{name}}, {{company}}, {{title}}, {{industry}})
+- [ ] Crear selector de "Best Time to Call" basado en timezone del lead
+- [ ] Implementar bulk call action: seleccionar múltiples leads y llamar en batch
+- [ ] Agregar filtro en Leads page: "Never Called", "Called - No Answer", "Called - Interested"
+
+### Testing & Documentation
+- [ ] Probar flujo completo: iniciar llamada → recibir webhook → guardar transcript → analizar
+- [ ] Verificar que permissions funcionan correctamente
+- [ ] Probar call scheduling y bulk calls
+- [ ] Documentar integración de Bland.ai en BLAND_AI_INTEGRATION.md
+- [ ] Crear guía de uso de Ivy-Call para usuarios finales
+- [ ] Agregar ejemplos de call scripts efectivos
+
+### Permissions & Security
+- [ ] Agregar permisos "calls" a tabla permissions con CRUD
+- [ ] Aplicar requirePermission("calls", "create") a calls.initiate
+- [ ] Aplicar requirePermission("calls", "read") a calls.list
+- [ ] Aplicar requirePermission("calls", "delete") a calls.delete (si aplica)
+- [ ] Verificar que solo usuarios de la misma company pueden ver calls
+- [ ] Implementar audit logging para call actions
+
+## Fase 16: Date Range Picker en Analytics Dashboard
+- [x] Instalar dependencia date-fns para manejo de fechas
+- [x] Crear componente DateRangePicker con Popover + Calendar
+- [x] Agregar presets (Last 7 days, Last 30 days, Last 90 days, Custom)
+- [x] Actualizar query prospectMetrics para aceptar startDate y endDate
+- [x] Backend analytics.prospectMetrics ya soporta filtrado por rango de fechas
+- [x] Agregar DateRangePicker en header de ProspectMetrics junto a company selector
+- [x] KPI cards automáticamente muestran datos del período seleccionado
+- [x] Indicador visual del rango seleccionado en botón del picker
+- [ ] Probar con diferentes rangos de fechas
+
+## Fase 17: Notificaciones VIP de Leads de Alta Calidad
+- [x] Crear función notifyVIPLead en server/notification-helper.ts
+- [x] Modificar mutation leads.create para detectar qualificationScore > 80
+- [x] Llamar notifyVIPLead cuando se crea lead VIP con detalles completos
+- [x] Incluir en notificación: nombre, empresa, score, title, email, link directo
+- [x] Agregar badge "🌟 VIP" en tabla de leads para scores > 80
+- [x] Crear botón filtro "🌟 VIP Only" en página Leads
+- [x] Implementar lógica de filtrado VIP (showVIPOnly state)
+- [ ] Probar creando lead con score alto
+- [ ] Verificar que notificación llega correctamente
+
+## Fase 15.1: Testing de Búsquedas Guardadas (Listo para testing manual)
+- [ ] Probar flujo completo: guardar búsqueda → ejecutar → eliminar (MANUAL)
+- [ ] Verificar que usageCount se incrementa al ejecutar (MANUAL)
+- [ ] Verificar que filtros se pre-llenan correctamente (MANUAL)
+- [ ] Probar con diferentes combinaciones de filtros (MANUAL)
+- [ ] Verificar que eliminación funciona con confirmación (MANUAL)

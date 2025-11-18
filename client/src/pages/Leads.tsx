@@ -175,6 +175,7 @@ function EnrichedDataView({ metadata }: { metadata: any }) {
 export default function Leads() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showVIPOnly, setShowVIPOnly] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [exportFilters, setExportFilters] = useState<{
     status?: string;
@@ -407,7 +408,8 @@ export default function Leads() {
     const matchesSearch = (lead.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesVIP = !showVIPOnly || (lead.qualificationScore || 0) > 80;
+    return matchesSearch && matchesStatus && matchesVIP;
   });
 
   // Stats
@@ -945,6 +947,13 @@ export default function Leads() {
                 <SelectItem value="lost">Lost</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant={showVIPOnly ? "default" : "outline"}
+              onClick={() => setShowVIPOnly(!showVIPOnly)}
+              className={showVIPOnly ? "bg-amber-500 hover:bg-amber-600" : ""}
+            >
+              🌟 VIP Only
+            </Button>
           </div>
 
           <div className="rounded-md border">
@@ -971,7 +980,16 @@ export default function Leads() {
                 ) : (
                   filteredLeads.map((lead) => (
                     <TableRow key={lead.id}>
-                      <TableCell className="font-medium">{lead.company}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {lead.company}
+                          {(lead.qualificationScore || 0) > 80 && (
+                            <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                              🌟 VIP
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <div>
                           <div className="font-medium">{lead.name}</div>
