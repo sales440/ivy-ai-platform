@@ -194,6 +194,13 @@ export const leads = mysqlTable("leads", {
   companySize: varchar("companySize", { length: 50 }),
   qualificationScore: int("qualificationScore").default(0),
   qualificationLevel: mysqlEnum("qualificationLevel", ["A", "B", "C", "D"]),
+  scoreHistory: json("scoreHistory").$type<Array<{
+    score: number;
+    change: number;
+    reason: string;
+    timestamp: string;
+    userId: number;
+  }>>(),
   status: mysqlEnum("status", ["new", "contacted", "qualified", "nurture", "converted", "lost"]).default("new").notNull(),
   source: varchar("source", { length: 100 }), // linkedin, web, manual
   prospectSearchId: int("prospectSearchId"), // Link to prospectSearches for conversion tracking
@@ -457,3 +464,49 @@ export const calls = mysqlTable("calls", {
 
 export type Call = typeof calls.$inferSelect;
 export type InsertCall = typeof calls.$inferInsert;
+
+/**
+ * Email Campaigns - Templates for automated follow-ups
+ */
+export const emailCampaigns = mysqlTable("emailCampaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  subject: varchar("subject", { length: 300 }).notNull(),
+  body: text("body").notNull(),
+  triggerType: mysqlEnum("triggerType", ["manual", "call-outcome", "lead-created", "scheduled"]).default("manual").notNull(),
+  triggerCondition: json("triggerCondition").$type<{
+    outcome?: string;
+    status?: string;
+    scoreThreshold?: number;
+  }>(),
+  active: int("active").default(1).notNull(), // 1 = active, 0 = inactive
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailCampaign = typeof emailCampaigns.$inferSelect;
+export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
+
+/**
+ * Email Logs - Track all sent emails
+ */
+export const emailLogs = mysqlTable("emailLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId"),
+  leadId: int("leadId").notNull(),
+  companyId: int("companyId").notNull(),
+  userId: int("userId").notNull(), // Who triggered the email
+  to: varchar("to", { length: 320 }).notNull(),
+  subject: varchar("subject", { length: 300 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("status", ["sent", "failed", "bounced", "opened", "clicked"]).default("sent").notNull(),
+  error: text("error"),
+  metadata: json("metadata"),
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  openedAt: timestamp("openedAt"),
+  clickedAt: timestamp("clickedAt"),
+});
+
+export type EmailLog = typeof emailLogs.$inferSelect;
+export type InsertEmailLog = typeof emailLogs.$inferInsert;

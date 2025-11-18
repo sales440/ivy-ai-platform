@@ -1525,3 +1525,77 @@ export async function updateCallRecording(id: number, recordingUrl: string, dura
 
   await db.update(calls).set(updateData).where(eq(calls.id, id));
 }
+
+
+/**
+ * Update lead score with history tracking
+ */
+export async function updateLeadScore(
+  leadId: number,
+  scoreChange: number,
+  reason: string,
+  userId: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update lead score: database not available");
+    return;
+  }
+
+  try {
+    // Get current lead
+    const leadResult = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
+    const lead = leadResult[0];
+    
+    if (!lead) {
+      throw new Error(`Lead ${leadId} not found`);
+    }
+
+    const currentScore = lead.qualificationScore || 0;
+    const newScore = Math.max(0, Math.min(100, currentScore + scoreChange)); // Clamp between 0-100
+
+    // Build score history entry
+    const historyEntry = {
+      score: newScore,
+      change: scoreChange,
+      reason,
+      timestamp: new Date().toISOString(),
+      userId,
+    };
+
+    // Get existing history or create new array
+    const existingHistory = (lead.scoreHistory as any[]) || [];
+    const newHistory = [...existingHistory, historyEntry];
+
+    // Update lead with new score and history
+    await db.update(leads)
+      .set({
+        qualificationScore: newScore,
+        scoreHistory: newHistory as any,
+        updatedAt: new Date(),
+      })
+      .where(eq(leads.id, leadId));
+
+    console.log(`[Database] Updated lead ${leadId} score: ${currentScore} → ${newScore} (${scoreChange > 0 ? '+' : ''}${scoreChange}) - ${reason}`);
+  } catch (error) {
+    console.error("[Database] Failed to update lead score:", error);
+    throw error;
+  }
+}
+
+/**
+ * Scoring rules for different interactions
+ */
+export const SCORING_RULES = {
+  CALL_POSITIVE: 10,
+  CALL_NEGATIVE: -5,
+  EMAIL_OPENED: 5,
+  EMAIL_CLICKED: 8,
+  MEETING_COMPLETED: 15,
+  MEETING_CANCELLED: -3,
+  DEMO_REQUESTED: 20,
+  PROPOSAL_SENT: 12,
+  CONTRACT_SIGNED: 30,
+  UNSUBSCRIBED: -15,
+  BOUNCED_EMAIL: -2,
+};

@@ -1028,3 +1028,43 @@
 - [x] Crear diálogo de detalles con reproductor de audio y transcripción
 - [x] Agregar ruta /calls en App.tsx
 - [x] Agregar Call History a navegación en DashboardLayout
+
+## Fase 24: Activar Llamadas Funcionales
+- [x] Crear componente CallDialog.tsx con script template editor
+- [x] Agregar presets de scripts (intro call, follow-up, demo request, custom)
+- [x] Implementar mutation trpc.calls.initiate en Leads page
+- [x] Reemplazar botón placeholder con diálogo funcional
+- [x] Mostrar loading state durante llamada (Loader2 spinner)
+- [x] Agregar toast de confirmación al iniciar llamada
+- [x] Botón Call solo visible cuando lead tiene email
+- [ ] Backend validará TELNYX_PHONE_NUMBER en mutation
+
+## Fase 25: Email Automation con Follow-ups
+- [x] Crear tabla emailCampaigns en schema
+- [x] Crear tabla emailLogs para tracking de envíos
+- [x] Implementar helper sendEmail en server/_core/email.ts
+- [x] Crear templates de email por outcome (callback, interested, notInterested, voicemail)
+- [x] Crear mutation emails.sendFollowUp con validación de email
+- [x] Mutation emails.listByLead para historial de emails por lead
+- [x] Mutation emails.list para todos los emails de company
+- [x] Agregar emails router a appRouter
+- [ ] Agregar botón "Send Follow-up" en Call History (UI)
+- [ ] Workflow automático post-llamada (trigger on call completion)
+- [ ] Implementar tracking de opens/clicks (opcional, requiere SendGrid)
+
+## Fase 26: Lead Scoring Automático
+- [x] Agregar campo scoreHistory (JSON) en tabla leads
+- [x] Crear función updateLeadScore en server/db.ts con history tracking
+- [x] Implementar reglas de scoring (SCORING_RULES):
+  * Llamada positiva: +10 puntos
+  * Email abierto: +5 puntos  
+  * Meeting completado: +15 puntos
+  * Llamada negativa: -5 puntos
+  * Demo requested: +20, Contract signed: +30, etc.
+- [x] Scores clamped entre 0-100 automáticamente
+- [x] History tracking con timestamp, userId, reason
+- [ ] Crear mutation leads.updateScore (pending router edit)
+- [ ] Actualizar score automáticamente después de llamadas
+- [ ] Agregar badge de score change en tabla Leads (UI)
+- [ ] Crear gráfico de score evolution en lead details (UI)
+- [ ] Implementar threshold alerts (score > 90 = hot lead)

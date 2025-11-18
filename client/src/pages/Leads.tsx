@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Plus, Search, TrendingUp, Users, DollarSign, Filter, Download, Sparkles, UserPlus, Award, Briefcase, GraduationCap, Bookmark, Play } from 'lucide-react';
+import { CallDialog } from '@/components/CallDialog';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -194,6 +195,8 @@ export default function Leads() {
   const [showSaveSearchDialog, setShowSaveSearchDialog] = useState(false);
   const [savedSearchName, setSavedSearchName] = useState('');
   const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
+  const [selectedCallLead, setSelectedCallLead] = useState<any>(null);
 
   const { selectedCompany } = useCompany();
   const { data: leadsData, isLoading, refetch } = trpc.leads.list.useQuery(
@@ -209,6 +212,17 @@ export default function Leads() {
     },
     onError: (error) => {
       toast.error(`Failed to update leads: ${error.message}`);
+    }
+  });
+
+  const initiateCall = trpc.calls.initiate.useMutation({
+    onSuccess: () => {
+      toast.success('Call initiated successfully!');
+      setCallDialogOpen(false);
+      setSelectedCallLead(null);
+    },
+    onError: (error) => {
+      toast.error(`Failed to initiate call: ${error.message}`);
     }
   });
 
@@ -1173,7 +1187,8 @@ export default function Leads() {
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                toast.info("📞 Call feature coming soon!");
+                                setSelectedCallLead(lead);
+                                setCallDialogOpen(true);
                               }}
                               title="Call this lead"
                             >
@@ -1190,6 +1205,24 @@ export default function Leads() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Call Dialog */}
+      {selectedCallLead && (
+        <CallDialog
+          open={callDialogOpen}
+          onOpenChange={setCallDialogOpen}
+          leadName={selectedCallLead.name}
+          leadCompany={selectedCallLead.company}
+          phoneNumber={selectedCallLead.email || ''}
+          onInitiateCall={async (script) => {
+            await initiateCall.mutateAsync({
+              leadId: selectedCallLead.id,
+              phoneNumber: selectedCallLead.email || '',
+              script,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

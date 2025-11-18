@@ -12,6 +12,7 @@ import { prospectRouter } from "./prospect-router";
 import { analyticsRouter } from "./analytics-router";
 import { savedSearchesRouter } from "./saved-searches-router";
 import { callsRouter } from "./calls-router";
+import { emailsRouter } from "./emails-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -60,6 +61,7 @@ function parseCommand(input: string): ParsedCommand {
 
 export const appRouter = router({
   calls: callsRouter,
+  emails: emailsRouter,
   system: systemRouter,
   seed: seedRouter,
   notifications: notificationsRouter,
@@ -415,7 +417,26 @@ export const appRouter = router({
         return { success: true, updated: input.ids.length };
       }),
 
-    bulkDelete: protectedProcedure
+    /**
+   * Update lead score with history tracking
+   */
+  updateScore: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+      scoreChange: z.number(),
+      reason: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db.updateLeadScore(
+        input.leadId,
+        input.scoreChange,
+        input.reason,
+        ctx.user.id
+      );
+      return { success: true };
+    }),
+
+  bulkDelete: protectedProcedure
       .use(requirePermission("leads", "delete"))
       .input(z.object({
         ids: z.array(z.number()),
