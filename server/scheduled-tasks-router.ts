@@ -243,7 +243,9 @@ export const scheduledTasksRouter = router({
         dailyData[dateKey] = { completed: 0, failed: 0, pending: 0 };
       }
 
-      // Count tasks by date and status
+      // Count tasks by date and status + calculate avg completion time
+      const completedTasks: Array<{ createdAt: Date; executedAt: Date | null }> = [];
+
       allTasks.forEach(task => {
         const taskDate = new Date(task.createdAt);
         if (taskDate >= startDate) {
@@ -251,6 +253,9 @@ export const scheduledTasksRouter = router({
           if (dailyData[dateKey]) {
             if (task.status === 'completed') {
               dailyData[dateKey].completed++;
+              if (task.executedAt) {
+                completedTasks.push({ createdAt: task.createdAt, executedAt: task.executedAt });
+              }
             } else if (task.status === 'failed') {
               dailyData[dateKey].failed++;
             } else if (task.status === 'pending') {
@@ -260,14 +265,28 @@ export const scheduledTasksRouter = router({
         }
       });
 
+      // Calculate average completion time in hours
+      let avgCompletionTime = 0;
+      if (completedTasks.length > 0) {
+        const totalMs = completedTasks.reduce((sum, task) => {
+          const diff = task.executedAt!.getTime() - task.createdAt.getTime();
+          return sum + diff;
+        }, 0);
+        const avgMs = totalMs / completedTasks.length;
+        avgCompletionTime = Number((avgMs / (1000 * 60 * 60)).toFixed(1)); // Convert to hours with 1 decimal
+      }
+
       // Convert to array format for charts
-      const result = Object.entries(dailyData)
+      const dailyResult = Object.entries(dailyData)
         .map(([date, counts]) => ({
           date,
           ...counts,
         }))
         .sort((a, b) => a.date.localeCompare(b.date));
 
-      return result;
+      return {
+        daily: dailyResult,
+        avgCompletionTime,
+      };
     }),
 });

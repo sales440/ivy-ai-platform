@@ -42,12 +42,15 @@ export default function TaskAnalytics() {
   );
 
   // Format daily stats for chart (convert date to readable format)
-  const dailyTasks = dailyStatsData?.map(item => ({
+  const dailyTasks = dailyStatsData?.daily?.map(item => ({
     date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     completed: item.completed,
     failed: item.failed,
     pending: item.pending,
   })) || [];
+
+  // Get average completion time from backend
+  const avgCompletionTime = dailyStatsData?.avgCompletionTime || 0;
 
   const taskTypeDistribution = stats?.byType ? Object.entries(stats.byType).map(([type, count]) => ({
     name: type === "send-email" ? "Send Email" : 
@@ -61,7 +64,7 @@ export default function TaskAnalytics() {
     ? ((stats.completed / stats.total) * 100).toFixed(1)
     : "0.0";
 
-  const avgCompletionTime = "2.3"; // TODO: Calculate from executedAt - createdAt
+  // avgCompletionTime now comes from backend dailyStats query
 
   if (!company) {
     return (

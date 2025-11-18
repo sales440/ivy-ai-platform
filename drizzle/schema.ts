@@ -494,7 +494,7 @@ export type InsertEmailCampaign = typeof emailCampaigns.$inferInsert;
 export const emailLogs = mysqlTable("emailLogs", {
   id: int("id").autoincrement().primaryKey(),
   campaignId: int("campaignId"),
-  leadId: int("leadId").notNull(),
+  leadId: int("leadId"), // Nullable - emails can be sent without a lead
   companyId: int("companyId").notNull(),
   userId: int("userId").notNull(), // Who triggered the email
   to: varchar("to", { length: 320 }).notNull(),

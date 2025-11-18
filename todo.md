@@ -1215,3 +1215,18 @@
 - [x] Formatear fechas para chart (MMM DD)
 - [x] Inicializar todos los días con 0 para evitar gaps en gráfico
 - [x] Manejar caso cuando no hay datos (array vacío)
+
+## Fase 42: Fix TypeScript Errors en Schema
+- [x] Cambiar leadId a nullable en emailLogs table
+- [ ] Ejecutar migración de base de datos (MANUAL: `pnpm drizzle-kit push`)
+- [ ] Nota: Migración requiere confirmaciones interactivas
+- [ ] Verificar que errores de TypeScript desaparecen después de migración
+
+## Fase 43: Implementar Average Completion Time
+- [x] Agregar cálculo de avg completion time en dailyStats query
+- [x] Calcular diferencia entre executedAt y createdAt para completed tasks
+- [x] Convertir a horas con 1 decimal usando toFixed(1)
+- [x] Retornar avgCompletionTime en response junto con daily array
+- [x] Integrar en TaskAnalytics.tsx KPI card
+- [x] Reemplazar valor mock "2.3" con dato real de backend
+- [x] Actualizar dailyTasks mapping para usar dailyStatsData.daily
