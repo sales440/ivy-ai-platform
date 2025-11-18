@@ -208,4 +208,66 @@ export const scheduledTasksRouter = router({
 
       return stats;
     }),
+
+  /**
+   * Get daily statistics for trend charts
+   */
+  dailyStats: protectedProcedure
+    .input(
+      z.object({
+        companyId: z.number(),
+        days: z.number().min(1).max(90).default(30),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error('Database not available');
+
+      const allTasks = await db
+        .select()
+        .from(scheduledTasks)
+        .where(eq(scheduledTasks.companyId, input.companyId));
+
+      // Group tasks by date
+      const dailyData: Record<string, { completed: number; failed: number; pending: number }> = {};
+
+      const now = new Date();
+      const startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - input.days);
+
+      // Initialize all dates with 0
+      for (let i = 0; i < input.days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0];
+        dailyData[dateKey] = { completed: 0, failed: 0, pending: 0 };
+      }
+
+      // Count tasks by date and status
+      allTasks.forEach(task => {
+        const taskDate = new Date(task.createdAt);
+        if (taskDate >= startDate) {
+          const dateKey = taskDate.toISOString().split('T')[0];
+          if (dailyData[dateKey]) {
+            if (task.status === 'completed') {
+              dailyData[dateKey].completed++;
+            } else if (task.status === 'failed') {
+              dailyData[dateKey].failed++;
+            } else if (task.status === 'pending') {
+              dailyData[dateKey].pending++;
+            }
+          }
+        }
+      });
+
+      // Convert to array format for charts
+      const result = Object.entries(dailyData)
+        .map(([date, counts]) => ({
+          date,
+          ...counts,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      return result;
+    }),
 });

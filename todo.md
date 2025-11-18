@@ -1188,3 +1188,30 @@
 - [x] Integrar DateRangePicker para filtrado por período
 - [x] Agregar navegación "Task Analytics" en DashboardLayout sidebar
 - [x] Trending indicators en KPI cards (+5.2%, -0.5h)
+
+## Fase 39: Ejecutar Migración de scheduledTasks
+- [ ] Intentar migración automática con timeout
+- [ ] Verificar que tabla scheduledTasks se creó correctamente
+- [ ] Verificar que processor deja de mostrar errores de tabla no existe
+- [ ] Probar creación de scheduled task desde webhook
+
+## Fase 40: Real-time Task Updates con Polling
+- [x] Agregar useEffect con setInterval en ScheduledTasksManagement
+- [x] Configurar polling cada 30 segundos
+- [x] Usar refetch de tRPC query para actualizar datos
+- [x] Agregar indicador visual de "Last updated" con timestamp (HH:mm:ss)
+- [x] Limpiar interval en cleanup de useEffect
+- [x] Agregar botón manual "Refresh Now" con icono RefreshCw
+- [x] Toast de confirmación al hacer refresh manual
+- [x] Actualizar lastUpdated state en cada refetch
+
+## Fase 41: Historical Trends Query con Datos Reales
+- [x] Crear query scheduledTasks.dailyStats en backend
+- [x] Agrupar tasks por fecha (toISOString().split('T')[0])
+- [x] Contar completed, failed, pending por día
+- [x] Limitar a últimos 30 días por defecto (configurable 1-90)
+- [x] Integrar query en TaskAnalytics.tsx con dateRange
+- [x] Reemplazar mock data con datos reales de dailyStats
+- [x] Formatear fechas para chart (MMM DD)
+- [x] Inicializar todos los días con 0 para evitar gaps en gráfico
+- [x] Manejar caso cuando no hay datos (array vacío)

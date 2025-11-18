@@ -33,16 +33,21 @@ export default function TaskAnalytics() {
     { enabled: !!company }
   );
 
-  // Mock data for charts (will be replaced with real data from backend)
-  const dailyTasks = [
-    { date: "Nov 11", completed: 12, failed: 2, pending: 5 },
-    { date: "Nov 12", completed: 15, failed: 1, pending: 8 },
-    { date: "Nov 13", completed: 18, failed: 3, pending: 6 },
-    { date: "Nov 14", completed: 14, failed: 2, pending: 7 },
-    { date: "Nov 15", completed: 20, failed: 1, pending: 4 },
-    { date: "Nov 16", completed: 16, failed: 4, pending: 9 },
-    { date: "Nov 17", completed: 22, failed: 2, pending: 5 },
-  ];
+  const { data: dailyStatsData, isLoading: isDailyStatsLoading } = trpc.scheduledTasks.dailyStats.useQuery(
+    {
+      companyId: company?.id || 0,
+      days: Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)),
+    },
+    { enabled: !!company }
+  );
+
+  // Format daily stats for chart (convert date to readable format)
+  const dailyTasks = dailyStatsData?.map(item => ({
+    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    completed: item.completed,
+    failed: item.failed,
+    pending: item.pending,
+  })) || [];
 
   const taskTypeDistribution = stats?.byType ? Object.entries(stats.byType).map(([type, count]) => ({
     name: type === "send-email" ? "Send Email" : 
@@ -56,7 +61,7 @@ export default function TaskAnalytics() {
     ? ((stats.completed / stats.total) * 100).toFixed(1)
     : "0.0";
 
-  const avgCompletionTime = "2.3"; // Mock data - will be calculated from real data
+  const avgCompletionTime = "2.3"; // TODO: Calculate from executedAt - createdAt
 
   if (!company) {
     return (

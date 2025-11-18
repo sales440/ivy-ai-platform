@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Calendar, CheckCircle2, XCircle, Clock, AlertCircle, Ban, RotateCcw, Loader2 } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Clock, AlertCircle, Ban, RotateCcw, Loader2, RefreshCw } from "lucide-react";
 
 export default function ScheduledTasksManagement() {
   const { company } = useCompany();
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const { data: tasks, isLoading, refetch } = trpc.scheduledTasks.list.useQuery(
     {
@@ -54,6 +55,24 @@ export default function ScheduledTasksManagement() {
       toast.error(`Failed to retry task: ${error.message}`);
     },
   });
+
+  // Real-time polling: refetch tasks every 30 seconds
+  useEffect(() => {
+    if (!company) return;
+
+    const intervalId = setInterval(() => {
+      refetch();
+      setLastUpdated(new Date());
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [company, refetch]);
+
+  const handleManualRefresh = () => {
+    refetch();
+    setLastUpdated(new Date());
+    toast.success("Tasks refreshed");
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: any; icon: any; label: string }> = {
@@ -95,11 +114,22 @@ export default function ScheduledTasksManagement() {
 
   return (
     <div className="container py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Scheduled Tasks</h1>
-        <p className="text-muted-foreground">
-          Manage automated tasks and workflows
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Scheduled Tasks</h1>
+          <p className="text-muted-foreground">
+            Manage automated tasks and workflows
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Last updated: {format(lastUpdated, "HH:mm:ss")}
+          </div>
+          <Button onClick={handleManualRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Now
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
