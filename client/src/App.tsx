@@ -19,7 +19,8 @@ import AuditLog from "./pages/AuditLog";
 import Integrations from "./pages/Integrations";
 import Permissions from "./pages/Permissions";
 import ProspectMetrics from "./pages/ProspectMetrics";
-import PipelineDashboard from "./pages/PipelineDashboard";
+import PipelineDashboard from "@/pages/PipelineDashboard";
+import CallHistory from "@/pages/CallHistory";
 
 function Router() {
   return (
@@ -39,6 +40,7 @@ function Router() {
       <Route path="/admin/permissions" component={Permissions} />
       <Route path="/analytics/prospect-metrics" component={ProspectMetrics} />
       <Route path="/analytics/pipeline" component={PipelineDashboard} />
+      <Route path="/calls" component={CallHistory} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

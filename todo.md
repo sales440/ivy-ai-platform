@@ -1015,3 +1015,16 @@
 - [ ] Crear diálogo CallLead funcional con script y Start Call
 - [ ] Crear página CallHistory.tsx para ver historial completo
 - [ ] Integrar actualización automática de lead status según outcome
+
+## Fase 23: Completar Ivy-Call Implementation
+- [x] Ejecutar migración de base de datos para tabla calls
+- [x] Crear webhook handler en server/webhooks/telnyx.ts
+- [x] Registrar endpoint POST /api/webhooks/telnyx en server
+- [x] Manejar eventos: call.initiated, call.answered, call.hangup, call.recording.saved
+- [x] Actualizar status de llamadas automáticamente según eventos
+- [x] Crear página CallHistory.tsx con tabla de llamadas
+- [x] Agregar KPI cards: Total Calls, Success Rate, Avg Duration, Failed Calls
+- [x] Implementar gráficos: Pie chart de outcomes, Bar chart de sentiment
+- [x] Crear diálogo de detalles con reproductor de audio y transcripción
+- [x] Agregar ruta /calls en App.tsx
+- [x] Agregar Call History a navegación en DashboardLayout

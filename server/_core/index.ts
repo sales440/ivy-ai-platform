@@ -35,6 +35,12 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Telnyx webhook endpoint
+  app.post("/api/webhooks/telnyx", async (req, res) => {
+    const { handleTelnyxWebhook } = await import("../webhooks/telnyx");
+    return handleTelnyxWebhook(req, res);
+  });
   // tRPC API
   app.use(
     "/api/trpc",
