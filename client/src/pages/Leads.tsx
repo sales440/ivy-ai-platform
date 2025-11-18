@@ -1009,22 +1009,29 @@ export default function Leads() {
                       </TableCell>
                       <TableCell>
                         {lead.metadata && Object.keys(lead.metadata).length > 0 ? (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 cursor-pointer">
-                                ✓ View
+                          <div className="flex items-center gap-2">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 cursor-pointer">
+                                  ✓ View
+                                </Badge>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle>Enriched Profile Data</DialogTitle>
+                                  <DialogDescription>
+                                    LinkedIn profile information for {lead.name}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <EnrichedDataView metadata={lead.metadata} />
+                              </DialogContent>
+                            </Dialog>
+                            {(lead.qualificationScore || 0) > 80 && (
+                              <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+                                ⚡ Auto-Enriched
                               </Badge>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle>Enriched Profile Data</DialogTitle>
-                                <DialogDescription>
-                                  LinkedIn profile information for {lead.name}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <EnrichedDataView metadata={lead.metadata} />
-                            </DialogContent>
-                          </Dialog>
+                            )}
+                          </div>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
                             No

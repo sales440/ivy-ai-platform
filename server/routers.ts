@@ -297,7 +297,7 @@ export const appRouter = router({
           status: "new"
         });
         
-        // If lead is VIP (score > 80), create VIP notification
+        // If lead is VIP (score > 80), create VIP notification and auto-enrich
         if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore > 80) {
           await notificationHelper.notifyVIPLead(
             lead.name,
@@ -308,6 +308,60 @@ export const appRouter = router({
             lead.id,
             ctx.user.id
           );
+          
+          // Auto-enrich VIP lead if LinkedIn URL is available
+          if (lead.linkedinUrl) {
+            try {
+              console.log(`[Auto-Enrich] Enriching VIP lead ${lead.name} (ID: ${lead.id})`);
+              
+              // Extract username from LinkedIn URL
+              const urlMatch = lead.linkedinUrl.match(/linkedin\.com\/in\/([^\/\?]+)/);
+              const username = urlMatch ? urlMatch[1] : null;
+              
+              if (username) {
+                // Call LinkedIn profile API
+                const profileResult = await callDataApi('LinkedIn/get_user_profile_by_username', {
+                  query: { username }
+                });
+                
+                if (profileResult && profileResult.id) {
+                  // Extract enriched data
+                  const enrichedData = {
+                    skills: (profileResult.skills || [])
+                      .sort((a: any, b: any) => (b.endorsementsCount || 0) - (a.endorsementsCount || 0))
+                      .slice(0, 10)
+                      .map((skill: any) => ({
+                        name: skill.name,
+                        endorsements: skill.endorsementsCount || 0,
+                      })),
+                    experience: (profileResult.position || []).map((pos: any) => ({
+                      title: pos.title || '',
+                      company: pos.companyName || '',
+                      duration: pos.end && pos.end.year ? `${pos.start?.year || ''}-${pos.end.year}` : `${pos.start?.year || ''}-Present`,
+                    })),
+                    education: (profileResult.educations || []).map((edu: any) => ({
+                      school: edu.schoolName || '',
+                      degree: edu.degree || '',
+                      field: edu.fieldOfStudy || '',
+                    })),
+                    languages: (profileResult.languages || []).map((lang: any) => lang.name),
+                    badges: {
+                      isTopVoice: profileResult.isTopVoice || false,
+                      isCreator: profileResult.isCreator || false,
+                      isPremium: profileResult.isPremium || false,
+                    },
+                  };
+                  
+                  // Update lead with enriched metadata
+                  await db.updateLeadMetadata(lead.id, enrichedData);
+                  console.log(`[Auto-Enrich] Successfully enriched VIP lead ${lead.name}`);
+                }
+              }
+            } catch (error) {
+              console.error(`[Auto-Enrich] Failed to enrich VIP lead ${lead.id}:`, error);
+              // Don't throw - enrichment failure shouldn't block lead creation
+            }
+          }
         }
         // Otherwise if qualified (score >= 70), create standard notification
         else if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore >= 70) {

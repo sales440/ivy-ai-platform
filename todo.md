@@ -962,3 +962,13 @@
 - [ ] Verificar que filtros se pre-llenan correctamente (MANUAL)
 - [ ] Probar con diferentes combinaciones de filtros (MANUAL)
 - [ ] Verificar que eliminación funciona con confirmación (MANUAL)
+
+## Fase 19: Enriquecimiento Automático de Leads VIP
+- [x] Modificar leads.create para detectar leads VIP (score > 80)
+- [x] Llamar automáticamente a LinkedIn API cuando se crea lead VIP
+- [x] Actualizar lead con metadata enriquecida después de enrichment
+- [x] Crear función updateLeadMetadata en server/db.ts
+- [x] Manejar errores de enrichment sin bloquear creación de lead
+- [x] Agregar logs de auto-enrichment con console.log
+- [x] Agregar badge "⚡ Auto-Enriched" en tabla de leads para VIP con metadata
+- [ ] Probar creando lead VIP y verificar enrichment automático (MANUAL)

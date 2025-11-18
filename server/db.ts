@@ -365,6 +365,13 @@ export async function updateLeadStatus(id: number, status: Lead["status"]): Prom
   await db.update(leads).set({ status }).where(eq(leads.id, id));
 }
 
+export async function updateLeadMetadata(id: number, metadata: any): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(leads).set({ metadata }).where(eq(leads.id, id));
+}
+
 // ============================================================================
 // TICKET MANAGEMENT
 // ============================================================================
