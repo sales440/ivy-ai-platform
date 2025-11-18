@@ -1159,3 +1159,32 @@
 - [x] Agregar navegación "Scheduled Tasks" en DashboardLayout sidebar
 - [x] Badges con iconos para cada status (pending, processing, completed, failed, cancelled)
 - [x] Task type labels con emojis (📧 Send Email, 📊 Update Score, etc.)
+
+## Fase 36: Ejecutar Migración de scheduledTasks
+- [ ] Intentar migración automática con script
+- [ ] Verificar que tabla scheduledTasks existe en base de datos
+- [ ] Verificar que processor deja de mostrar errores
+
+## Fase 37: Integrar Auto-Scheduling en Webhook Telnyx
+- [x] Modificar server/webhooks/telnyx.ts
+- [x] Importar scheduleFollowUpEmail helper
+- [x] Agregar lógica para outcomes callback e interested en call.hangup event
+- [x] Configurar delay de 24 horas (delayHours: 24)
+- [x] Obtener lead details para personalizar email (nombre, empresa)
+- [x] Generar email subject y body desde templates por outcome
+- [x] Solo enviar si lead tiene email válido
+- [x] Logs detallados de scheduling exitoso y errores
+- [ ] Probar con llamada de prueba (requiere tabla scheduledTasks)
+
+## Fase 38: Dashboard de Task Analytics
+- [x] Crear página TaskAnalytics.tsx
+- [x] Agregar ruta /analytics/tasks en App.tsx
+- [x] Usar stats query existente para obtener datos agregados
+- [x] Crear gráfico de línea: tasks completados por día (Recharts LineChart)
+- [x] Crear gráfico de barras: tasa de éxito vs fallos (BarChart con colores)
+- [x] Crear gráfico de pie: distribución por tipo de task (PieChart con labels)
+- [x] Agregar 4 KPI cards: success rate, avg completion time, failed tasks, most used type
+- [x] Agregar sección Recent Activity con últimas 5 ejecuciones
+- [x] Integrar DateRangePicker para filtrado por período
+- [x] Agregar navegación "Task Analytics" en DashboardLayout sidebar
+- [x] Trending indicators en KPI cards (+5.2%, -0.5h)
