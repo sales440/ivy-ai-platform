@@ -87,6 +87,7 @@ export const notifications = mysqlTable("notifications", {
   type: mysqlEnum("type", ["info", "success", "warning", "error"]).default("info").notNull(),
   category: mysqlEnum("category", ["workflow", "agent", "lead", "ticket", "system"]).notNull(),
   relatedId: varchar("relatedId", { length: 64 }), // ID del objeto relacionado (workflow, lead, ticket, etc.)
+  actionUrl: varchar("actionUrl", { length: 500 }), // URL para acción relacionada
   isRead: boolean("isRead").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -203,6 +204,7 @@ export const leads = mysqlTable("leads", {
   }>>(),
   status: mysqlEnum("status", ["new", "contacted", "qualified", "nurture", "converted", "lost"]).default("new").notNull(),
   source: varchar("source", { length: 100 }), // linkedin, web, manual
+  linkedinUrl: varchar("linkedinUrl", { length: 500 }), // LinkedIn profile URL
   prospectSearchId: int("prospectSearchId"), // Link to prospectSearches for conversion tracking
   metadata: json("metadata").$type<Record<string, any>>(),
   assignedTo: int("assignedTo"), // Agent ID

@@ -3,6 +3,37 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { callDataApi } from "./_core/dataApi";
 import * as db from "./db";
 
+// Type definitions for LinkedIn API responses
+interface LinkedInPerson {
+  id?: string;
+  firstName?: string;
+  lastName?: string;
+  headline?: string;
+  summary?: string;
+  geo?: string;
+  location?: string;
+  profilePicture?: string;
+  profileURL?: string;
+  username?: string;
+  title?: string;
+  company?: string;
+  skills?: string[];
+  position?: any;
+  educations?: any[];
+  languages?: any[];
+  isTopVoice?: boolean;
+  isCreator?: boolean;
+  isPremium?: boolean;
+}
+
+interface LinkedInSearchResponse {
+  success: boolean;
+  data: {
+    items: LinkedInPerson[];
+    total?: number;
+  };
+}
+
 // Helper function to calculate qualification score based on profile data
 function calculateQualificationScore(person: any, filters: any): number {
   let score = 70; // Base score
@@ -154,7 +185,7 @@ export const prospectRouter = router({
             keywordTitle: input.query,
             start: "0",
           }
-        });
+        }) as LinkedInSearchResponse;
         
         // Check if API call was successful
         if (!searchResult || !searchResult.success || !searchResult.data || !searchResult.data.items) {
@@ -195,15 +226,15 @@ export const prospectRouter = router({
          // Log search to database for analytics
         let searchId: number | undefined;
         if (ctx.user) {
-          searchId = await db.createProspectSearch({
+          const searchResult = await db.createProspectSearch({
             userId: ctx.user.id,
-            companyId: ctx.user.companyId || null,
+            companyId: ctx.user.companyId as number,
             query: input.query,
             industry: input.industry || null,
             location: input.location || null,
             companySize: input.companySize || null,
             seniority: input.seniority || null,
-            skills: input.skills ? input.skills.join(', ') : null,
+            skills: input.skills || null,
             resultCount: searchResult.data.total || prospects.length,
             source: 'linkedin',
           });
@@ -260,7 +291,7 @@ export const prospectRouter = router({
         // Call LinkedIn profile API
         const profileResult = await callDataApi('LinkedIn/get_user_profile_by_username', {
           query: { username }
-        });
+        }) as LinkedInPerson;
 
         if (!profileResult || !profileResult.id) {
           console.warn('[Ivy-Prospect] LinkedIn API returned no profile data');
