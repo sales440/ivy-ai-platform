@@ -1414,3 +1414,57 @@
 - [ ] Probar envío de email con template personalizado
 - [ ] Probar scoring ML con lead de prueba
 - [ ] Documentar proceso completo de activación
+
+
+## EPM Construcciones - Próximos Pasos
+
+### Configuración de Gmail API
+- [ ] Verificar interfaz de configuración en /admin/api-config
+- [ ] Mejorar UI para ingreso de credenciales OAuth 2.0
+- [ ] Agregar validación de credenciales en tiempo real
+- [ ] Crear flujo de testing de envío de email
+- [ ] Implementar refresh token automático
+
+### Sistema de Importación de Leads
+- [ ] Crear endpoint tRPC para importación CSV
+- [ ] Implementar parser de CSV con validación de campos
+- [ ] Agregar mapeo automático de columnas
+- [ ] Crear página de importación en frontend (/admin/import-leads)
+- [ ] Implementar preview de datos antes de importar
+- [ ] Agregar detección automática de sector (educativo/hotelero/residencial)
+
+### Tracking de Métricas de Email
+- [ ] Implementar pixel de tracking para email opens
+- [ ] Crear sistema de tracking de clicks en links
+- [ ] Agregar webhook para respuestas de Gmail
+- [ ] Crear dashboard de métricas de email campaigns
+- [ ] Implementar almacenamiento de métricas en DB
+- [ ] Agregar gráficos de tasas de apertura/clicks por sector
+
+### Prueba Piloto de Templates
+- [ ] Crear script de selección de leads de prueba (10-15 por sector)
+- [ ] Implementar envío programado de secuencias (0-3-7-14 días)
+- [ ] Crear reporte de resultados de prueba piloto
+- [ ] Agregar A/B testing de asuntos de email
+- [ ] Implementar comparación de performance entre sectores
+
+### Calibración de Scoring ML
+- [ ] Recopilar datos de conversión reales de EPM
+- [ ] Ajustar pesos de factores de scoring basado en resultados
+- [ ] Validar predicciones vs. resultados reales
+- [ ] Crear dashboard de precisión del modelo ML
+- [ ] Implementar re-entrenamiento automático mensual
+
+
+## Progreso Actual (19 Nov 2025)
+
+### Sistema de Importación de Leads ✅
+- [x] Crear endpoint tRPC para importación CSV (import-router.ts)
+- [x] Implementar parser de CSV con validación de campos
+- [x] Agregar mapeo automático de columnas
+- [x] Crear página de importación en frontend (/admin/import-leads)
+- [x] Implementar preview de datos antes de importar
+- [x] Agregar detección automática de sector (educativo/hotelero/residencial)
+- [x] Implementar función de descarga de template CSV
+- [x] Agregar opción de omitir duplicados
+- [x] Integrar en navegación del dashboard

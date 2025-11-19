@@ -16,6 +16,8 @@ import { emailsRouter } from "./emails-router";
 import { emailCampaignsRouter } from "./email-campaigns-router";
 import { scheduledTasksRouter } from "./scheduled-tasks-router";
 import { mlScoringRouter } from "./routers/ml-scoring-router";
+import { importRouter } from "./routers/import-router";
+import { emailTrackingRouter } from "./routers/email-tracking-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -68,6 +70,8 @@ export const appRouter = router({
   emailCampaigns: emailCampaignsRouter,
   scheduledTasks: scheduledTasksRouter,
   mlScoring: mlScoringRouter,
+  import: importRouter,
+  emailTracking: emailTrackingRouter,
   system: systemRouter,
   seed: seedRouter,
   notifications: notificationsRouter,

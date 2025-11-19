@@ -28,6 +28,7 @@ import Workflows from "@/pages/Workflows";
 import EPMDashboard from "@/pages/EPMDashboard";
 import APIConfig from "@/pages/APIConfig";
 import MLScoringDashboard from "@/pages/MLScoringDashboard";
+import ImportLeads from "@/pages/ImportLeads";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Route path={"/epm-dashboard"} component={EPMDashboard} />
       <Route path={"/workflows"} component={Workflows} />
       <Route path={"/analytics/ml-scoring"} component={MLScoringDashboard} />
+      <Route path={"/admin/import-leads"} component={ImportLeads} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
