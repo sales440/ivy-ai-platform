@@ -1408,3 +1408,9 @@
 - [x] Crear guión de video de 5 minutos con narrativa impactante
 - [ ] Grabar video siguiendo guión compacto
 - [ ] Publicar en Canva/Loom
+
+
+## Guión Adobe Firefly - 5 Minutos
+- [x] Crear guión en texto puro para Adobe Firefly
+- [ ] Generar video con Adobe Firefly
+- [ ] Publicar y distribuir
