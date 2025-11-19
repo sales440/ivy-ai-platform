@@ -1260,3 +1260,63 @@
 - [ ] Crear mutation emailCampaigns.update
 - [ ] Crear mutation emailCampaigns.delete
 - [ ] Agregar navegación en DashboardLayout
+
+
+## Nuevas Tareas - Preparación para Lanzamiento con Clientes
+
+### Configuración de Telnyx y Llamadas Automáticas
+- [ ] Validar integración de Telnyx API en backend
+- [ ] Crear endpoint para iniciar llamadas automáticas
+- [ ] Implementar webhook handler para eventos de Telnyx
+- [ ] Crear UI para configurar credenciales de Telnyx
+- [ ] Implementar grabación y transcripción de llamadas
+- [ ] Crear página de historial de llamadas con reproductor de audio
+
+### Sistema de Workflows Personalizados
+- [ ] Crear interfaz visual para diseñar workflows (drag & drop)
+- [ ] Implementar backend para guardar workflows personalizados
+- [ ] Crear biblioteca de acciones disponibles por agente
+- [ ] Implementar sistema de triggers (eventos que inician workflows)
+- [ ] Añadir validación de workflows antes de guardar
+- [ ] Crear galería de templates de workflows predefinidos
+
+### Integración CRM
+- [ ] Implementar conector para Salesforce API
+- [ ] Implementar conector para HubSpot API
+- [ ] Implementar conector para Pipedrive API
+- [ ] Crear UI para configurar credenciales de CRM
+- [ ] Implementar sincronización bidireccional de leads
+- [ ] Crear mapeo de campos personalizable (CRM ↔ Ivy.AI)
+- [ ] Implementar sincronización automática cada 15 minutos
+- [ ] Añadir logs de sincronización y manejo de errores
+
+### Auditoría Completa de Funcionalidad
+- [ ] Testing end-to-end de flujo de leads (crear → calificar → convertir)
+- [ ] Testing end-to-end de flujo de tickets (crear → resolver → cerrar)
+- [ ] Testing de workflows predefinidos (Sales Pipeline, Support Escalation)
+- [ ] Verificar que todos los 6 agentes respondan correctamente
+- [ ] Testing de Email Templates (crear, editar, eliminar, usar)
+- [ ] Verificar analytics y métricas en tiempo real
+- [ ] Testing de sistema multi-tenant (cambio entre empresas)
+- [ ] Verificar permisos y roles (admin vs user)
+- [ ] Testing de exportación CSV (leads, tickets, analytics)
+- [ ] Verificar responsive design en móvil y tablet
+
+### Preparación para Clientes
+- [ ] Crear video demo de 3 minutos mostrando funcionalidades clave
+- [ ] Crear guía de onboarding para nuevos clientes
+- [ ] Preparar presentación de ventas con casos de uso
+- [ ] Crear FAQ con preguntas frecuentes
+- [ ] Configurar sistema de soporte para clientes
+- [ ] Preparar plantillas de contratos y términos de servicio
+
+
+## Nuevas Tareas - Preparación para Lanzamiento (Nov 18, 2025)
+- [x] Validar integración de Telnyx
+- [x] Crear página de Workflows
+- [x] Implementar 4 workflows predefinidos
+- [x] Testing end-to-end completo
+- [x] Generar reporte de readiness
+- [x] Crear timeline de lanzamiento
+- [x] Documentar pricing recomendado
+- [x] Definir KPIs de éxito
