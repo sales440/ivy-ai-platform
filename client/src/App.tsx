@@ -26,6 +26,8 @@ import TaskAnalytics from "@/pages/TaskAnalytics";
 import EmailTemplates from "@/pages/EmailTemplates";
 import Workflows from "@/pages/Workflows";
 import EPMDashboard from "@/pages/EPMDashboard";
+import APIConfig from "@/pages/APIConfig";
+import MLScoringDashboard from "@/pages/MLScoringDashboard";
 
 function Router() {
   return (
@@ -42,6 +44,7 @@ function Router() {
       <Route path="/admin/company-reports" component={CompanyReports} />
       <Route path="/admin/audit-log" component={AuditLog} />
       <Route path="/admin/integrations" component={Integrations} />
+      <Route path="/admin/api-config" component={APIConfig} />
       <Route path="/admin/permissions" component={Permissions} />
       <Route path="/analytics/prospect-metrics" component={ProspectMetrics} />
       <Route path="/analytics/pipeline" component={PipelineDashboard} />
@@ -51,6 +54,7 @@ function Router() {
       <Route path={"/email-templates"} component={EmailTemplates} />
       <Route path={"/epm-dashboard"} component={EPMDashboard} />
       <Route path={"/workflows"} component={Workflows} />
+      <Route path={"/analytics/ml-scoring"} component={MLScoringDashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

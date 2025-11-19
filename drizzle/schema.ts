@@ -480,6 +480,9 @@ export const emailCampaigns = mysqlTable("emailCampaigns", {
     status?: string;
     scoreThreshold?: number;
   }>(),
+  sector: varchar("sector", { length: 50 }), // educativo, hotelero, residencial, etc.
+  sequence: int("sequence"), // 1, 2, 3, 4 (order in follow-up sequence)
+  delayDays: int("delayDays"), // 0, 3, 7, 14 (days to wait before sending)
   active: int("active").default(1).notNull(), // 1 = active, 0 = inactive
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

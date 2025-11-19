@@ -1400,3 +1400,17 @@
 - [x] Entrenar modelo con datos históricos de EPM (tasas de conversión: educativo 26.7%, hotelero 44.4%, residencial 46.9%)
 - [x] Documentar estrategia de seguimiento automatizado (calendario 0-3-7-14 días)
 - [x] Documentar métricas de éxito por template (tasas de apertura y respuesta objetivo)
+
+## Activación Gmail API + Templates + ML Scoring (Nov 19, 2025)
+- [ ] Crear página de configuración de integraciones (/admin/integrations)
+- [ ] Implementar formulario de configuración de Gmail API (Client ID, Secret, Refresh Token)
+- [ ] Crear sistema de gestión de templates de email en base de datos
+- [ ] Importar 12 templates de email personalizados (4 educativo, 4 hotelero, 4 residencial)
+- [ ] Crear router tRPC para envío de emails con Gmail API
+- [ ] Integrar sistema de scoring ML con IVY-QUALIFY
+- [ ] Crear endpoint de scoring en tiempo real
+- [ ] Agregar columna de score predictivo en tabla de leads
+- [ ] Crear dashboard de métricas de templates (tasas de apertura, respuesta, conversión)
+- [ ] Probar envío de email con template personalizado
+- [ ] Probar scoring ML con lead de prueba
+- [ ] Documentar proceso completo de activación
