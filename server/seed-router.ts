@@ -26,6 +26,25 @@ export const seedRouter = router({
       };
 
       try {
+        console.log('[SEED] executeSeed mutation called with input:', input);
+        
+        // 0. Check if data already exists
+        const existingLeads = await db.getAllLeads();
+        const existingTickets = await db.getAllTickets();
+        
+        if (existingLeads.length > 0 || existingTickets.length > 0) {
+          return {
+            success: true,
+            message: `Database already contains data (${existingLeads.length} leads, ${existingTickets.length} tickets). Skipping seed to avoid duplicates. To re-seed, please clear the database first.`,
+            results: {
+              leads: existingLeads.length,
+              tickets: existingTickets.length,
+              knowledgeArticles: 0,
+              agents: 0,
+            },
+          };
+        }
+
         // 1. Crear agentes si no existen
         const existingAgents = await db.getAllAgents();
         if (existingAgents.length === 0) {
