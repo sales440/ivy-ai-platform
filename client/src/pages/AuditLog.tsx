@@ -151,12 +151,12 @@ export default function AuditLog() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
                 <Label htmlFor="action">Action</Label>
-                <Select value={filters.action} onValueChange={(value) => setFilters({...filters, action: value})}>
+                <Select value={filters.action} onValueChange={(value) => setFilters({...filters, action: value === 'all' ? '' : value})}>
                   <SelectTrigger id="action">
                     <SelectValue placeholder="All actions" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All actions</SelectItem>
+                    <SelectItem value="all">All actions</SelectItem>
                     <SelectItem value="assign_user">Assign User</SelectItem>
                     <SelectItem value="remove_user">Remove User</SelectItem>
                     <SelectItem value="update_role">Update Role</SelectItem>
@@ -167,12 +167,12 @@ export default function AuditLog() {
 
               <div className="space-y-2">
                 <Label htmlFor="entityType">Entity Type</Label>
-                <Select value={filters.entityType} onValueChange={(value) => setFilters({...filters, entityType: value})}>
+                <Select value={filters.entityType} onValueChange={(value) => setFilters({...filters, entityType: value === 'all' ? '' : value})}>
                   <SelectTrigger id="entityType">
                     <SelectValue placeholder="All entities" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All entities</SelectItem>
+                    <SelectItem value="all">All entities</SelectItem>
                     <SelectItem value="user_company">User Company</SelectItem>
                     <SelectItem value="agent_config">Agent Config</SelectItem>
                     <SelectItem value="company">Company</SelectItem>

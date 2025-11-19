@@ -60,8 +60,7 @@ export const emailsRouter = router({
 
       // Log email
       await db.insert(emailLogs).values({
-        leadId: input.leadId as number | null,
-        campaignId: null,
+        leadId: input.leadId,
         companyId: lead.companyId,
         userId: ctx.user.id,
         to: lead.email,

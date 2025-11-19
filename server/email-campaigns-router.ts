@@ -69,7 +69,7 @@ export const emailCampaignsRouter = router({
       });
 
       return {
-        id: Number(result[0].insertId),
+        id: Number(result.insertId),
         success: true,
       };
     }),

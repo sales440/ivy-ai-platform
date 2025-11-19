@@ -13,6 +13,7 @@ export interface Company {
 
 interface CompanyContextType {
   selectedCompany: Company | null;
+  company: Company | null; // Alias for backward compatibility
   setSelectedCompany: (company: Company) => void;
   companies: Company[];
   isAdmin: boolean; // Si el usuario puede ver todas las empresas
@@ -65,6 +66,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     <CompanyContext.Provider
       value={{
         selectedCompany,
+        company: selectedCompany, // Alias for backward compatibility
         setSelectedCompany,
         companies,
         isAdmin,

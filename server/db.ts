@@ -48,9 +48,6 @@ import {
   InsertCrmIntegration,
   CrmIntegration,
   prospectSearches,
-  calls,
-  InsertCall,
-  Call,
   InsertProspectSearch,
   ProspectSearch,
   savedSearches,
@@ -1125,7 +1122,7 @@ export async function createAuditLog(log: InsertAuditLog) {
 
   try {
     const result = await db.insert(auditLogs).values(log);
-    return { id: Number(result[0].insertId), ...log };
+    return { id: Number(result.insertId), ...log };
   } catch (error) {
     console.error("[Database] Failed to create audit log:", error);
     return null;
@@ -1209,7 +1206,7 @@ export async function upsertCrmIntegration(integration: InsertCrmIntegration & {
   } else {
     // Insert new
     const result = await db.insert(crmIntegrations).values(integration);
-    return Number(result[0].insertId);
+    return Number(result.insertId);
   }
 }
 
@@ -1318,7 +1315,7 @@ export async function createSavedSearch(data: InsertSavedSearch) {
   if (!db) throw new Error("Database not available");
   
   const [result] = await db.insert(savedSearches).values(data);
-  return Number(result[0].insertId);
+  return result.insertId;
 }
 
 export async function getSavedSearches(userId: number, companyId?: number | null) {
@@ -1602,51 +1599,3 @@ export const SCORING_RULES = {
   UNSUBSCRIBED: -15,
   BOUNCED_EMAIL: -2,
 };
-
-/**
- * Delete a lead by ID
- */
-export async function deleteLead(leadId: number): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot delete lead: database not available");
-    return;
-  }
-
-  try {
-    await db.delete(leads).where(eq(leads.id, leadId));
-    console.log(`[Database] Deleted lead ${leadId}`);
-  } catch (error) {
-    console.error("[Database] Failed to delete lead:", error);
-    throw error;
-  }
-}
-
-/**
- * Update a ticket
- */
-export async function updateTicket(
-  ticketId: number,
-  updates: Partial<InsertTicket>
-): Promise<void> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot update ticket: database not available");
-    return;
-  }
-
-  try {
-    await db.update(tickets)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(tickets.id, ticketId));
-    console.log(`[Database] Updated ticket ${ticketId}`);
-  } catch (error) {
-    console.error("[Database] Failed to update ticket:", error);
-    throw error;
-  }
-}
-
-/**
- * Export commonly used Drizzle ORM functions
- */
-export { eq, desc, and, or, sql, like, not, isNull, isNotNull, inArray } from "drizzle-orm";

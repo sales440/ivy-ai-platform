@@ -29,15 +29,15 @@ export default function TaskAnalytics() {
   });
 
   const { data: stats, isLoading } = trpc.scheduledTasks.stats.useQuery(
-    { companyId: company?.id || 0 },
+    company ? { companyId: Number(company.id) } : undefined,
     { enabled: !!company }
   );
 
   const { data: dailyStatsData, isLoading: isDailyStatsLoading } = trpc.scheduledTasks.dailyStats.useQuery(
-    {
-      companyId: company?.id || 0,
+    company ? {
+      companyId: Number(company.id),
       days: Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24)),
-    },
+    } : undefined,
     { enabled: !!company }
   );
 

@@ -152,8 +152,7 @@ async function executeSendEmailTask(task: any) {
   // Log email
   const { emailLogs } = await import('../drizzle/schema');
   await db.insert(emailLogs).values({
-    leadId: lead.id as number | null,
-    campaignId: null,
+    leadId: lead.id,
     companyId: lead.companyId,
     userId: task.createdBy,
     to: lead.email,

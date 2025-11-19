@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Edit, Trash2, Eye, Loader2, Mail } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 
 const AVAILABLE_VARIABLES = [
   { name: "{{leadName}}", description: "Lead's full name" },
@@ -34,7 +35,7 @@ export default function EmailTemplates() {
   });
 
   const { data: templates, isLoading, refetch } = trpc.emailCampaigns.list.useQuery(
-    { companyId: company?.id || 0 },
+    company ? { companyId: Number(company.id) } : undefined,
     { enabled: !!company }
   );
 
@@ -135,22 +136,27 @@ export default function EmailTemplates() {
 
   if (!company) {
     return (
-      <div className="container py-8">
-        <p className="text-muted-foreground">Please select a company first.</p>
-      </div>
+      <DashboardLayout>
+        <div className="container py-8">
+          <p className="text-muted-foreground">Please select a company first.</p>
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="container py-8 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <DashboardLayout>
+        <div className="container py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="container py-8">
+    <DashboardLayout>
+      <div className="container py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Email Templates</h1>
@@ -450,5 +456,6 @@ export default function EmailTemplates() {
         </DialogContent>
       </Dialog>
     </div>
+    </DashboardLayout>
   );
 }

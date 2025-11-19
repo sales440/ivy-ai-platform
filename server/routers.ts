@@ -18,7 +18,6 @@ import { scheduledTasksRouter } from "./scheduled-tasks-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
-import { callDataApi } from "./_core/dataApi";
 import { z } from "zod";
 import { getHive } from "./hive/orchestrator";
 import { AgentType } from "./agents/core";
