@@ -84,3 +84,14 @@ export function useCompany() {
   }
   return context;
 }
+
+/**
+ * Helper function to get companyId as number
+ * Handles the conversion from string to number safely
+ * Returns 0 if company is null or conversion fails
+ */
+export function getCompanyId(company: Company | null | undefined): number {
+  if (!company || !company.id) return 0;
+  const id = Number(company.id);
+  return isNaN(id) ? 0 : id;
+}

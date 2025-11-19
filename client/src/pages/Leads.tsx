@@ -552,6 +552,31 @@ export default function Leads() {
                         <SelectItem value="Software">Software</SelectItem>
                         <SelectItem value="Data Analytics">Data Analytics</SelectItem>
                         <SelectItem value="Cloud Computing">Cloud Computing</SelectItem>
+                        <SelectItem value="Packaging">Packaging</SelectItem>
+                        <SelectItem value="Bottling">Bottling</SelectItem>
+                        <SelectItem value="B2B Services">B2B Services</SelectItem>
+                        <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                        <SelectItem value="Logistics">Logistics</SelectItem>
+                        <SelectItem value="Supply Chain">Supply Chain</SelectItem>
+                        <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
+                        <SelectItem value="Retail">Retail</SelectItem>
+                        <SelectItem value="E-commerce">E-commerce</SelectItem>
+                        <SelectItem value="Healthcare">Healthcare</SelectItem>
+                        <SelectItem value="Pharmaceuticals">Pharmaceuticals</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
+                        <SelectItem value="Insurance">Insurance</SelectItem>
+                        <SelectItem value="Real Estate">Real Estate</SelectItem>
+                        <SelectItem value="Construction">Construction</SelectItem>
+                        <SelectItem value="Automotive">Automotive</SelectItem>
+                        <SelectItem value="Energy">Energy</SelectItem>
+                        <SelectItem value="Telecommunications">Telecommunications</SelectItem>
+                        <SelectItem value="Media & Entertainment">Media & Entertainment</SelectItem>
+                        <SelectItem value="Education">Education</SelectItem>
+                        <SelectItem value="Consulting">Consulting</SelectItem>
+                        <SelectItem value="Professional Services">Professional Services</SelectItem>
+                        <SelectItem value="Marketing & Advertising">Marketing & Advertising</SelectItem>
+                        <SelectItem value="Hospitality">Hospitality</SelectItem>
+                        <SelectItem value="Travel & Tourism">Travel & Tourism</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

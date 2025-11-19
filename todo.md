@@ -1335,3 +1335,9 @@
 - [x] Corregir discrepancias entre schema y seed data
 - [x] Agregar validación para evitar duplicados
 - [x] Probar seed data exitosamente
+
+## Mejoras Recomendadas (Nov 19, 2025)
+- [x] Crear helper getCompanyId para estandarizar tipo de companyId
+- [x] Expandir opciones de industrias en búsqueda (Packaging, Bottling, B2B, etc.)
+- [x] Probar búsqueda con nuevas industrias (30 industrias disponibles)
+- [ ] Sincronizar schema completo con pnpm db:push (pendiente, requiere intervención manual)
