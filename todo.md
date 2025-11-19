@@ -1381,3 +1381,10 @@
 
 **Progreso:** 120 → ~94 errores TypeScript (21.7% reducción)  
 **Estado:** BETA READY - Plataforma funcional a pesar de warnings
+
+
+## Video Demo Profesional para Clientes
+- [x] Crear guión detallado paso a paso con timestamps
+- [x] Preparar datos demo y configuración de pantalla (checklist creado)
+- [ ] Grabar video demo (15-20 minutos)
+- [ ] Editar y publicar en YouTube/Loom
