@@ -1363,3 +1363,29 @@
 - [ ] Implementar IVY-ANALYTICS (inteligencia de negocio)
 - [ ] Crear suite de pruebas funcionales para cada agente
 - [ ] Ejecutar pruebas y documentar resultados
+
+## Integraciones Externas para EPM Construcciones (Nov 19, 2025)
+- [ ] Configurar Gmail API para epmconstrucciones@gmail.com
+- [ ] Crear templates de email personalizados (educativo, hotelero, residencial)
+- [ ] Implementar sistema de envío automático de emails
+- [ ] Configurar WhatsApp Business API (+52 1 951 307 9830)
+- [ ] Implementar seguimiento automático por WhatsApp
+- [ ] Configurar Google Calendar API para calendario de técnicos
+- [ ] Implementar asignación automática de servicios en calendario
+- [ ] Crear dashboard ejecutivo personalizado para EPM
+- [ ] Implementar métricas por sector (educativo, hotelero, residencial)
+- [ ] Configurar sistema de clasificación automática de leads
+- [ ] Configurar sistema de clasificación automática de emergencias
+- [ ] Probar todas las integraciones end-to-end
+- [ ] Documentar configuración y uso de integraciones
+
+## Integraciones Externas para EPM (Nov 19, 2025)
+- [x] Configurar módulo Gmail API para envío automático de emails
+- [x] Crear templates de email por sector (educativo, hotelero, residencial)
+- [x] Documentar configuración de WhatsApp Business API
+- [x] Documentar configuración de Google Calendar API
+- [x] Crear dashboard ejecutivo personalizado para EPM (/epm-dashboard)
+- [x] Implementar sistema de clasificación automática de leads
+- [x] Implementar sistema de clasificación de emergencias
+- [x] Probar dashboard EPM (95 leads, 36.8% conversión, $1.93M MXN)
+- [x] Documentar configuración completa

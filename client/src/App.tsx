@@ -25,6 +25,7 @@ import ScheduledTasksManagement from "@/pages/ScheduledTasksManagement";
 import TaskAnalytics from "@/pages/TaskAnalytics";
 import EmailTemplates from "@/pages/EmailTemplates";
 import Workflows from "@/pages/Workflows";
+import EPMDashboard from "@/pages/EPMDashboard";
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/scheduled-tasks" component={ScheduledTasksManagement} />
       <Route path={"/analytics/tasks"} component={TaskAnalytics} />
       <Route path={"/email-templates"} component={EmailTemplates} />
+      <Route path={"/epm-dashboard"} component={EPMDashboard} />
       <Route path={"/workflows"} component={Workflows} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
