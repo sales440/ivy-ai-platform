@@ -23,6 +23,7 @@ import PipelineDashboard from "@/pages/PipelineDashboard";
 import CallHistory from "@/pages/CallHistory";
 import ScheduledTasksManagement from "@/pages/ScheduledTasksManagement";
 import TaskAnalytics from "@/pages/TaskAnalytics";
+import EmailTemplates from "@/pages/EmailTemplates";
 
 function Router() {
   return (
@@ -44,7 +45,8 @@ function Router() {
       <Route path="/analytics/pipeline" component={PipelineDashboard} />
       <Route path="/calls" component={CallHistory} />
       <Route path="/scheduled-tasks" component={ScheduledTasksManagement} />
-      <Route path="/analytics/tasks" component={TaskAnalytics} />
+      <Route path={"/analytics/tasks"} component={TaskAnalytics} />
+      <Route path={"/email-templates"} component={EmailTemplates} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

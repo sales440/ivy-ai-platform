@@ -1230,3 +1230,33 @@
 - [x] Integrar en TaskAnalytics.tsx KPI card
 - [x] Reemplazar valor mock "2.3" con dato real de backend
 - [x] Actualizar dailyTasks mapping para usar dailyStatsData.daily
+
+## Fase 44: Ejecutar Migración de Base de Datos
+- [ ] Ejecutar `pnpm drizzle-kit push` manualmente
+- [ ] Confirmar cada prompt de migración
+- [ ] Verificar que tabla scheduledTasks se crea correctamente
+- [ ] Verificar que emailLogs.leadId es nullable
+- [ ] Verificar que scoreHistory existe en leads table
+- [ ] Confirmar que errores de TypeScript desaparecen
+
+## Fase 45: Crear Script de Seed Data
+- [x] Crear archivo seed-data.mjs en root del proyecto
+- [x] Generar 15 leads con datos realistas (nombres, empresas, títulos, industrias)
+- [x] Generar 8 calls con diferentes outcomes (callback, interested, notInterested, voicemail, noAnswer)
+- [x] Generar 15 scheduled tasks (pending, completed, failed) con diferentes tipos
+- [x] Generar 10 email logs con statuses (sent, opened, clicked)
+- [x] Generar 5 saved searches con filtros variados
+- [x] Usar datos hardcoded realistas sin dependencias externas
+- [ ] Ejecutar script con `node seed-data.mjs` (MANUAL, después de migración)
+
+## Fase 46: Implementar Email Template Editor
+- [ ] Crear página EmailTemplates.tsx
+- [ ] Agregar ruta /email-templates en App.tsx
+- [ ] Mostrar lista de templates existentes
+- [ ] Crear formulario para nuevo template
+- [ ] Implementar editor de template con preview
+- [ ] Agregar variables dinámicas: {{leadName}}, {{company}}, {{title}}, etc.
+- [ ] Crear mutation emailCampaigns.create
+- [ ] Crear mutation emailCampaigns.update
+- [ ] Crear mutation emailCampaigns.delete
+- [ ] Agregar navegación en DashboardLayout
