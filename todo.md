@@ -1389,3 +1389,14 @@
 - [x] Implementar sistema de clasificación de emergencias
 - [x] Probar dashboard EPM (95 leads, 36.8% conversión, $1.93M MXN)
 - [x] Documentar configuración completa
+
+## Gmail API + Templates + ML Scoring para EPM (Nov 19, 2025)
+- [x] Crear guía paso a paso de configuración de Gmail API en Google Cloud Console
+- [x] Documentar proceso de obtención de credenciales OAuth 2.0
+- [x] Crear 4 templates de email para sector educativo (primer contacto, seguimiento 1-2, última oportunidad)
+- [x] Crear 4 templates de email para sector hotelero (primer contacto, seguimiento 1-2, última oportunidad)
+- [x] Crear 4 templates de email para sector residencial (primer contacto, seguimiento 1-2, última oportunidad)
+- [x] Implementar sistema de scoring predictivo con ML (7 factores: sector, tamaño, presupuesto, autoridad, engagement, urgencia, contexto)
+- [x] Entrenar modelo con datos históricos de EPM (tasas de conversión: educativo 26.7%, hotelero 44.4%, residencial 46.9%)
+- [x] Documentar estrategia de seguimiento automatizado (calendario 0-3-7-14 días)
+- [x] Documentar métricas de éxito por template (tasas de apertura y respuesta objetivo)
