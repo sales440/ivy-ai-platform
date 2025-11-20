@@ -41,6 +41,10 @@ async function startServer() {
     const { handleTelnyxWebhook } = await import("../webhooks/telnyx");
     return handleTelnyxWebhook(req, res);
   });
+
+  // Gmail webhook endpoints
+  const { gmailWebhookRouter } = await import("../webhooks/gmail-webhook");
+  app.use("/api/webhooks", gmailWebhookRouter);
   // tRPC API
   app.use(
     "/api/trpc",

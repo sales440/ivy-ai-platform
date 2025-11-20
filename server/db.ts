@@ -1,5 +1,6 @@
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import { 
   InsertUser, 
   users, 
@@ -57,18 +58,56 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: mysql.Pool | null = null;
+let _lastConnectionAttempt = 0;
+const RECONNECT_INTERVAL = 5000; // 5 seconds
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+// Create connection pool with automatic reconnection
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!process.env.DATABASE_URL) {
+    return null;
+  }
+
+  // If we have a healthy connection, return it
+  if (_db && _pool) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Test connection
+      await _pool.query('SELECT 1');
+      return _db;
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.warn("[Database] Connection lost, attempting reconnect...");
       _db = null;
+      _pool = null;
     }
   }
-  return _db;
+
+  // Throttle reconnection attempts
+  const now = Date.now();
+  if (now - _lastConnectionAttempt < RECONNECT_INTERVAL) {
+    return null;
+  }
+  _lastConnectionAttempt = now;
+
+  try {
+    // Create new connection pool
+    _pool = mysql.createPool({
+      uri: process.env.DATABASE_URL,
+      connectionLimit: 10,
+      waitForConnections: true,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+    });
+
+    _db = drizzle(_pool);
+    console.log("[Database] Connected successfully");
+    return _db;
+  } catch (error) {
+    console.error("[Database] Failed to connect:", error);
+    _db = null;
+    _pool = null;
+    return null;
+  }
 }
 
 // ============================================================================

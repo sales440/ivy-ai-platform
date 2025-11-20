@@ -37,6 +37,7 @@ const menuItems = [
   { icon: GitBranch, label: "Pipeline Dashboard", path: "/analytics/pipeline" },
   { icon: Activity, label: "Task Analytics", path: "/analytics/tasks" },
   { icon: Target, label: "ML Scoring Dashboard", path: "/analytics/ml-scoring" },
+  { icon: Mail, label: "Campaign Metrics", path: "/analytics/campaigns" },
   { icon: Mail, label: "Performance de Emails", path: "/analytics/email-performance" },
   { icon: Phone, label: "Call History", path: "/calls" },
   { icon: Clock, label: "Scheduled Tasks", path: "/scheduled-tasks" },

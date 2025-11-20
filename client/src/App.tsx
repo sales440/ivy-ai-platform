@@ -28,6 +28,7 @@ import Workflows from "@/pages/Workflows";
 import EPMDashboard from "@/pages/EPMDashboard";
 import APIConfig from "@/pages/APIConfig";
 import MLScoringDashboard from "@/pages/MLScoringDashboard";
+import CampaignMetrics from "@/pages/CampaignMetrics";
 import ImportLeads from "@/pages/ImportLeads";
 import EmailPerformance from "@/pages/EmailPerformance";
 
@@ -56,7 +57,8 @@ function Router() {
       <Route path={"/email-templates"} component={EmailTemplates} />
       <Route path={"/epm-dashboard"} component={EPMDashboard} />
       <Route path={"/workflows"} component={Workflows} />
-      <Route path={"/analytics/ml-scoring"} component={MLScoringDashboard} />
+        <Route path="/analytics/ml-scoring" component={MLScoringDashboard} />
+      <Route path="/analytics/campaigns" component={CampaignMetrics} />
       <Route path={"/admin/import-leads"} component={ImportLeads} />
       <Route path={"/analytics/email-performance"} component={EmailPerformance} />
       <Route path={"/404"} component={NotFound} />
