@@ -45,6 +45,10 @@ async function startServer() {
   // Gmail webhook endpoints
   const { gmailWebhookRouter } = await import("../webhooks/gmail-webhook");
   app.use("/api/webhooks", gmailWebhookRouter);
+  
+  // SSE notifications endpoint
+  const notificationsSSERouter = (await import("../routes/notifications-sse")).default;
+  app.use("/api/notifications", notificationsSSERouter);
   // tRPC API
   app.use(
     "/api/trpc",

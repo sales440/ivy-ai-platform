@@ -4,6 +4,8 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { GlobalSearch } from "./components/GlobalSearch";
+import { OnboardingTour } from "./components/OnboardingTour";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
@@ -29,6 +31,7 @@ import EPMDashboard from "@/pages/EPMDashboard";
 import APIConfig from "@/pages/APIConfig";
 import MLScoringDashboard from "@/pages/MLScoringDashboard";
 import CampaignMetrics from "@/pages/CampaignMetrics";
+import ROIDashboard from "@/pages/ROIDashboard";
 import ImportLeads from "@/pages/ImportLeads";
 import EmailPerformance from "@/pages/EmailPerformance";
 
@@ -59,6 +62,7 @@ function Router() {
       <Route path={"/workflows"} component={Workflows} />
         <Route path="/analytics/ml-scoring" component={MLScoringDashboard} />
       <Route path="/analytics/campaigns" component={CampaignMetrics} />
+      <Route path="/analytics/roi" component={ROIDashboard} />
       <Route path={"/admin/import-leads"} component={ImportLeads} />
       <Route path={"/analytics/email-performance"} component={EmailPerformance} />
       <Route path={"/404"} component={NotFound} />
@@ -71,13 +75,16 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
-        <CompanyProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </CompanyProvider>
+      <ThemeProvider
+        defaultTheme="light"
+        // switchable
+      >
+        <TooltipProvider>
+          <Toaster />
+          <GlobalSearch />
+          <OnboardingTour />
+          <Router />
+        </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );
