@@ -51,7 +51,7 @@ async function recordOpen(emailId: number, leadId?: number): Promise<void> {
   try {
     // Update email record
     await db.execute(
-      `UPDATE emails 
+      `UPDATE emailLogs 
        SET openedAt = COALESCE(openedAt, NOW()),
            updatedAt = NOW()
        WHERE id = ?`,
@@ -89,7 +89,7 @@ async function recordClick(emailId: number, url: string, leadId?: number): Promi
   try {
     // Update email record
     await db.execute(
-      `UPDATE emails 
+      `UPDATE emailLogs 
        SET clickedAt = COALESCE(clickedAt, NOW()),
            updatedAt = NOW()
        WHERE id = ?`,
@@ -127,7 +127,7 @@ async function recordResponse(emailId: number, leadId?: number): Promise<void> {
   try {
     // Update email record
     await db.execute(
-      `UPDATE emails 
+      `UPDATE emailLogs 
        SET respondedAt = COALESCE(respondedAt, NOW()),
            updatedAt = NOW()
        WHERE id = ?`,
@@ -209,7 +209,7 @@ export const emailTrackingRouter = router({
           SUM(CASE WHEN openedAt IS NOT NULL THEN 1 ELSE 0 END) as totalOpens,
           SUM(CASE WHEN clickedAt IS NOT NULL THEN 1 ELSE 0 END) as totalClicks,
           SUM(CASE WHEN respondedAt IS NOT NULL THEN 1 ELSE 0 END) as totalResponses
-         FROM emails
+         FROM emailLogs
          WHERE campaignId = ?`,
         [input.campaignId]
       );
@@ -259,7 +259,7 @@ export const emailTrackingRouter = router({
           SUM(CASE WHEN e.openedAt IS NOT NULL THEN 1 ELSE 0 END) as totalOpens,
           SUM(CASE WHEN e.clickedAt IS NOT NULL THEN 1 ELSE 0 END) as totalClicks,
           SUM(CASE WHEN e.respondedAt IS NOT NULL THEN 1 ELSE 0 END) as totalResponses
-         FROM emails e
+         FROM emailLogs e
          LEFT JOIN leads l ON e.leadId = l.id
          WHERE e.companyId = ?
          GROUP BY l.industry`,
@@ -308,7 +308,7 @@ export const emailTrackingRouter = router({
             THEN TIMESTAMPDIFF(MINUTE, sentAt, openedAt) 
             ELSE NULL 
           END) as avgTimeToOpen
-         FROM emails
+         FROM emailLogs
          WHERE companyId = ?`,
         [input.companyId]
       );

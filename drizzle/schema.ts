@@ -509,6 +509,8 @@ export const emailLogs = mysqlTable("emailLogs", {
   sentAt: timestamp("sentAt").defaultNow().notNull(),
   openedAt: timestamp("openedAt"),
   clickedAt: timestamp("clickedAt"),
+  respondedAt: timestamp("respondedAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type EmailLog = typeof emailLogs.$inferSelect;
