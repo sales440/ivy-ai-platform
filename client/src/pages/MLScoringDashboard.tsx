@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 export default function MLScoringDashboard() {
   const { selectedCompany } = useCompany();
-  const companyId = selectedCompany?.id;
+  const companyId = selectedCompany?.id ? Number(selectedCompany.id) : undefined;
 
   // Query company stats
   const { data: stats, isLoading, refetch } = trpc.mlScoring.getCompanyStats.useQuery(

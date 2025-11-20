@@ -1579,3 +1579,9 @@
 - [x] Verified ROI Dashboard shows $1,359,625 projected revenue
 - [x] Verified Leads Management shows 55 leads with scores 78-95
 - [x] Confirmed 22 qualified leads ready for sales
+
+
+## Bug Fix - CompanyId Type Error in ML Scoring (20 Nov 2025 - 13:10) ✅ FIXED
+- [x] Fix companyId being sent as string instead of number in MLScoringDashboard
+- [x] Convert companyId to number before sending to tRPC
+- [x] Converted using Number(selectedCompany.id)
