@@ -1554,3 +1554,10 @@
 - [x] Wrap Router with CompanyProvider in App.tsx
 - [x] Verify dashboard loads without errors
 - [x] Test company selector functionality
+
+
+## Bug Fix - CompanyId Null Error (20 Nov 2025 - 08:17) ✅ FIXED
+- [x] Assign companyId automatically to admin user (companyId = 1)
+- [x] Verified ROI dashboard loads correctly
+- [x] Revenue projections showing: $1,359,625 total
+- [x] Sector breakdown: Educativo (15 leads), Hotelero (20 leads), Residencial (20 leads)
