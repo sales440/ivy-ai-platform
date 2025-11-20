@@ -1468,3 +1468,30 @@
 - [x] Implementar función de descarga de template CSV
 - [x] Agregar opción de omitir duplicados
 - [x] Integrar en navegación del dashboard
+
+
+## EPM Construcciones - Implementación Completa ✅
+
+### Sistema de Email Automation (19 Nov 2025)
+- [x] Importar 12 templates de email (educativo, hotelero, residencial)
+- [x] Agregar columnas sector, sequence, delayDays a emailCampaigns
+- [x] Crear sistema de scoring ML con datos históricos EPM
+- [x] Implementar 7 factores de scoring predictivo
+- [x] Crear dashboard de ML Scoring (`/analytics/ml-scoring`)
+- [x] Crear dashboard de Email Performance (`/analytics/email-performance`)
+- [x] Implementar sistema de importación de leads desde CSV
+- [x] Crear sistema de tracking de emails (opens, clicks, responses)
+- [x] Implementar métricas por sector en tiempo real
+- [x] Crear script de prueba piloto (`pilot-test-epm-templates.mjs`)
+- [x] Crear guía visual de Gmail API (20 páginas con screenshots)
+- [x] Crear documentación técnica completa (40+ páginas)
+- [x] Integrar routers tRPC (import, emailTracking, mlScoring)
+- [x] Agregar navegación en sidebar (Import Leads, ML Scoring, Email Performance)
+
+### Pendiente (Requiere Cliente)
+- [ ] Configurar credenciales Gmail API en `/admin/api-config`
+- [ ] Importar leads históricos de EPM vía CSV
+- [ ] Ejecutar prueba piloto con 15 leads (5 por sector)
+- [ ] Monitorear métricas durante 2 semanas
+- [ ] Ajustar templates basado en performance
+- [ ] Lanzar campaña completa
