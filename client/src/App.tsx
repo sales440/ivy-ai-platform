@@ -83,7 +83,9 @@ function App() {
           <Toaster />
           <GlobalSearch />
           <OnboardingTour />
-          <Router />
+          <CompanyProvider>
+            <Router />
+          </CompanyProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
