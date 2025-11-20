@@ -141,4 +141,78 @@ export const analyticsRouter = router({
       });
       return pipelineData;
     }),
+
+  systemStatus: protectedProcedure
+    .query(async () => {
+      // Get system health metrics
+      const totalAgents = await db.getAgentCount();
+      const activeAgents = await db.getActiveAgentCount();
+      const totalLeads = await db.getLeadCount();
+      const totalTickets = await db.getTicketCount();
+      
+      return {
+        totalAgents,
+        activeAgents,
+        idleAgents: totalAgents - activeAgents,
+        totalLeads,
+        totalTickets,
+        systemHealth: 100, // Placeholder
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+      };
+    }),
+
+  companyMetrics: protectedProcedure
+    .input(z.object({
+      companyId: z.number(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      const leads = await db.getAllLeads(input.companyId);
+      const tickets = await db.getAllTickets(input.companyId);
+      const agents = await db.getAllAgents(input.companyId);
+      
+      // Calculate lead metrics
+      const totalLeads = leads.length;
+      const qualifiedLeads = leads.filter(l => l.status === 'qualified').length;
+      const convertedLeads = leads.filter(l => l.status === 'converted').length;
+      const conversionRate = totalLeads > 0 ? (convertedLeads / totalLeads) * 100 : 0;
+      const avgScore = totalLeads > 0 
+        ? leads.reduce((sum, l) => sum + (l.score || 0), 0) / totalLeads 
+        : 0;
+      
+      // Calculate ticket metrics
+      const totalTickets = tickets.length;
+      const openTickets = tickets.filter(t => t.status === 'open').length;
+      const resolvedTickets = tickets.filter(t => t.status === 'resolved').length;
+      const resolutionRate = totalTickets > 0 ? (resolvedTickets / totalTickets) * 100 : 0;
+      
+      // Calculate agent metrics
+      const totalAgents = agents.length;
+      const activeAgents = agents.filter(a => a.status === 'active').length;
+      
+      return {
+        companyId: input.companyId,
+        leads: {
+          total: totalLeads,
+          qualified: qualifiedLeads,
+          converted: convertedLeads,
+          conversionRate: Math.round(conversionRate * 10) / 10,
+          avgScore: Math.round(avgScore),
+        },
+        tickets: {
+          total: totalTickets,
+          open: openTickets,
+          resolved: resolvedTickets,
+          resolutionRate: Math.round(resolutionRate * 10) / 10,
+        },
+        agents: {
+          total: totalAgents,
+          active: activeAgents,
+          idle: totalAgents - activeAgents,
+        },
+        timestamp: new Date().toISOString(),
+      };
+    }),
 });

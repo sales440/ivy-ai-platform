@@ -209,6 +209,26 @@ export async function getAgentsByType(type: Agent["type"]): Promise<Agent[]> {
   return await db.select().from(agents).where(eq(agents.type, type));
 }
 
+export async function getAgentCount(companyId?: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = companyId
+    ? await db.select().from(agents).where(eq(agents.companyId, companyId))
+    : await db.select().from(agents);
+  return result.length;
+}
+
+export async function getActiveAgentCount(companyId?: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = companyId
+    ? await db.select().from(agents).where(and(eq(agents.companyId, companyId), eq(agents.status, 'active')))
+    : await db.select().from(agents).where(eq(agents.status, 'active'));
+  return result.length;
+}
+
 export async function updateAgentStatus(id: number, status: Agent["status"]): Promise<void> {
   const db = await getDb();
   if (!db) return;
@@ -348,6 +368,16 @@ export async function getAllLeads(companyId?: number): Promise<Lead[]> {
   return await db.select().from(leads).orderBy(desc(leads.createdAt));
 }
 
+export async function getLeadCount(companyId?: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = companyId
+    ? await db.select().from(leads).where(eq(leads.companyId, companyId))
+    : await db.select().from(leads);
+  return result.length;
+}
+
 export async function getLeadsByStatus(status: Lead["status"], companyId?: number): Promise<Lead[]> {
   const db = await getDb();
   if (!db) return [];
@@ -426,6 +456,16 @@ export async function getAllTickets(companyId?: number): Promise<Ticket[]> {
     return await db.select().from(tickets).where(eq(tickets.companyId, companyId)).orderBy(desc(tickets.createdAt));
   }
   return await db.select().from(tickets).orderBy(desc(tickets.createdAt));
+}
+
+export async function getTicketCount(companyId?: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const result = companyId
+    ? await db.select().from(tickets).where(eq(tickets.companyId, companyId))
+    : await db.select().from(tickets);
+  return result.length;
 }
 
 export async function getTicketsByStatus(status: Ticket["status"], companyId?: number): Promise<Ticket[]> {

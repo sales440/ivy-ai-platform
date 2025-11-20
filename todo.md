@@ -1495,3 +1495,15 @@
 - [ ] Monitorear métricas durante 2 semanas
 - [ ] Ajustar templates basado en performance
 - [ ] Lanzar campaña completa
+
+
+## Bug Fixes (19 Nov 2025 - 22:35)
+- [x] Fix tRPC error "No procedure found on path analytics.systemStatus"
+- [x] Fix tRPC error "No procedure found on path analytics.companyMetrics"
+- [x] Add systemStatus procedure to analytics router
+- [x] Add companyMetrics procedure to analytics router
+- [x] Add getAgentCount function to db.ts
+- [x] Add getActiveAgentCount function to db.ts
+- [x] Add getLeadCount function to db.ts
+- [x] Add getTicketCount function to db.ts
+- [x] Dashboard now loads without tRPC errors
