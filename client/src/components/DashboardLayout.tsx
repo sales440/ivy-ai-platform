@@ -192,14 +192,14 @@ function DashboardLayoutContent({
           className="border-r-0"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center">
-            <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
+          <SidebarHeader className="h-auto py-4 justify-center">
+            <div className="flex flex-col items-center gap-2 px-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
                   <img
-                    src={APP_LOGO}
-                    className="h-8 w-8 rounded-md object-cover ring-1 ring-border"
-                    alt="Logo"
+                    src="/ivy-ai-logo.png"
+                    className="h-8 w-8 object-contain"
+                    alt="Ivy.AI Logo"
                   />
                   <button
                     onClick={toggleSidebar}
@@ -210,19 +210,19 @@ function DashboardLayoutContent({
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex flex-col items-center gap-3 w-full">
                     <img
-                      src={APP_LOGO}
-                      className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
-                      alt="Logo"
+                      src="/ivy-ai-logo.png"
+                      className="h-16 w-16 object-contain"
+                      alt="Ivy.AI Logo"
                     />
-                    <span className="font-semibold tracking-tight truncate">
-                      {APP_TITLE}
+                    <span className="font-semibold tracking-tight text-center text-lg">
+                      Ivy.AI Platform
                     </span>
                   </div>
                   <button
                     onClick={toggleSidebar}
-                    className="ml-auto h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                    className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                   >
                     <PanelLeft className="h-4 w-4 text-muted-foreground" />
                   </button>

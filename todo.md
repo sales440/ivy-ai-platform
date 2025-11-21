@@ -1585,3 +1585,19 @@
 - [x] Fix companyId being sent as string instead of number in MLScoringDashboard
 - [x] Convert companyId to number before sending to tRPC
 - [x] Converted using Number(selectedCompany.id)
+
+
+## PDF Proposal Creation for Born Into Glory (20 Nov 2025 - 13:15) ✅ COMPLETED
+- [x] Create HTML document with proposal content
+- [x] Get Ivy.AI logo from platform
+- [x] Generate professional PDF with header (logo + contact info)
+- [x] Include strategy sections with tables and visuals
+- [x] PDF generated successfully (1.3MB, 10+ pages)
+
+
+## Logo Integration in Dashboard (20 Nov 2025 - 19:15) ✅ COMPLETED
+- [x] Copy Ivy.AI logo to client/public directory (280KB PNG)
+- [x] Update DashboardLayout to display logo above "Ivy.AI Platform" text
+- [x] Verify logo displays correctly in dashboard
+- [x] Logo shows 64x64px when expanded, 32x32px when collapsed
+- [ ] Save checkpoint with changes
