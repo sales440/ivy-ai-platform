@@ -544,3 +544,80 @@ export const scheduledTasks = mysqlTable("scheduledTasks", {
 
 export type ScheduledTask = typeof scheduledTasks.$inferSelect;
 export type InsertScheduledTask = typeof scheduledTasks.$inferInsert;
+
+/**
+ * Marketing Leads - Prospects captured through marketing campaigns
+ */
+export const marketingLeads = mysqlTable("marketingLeads", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  company: varchar("company", { length: 255 }),
+  role: varchar("role", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  numSDRs: varchar("numSDRs", { length: 50 }),
+  timeline: varchar("timeline", { length: 100 }),
+  challenges: text("challenges"),
+  source: mysqlEnum("source", ["whitepaper", "calculator", "demo-request", "linkedin", "seo", "referral"]).notNull(),
+  leadScore: int("leadScore").default(0).notNull(), // 0-100 score
+  stage: mysqlEnum("stage", ["awareness", "consideration", "decision", "qualified", "disqualified"]).default("awareness").notNull(),
+  status: mysqlEnum("status", ["new", "contacted", "nurturing", "qualified", "converted", "lost"]).default("new").notNull(),
+  assignedAgentId: int("assignedAgentId"), // Which AI agent is handling this lead
+  lastContactedAt: timestamp("lastContactedAt"),
+  qualifiedAt: timestamp("qualifiedAt"),
+  convertedAt: timestamp("convertedAt"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MarketingLead = typeof marketingLeads.$inferSelect;
+export type InsertMarketingLead = typeof marketingLeads.$inferInsert;
+
+/**
+ * Lead Activities - Track all interactions with marketing leads
+ */
+export const leadActivities = mysqlTable("leadActivities", {
+  id: int("id").autoincrement().primaryKey(),
+  leadId: int("leadId").notNull(),
+  activityType: mysqlEnum("activityType", ["email-sent", "email-opened", "email-clicked", "call-attempted", "call-connected", "demo-scheduled", "whitepaper-downloaded", "calculator-used", "page-visited"]).notNull(),
+  description: text("description"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type LeadActivity = typeof leadActivities.$inferSelect;
+export type InsertLeadActivity = typeof leadActivities.$inferInsert;
+
+/**
+ * Email Sequences - Automated email campaigns for lead nurturing
+ */
+export const emailSequences = mysqlTable("emailSequences", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  targetStage: mysqlEnum("targetStage", ["awareness", "consideration", "decision"]).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailSequence = typeof emailSequences.$inferSelect;
+export type InsertEmailSequence = typeof emailSequences.$inferInsert;
+
+/**
+ * Email Sequence Steps - Individual emails in a sequence
+ */
+export const emailSequenceSteps = mysqlTable("emailSequenceSteps", {
+  id: int("id").autoincrement().primaryKey(),
+  sequenceId: int("sequenceId").notNull(),
+  stepNumber: int("stepNumber").notNull(),
+  delayDays: int("delayDays").notNull(), // Days after previous step
+  subject: varchar("subject", { length: 300 }).notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailSequenceStep = typeof emailSequenceSteps.$inferSelect;
+export type InsertEmailSequenceStep = typeof emailSequenceSteps.$inferInsert;

@@ -34,11 +34,17 @@ import CampaignMetrics from "@/pages/CampaignMetrics";
 import ROIDashboard from "@/pages/ROIDashboard";
 import ImportLeads from "@/pages/ImportLeads";
 import EmailPerformance from "@/pages/EmailPerformance";
+import ROICalculator from "@/pages/ROICalculator";
+import WhitepaperDownload from "@/pages/WhitepaperDownload";
+import DemoRequest from "@/pages/DemoRequest";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path="/roi-calculator" component={ROICalculator} />
+      <Route path="/whitepaper" component={WhitepaperDownload} />
+      <Route path="/demo-request" component={DemoRequest} />
       <Route path={"/profile"} component={Profile} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/leads"} component={Leads} />
