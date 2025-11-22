@@ -2,6 +2,8 @@ import { drizzle } from "drizzle-orm/mysql2";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { agents, tasks, leads, emailSequences, emailSequenceSteps } from "../../drizzle/schema";
 import { invokeLLM } from "../_core/llm";
+import { sendEmail } from "../services/sendgrid";
+import { getDb } from "../db";
 
 /**
  * Marketing Automation Workflows

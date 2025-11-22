@@ -1743,3 +1743,34 @@
 - [x] Dashboard displays agents correctly (AgentMonitoring.tsx functional)
 - [x] tRPC procedures working (listMarketingAgents, getRecentTasks, getWorkflowStats)
 - [x] Save checkpoint with operational system
+
+
+## API Integration & Campaign Control (22 Nov 2025 - 17:45)
+### Phase 1: External API Integration
+- [x] Request SendGrid API key from user via webdev_request_secrets
+- [x] Create SendGrid email service wrapper (server/services/sendgrid.ts)
+- [x] Update email nurturing workflow to use real SendGrid API
+- [x] Test email sending with SendGrid (vitest passed)
+- [ ] Create LinkedIn posts database table (linkedinPosts)
+- [ ] Create LinkedIn content panel (LinkedInContentPanel.tsx)
+- [ ] Implement post generation workflow (agents generate posts automatically)
+- [ ] Add copy-to-clipboard and Zapier webhook options
+- [ ] Configure for Juan Carlos Robledo's LinkedIn account
+
+### Phase 2: Activate First Workflow
+- [ ] Create workflow activation endpoint (trpc.workflows.trigger)
+- [ ] Execute email_nurturing workflow with real leads from database
+- [ ] Monitor workflow execution in real-time via dashboard
+- [ ] Verify emails are sent successfully via SendGrid
+- [ ] Check lead activity tracking in database
+- [ ] Validate error handling and retry logic
+
+### Phase 3: Campaign Control Panel
+- [ ] Create CampaignControl.tsx page component
+- [ ] Add workflow activation/pause controls
+- [ ] Implement workflow scheduling (daily, weekly, custom)
+- [ ] Add email template editor (inline editing without code)
+- [ ] Add LinkedIn post frequency controls
+- [ ] Create workflow execution history viewer
+- [ ] Add bulk workflow actions (pause all, resume all)
+- [ ] Save checkpoint with complete campaign control system
