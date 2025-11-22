@@ -107,6 +107,118 @@ function determineLeadStage(source: string, score: number): "awareness" | "consi
 
 export const marketingRouter = router({
   /**
+   * Get marketing analytics overview
+   */
+  getAnalytics: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return null;
+
+    // Get total leads
+    const totalLeads = await db.select().from(marketingLeads);
+
+    // Calculate metrics by source
+    const leadsBySource = totalLeads.reduce((acc, lead) => {
+      acc[lead.source] = (acc[lead.source] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Calculate metrics by stage
+    const leadsByStage = totalLeads.reduce((acc, lead) => {
+      acc[lead.stage] = (acc[lead.stage] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Calculate average lead score
+    const avgLeadScore = totalLeads.length > 0
+      ? totalLeads.reduce((sum, lead) => sum + lead.leadScore, 0) / totalLeads.length
+      : 0;
+
+    // Calculate conversion rates
+    const qualifiedLeads = totalLeads.filter(l => l.leadScore >= 70).length;
+    const conversionRate = totalLeads.length > 0
+      ? (qualifiedLeads / totalLeads.length) * 100
+      : 0;
+
+    return {
+      totalLeads: totalLeads.length,
+      leadsBySource,
+      leadsByStage,
+      avgLeadScore: Math.round(avgLeadScore),
+      qualifiedLeads,
+      conversionRate: Math.round(conversionRate * 10) / 10,
+    };
+  }),
+
+  /**
+   * Get A/B test variants for a page
+   */
+  getABTestVariants: publicProcedure
+    .input(z.object({ page: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const results = await db.execute(
+        `SELECT * FROM abTestVariants WHERE page = ? AND isActive = TRUE`,
+        [input.page]
+      );
+      return results.rows as any[];
+    }),
+
+  /**
+   * Track A/B test event (view, click, conversion)
+   */
+  trackABTestEvent: publicProcedure
+    .input(
+      z.object({
+        variantId: z.number(),
+        eventType: z.enum(["view", "click", "conversion"]),
+        sessionId: z.string(),
+        metadata: z.record(z.any()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+
+      await db.execute(
+        `INSERT INTO abTestResults (variantId, eventType, sessionId, metadata) VALUES (?, ?, ?, ?)`,
+        [input.variantId, input.eventType, input.sessionId, JSON.stringify(input.metadata || {})]
+      );
+
+      return { success: true };
+    }),
+
+  /**
+   * Get A/B test results summary
+   */
+  getABTestResults: publicProcedure
+    .input(z.object({ testName: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+
+      const results = await db.execute(
+        `SELECT 
+          v.id,
+          v.variantName,
+          v.isControl,
+          COUNT(CASE WHEN r.eventType = 'view' THEN 1 END) as views,
+          COUNT(CASE WHEN r.eventType = 'click' THEN 1 END) as clicks,
+          COUNT(CASE WHEN r.eventType = 'conversion' THEN 1 END) as conversions,
+          ROUND(COUNT(CASE WHEN r.eventType = 'click' THEN 1 END) * 100.0 / NULLIF(COUNT(CASE WHEN r.eventType = 'view' THEN 1 END), 0), 2) as ctr,
+          ROUND(COUNT(CASE WHEN r.eventType = 'conversion' THEN 1 END) * 100.0 / NULLIF(COUNT(CASE WHEN r.eventType = 'view' THEN 1 END), 0), 2) as conversionRate
+        FROM abTestVariants v
+        LEFT JOIN abTestResults r ON v.id = r.variantId
+        WHERE v.testName = ?
+        GROUP BY v.id, v.variantName, v.isControl
+        ORDER BY v.isControl DESC, v.id ASC`,
+        [input.testName]
+      );
+      return results.rows as any[];
+    }),
+
+  /**
    * Capture lead from whitepaper download
    */
   captureWhitepaperLead: publicProcedure

@@ -34,7 +34,9 @@ import CampaignMetrics from "@/pages/CampaignMetrics";
 import ROIDashboard from "@/pages/ROIDashboard";
 import ImportLeads from "@/pages/ImportLeads";
 import EmailPerformance from "@/pages/EmailPerformance";
-import ROICalculator from "@/pages/ROICalculator";
+import ROICalculator from "./pages/ROICalculator";
+import MarketingDashboard from "./pages/MarketingDashboard";
+import ABTestDashboard from "./pages/ABTestDashboard";
 import WhitepaperDownload from "@/pages/WhitepaperDownload";
 import DemoRequest from "@/pages/DemoRequest";
 
@@ -43,9 +45,9 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path="/roi-calculator" component={ROICalculator} />
-      <Route path="/whitepaper" component={WhitepaperDownload} />
-      <Route path="/demo-request" component={DemoRequest} />
-      <Route path={"/profile"} component={Profile} />
+      <Route path="/whitepaper" component={WhitepaperDownload} />      <Route path={"/demo-request"} component={DemoRequest} />
+      <Route path={"/marketing-dashboard"} component={MarketingDashboard} />
+      <Route path={"/ab-test-dashboard"} component={ABTestDashboard} />      <Route path={"/profile"} component={Profile} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/leads"} component={Leads} />
       <Route path={"/tickets"} component={Tickets} />
