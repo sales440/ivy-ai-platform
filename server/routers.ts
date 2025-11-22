@@ -21,6 +21,10 @@ import { emailTrackingRouter } from "./routers/email-tracking-router";
 import { marketingRouter } from "./marketing";
 import { leadAssignmentRouter } from "./lead-assignment";
 import { agentsRouter } from "./agents-router";
+import { linkedInRouter } from "./linkedin-router";
+import { linkedInPostsRouter } from "./linkedin-posts-router";
+import { workflowsRouter } from "./workflows-router";
+import { emailWorkflowsRouter } from "./email-workflows-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -71,6 +75,10 @@ export const appRouter = router({
   marketing: marketingRouter,
   leadAssignment: leadAssignmentRouter,
   agents: agentsRouter,
+  linkedin: linkedInRouter,
+  linkedInPosts: linkedInPostsRouter,
+  workflows: workflowsRouter,
+  emailWorkflows: emailWorkflowsRouter,
   calls: callsRouter,
   emails: emailsRouter,
   emailCampaigns: emailCampaignsRouter,
