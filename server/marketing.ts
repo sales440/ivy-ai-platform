@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
 import { marketingLeads, leadActivities, InsertMarketingLead, InsertLeadActivity, leads } from "../drizzle/schema";
+import { autoAssignLead } from "./lead-assignment";
 import { eq, desc } from "drizzle-orm";
 
 /**
@@ -281,6 +282,12 @@ export const marketingRouter = router({
       };
       await db.insert(leadActivities).values(activityData);
 
+      // Auto-assign if qualified (score >= 70)
+      let assignmentResult = null;
+      if (leadScore >= 70) {
+        assignmentResult = await autoAssignLead(lead.id, leadScore);
+      }
+
       // TODO: Trigger email sequence based on lead score
       // High score (70+): Immediate outreach by AI agent
       // Medium score (40-69): Nurture sequence
@@ -291,6 +298,8 @@ export const marketingRouter = router({
         leadId: lead.id,
         leadScore,
         stage,
+        assigned: assignmentResult?.success || false,
+        assignedTo: assignmentResult?.agentName,
       };
     }),
 
@@ -365,7 +374,12 @@ export const marketingRouter = router({
       };
       await db.insert(leadActivities).values(activityData);
 
-      // TODO: If high score (70+), notify owner immediately
+      // Auto-assign if qualified (score >= 70)
+      let assignmentResult = null;
+      if (leadScore >= 70) {
+        assignmentResult = await autoAssignLead(lead.id, leadScore);
+      }
+
       // TODO: Schedule automated follow-up by AI agent within 24 hours
 
       return {
@@ -374,6 +388,8 @@ export const marketingRouter = router({
         leadScore,
         stage,
         isHighPriority: leadScore >= 70,
+        assigned: assignmentResult?.success || false,
+        assignedTo: assignmentResult?.agentName,
       };
     }),
 

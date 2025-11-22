@@ -1663,3 +1663,16 @@
 - [x] Lead score already displayed prominently in table
 - [x] All marketing forms now use unified leads table with qualificationScore
 - [x] Save checkpoint with complete marketing leads integration
+
+
+## Lead Assignment & Real-Time Notifications (22 Nov 2025 - 14:20) ✅ COMPLETED
+- [x] Create lead assignment algorithm based on agent workload (lead-assignment.ts with calculateAgentWorkload function)
+- [x] Add agent capacity tracking (max 20 leads per agent, tracks current/qualified/capacity)
+- [x] Implement auto-assignment trigger when lead score >= 70 (autoAssignLead function)
+- [x] Create notification system for high-priority leads (score >= 80 notifies owner + agent)
+- [x] Add notification integration for lead assignments (creates notification in DB for assigned agent)
+- [x] Real-time notification UI component already exists (NotificationBell.tsx with 30s polling)
+- [x] Assignment history tracking via getAssignmentHistory procedure
+- [x] Build assignment dashboard (LeadAssignmentDashboard.tsx with workload distribution and history)
+- [x] Integrated auto-assignment into captureWhitepaperLead and requestDemo procedures
+- [x] Save checkpoint with complete assignment and notification system

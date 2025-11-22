@@ -36,6 +36,7 @@ import ImportLeads from "@/pages/ImportLeads";
 import EmailPerformance from "@/pages/EmailPerformance";
 import ROICalculator from "./pages/ROICalculator";
 import MarketingDashboard from "./pages/MarketingDashboard";
+import LeadAssignmentDashboard from "./pages/LeadAssignmentDashboard";
 import ABTestDashboard from "./pages/ABTestDashboard";
 import WhitepaperDownload from "@/pages/WhitepaperDownload";
 import DemoRequest from "@/pages/DemoRequest";
@@ -47,7 +48,8 @@ function Router() {
       <Route path="/roi-calculator" component={ROICalculator} />
       <Route path="/whitepaper" component={WhitepaperDownload} />      <Route path={"/demo-request"} component={DemoRequest} />
       <Route path={"/marketing-dashboard"} component={MarketingDashboard} />
-      <Route path={"/ab-test-dashboard"} component={ABTestDashboard} />      <Route path={"/profile"} component={Profile} />
+      <Route path={"/ab-test-dashboard"} component={ABTestDashboard} />
+      <Route path={"/lead-assignment"} component={LeadAssignmentDashboard} />      <Route path={"/profile"} component={Profile} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/leads"} component={Leads} />
       <Route path={"/tickets"} component={Tickets} />
