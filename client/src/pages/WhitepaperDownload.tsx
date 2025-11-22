@@ -39,7 +39,7 @@ export default function WhitepaperDownload() {
 
   const handleDownload = () => {
     // Trigger download of whitepaper PDF
-    window.open("/assets/IVY_AI_WHITEPAPER_ROI.pdf", "_blank");
+    window.open("/whitepaper-ivy-ai-roi.pdf", "_blank");
   };
 
   if (submitted) {
@@ -83,7 +83,7 @@ export default function WhitepaperDownload() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button className="flex-1" size="lg" onClick={handleDownload}>
                 <Download className="mr-2 h-4 w-4" />
-                Descargar Whitepaper Ahora
+                Descargar Whitepaper Gratis
               </Button>
               <Button className="flex-1" variant="outline" size="lg" asChild>
                 <a href="/roi-calculator">

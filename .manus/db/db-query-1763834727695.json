@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS leadActivities (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  leadId INT NOT NULL,\n  activityType ENUM('email-sent', 'email-opened', 'email-clicked', 'call-attempted', 'call-connected', 'demo-scheduled', 'whitepaper-downloaded', 'calculator-used', 'page-visited') NOT NULL,\n  description TEXT,\n  metadata JSON,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS leadActivities (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  leadId INT NOT NULL,\n  activityType ENUM('email-sent', 'email-opened', 'email-clicked', 'call-attempted', 'call-connected', 'demo-scheduled', 'whitepaper-downloaded', 'calculator-used', 'page-visited') NOT NULL,\n  description TEXT,\n  metadata JSON,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 212
+}
