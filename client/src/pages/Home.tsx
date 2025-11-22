@@ -5,6 +5,7 @@ import { Loader2, Bot, Zap, TrendingUp, Users, ArrowRight, CheckCircle2 } from "
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
+import { AnimatedLogo } from "@/components/AnimatedLogo";
 
 export default function Home() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -47,6 +48,10 @@ export default function Home() {
       {/* Hero Section */}
       <section className="container py-20">
         <div className="max-w-4xl mx-auto text-center space-y-8">
+          {/* Animated Logo */}
+          <div className="flex justify-center mb-8">
+            <AnimatedLogo size={250} />
+          </div>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
             <Zap className="h-4 w-4" />
             Next-Generation AI Agent Platform
