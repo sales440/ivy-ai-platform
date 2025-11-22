@@ -1650,3 +1650,16 @@
 - [x] Create A/B Test Dashboard (ABTestDashboard.tsx with variant comparison)
 - [x] Insert 6 test variants (3 for whitepaper, 3 for demo pages)
 - [x] Save checkpoint with analytics dashboard and A/B testing system
+
+
+## Marketing Leads Integration (22 Nov 2025 - 13:55) ✅ COMPLETED
+- [x] Verified leads table already has source and qualificationScore columns
+- [x] Updated captureWhitepaperLead to insert into unified leads table
+- [x] Updated requestDemo to insert into unified leads table
+- [x] Updated trackCalculatorUsage to query unified leads table
+- [x] Updated getAnalytics to filter marketing leads from unified table
+- [x] Modified Leads.tsx to show Marketing badge for whitepaper/calculator/demo-request sources
+- [x] Added "Marketing Leads" quick filter button (purple badge)
+- [x] Lead score already displayed prominently in table
+- [x] All marketing forms now use unified leads table with qualificationScore
+- [x] Save checkpoint with complete marketing leads integration

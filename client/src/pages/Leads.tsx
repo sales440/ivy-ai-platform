@@ -448,7 +448,13 @@ export default function Leads() {
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = (lead.company || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          lead.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
+    
+    // Handle marketing filter
+    const marketingSources = ["whitepaper", "calculator", "demo-request"];
+    const matchesStatus = statusFilter === 'marketing' 
+      ? marketingSources.includes(lead.source || "")
+      : (statusFilter === 'all' || lead.status === statusFilter);
+    
     const matchesVIP = !showVIPOnly || (lead.qualificationScore || 0) > 80;
     return matchesSearch && matchesStatus && matchesVIP;
   });
@@ -1020,6 +1026,13 @@ export default function Leads() {
             >
               🌟 VIP Only
             </Button>
+            <Button
+              variant={statusFilter === "marketing" ? "default" : "outline"}
+              onClick={() => setStatusFilter(statusFilter === "marketing" ? "all" : "marketing")}
+              className={statusFilter === "marketing" ? "bg-purple-500 hover:bg-purple-600" : ""}
+            >
+              📊 Marketing Leads
+            </Button>
           </div>
 
           {/* Bulk Actions Bar */}
@@ -1155,7 +1168,14 @@ export default function Leads() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{lead.source}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{lead.source}</Badge>
+                          {["whitepaper", "calculator", "demo-request"].includes(lead.source || "") && (
+                            <Badge className="bg-purple-500/10 text-purple-600 border-purple-500/20">
+                              📊 Marketing
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <span className={getScoreColor(lead.qualificationScore || 0)}>{lead.qualificationScore || 0}</span>

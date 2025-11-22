@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
-import { marketingLeads, leadActivities, InsertMarketingLead, InsertLeadActivity } from "../drizzle/schema";
+import { marketingLeads, leadActivities, InsertMarketingLead, InsertLeadActivity, leads } from "../drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 
 /**
@@ -113,28 +113,33 @@ export const marketingRouter = router({
     const db = await getDb();
     if (!db) return null;
 
-    // Get total leads
-    const totalLeads = await db.select().from(marketingLeads);
+    // Get marketing leads (whitepaper, calculator, demo-request)
+    const marketingSources = ["whitepaper", "calculator", "demo-request"];
+    const allLeads = await db.select().from(leads);
+    const totalLeads = allLeads.filter(l => l.source && marketingSources.includes(l.source));
 
     // Calculate metrics by source
     const leadsBySource = totalLeads.reduce((acc, lead) => {
-      acc[lead.source] = (acc[lead.source] || 0) + 1;
+      if (lead.source) {
+        acc[lead.source] = (acc[lead.source] || 0) + 1;
+      }
       return acc;
     }, {} as Record<string, number>);
 
-    // Calculate metrics by stage
+    // Calculate metrics by stage (from metadata)
     const leadsByStage = totalLeads.reduce((acc, lead) => {
-      acc[lead.stage] = (acc[lead.stage] || 0) + 1;
+      const stage = (lead.metadata as any)?.leadStage || "awareness";
+      acc[stage] = (acc[stage] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
     // Calculate average lead score
     const avgLeadScore = totalLeads.length > 0
-      ? totalLeads.reduce((sum, lead) => sum + lead.leadScore, 0) / totalLeads.length
+      ? totalLeads.reduce((sum, lead) => sum + (lead.qualificationScore || 0), 0) / totalLeads.length
       : 0;
 
     // Calculate conversion rates
-    const qualifiedLeads = totalLeads.filter(l => l.leadScore >= 70).length;
+    const qualifiedLeads = totalLeads.filter(l => (l.qualificationScore || 0) >= 70).length;
     const conversionRate = totalLeads.length > 0
       ? (qualifiedLeads / totalLeads.length) * 100
       : 0;
@@ -244,21 +249,31 @@ export const marketingRouter = router({
 
       const stage = determineLeadStage("whitepaper", leadScore);
 
-      const leadData: InsertMarketingLead = {
+      // Generate unique leadId
+      const leadId = `WP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Insert into unified leads table
+      const leadData = {
+        leadId,
         name: input.name,
         email: input.email,
         company: input.company || null,
-        role: input.role || null,
-        numSDRs: input.numSDRs || null,
+        title: input.role || null,
         source: "whitepaper",
-        leadScore,
-        stage,
-        status: "new",
+        qualificationScore: leadScore,
+        qualificationLevel: leadScore >= 70 ? "A" as const : leadScore >= 50 ? "B" as const : leadScore >= 30 ? "C" as const : "D" as const,
+        status: "new" as const,
+        metadata: {
+          marketingSource: "whitepaper",
+          numSDRs: input.numSDRs,
+          leadStage: stage,
+          capturedAt: new Date().toISOString(),
+        },
       };
 
-      const [lead] = await db.insert(marketingLeads).values(leadData).$returningId();
+      const [lead] = await db.insert(leads).values(leadData).$returningId();
 
-      // Log activity
+      // Log activity in leadActivities
       const activityData: InsertLeadActivity = {
         leadId: lead.id,
         activityType: "whitepaper-downloaded",
@@ -310,23 +325,32 @@ export const marketingRouter = router({
 
       const stage = determineLeadStage("demo-request", leadScore);
 
-      const leadData: InsertMarketingLead = {
+      // Generate unique leadId
+      const leadId = `DEMO-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Insert into unified leads table
+      const leadData = {
+        leadId,
         name: input.name,
         email: input.email,
         company: input.company,
-        role: input.role,
-        phone: input.phone || null,
-        numSDRs: input.numSDRs,
-        timeline: input.timeline,
-        challenges: input.challenges || null,
+        title: input.role,
         source: "demo-request",
-        leadScore,
-        stage,
-        status: leadScore >= 70 ? "qualified" : "new",
-        qualifiedAt: leadScore >= 70 ? new Date() : null,
+        qualificationScore: leadScore,
+        qualificationLevel: leadScore >= 70 ? "A" as const : leadScore >= 50 ? "B" as const : leadScore >= 30 ? "C" as const : "D" as const,
+        status: leadScore >= 70 ? "qualified" as const : "new" as const,
+        metadata: {
+          marketingSource: "demo-request",
+          phone: input.phone,
+          numSDRs: input.numSDRs,
+          timeline: input.timeline,
+          challenges: input.challenges,
+          leadStage: stage,
+          capturedAt: new Date().toISOString(),
+        },
       };
 
-      const [lead] = await db.insert(marketingLeads).values(leadData).$returningId();
+      const [lead] = await db.insert(leads).values(leadData).$returningId();
 
       // Log activity
       const activityData: InsertLeadActivity = {
@@ -373,23 +397,23 @@ export const marketingRouter = router({
       if (input.email) {
         const existingLeads = await db
           .select()
-          .from(marketingLeads)
-          .where(eq(marketingLeads.email, input.email))
+          .from(leads)
+          .where(eq(leads.email, input.email))
           .limit(1);
 
         if (existingLeads.length > 0) {
           // Update existing lead score
           const lead = existingLeads[0];
-          const newScore = Math.min(lead.leadScore + 10, 100); // Boost score for calculator usage
+          const newScore = Math.min((lead.qualificationScore || 0) + 10, 100); // Boost score for calculator usage
 
           await db
-            .update(marketingLeads)
+            .update(leads)
             .set({
-              leadScore: newScore,
-              stage: determineLeadStage(lead.source, newScore),
+              qualificationScore: newScore,
+              qualificationLevel: newScore >= 70 ? "A" as const : newScore >= 50 ? "B" as const : newScore >= 30 ? "C" as const : "D" as const,
               updatedAt: new Date(),
             })
-            .where(eq(marketingLeads.id, lead.id));
+            .where(eq(leads.id, lead.id));
 
           // Log activity
           const activityData: InsertLeadActivity = {
