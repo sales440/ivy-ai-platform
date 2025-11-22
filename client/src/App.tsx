@@ -40,15 +40,16 @@ import LeadAssignmentDashboard from "./pages/LeadAssignmentDashboard";
 import ABTestDashboard from "./pages/ABTestDashboard";
 import WhitepaperDownload from "@/pages/WhitepaperDownload";
 import DemoRequest from "@/pages/DemoRequest";
+import AgentMonitoring from "@/pages/AgentMonitoring";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path="/roi-calculator" component={ROICalculator} />
-      <Route path="/whitepaper" component={WhitepaperDownload} />      <Route path={"/demo-request"} component={DemoRequest} />
-      <Route path={"/marketing-dashboard"} component={MarketingDashboard} />
-      <Route path={"/ab-test-dashboard"} component={ABTestDashboard} />
+      <Route path="/whitepaper" component={WhitepaperDownload} />      <Route path={" /demo-request"} component={DemoRequest} />
+      <Route path={" /marketing-dashboard"} component={MarketingDashboard} />
+      <Route path={" /agent-monitoring"} component={AgentMonitoring} />     <Route path={"/ab-test-dashboard"} component={ABTestDashboard} />
       <Route path={"/lead-assignment"} component={LeadAssignmentDashboard} />      <Route path={"/profile"} component={Profile} />
       <Route path={"/dashboard"} component={Dashboard} />
       <Route path={"/leads"} component={Leads} />
