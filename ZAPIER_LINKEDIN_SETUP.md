@@ -79,10 +79,13 @@ Esta guía te ayudará a configurar un Zap que permita a Ivy.AI publicar automá
 Mapea los campos del webhook a LinkedIn:
 
 1. **Visibility**: Selecciona **"Public"** (o **"Connections"** si prefieres)
-2. **Comment**: Haz clic en el campo y selecciona **"Content"** del menú desplegable
+2. **Comment**: Haz clic en el campo → En el menú desplegable, busca la sección **"1. Catch Hook in Webhooks by Zapier"** → Selecciona **"Content"**
+   - **⚠️ IMPORTANTE**: El campo se llama "Comment" en LinkedIn, NO "Text" o "Message"
    - Esto insertará el contenido del post generado por Ivy.AI
-3. **Link URL** (opcional): Deja en blanco o agrega tu sitio web
+3. **Link URL** (opcional): Deja en blanco o agrega tu sitio web (ej: https://ivybai.com)
 4. Haz clic en **"Continue"**
+
+**Verificación**: Deberías ver algo como `{{125617544__content}}` en el campo Comment, lo que indica que está correctamente mapeado.
 
 ### 3.4 Probar la Action
 

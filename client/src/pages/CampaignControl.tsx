@@ -42,6 +42,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import EmailAnalytics from "@/components/EmailAnalytics";
 
 /**
  * Campaign Control Panel
@@ -345,6 +346,10 @@ export default function CampaignControl() {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-4">
+            {/* Email Analytics */}
+            <EmailAnalytics />
+
+            {/* Original Analytics Content */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>

@@ -1822,3 +1822,23 @@
 - [x] Update seed-marketing-agents.ts
 - [x] Update linkedin-posts-router.ts
 - [x] Send test email with new sender (Message ID: o40-8ldKQGq_5H3oyo-WMA)
+
+## Email Sequences Expansion
+- [x] Create consideration stage email sequences (3 emails)
+- [x] Create decision stage email sequences (3 emails)
+- [ ] Create post-demo follow-up sequences (3 emails)
+- [x] Add industry-specific personalization variables
+- [x] Insert new sequences into emailSequences table
+
+## SendGrid Analytics Dashboard
+- [x] Create SendGrid Stats API integration service
+- [x] Implement email analytics tRPC router
+- [x] Add email analytics section to /campaign-control
+- [x] Display open rate, click rate, bounce rate metrics
+- [ ] Create charts for email performance over timeme
+
+## LinkedIn Zapier Automation Completion
+- [ ] Document Zapier field mapping instructions
+- [ ] Create guide for adding ZAPIER_LINKEDIN_WEBHOOK_URL secret
+- [ ] Test LinkedIn publish button from /linkedin-content
+- [ ] Validate post appears on LinkedIn profile
