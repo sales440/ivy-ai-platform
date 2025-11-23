@@ -643,3 +643,59 @@ export const linkedInPosts = mysqlTable("linkedInPosts", {
 
 export type LinkedInPost = typeof linkedInPosts.$inferSelect;
 export type InsertLinkedInPost = typeof linkedInPosts.$inferInsert;
+
+/**
+ * Multi-Channel Campaigns - Orchestrate email + LinkedIn workflows
+ */
+export const multiChannelCampaigns = mysqlTable("multiChannelCampaigns", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  targetAudience: mysqlEnum("targetAudience", ["awareness", "consideration", "decision"]).notNull(),
+  status: mysqlEnum("status", ["draft", "active", "paused", "completed"]).default("draft").notNull(),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  createdBy: int("createdBy").notNull(), // User ID
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type MultiChannelCampaign = typeof multiChannelCampaigns.$inferSelect;
+export type InsertMultiChannelCampaign = typeof multiChannelCampaigns.$inferInsert;
+
+/**
+ * Campaign Steps - Individual actions in a multi-channel campaign
+ */
+export const campaignSteps = mysqlTable("campaignSteps", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  stepNumber: int("stepNumber").notNull(), // Order of execution
+  delayDays: int("delayDays").notNull(), // Days after previous step (0 for first step)
+  channelType: mysqlEnum("channelType", ["email", "linkedin"]).notNull(),
+  actionType: varchar("actionType", { length: 100 }).notNull(), // "send_email", "generate_linkedin_post"
+  actionConfig: text("actionConfig").notNull(), // JSON config for the action
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CampaignStep = typeof campaignSteps.$inferSelect;
+export type InsertCampaignStep = typeof campaignSteps.$inferInsert;
+
+/**
+ * Campaign Executions - Track campaign execution per lead
+ */
+export const campaignExecutions = mysqlTable("campaignExecutions", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaignId").notNull(),
+  leadId: int("leadId").notNull(),
+  currentStepNumber: int("currentStepNumber").default(0).notNull(),
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "failed"]).default("pending").notNull(),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  lastExecutedAt: timestamp("lastExecutedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CampaignExecution = typeof campaignExecutions.$inferSelect;
+export type InsertCampaignExecution = typeof campaignExecutions.$inferInsert;

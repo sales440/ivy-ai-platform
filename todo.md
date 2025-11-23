@@ -1842,3 +1842,11 @@
 - [ ] Create guide for adding ZAPIER_LINKEDIN_WEBHOOK_URL secret
 - [ ] Test LinkedIn publish button from /linkedin-content
 - [ ] Validate post appears on LinkedIn profile
+
+## Multi-Channel Nurturing Workflows
+- [ ] Create multiChannelCampaigns table schema
+- [ ] Create campaignSteps table for orchestration
+- [ ] Implement campaign orchestrator service
+- [ ] Create multi-channel campaigns tRPC router
+- [ ] Build campaign management UI in /campaign-control
+- [ ] Test end-to-end multi-channel workflow execution
