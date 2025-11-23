@@ -25,6 +25,7 @@ import { linkedInRouter } from "./linkedin-router";
 import { linkedInPostsRouter } from "./linkedin-posts-router";
 import { workflowsRouter } from "./workflows-router";
 import { emailWorkflowsRouter } from "./email-workflows-router";
+import { linkedInOAuthRouter } from "./linkedin-oauth-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -79,6 +80,7 @@ export const appRouter = router({
   linkedInPosts: linkedInPostsRouter,
   workflows: workflowsRouter,
   emailWorkflows: emailWorkflowsRouter,
+  linkedInOAuth: linkedInOAuthRouter,
   calls: callsRouter,
   emails: emailsRouter,
   emailCampaigns: emailCampaignsRouter,

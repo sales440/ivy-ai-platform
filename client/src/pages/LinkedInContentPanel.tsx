@@ -62,6 +62,20 @@ export default function LinkedInContentPanel() {
     },
   });
 
+  // Publish to LinkedIn mutation
+  const publishPost = trpc.linkedInPosts.publish.useMutation({
+    onSuccess: (result) => {
+      toast.success("Post publicado en LinkedIn");
+      if (result.postUrl) {
+        window.open(result.postUrl, "_blank");
+      }
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(`Error al publicar: ${error.message}`);
+    },
+  });
+
   // Mark as published mutation
   const markAsPublished = trpc.linkedInPosts.update.useMutation({
     onSuccess: () => {
@@ -310,20 +324,32 @@ export default function LinkedInContentPanel() {
                     </div>
 
                     <div className="flex gap-2">
-                      {post.status === "draft" && (
-                        <Button
-                          size="sm"
-                          onClick={() =>
-                            markAsPublished.mutate({
-                              id: post.id,
-                              linkedinUrl: "",
-                            })
-                          }
-                          disabled={markAsPublished.isPending}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-2" />
-                          Marcar como Publicado
-                        </Button>
+                      {post.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => publishPost.mutate({ postId: post.id })}
+                            disabled={publishPost.isPending}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Publicar Ahora
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              markAsPublished.mutate({
+                                id: post.id,
+                                status: "published",
+                              })
+                            }
+                            disabled={markAsPublished.isPending}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Marcar Publicado
+                          </Button>
+                        </>
                       )}
 
                       <Button

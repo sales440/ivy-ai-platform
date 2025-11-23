@@ -1777,3 +1777,12 @@
 - [ ] Add bulk workflow actions (pause all, resume all)
 - [ ] Integrate with AgentMonitoring dashboard
 - [ ] Save checkpoint with complete campaign control system
+
+## LinkedIn Auto-Publish Feature
+- [x] Crear LinkedIn API client con OAuth 2.0
+- [x] Implementar servicio de autenticación LinkedIn
+- [x] Crear endpoint tRPC para publicar posts automáticamente
+- [x] Agregar botón "Publicar Ahora" en panel /linkedin-content
+- [ ] Implementar scheduler para publicaciones programadas
+- [ ] Crear guía de configuración de LinkedIn App
+- [ ] Documentar proceso de obtención de credenciales

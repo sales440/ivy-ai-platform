@@ -2,6 +2,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { invokeLLM } from "./_core/llm";
+import { publishLinkedInPost } from "./services/linkedin-api";
 
 /**
  * LinkedIn Posts Router
@@ -211,6 +212,63 @@ Responde SOLO con el texto del post, sin comillas ni formato adicional.`;
       await db.execute("DELETE FROM linkedinPosts WHERE id = ?", [input.id]);
 
       return { success: true };
+    }),
+
+  /**
+   * Publish a LinkedIn post
+   */
+  publish: protectedProcedure
+    .input(z.object({ postId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new Error("Database not available");
+      }
+
+      // Get post from database
+      const query = `SELECT * FROM linkedInPosts WHERE id = ? LIMIT 1`;
+      const result = await db.execute(query, [input.postId]);
+      const rows = result[0] as any[];
+
+      if (rows.length === 0) {
+        throw new Error("Post not found");
+      }
+
+      const post = rows[0];
+
+      // Publish to LinkedIn
+      const publishResult = await publishLinkedInPost({
+        text: post.content,
+        visibility: "PUBLIC",
+      });
+
+      if (!publishResult.success) {
+        // Update post status to failed
+        await db.execute(
+          `UPDATE linkedInPosts SET status = 'failed', error = ?, updatedAt = NOW() WHERE id = ?`,
+          [publishResult.error, input.postId]
+        );
+
+        throw new Error(publishResult.error || "Failed to publish post");
+      }
+
+      // Update post status to published
+      await db.execute(
+        `UPDATE linkedInPosts 
+         SET status = 'published', 
+             publishedAt = NOW(), 
+             linkedInPostId = ?, 
+             publishedUrl = ?,
+             updatedAt = NOW() 
+         WHERE id = ?`,
+        [publishResult.postId, publishResult.postUrl, input.postId]
+      );
+
+      return {
+        success: true,
+        postId: publishResult.postId,
+        postUrl: publishResult.postUrl,
+      };
     }),
 
   /**

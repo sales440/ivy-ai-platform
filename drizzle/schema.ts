@@ -621,3 +621,25 @@ export const emailSequenceSteps = mysqlTable("emailSequenceSteps", {
 
 export type EmailSequenceStep = typeof emailSequenceSteps.$inferSelect;
 export type InsertEmailSequenceStep = typeof emailSequenceSteps.$inferInsert;
+
+/**
+ * LinkedIn Posts - AI-generated content for Juan Carlos Robledo's LinkedIn
+ */
+export const linkedInPosts = mysqlTable("linkedInPosts", {
+  id: int("id").autoincrement().primaryKey(),
+  postType: mysqlEnum("postType", ["thought_leadership", "case_study", "product_update", "industry_insight", "customer_success"]).notNull(),
+  content: text("content").notNull(),
+  tone: varchar("tone", { length: 50 }).default("professional").notNull(),
+  status: mysqlEnum("status", ["pending", "scheduled", "published", "failed"]).default("pending").notNull(),
+  scheduledFor: timestamp("scheduledFor"),
+  publishedAt: timestamp("publishedAt"),
+  linkedInPostId: varchar("linkedInPostId", { length: 255 }),
+  publishedUrl: varchar("publishedUrl", { length: 512 }),
+  generatedBy: varchar("generatedBy", { length: 100 }).default("Ivy-Content").notNull(),
+  error: text("error"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LinkedInPost = typeof linkedInPosts.$inferSelect;
+export type InsertLinkedInPost = typeof linkedInPosts.$inferInsert;
