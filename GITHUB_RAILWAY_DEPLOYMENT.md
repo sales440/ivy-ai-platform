@@ -30,7 +30,7 @@ Antes de empezar, ten a mano:
 
 ```bash
 # SendGrid
-SENDGRID_API_KEY=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
+SENDGRID_API_KEY=SG.your_sendgrid_api_key_here
 
 # Zapier (opcional - para LinkedIn)
 ZAPIER_LINKEDIN_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/25223690/uza7lea/
@@ -163,7 +163,7 @@ VITE_ANALYTICS_WEBSITE_ID=tu_website_id_aqui
 #### 📧 Variables de Email (SendGrid)
 
 ```bash
-SENDGRID_API_KEY=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
+SENDGRID_API_KEY=SG.your_sendgrid_api_key_here
 ```
 
 #### 🎨 Variables de Branding
