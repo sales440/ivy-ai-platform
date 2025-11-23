@@ -2,7 +2,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { invokeLLM } from "./_core/llm";
-import { publishLinkedInPost } from "./services/linkedin-api";
+import { publishToLinkedInViaZapier } from "./services/zapier-linkedin";
 
 /**
  * LinkedIn Posts Router
@@ -236,10 +236,19 @@ Responde SOLO con el texto del post, sin comillas ni formato adicional.`;
 
       const post = rows[0];
 
-      // Publish to LinkedIn
-      const publishResult = await publishLinkedInPost({
-        text: post.content,
-        visibility: "PUBLIC",
+      // Get Zapier webhook URL from environment
+      const zapierWebhookUrl = process.env.ZAPIER_LINKEDIN_WEBHOOK_URL;
+      
+      if (!zapierWebhookUrl) {
+        throw new Error("ZAPIER_LINKEDIN_WEBHOOK_URL not configured. Please add it in Settings → Secrets.");
+      }
+
+      // Publish to LinkedIn via Zapier
+      const publishResult = await publishToLinkedInViaZapier(zapierWebhookUrl, {
+        content: post.content,
+        postId: input.postId,
+        postType: post.postType,
+        author: "Juan Carlos Robledo",
       });
 
       if (!publishResult.success) {
@@ -261,13 +270,13 @@ Responde SOLO con el texto del post, sin comillas ni formato adicional.`;
              publishedUrl = ?,
              updatedAt = NOW() 
          WHERE id = ?`,
-        [publishResult.postId, publishResult.postUrl, input.postId]
+        [publishResult.linkedInPostId, publishResult.publishedUrl, input.postId]
       );
 
       return {
         success: true,
-        postId: publishResult.postId,
-        postUrl: publishResult.postUrl,
+        postId: publishResult.linkedInPostId,
+        postUrl: publishResult.publishedUrl,
       };
     }),
 

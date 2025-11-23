@@ -1794,3 +1794,9 @@
 - [x] Add contact information (sales@rpcommercegroupllc.com)
 - [x] Update LINKEDIN_SETUP.md with Privacy Policy URL
 - [x] Test Privacy Policy page accessibility
+
+## Zapier Webhooks LinkedIn Integration
+- [x] Create Zapier webhook service for LinkedIn publishing
+- [x] Update linkedInPostsRouter to use Zapier webhooks
+- [x] Create ZAPIER_LINKEDIN_SETUP.md guide for configuring Zap
+- [ ] Test Zapier webhook integration with sample post
