@@ -1,0 +1,37 @@
+{
+  "query": "SELECT * FROM emailSequences LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT * FROM emailSequences LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Awareness Nurture",
+      "description": "Educational sequence for leads in awareness stage (score <40)",
+      "targetStage": "awareness",
+      "isActive": "1",
+      "createdAt": "2025-11-22 18:07:55",
+      "updatedAt": "2025-11-22 18:07:55"
+    },
+    {
+      "id": "2",
+      "name": "Consideration Nurture",
+      "description": "ROI-focused sequence for leads evaluating options (score 40-69)",
+      "targetStage": "consideration",
+      "isActive": "1",
+      "createdAt": "2025-11-22 18:07:55",
+      "updatedAt": "2025-11-22 18:07:55"
+    },
+    {
+      "id": "3",
+      "name": "Decision Accelerator",
+      "description": "High-touch sequence for leads ready to buy (score 70+)",
+      "targetStage": "decision",
+      "isActive": "1",
+      "createdAt": "2025-11-22 18:07:55",
+      "updatedAt": "2025-11-22 18:07:55"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdescription\ttargetStage\tisActive\tcreatedAt\tupdatedAt\n1\tAwareness Nurture\tEducational sequence for leads in awareness stage (score <40)\tawareness\t1\t2025-11-22 18:07:55\t2025-11-22 18:07:55\n2\tConsideration Nurture\tROI-focused sequence for leads evaluating options (score 40-69)\tconsideration\t1\t2025-11-22 18:07:55\t2025-11-22 18:07:55\n3\tDecision Accelerator\tHigh-touch sequence for leads ready to buy (score 70+)\tdecision\t1\t2025-11-22 18:07:55\t2025-11-22 18:07:55\n",
+  "stderr": "",
+  "execution_time_ms": 51
+}
