@@ -14,7 +14,7 @@ if (SENDGRID_API_KEY) {
   console.warn("[SendGrid] API key not configured. Email sending will be simulated.");
 }
 
-const FROM_EMAIL = "sales@rpcommercegroupllc.com";
+const FROM_EMAIL = "sales@ivybai.com";
 const FROM_NAME = "Ivy.AI - AI Agent Platform";
 
 export interface EmailTemplate {

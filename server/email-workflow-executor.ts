@@ -144,7 +144,7 @@ function replaceVariables(content: string, lead: any): string {
     .replace(/\{\{email\}\}/g, lead.email || "")
     .replace(/\{\{phone\}\}/g, lead.phone || "")
     .replace(/\{\{agentName\}\}/g, "Ivy.AI Team")
-    .replace(/\{\{agentEmail\}\}/g, "sales@rpcommercegroupllc.com");
+    .replace(/\{\{agentEmail\}\}/g, "sales@ivybai.com");
 }
 
 /**

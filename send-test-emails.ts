@@ -28,7 +28,7 @@ Ivy.AI es una plataforma de orquestación de agentes de IA diseñada para automa
 
 En los próximos días, te enviaremos información sobre cómo Ivy.AI puede transformar ${testLead.company} y resolver tu desafío actual: ${testLead.painPoint}.
 
-¿Tienes preguntas? Responde a este email o contáctanos en sales@rpcommercegroupllc.com
+¿Tienes preguntas? Responde a este email o contáctanos en sales@ivybai.com
 
 Saludos,
 Ivy.AI Team`,
@@ -52,7 +52,7 @@ Nuestros 6 agentes especializados trabajan juntos:
 📅 **Agenda una demo de 15 minutos**
 Responde a este email con tu disponibilidad y te mostraremos cómo resolver: ${testLead.painPoint}
 
-¿Preguntas? Escríbenos a sales@rpcommercegroupllc.com
+¿Preguntas? Escríbenos a sales@ivybai.com
 
 Saludos,
 Ivy.AI Team`,
@@ -77,7 +77,7 @@ Estamos listos para ayudarte a resolver: ${testLead.painPoint}
 
 Agenda una llamada de 15 minutos para discutir cómo Ivy.AI puede transformar ${testLead.company}.
 
-Responde a este email o contáctanos en sales@rpcommercegroupllc.com
+Responde a este email o contáctanos en sales@ivybai.com
 
 Saludos,
 Ivy.AI Team`,

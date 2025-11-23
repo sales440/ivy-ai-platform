@@ -38,7 +38,7 @@ async function seedMarketingAgents() {
         engagement_rate: 0,
       },
       configuration: {
-        email: "sales@rpcommercegroupllc.com",
+        email: "sales@ivybai.com",
         posting_schedule: ["Monday 9am", "Tuesday 10am", "Thursday 9am", "Friday 2pm", "Saturday 11am"],
         engagement_time: "30min/day",
         target_audience: ["VP of Sales", "Director of Sales", "Head of Revenue"],
@@ -67,7 +67,7 @@ async function seedMarketingAgents() {
         unsubscribe_rate: 0,
       },
       configuration: {
-        email: "sales@rpcommercegroupllc.com",
+        email: "sales@ivybai.com",
         sequences: [
           {
             name: "awareness",
@@ -119,7 +119,7 @@ async function seedMarketingAgents() {
         average_booking_time: 0,
       },
       configuration: {
-        email: "sales@rpcommercegroupllc.com",
+        email: "sales@ivybai.com",
         calendar_platform: "calendly",
         demo_duration: 30,
         buffer_time: 15,
@@ -158,7 +158,7 @@ async function seedMarketingAgents() {
         qualification_accuracy: 0,
       },
       configuration: {
-        email: "sales@rpcommercegroupllc.com",
+        email: "sales@ivybai.com",
         scoring_model: {
           company_size: { weight: 20, ranges: { "1-50": 0, "50-200": 50, "200-500": 80, "500+": 100 } },
           job_title: { weight: 25, values: { "VP": 100, "Director": 80, "Manager": 50, "Other": 20 } },
@@ -193,7 +193,7 @@ async function seedMarketingAgents() {
         winning_variants: 0,
       },
       configuration: {
-        email: "sales@rpcommercegroupllc.com",
+        email: "sales@ivybai.com",
         content_types: ["linkedin_post", "email", "carousel", "video_script", "ad_copy"],
         tone: "professional_conversational",
         brand_voice: {

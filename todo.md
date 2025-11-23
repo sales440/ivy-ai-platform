@@ -1813,3 +1813,12 @@
 - [x] Create email test script
 - [x] Send test emails with different sequences (3 emails sent successfully)
 - [x] Validate email delivery (Message IDs: cho72i07TkGXGY7r4De01g, lO1efDgiReSphkG5kSB3-w, UTuroXozRjWNxbgrVDLrVQ)
+
+## Email Sender Change
+- [x] Update email sender from sales@rpcommercegroupllc.com to sales@ivybai.com
+- [x] Verify new sender in SendGrid
+- [x] Update email-workflow-executor.ts
+- [x] Update send-test-emails.ts
+- [x] Update seed-marketing-agents.ts
+- [x] Update linkedin-posts-router.ts
+- [x] Send test email with new sender (Message ID: o40-8ldKQGq_5H3oyo-WMA)

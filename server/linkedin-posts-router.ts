@@ -86,7 +86,7 @@ export const linkedInPostsRouter = router({
 
 Contexto de Ivy.AI:
 - Plataforma de agentes de IA especializados (ventas, soporte, marketing, operaciones)
-- Email unificado: sales@rpcommercegroupllc.com
+- Email unificado: sales@ivybai.com
 - Dirigido a empresas B2B que buscan automatizar procesos
 - Casos de uso: generación de leads, calificación automática, soporte 24/7, análisis predictivo
 
