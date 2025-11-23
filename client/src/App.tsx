@@ -43,6 +43,7 @@ import DemoRequest from "@/pages/DemoRequest";
 import AgentMonitoring from "@/pages/AgentMonitoring";
 import LinkedInContentPanel from "@/pages/LinkedInContentPanel";
 import CampaignControl from "@/pages/CampaignControl";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/agent-monitoring" component={AgentMonitoring} />
       <Route path="/linkedin-content" component={LinkedInContentPanel} />
       <Route path="/campaign-control" component={CampaignControl} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/ab-test-dashboard" component={ABTestDashboard} />
       <Route path="/lead-assignment" component={LeadAssignmentDashboard} />
       <Route path="/profile" component={Profile} />

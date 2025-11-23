@@ -9,8 +9,11 @@ Esta guía te ayudará a configurar la integración con LinkedIn API para public
 3. Completa el formulario:
    - **App name**: Ivy.AI Platform
    - **LinkedIn Page**: Selecciona tu página de empresa (o crea una si no tienes)
+   - **Privacy policy URL**: `https://tu-dominio.manus.space/privacy-policy` (reemplaza `tu-dominio` con tu dominio real)
    - **App logo**: Sube el logo de Ivy.AI
    - **Legal agreement**: Acepta los términos
+
+   **Nota importante:** Ivy.AI Platform ya incluye una página de Privacy Policy profesional en `/privacy-policy`. Esta página cumple con GDPR y regulaciones de LinkedIn. Simplemente usa la URL de tu dominio publicado.
 
 4. Haz clic en **"Create app"**
 

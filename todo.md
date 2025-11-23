@@ -1784,5 +1784,13 @@
 - [x] Crear endpoint tRPC para publicar posts automáticamente
 - [x] Agregar botón "Publicar Ahora" en panel /linkedin-content
 - [ ] Implementar scheduler para publicaciones programadas
-- [ ] Crear guía de configuración de LinkedIn App
-- [ ] Documentar proceso de obtención de credenciales
+- [x] Crear guía de configuración de LinkedIn App
+- [x] Documentar proceso de obtención de credenciales
+
+## Privacy Policy Page for LinkedIn App
+- [x] Create /privacy-policy page with professional legal content
+- [x] Add GDPR compliance sections
+- [x] Include LinkedIn integration disclosure
+- [x] Add contact information (sales@rpcommercegroupllc.com)
+- [x] Update LINKEDIN_SETUP.md with Privacy Policy URL
+- [x] Test Privacy Policy page accessibility
