@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS fagorEmailEvents (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  enrollmentId INT NOT NULL,\n  contactId INT NOT NULL,\n  emailNumber INT NOT NULL,\n  eventType ENUM('sent', 'delivered', 'opened', 'clicked', 'bounced', 'complained', 'unsubscribed') NOT NULL,\n  messageId VARCHAR(255),\n  userAgent TEXT,\n  ipAddress VARCHAR(45),\n  clickedUrl TEXT,\n  metadata JSON,\n  eventAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS fagorEmailEvents (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  enrollmentId INT NOT NULL,\n  contactId INT NOT NULL,\n  emailNumber INT NOT NULL,\n  eventType ENUM('sent', 'delivered', 'opened', 'clicked', 'bounced', 'complained', 'unsubscribed') NOT NULL,\n  messageId VARCHAR(255),\n  userAgent TEXT,\n  ipAddress VARCHAR(45),\n  clickedUrl TEXT,\n  metadata JSON,\n  eventAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 172
+}

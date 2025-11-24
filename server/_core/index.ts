@@ -45,6 +45,10 @@ async function startServer() {
   // Gmail webhook endpoints
   const { gmailWebhookRouter } = await import("../webhooks/gmail-webhook");
   app.use("/api/webhooks", gmailWebhookRouter);
+
+  // SendGrid webhook endpoints
+  const { sendgridWebhookRouter } = await import("../webhooks/sendgrid-webhook");
+  app.use("/api/webhooks", sendgridWebhookRouter);
   
   // SSE notifications endpoint
   const notificationsSSERouter = (await import("../routes/notifications-sse")).default;
@@ -77,6 +81,10 @@ async function startServer() {
     // Start scheduled tasks processor
     const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
     startScheduledTasksProcessor();
+
+    // Start FAGOR drip campaign scheduler
+    const { startFagorDripScheduler } = await import('../fagor-drip-scheduler');
+    startFagorDripScheduler();
   });
 }
 

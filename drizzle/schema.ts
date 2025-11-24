@@ -699,3 +699,72 @@ export const campaignExecutions = mysqlTable("campaignExecutions", {
 
 export type CampaignExecution = typeof campaignExecutions.$inferSelect;
 export type InsertCampaignExecution = typeof campaignExecutions.$inferInsert;
+
+/**
+ * FAGOR Campaign Contacts - Contacts imported for FAGOR training campaigns
+ */
+export const fagorContacts = mysqlTable("fagorContacts", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  company: varchar("company", { length: 255 }),
+  role: varchar("role", { length: 255 }),
+  phone: varchar("phone", { length: 50 }),
+  source: varchar("source", { length: 100 }).default("csv_import").notNull(), // csv_import, manual, api
+  tags: json("tags").$type<string[]>(), // ["manufacturing", "cnc", "midwest"]
+  customFields: json("customFields").$type<Record<string, any>>(), // Additional custom data
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FagorContact = typeof fagorContacts.$inferSelect;
+export type InsertFagorContact = typeof fagorContacts.$inferInsert;
+
+/**
+ * FAGOR Campaign Enrollments - Track which contacts are enrolled in which campaigns
+ */
+export const fagorCampaignEnrollments = mysqlTable("fagorCampaignEnrollments", {
+  id: int("id").autoincrement().primaryKey(),
+  contactId: int("contactId").notNull(),
+  campaignName: varchar("campaignName", { length: 255 }).notNull(), // "FAGOR_CNC_Training_2026"
+  currentStep: int("currentStep").default(0).notNull(), // 0 = not started, 1 = email 1 sent, 2 = email 2 sent, 3 = email 3 sent
+  status: mysqlEnum("status", ["active", "paused", "completed", "unsubscribed"]).default("active").notNull(),
+  email1SentAt: timestamp("email1SentAt"),
+  email1OpenedAt: timestamp("email1OpenedAt"),
+  email1ClickedAt: timestamp("email1ClickedAt"),
+  email2SentAt: timestamp("email2SentAt"),
+  email2OpenedAt: timestamp("email2OpenedAt"),
+  email2ClickedAt: timestamp("email2ClickedAt"),
+  email3SentAt: timestamp("email3SentAt"),
+  email3OpenedAt: timestamp("email3OpenedAt"),
+  email3ClickedAt: timestamp("email3ClickedAt"),
+  respondedAt: timestamp("respondedAt"), // When they replied to any email
+  enrolledAt: timestamp("enrolledAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FagorCampaignEnrollment = typeof fagorCampaignEnrollments.$inferSelect;
+export type InsertFagorCampaignEnrollment = typeof fagorCampaignEnrollments.$inferInsert;
+
+/**
+ * FAGOR Email Events - Detailed tracking of all email events (opens, clicks, bounces)
+ */
+export const fagorEmailEvents = mysqlTable("fagorEmailEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  enrollmentId: int("enrollmentId").notNull(),
+  contactId: int("contactId").notNull(),
+  emailNumber: int("emailNumber").notNull(), // 1, 2, or 3
+  eventType: mysqlEnum("eventType", ["sent", "delivered", "opened", "clicked", "bounced", "complained", "unsubscribed"]).notNull(),
+  messageId: varchar("messageId", { length: 255 }), // SendGrid message ID
+  userAgent: text("userAgent"), // Browser/email client info
+  ipAddress: varchar("ipAddress", { length: 45 }), // IP address of opener/clicker
+  clickedUrl: text("clickedUrl"), // Which URL was clicked
+  metadata: json("metadata").$type<Record<string, any>>(), // Additional event data
+  eventAt: timestamp("eventAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FagorEmailEvent = typeof fagorEmailEvents.$inferSelect;
+export type InsertFagorEmailEvent = typeof fagorEmailEvents.$inferInsert;

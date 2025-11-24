@@ -28,6 +28,7 @@ import { emailWorkflowsRouter } from "./email-workflows-router";
 import { linkedInOAuthRouter } from "./linkedin-oauth-router";
 import { emailAnalyticsRouter } from "./email-analytics-router";
 import { multiChannelCampaignsRouter } from "./multi-channel-campaigns-router";
+import { fagorCampaignRouter } from "./fagor-campaign-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -75,6 +76,7 @@ function parseCommand(input: string): ParsedCommand {
 // ============================================================================
 
 export const appRouter = router({
+  fagorCampaign: fagorCampaignRouter,
   marketing: marketingRouter,
   leadAssignment: leadAssignmentRouter,
   agents: agentsRouter,
