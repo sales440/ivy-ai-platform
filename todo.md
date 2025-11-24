@@ -1850,3 +1850,23 @@
 - [ ] Create multi-channel campaigns tRPC router
 - [ ] Build campaign management UI in /campaign-control
 - [ ] Test end-to-end multi-channel workflow execution
+
+
+## FAGOR Automation - Agent Configuration
+- [ ] Define 5 additional FAGOR campaigns (beyond CNC Training 2026)
+- [ ] Configure Ivy-Prospect agent for FAGOR lead generation campaigns
+- [ ] Configure Ivy-Closer agent for FAGOR sales conversion campaigns
+- [ ] Configure Ivy-Solve agent for FAGOR customer support campaigns
+- [ ] Configure Ivy-Logic agent for FAGOR operations automation campaigns
+- [ ] Configure Ivy-Talent agent for FAGOR HR/recruiting campaigns
+- [ ] Configure Ivy-Insight agent for FAGOR analytics/reporting campaigns
+- [ ] Create email templates for each of the 6 FAGOR campaigns
+- [ ] Test multi-agent workflow for FAGOR campaigns
+- [ ] Configure agent personas with FAGOR brand voice and messaging
+
+## Railway Deployment - FAGOR Tables Fix
+- [ ] Create tRPC endpoint to automatically create FAGOR tables
+- [ ] Push changes to GitHub
+- [ ] Trigger Railway deployment
+- [ ] Test migration endpoint
+- [ ] Verify FAGOR tables exist in Railway database
