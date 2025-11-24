@@ -280,7 +280,7 @@ function CampaignCard({
   onToggleStatus: (id: number, currentStatus: string) => void;
 }) {
   const { data: stats } = trpc.multiChannelCampaigns.getStats.useQuery({
-    id: campaign.id,
+    campaignId: campaign.id,
   });
 
   const statusColors = {

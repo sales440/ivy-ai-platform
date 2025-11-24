@@ -22,7 +22,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { CompanySelector } from "@/components/CompanySelector";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield, TrendingUp, GitBranch, Phone, Clock, Activity, Mail, Target, Upload, DollarSign } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield, TrendingUp, GitBranch, Phone, Clock, Activity, Mail, Target, Upload, DollarSign, Zap } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -40,6 +40,7 @@ const menuItems = [
   { icon: DollarSign, label: "ROI Dashboard", path: "/analytics/roi" },
   { icon: Mail, label: "Campaign Metrics", path: "/analytics/campaigns" },
   { icon: Mail, label: "Performance de Emails", path: "/analytics/email-performance" },
+  { icon: Zap, label: "Multi-Channel Campaigns", path: "/multi-channel-campaigns" },
   { icon: Phone, label: "Call History", path: "/calls" },
   { icon: Clock, label: "Scheduled Tasks", path: "/scheduled-tasks" },
   { icon: Mail, label: "Email Templates", path: "/email-templates" },
