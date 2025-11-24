@@ -1870,3 +1870,20 @@
 - [ ] Trigger Railway deployment
 - [ ] Test migration endpoint
 - [ ] Verify FAGOR tables exist in Railway database
+
+## FAGOR Campaigns - Implementation Tasks
+- [x] Execute migration endpoint to create FAGOR tables in database
+- [x] Update Ivy-Prospect with CNC Training 2026 persona
+- [x] Update Ivy-Closer with Warranty Extension persona
+- [x] Update Ivy-Solve with Equipment Repair persona
+- [x] Update Ivy-Logic with EOL Parts + Preventive Maintenance persona
+- [x] Update Ivy-Talent with CNC Upgrades persona (3 types)
+- [x] Update Ivy-Insight with Digital Suite + Modernization persona
+- [x] Create email templates for Warranty Extension (3 emails)
+- [ ] Create email templates for Equipment Repair (3 emails)
+- [ ] Create email templates for EOL Parts (3 emails)
+- [ ] Create email templates for CNC Upgrades (3 emails)
+- [ ] Create email templates for Digital Suite (3 emails)
+- [ ] Create email templates for Preventive Maintenance (3 emails)
+- [ ] Configure SendGrid webhook for tracking
+- [ ] Test all 6 agent configurations with sample data
