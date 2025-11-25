@@ -49,6 +49,9 @@ import FAGORCampaign from "@/pages/FAGORCampaign";
 import AgentsDashboard from "@/pages/AgentsDashboard";
 import MilestoneConfig from "@/pages/MilestoneConfig";
 import AgentTrends from "@/pages/AgentTrends";
+import ABTestingDashboard from "@/pages/ABTestingDashboard";
+import ChurnRiskDashboard from "@/pages/ChurnRiskDashboard";
+import ExecutiveSummary from "@/pages/ExecutiveSummary";
 
 function Router() {
   return (
@@ -65,6 +68,9 @@ function Router() {
       <Route path="/fagor-campaign" component={FAGORCampaign} />
       <Route path="/agents-dashboard" component={AgentsDashboard} />
       <Route path="/agent-trends" component={AgentTrends} />
+      <Route path="/ab-testing" component={ABTestingDashboard} />
+      <Route path="/churn-risk" component={ChurnRiskDashboard} />
+      <Route path="/executive-summary" component={ExecutiveSummary} />
       <Route path="/admin/milestone-config" component={MilestoneConfig} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/ab-test-dashboard" component={ABTestDashboard} />
