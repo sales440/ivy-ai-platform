@@ -137,6 +137,7 @@ export default function AgentsDashboard() {
   }
 
   const agents = metrics?.agents || [];
+  const filteredAgents = agents; // All agents (filtering already done by query)
   const totalMetrics = metrics?.totals || {
     emailsSent: 0,
     emailsOpened: 0,

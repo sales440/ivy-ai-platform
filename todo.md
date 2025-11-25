@@ -2077,3 +2077,8 @@
 - [ ] Build agent performance dashboard (showing which agent converts best)
 - [ ] Add "Powered by Ivy.AI" branding to all agent communications
 - [ ] Create agent switching logic (Ivy-Prospect → Ivy-Closer handoff)
+
+
+## Bug Fixes
+
+- [x] Fix ReferenceError: filteredAgents is not defined in /agents-dashboard
