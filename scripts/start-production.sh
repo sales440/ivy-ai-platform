@@ -13,6 +13,10 @@ pnpm db:push || echo "⚠️  Migration failed or no changes needed"
 echo "🔔 Ensuring notifications table exists..."
 node scripts/fix-notifications.mjs || echo "⚠️  Notifications table check failed"
 
+# Create FAGOR tables if they don't exist
+echo "📊 Creating FAGOR campaign tables..."
+node scripts/create-fagor-tables.mjs || echo "⚠️  FAGOR tables creation failed or already exist"
+
 # Start the application
 echo "✅ Starting application server..."
 exec pnpm start
