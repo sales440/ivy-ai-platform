@@ -48,6 +48,7 @@ import MultiChannelCampaigns from "@/pages/MultiChannelCampaigns";
 import FAGORCampaign from "@/pages/FAGORCampaign";
 import AgentsDashboard from "@/pages/AgentsDashboard";
 import MilestoneConfig from "@/pages/MilestoneConfig";
+import AgentTrends from "@/pages/AgentTrends";
 
 function Router() {
   return (
@@ -63,6 +64,7 @@ function Router() {
       <Route path="/multi-channel-campaigns" component={MultiChannelCampaigns} />
       <Route path="/fagor-campaign" component={FAGORCampaign} />
       <Route path="/agents-dashboard" component={AgentsDashboard} />
+      <Route path="/agent-trends" component={AgentTrends} />
       <Route path="/admin/milestone-config" component={MilestoneConfig} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/ab-test-dashboard" component={ABTestDashboard} />

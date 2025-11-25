@@ -14,6 +14,9 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AgentComparison } from "@/components/AgentComparison";
+import { AgentRecommendations } from "@/components/AgentRecommendations";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AgentMetrics {
   agentId: string;
@@ -247,9 +250,10 @@ export default function AgentsDashboard() {
 
         {/* Tabs for Overview and Comparison */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="comparison">Agent Comparison</TabsTrigger>
+            <TabsTrigger value="comparison">Comparison</TabsTrigger>
+            <TabsTrigger value="recommendations">AI Recommendations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -467,6 +471,10 @@ export default function AgentsDashboard() {
 
           <TabsContent value="comparison" className="space-y-6">
             <AgentComparison agents={filteredAgents} />
+          </TabsContent>
+
+          <TabsContent value="recommendations" className="space-y-6">
+            <AgentRecommendations />
           </TabsContent>
         </Tabs>
       </div>

@@ -1953,3 +1953,30 @@
 - [x] Display comparison charts (bar charts for metrics)
 - [x] Show percentage differences between agents
 - [x] Add "Best Performer" and "Needs Improvement" indicators
+
+
+## FAGOR AI-Powered Enhancements
+
+### Proactive Email Alerts
+- [x] Create email alert system for milestone achievements
+- [x] Implement performance drop detection (conversion rate, ROI below thresholds)
+- [x] Send email alerts to owner when critical events occur
+- [x] Add email template for milestone notifications
+- [x] Add email template for performance warnings
+- [x] Test email delivery with SendGrid integration
+
+### Temporal Trends Dashboard
+- [x] Create historical metrics tracking in database
+- [x] Implement time-series data collection for agent metrics
+- [x] Add line charts showing 30/60/90 day trends
+- [x] Display trend indicators (up/down arrows, percentage change)
+- [x] Add date range selector for custom trend analysis
+- [x] Show comparative trends between agents
+
+### AI-Powered Optimization Recommendations
+- [x] Integrate LLM for analyzing agent performance data
+- [x] Generate specific recommendations per agent (subject lines, timing, targeting)
+- [x] Display recommendations in agents dashboard
+- [x] Add expandable action steps for each recommendation
+- [x] Categorize recommendations by type (subject_lines, timing, targeting, content, follow_up)
+- [x] Prioritize recommendations (high, medium, low) based on impact

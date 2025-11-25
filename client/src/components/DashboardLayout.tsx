@@ -22,7 +22,7 @@ import {
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { CompanySelector } from "@/components/CompanySelector";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield, TrendingUp, GitBranch, Phone, Clock, Activity, Mail, Target, Upload, DollarSign, Zap, Bot } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield, TrendingUp, GitBranch, Phone, Clock, Activity, Mail, Target, Upload, DollarSign, Zap, Bot, LineChart } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -42,6 +42,7 @@ const menuItems = [
   { icon: Mail, label: "Performance de Emails", path: "/analytics/email-performance" },
   { icon: Zap, label: "Multi-Channel Campaigns", path: "/multi-channel-campaigns" },
   { icon: Bot, label: "FAGOR Agents Dashboard", path: "/agents-dashboard" },
+  { icon: LineChart, label: "FAGOR Agent Trends", path: "/agent-trends" },
   { icon: Mail, label: "FAGOR Campaign Control", path: "/fagor-campaign" },
   { icon: Phone, label: "Call History", path: "/calls" },
   { icon: Clock, label: "Scheduled Tasks", path: "/scheduled-tasks" },

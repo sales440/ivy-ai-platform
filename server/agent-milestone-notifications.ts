@@ -12,6 +12,7 @@
 import { getDb } from "./db";
 import { notifications, fagorCampaignEnrollments } from "../drizzle/schema";
 import { eq, and, gte, sql } from "drizzle-orm";
+import { sendMilestoneEmail } from "./agent-email-alerts";
 
 interface AgentMilestone {
   agentId: string;
@@ -289,6 +290,16 @@ async function createMilestoneNotification(milestone: AgentMilestone): Promise<v
     });
 
     console.log(`[AgentMilestones] ✅ Created notification: ${milestone.message}`);
+
+    // Send email alert to owner
+    await sendMilestoneEmail({
+      agentName: milestone.agentName,
+      campaignName: milestone.campaignName,
+      milestoneType: milestone.milestoneType,
+      value: milestone.value,
+      threshold: milestone.threshold,
+      message: milestone.message,
+    });
   } catch (error) {
     console.error('[AgentMilestones] Error creating notification:', error);
   }
