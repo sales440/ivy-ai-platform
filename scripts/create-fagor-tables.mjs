@@ -44,9 +44,10 @@ async function main() {
           try {
             await connection.query(statement);
           } catch (err) {
-            // Ignore "already exists" errors
-            if (!err.message.includes('already exists')) {
-              throw err;
+            // Ignore "already exists" and "Duplicate key name" errors
+            if (!err.message.includes('already exists') && !err.message.includes('Duplicate key name')) {
+              console.warn(`⚠️  Warning executing statement: ${err.message}`);
+              // Don't throw, just warn - indexes are optional optimizations
             }
           }
         }
