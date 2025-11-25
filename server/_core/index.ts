@@ -85,6 +85,20 @@ async function startServer() {
     // Start FAGOR drip campaign scheduler
     const { startFagorDripScheduler } = await import('../fagor-drip-scheduler');
     startFagorDripScheduler();
+
+    // Start agent milestone checker (runs every hour)
+    const { scheduledMilestoneCheck } = await import('../agent-milestone-notifications');
+    setInterval(() => {
+      scheduledMilestoneCheck().catch(err => {
+        console.error('[AgentMilestones] Error in scheduled check:', err);
+      });
+    }, 60 * 60 * 1000); // Every hour
+    // Run initial check after 1 minute
+    setTimeout(() => {
+      scheduledMilestoneCheck().catch(err => {
+        console.error('[AgentMilestones] Error in initial check:', err);
+      });
+    }, 60 * 1000);
   });
 }
 

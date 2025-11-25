@@ -32,6 +32,7 @@ import { fagorCampaignRouter } from "./fagor-campaign-router";
 import { migrationRouter } from "./migration-router";
 import { agentCampaignRouter } from "./agent-campaign-integration";
 import { fagorAgentsMetricsRouter } from "./fagor-agents-metrics-router";
+import { agentMilestonesRouter } from "./agent-milestones-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -81,6 +82,7 @@ function parseCommand(input: string): ParsedCommand {
 export const appRouter = router({
   migration: migrationRouter,
   fagor: fagorAgentsMetricsRouter,
+  agentMilestones: agentMilestonesRouter,
   fagorCampaign: fagorCampaignRouter,
   agentCampaign: agentCampaignRouter,
   marketing: marketingRouter,

@@ -2,27 +2,15 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Upload, Send, Users, Mail, TrendingUp } from "lucide-react";
+import { Send, Users, Mail, TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-
-interface Contact {
-  name: string;
-  email: string;
-  company?: string;
-  role?: string;
-  phone?: string;
-}
+import { SmartContactImport } from "@/components/SmartContactImport";
 
 export default function FAGORCampaign() {
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [parsedContacts, setParsedContacts] = useState<Contact[]>([]);
-  const [importing, setImporting] = useState(false);
   const [sending, setSending] = useState(false);
   const [sendProgress, setSendProgress] = useState(0);
 
@@ -30,94 +18,8 @@ export default function FAGORCampaign() {
   const { data: stats } = trpc.fagorCampaign.getCampaignStats.useQuery({ campaignName: 'FAGOR_CNC_Training_2026' });
   const { data: enrollments } = trpc.fagorCampaign.getEnrollments.useQuery({ campaignName: 'FAGOR_CNC_Training_2026' });
 
-  const importMutation = trpc.fagorCampaign.importContacts.useMutation();
   const enrollMutation = trpc.fagorCampaign.enrollInCampaign.useMutation();
   const sendEmailMutation = trpc.fagorCampaign.sendCampaignEmail.useMutation();
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.csv')) {
-      toast.error('Please upload a CSV file');
-      return;
-    }
-
-    setCsvFile(file);
-
-    // Parse CSV
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
-      
-      if (lines.length < 2) {
-        toast.error('CSV file is empty or invalid');
-        return;
-      }
-
-      // Parse header
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      const nameIdx = headers.findIndex(h => h.includes('name'));
-      const emailIdx = headers.findIndex(h => h.includes('email'));
-      const companyIdx = headers.findIndex(h => h.includes('company'));
-      const roleIdx = headers.findIndex(h => h.includes('role') || h.includes('title'));
-      const phoneIdx = headers.findIndex(h => h.includes('phone'));
-
-      if (emailIdx === -1) {
-        toast.error('CSV must contain an "email" column');
-        return;
-      }
-
-      // Parse contacts
-      const contacts: Contact[] = [];
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-        
-        if (!values[emailIdx]) continue;
-
-        contacts.push({
-          name: nameIdx !== -1 ? values[nameIdx] : values[emailIdx].split('@')[0],
-          email: values[emailIdx],
-          company: companyIdx !== -1 ? values[companyIdx] : undefined,
-          role: roleIdx !== -1 ? values[roleIdx] : undefined,
-          phone: phoneIdx !== -1 ? values[phoneIdx] : undefined,
-        });
-      }
-
-      setParsedContacts(contacts);
-      toast.success(`Parsed ${contacts.length} contacts from CSV`);
-    };
-
-    reader.readAsText(file);
-  };
-
-  const handleImport = async () => {
-    if (parsedContacts.length === 0) {
-      toast.error('No contacts to import');
-      return;
-    }
-
-    setImporting(true);
-    try {
-      const result = await importMutation.mutateAsync({ contacts: parsedContacts });
-      
-      toast.success(`Imported ${result.imported} contacts${result.skipped > 0 ? `, skipped ${result.skipped} duplicates` : ''}`);
-      
-      if (result.errors.length > 0) {
-        toast.error(`${result.errors.length} errors occurred`);
-        console.error('Import errors:', result.errors);
-      }
-
-      setParsedContacts([]);
-      setCsvFile(null);
-      refetchContacts();
-    } catch (error: any) {
-      toast.error(`Import failed: ${error.message}`);
-    } finally {
-      setImporting(false);
-    }
-  };
 
   const handleEnrollAll = async () => {
     if (!contacts || contacts.length === 0) {
@@ -353,64 +255,7 @@ export default function FAGORCampaign() {
 
         {/* Import Contacts Tab */}
         <TabsContent value="import" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Import Contacts from CSV</CardTitle>
-              <CardDescription>
-                Upload a CSV file with columns: name, email, company, role, phone
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="csv-file">CSV File</Label>
-                <Input
-                  id="csv-file"
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileChange}
-                />
-              </div>
-
-              {parsedContacts.length > 0 && (
-                <>
-                  <div className="rounded-md border p-4">
-                    <p className="font-medium mb-2">Preview ({parsedContacts.length} contacts)</p>
-                    <div className="max-h-60 overflow-y-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Company</TableHead>
-                            <TableHead>Role</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {parsedContacts.slice(0, 10).map((contact, idx) => (
-                            <TableRow key={idx}>
-                              <TableCell>{contact.name}</TableCell>
-                              <TableCell>{contact.email}</TableCell>
-                              <TableCell>{contact.company || '-'}</TableCell>
-                              <TableCell>{contact.role || '-'}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                      {parsedContacts.length > 10 && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          ...and {parsedContacts.length - 10} more
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button onClick={handleImport} disabled={importing} className="w-full">
-                    {importing ? 'Importing...' : `Import ${parsedContacts.length} Contacts`}
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <SmartContactImport onImportComplete={refetchContacts} />
 
           <Card>
             <CardHeader>
