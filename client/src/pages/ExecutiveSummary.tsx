@@ -6,6 +6,9 @@ import {
   CheckCircle2, Clock, Zap, ArrowUp, ArrowDown, Minus
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import { RealtimeNotificationsPanel } from "@/components/RealtimeNotificationsPanel";
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
@@ -94,6 +97,25 @@ const criticalAlerts = [
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function ExecutiveSummary() {
+  const generatePdf = trpc.executiveSummaryPdf.generatePdf.useMutation({
+    onSuccess: (data) => {
+      toast.success(`PDF generated: ${data.pdf.filename}`);
+      // In production, trigger download
+      console.log('PDF ready for download:', data.pdf.url);
+    },
+    onError: (error) => {
+      toast.error(`Failed to generate PDF: ${error.message}`);
+    },
+  });
+
+  const handleExportPdf = () => {
+    generatePdf.mutate({
+      includeCharts: true,
+      includeAlerts: true,
+      dateRange: 'last_30_days',
+    });
+  };
+
   const getTrendIcon = (value: number) => {
     if (value > 5) return <ArrowUp className="h-4 w-4 text-green-600" />;
     if (value < -5) return <ArrowDown className="h-4 w-4 text-red-600" />;
@@ -142,11 +164,14 @@ export default function ExecutiveSummary() {
               <Clock className="h-4 w-4 mr-2" />
               Last 30 Days
             </Button>
-            <Button>
-              Export Report
+            <Button onClick={handleExportPdf} disabled={generatePdf.isPending}>
+              {generatePdf.isPending ? 'Generating...' : 'Export Report'}
             </Button>
           </div>
         </div>
+
+        {/* Real-Time Notifications */}
+        <RealtimeNotificationsPanel />
 
         {/* Critical Alerts */}
         <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50">

@@ -2010,3 +2010,26 @@
 - [x] Implement trend charts for key business metrics
 - [x] Add agent performance comparison summary
 - [x] Create revenue projection cards (monthly, quarterly)
+
+
+## FAGOR Real-Time Features
+
+### Executive Summary PDF Export
+- [x] Create PDF generation endpoint for executive summary
+- [x] Include all KPIs (revenue, conversions, ROI, emails sent)
+- [x] Embed charts as images in PDF (revenue trends, campaign breakdown)
+- [x] Include agent performance ranking table
+- [x] Add critical alerts section in PDF
+- [x] Style PDF with professional layout and branding
+- [x] Add download button functionality in ExecutiveSummary page
+
+### Real-Time Push Alerts
+- [x] Set up WebSocket server (Socket.IO) for real-time notifications
+- [x] Create WebSocket client connection in frontend (useWebSocketNotifications hook)
+- [x] Implement push notifications for milestone achievements
+- [x] Implement push notifications for A/B test significance
+- [x] Implement push notifications for churn spike detection
+- [x] Implement push notifications for performance drops
+- [x] Add toast notifications in UI when events occur (severity-based: critical/warning/success/info)
+- [x] Create RealtimeNotificationsPanel component with live status indicator
+- [x] Integrate WebSocket notifications into milestone system

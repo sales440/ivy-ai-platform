@@ -300,6 +300,15 @@ async function createMilestoneNotification(milestone: AgentMilestone): Promise<v
       threshold: milestone.threshold,
       message: milestone.message,
     });
+
+    // Send real-time push notification via WebSocket
+    const { notifyMilestone } = await import('./websocket-notifications');
+    notifyMilestone(
+      milestone.agentName,
+      milestone.milestoneType,
+      milestone.value,
+      milestone.campaignName
+    );
   } catch (error) {
     console.error('[AgentMilestones] Error creating notification:', error);
   }

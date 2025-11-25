@@ -35,6 +35,7 @@ import { fagorAgentsMetricsRouter } from "./fagor-agents-metrics-router";
 import { agentMilestonesRouter } from "./agent-milestones-router";
 import { agentRecommendationsRouter } from "./agent-recommendations-router";
 import { churnPredictionRouter } from "./churn-prediction-router";
+import { executiveSummaryPdfRouter } from "./executive-summary-pdf-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -87,6 +88,7 @@ export const appRouter = router({
   agentMilestones: agentMilestonesRouter,
   agentRecommendations: agentRecommendationsRouter,
   churnPrediction: churnPredictionRouter,
+  executiveSummaryPdf: executiveSummaryPdfRouter,
   fagorCampaign: fagorCampaignRouter,
   agentCampaign: agentCampaignRouter,
   marketing: marketingRouter,
