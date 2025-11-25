@@ -46,6 +46,7 @@ import CampaignControl from "@/pages/CampaignControl";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import MultiChannelCampaigns from "@/pages/MultiChannelCampaigns";
 import FAGORCampaign from "@/pages/FAGORCampaign";
+import AgentsDashboard from "@/pages/AgentsDashboard";
 
 function Router() {
   return (
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/campaign-control" component={CampaignControl} />
       <Route path="/multi-channel-campaigns" component={MultiChannelCampaigns} />
       <Route path="/fagor-campaign" component={FAGORCampaign} />
+      <Route path="/agents-dashboard" component={AgentsDashboard} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/ab-test-dashboard" component={ABTestDashboard} />
       <Route path="/lead-assignment" component={LeadAssignmentDashboard} />
