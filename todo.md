@@ -1880,10 +1880,10 @@
 - [x] Update Ivy-Talent with CNC Upgrades persona (3 types)
 - [x] Update Ivy-Insight with Digital Suite + Modernization persona
 - [x] Create email templates for Warranty Extension (3 emails)
-- [ ] Create email templates for Equipment Repair (3 emails)
-- [ ] Create email templates for EOL Parts (3 emails)
-- [ ] Create email templates for CNC Upgrades (3 emails)
-- [ ] Create email templates for Digital Suite (3 emails)
+- [x] Create email templates for Equipment Repair (3 emails)
+- [x] Create email templates for EOL Parts (3 emails)
+- [x] Create email templates for CNC Upgrades (3 emails)
+- [x] Create email templates for Digital Suite (3 emails)
 - [ ] Create email templates for Preventive Maintenance (3 emails)
-- [ ] Configure SendGrid webhook for tracking
+- [x] Configure SendGrid webhook for tracking
 - [ ] Test all 6 agent configurations with sample data
