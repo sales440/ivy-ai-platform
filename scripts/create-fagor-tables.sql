@@ -57,10 +57,10 @@ CREATE TABLE IF NOT EXISTS `fagorEmailEvents` (
 );
 
 -- Create indexes for better query performance
-CREATE INDEX `idx_fagorContacts_email` ON `fagorContacts`(`email`);
-CREATE INDEX `idx_fagorContacts_status` ON `fagorContacts`(`status`);
-CREATE INDEX `idx_fagorCampaignEnrollments_contactId` ON `fagorCampaignEnrollments`(`contactId`);
-CREATE INDEX `idx_fagorCampaignEnrollments_status` ON `fagorCampaignEnrollments`(`status`);
-CREATE INDEX `idx_fagorEmailEvents_enrollmentId` ON `fagorEmailEvents`(`enrollmentId`);
-CREATE INDEX `idx_fagorEmailEvents_contactId` ON `fagorEmailEvents`(`contactId`);
-CREATE INDEX `idx_fagorEmailEvents_eventType` ON `fagorEmailEvents`(`eventType`);
+CREATE INDEX IF NOT EXISTS `idx_fagorContacts_email` ON `fagorContacts`(`email`);
+CREATE INDEX IF NOT EXISTS `idx_fagorContacts_status` ON `fagorContacts`(`status`);
+CREATE INDEX IF NOT EXISTS `idx_fagorCampaignEnrollments_contactId` ON `fagorCampaignEnrollments`(`contactId`);
+CREATE INDEX IF NOT EXISTS `idx_fagorCampaignEnrollments_status` ON `fagorCampaignEnrollments`(`status`);
+CREATE INDEX IF NOT EXISTS `idx_fagorEmailEvents_enrollmentId` ON `fagorEmailEvents`(`enrollmentId`);
+CREATE INDEX IF NOT EXISTS `idx_fagorEmailEvents_contactId` ON `fagorEmailEvents`(`contactId`);
+CREATE INDEX IF NOT EXISTS `idx_fagorEmailEvents_eventType` ON `fagorEmailEvents`(`eventType`);
