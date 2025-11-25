@@ -49,6 +49,7 @@ import FAGORCampaign from "@/pages/FAGORCampaign";
 import AgentsDashboard from "@/pages/AgentsDashboard";
 import MilestoneConfig from "@/pages/MilestoneConfig";
 import AgentManagement from "@/pages/AgentManagement";
+import AgentTraining from "@/pages/AgentTraining";
 import AgentTrends from "@/pages/AgentTrends";
 import ABTestingDashboard from "@/pages/ABTestingDashboard";
 import ChurnRiskDashboard from "@/pages/ChurnRiskDashboard";
@@ -74,6 +75,7 @@ function Router() {
       <Route path="/executive-summary" component={ExecutiveSummary} />
       <Route path="/admin/milestone-config" component={MilestoneConfig} />
       <Route path="/agents/manage" component={AgentManagement} />
+      <Route path="/agents/training" component={AgentTraining} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/ab-test-dashboard" component={ABTestDashboard} />
       <Route path="/lead-assignment" component={LeadAssignmentDashboard} />

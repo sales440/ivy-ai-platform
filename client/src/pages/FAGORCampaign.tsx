@@ -9,6 +9,7 @@ import { Send, Users, Mail, TrendingUp } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { SmartContactImport } from "@/components/SmartContactImport";
+import { AgentRecommendation } from "@/components/AgentRecommendation";
 
 export default function FAGORCampaign() {
   const [sending, setSending] = useState(false);
@@ -125,6 +126,12 @@ export default function FAGORCampaign() {
 
         {/* Send Emails Tab */}
         <TabsContent value="send" className="space-y-6">
+          {/* Agent Recommendation */}
+          <AgentRecommendation 
+            campaignType="CNC Training"
+            targetIndustry="Manufacturing"
+          />
+
           <div className="grid gap-6 md:grid-cols-3">
             <Card>
               <CardHeader>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { AgentPerformanceDetail } from "@/components/AgentPerformanceDetail";
 import { Bot, Plus, Play, Pause, Copy, Trash2, Edit, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -46,7 +47,8 @@ export default function AgentManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [viewingPerformance, setViewingPerformance] = useState<Agent | null>(null);;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -405,6 +407,14 @@ export default function AgentManagement() {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => setViewingPerformance(agent)}
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => handleClone(agent)}
                     disabled={cloneMutation.isPending}
                   >
@@ -522,6 +532,13 @@ export default function AgentManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Performance Detail Modal */}
+        <AgentPerformanceDetail
+          agent={viewingPerformance}
+          open={!!viewingPerformance}
+          onOpenChange={(open) => !open && setViewingPerformance(null)}
+        />
       </div>
     </DashboardLayout>
   );
