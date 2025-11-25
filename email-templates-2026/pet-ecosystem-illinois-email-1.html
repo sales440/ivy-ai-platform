@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stop Losing $150 Per No-Show</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fef3f2; }
+        .email-container { max-width: 600px; margin: 0 auto; background: #ffffff; }
+        .header { background: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%); padding: 40px 30px; text-align: center; position: relative; overflow: hidden; }
+        .header::before { content: "🐾"; position: absolute; font-size: 120px; opacity: 0.1; top: -20px; right: -20px; transform: rotate(-15deg); }
+        .logo { font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; position: relative; z-index: 1; }
+        .logo-sub { font-size: 13px; color: #A7F3D0; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px; position: relative; z-index: 1; }
+        .hero { padding: 50px 30px; text-align: center; background: #ffffff; }
+        .hero .emoji { font-size: 64px; margin-bottom: 20px; }
+        .hero h1 { font-size: 34px; font-weight: 800; color: #0F172A; line-height: 1.2; margin-bottom: 20px; }
+        .hero .highlight { color: #DC2626; }
+        .hero p { font-size: 18px; color: #64748B; line-height: 1.6; margin-bottom: 30px; }
+        .location-badge { display: inline-block; background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); color: #ffffff; font-size: 14px; font-weight: 700; padding: 8px 20px; border-radius: 50px; margin-bottom: 20px; }
+        .stat-box { background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); border-left: 5px solid #DC2626; padding: 30px; margin: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.1); }
+        .stat-box .number { font-size: 52px; font-weight: 800; color: #991B1B; line-height: 1; }
+        .stat-box .label { font-size: 17px; color: #7F1D1D; margin-top: 12px; font-weight: 600; }
+        .stat-box .sublabel { font-size: 14px; color: #991B1B; margin-top: 8px; font-style: italic; }
+        .content { padding: 0 30px 40px; }
+        .content h2 { font-size: 26px; font-weight: 700; color: #0F172A; margin-bottom: 20px; }
+        .content p { font-size: 17px; color: #475569; line-height: 1.8; margin-bottom: 20px; }
+        .content strong { color: #0F172A; }
+        .pain-points { background: linear-gradient(135deg, #F0FDFA 0%, #CCFBF1 100%); padding: 35px; margin: 30px; border-radius: 16px; border: 2px solid #5EEAD4; }
+        .pain-point { display: flex; align-items: start; margin-bottom: 25px; padding: 20px; background: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
+        .pain-point:last-child { margin-bottom: 0; }
+        .pain-icon { width: 50px; height: 50px; background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 18px; font-size: 24px; }
+        .pain-text { flex: 1; }
+        .pain-text strong { font-size: 17px; color: #0F172A; display: block; margin-bottom: 8px; }
+        .pain-text span { font-size: 15px; color: #64748B; line-height: 1.6; }
+        .solution-section { background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%); padding: 50px 30px; }
+        .solution-section h2 { font-size: 28px; font-weight: 800; color: #0F172A; text-align: center; margin-bottom: 15px; }
+        .solution-section .subtitle { font-size: 16px; color: #64748B; text-align: center; margin-bottom: 40px; }
+        .solution-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .solution-card { background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); transition: all 0.3s; border: 2px solid transparent; }
+        .solution-card:hover { border-color: #14B8A6; transform: translateY(-8px); box-shadow: 0 12px 35px rgba(20, 184, 166, 0.15); }
+        .solution-icon { font-size: 42px; margin-bottom: 18px; }
+        .solution-card h3 { font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 12px; }
+        .solution-card p { font-size: 15px; color: #64748B; line-height: 1.6; }
+        .results-banner { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); padding: 30px; margin: 30px; border-radius: 12px; text-align: center; border: 3px dashed #F59E0B; }
+        .results-banner .stat-row { display: flex; justify-content: space-around; margin-top: 20px; }
+        .results-banner .stat-item { flex: 1; }
+        .results-banner .stat-number { font-size: 36px; font-weight: 800; color: #92400E; }
+        .results-banner .stat-label { font-size: 14px; color: #78350F; margin-top: 5px; font-weight: 600; }
+        .cta-section { background: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%); padding: 60px 30px; text-align: center; position: relative; overflow: hidden; }
+        .cta-section::before { content: "🐾"; position: absolute; font-size: 200px; opacity: 0.05; bottom: -50px; left: -30px; transform: rotate(25deg); }
+        .cta-section h2 { font-size: 32px; font-weight: 800; color: #ffffff; margin-bottom: 18px; position: relative; z-index: 1; }
+        .cta-section p { font-size: 18px; color: #CCFBF1; margin-bottom: 35px; position: relative; z-index: 1; }
+        .cta-button { display: inline-block; background: #ffffff; color: #14B8A6; font-size: 20px; font-weight: 800; padding: 20px 50px; border-radius: 50px; text-decoration: none; transition: all 0.3s; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); position: relative; z-index: 1; }
+        .cta-button:hover { transform: translateY(-5px); box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4); background: #FEF3C7; color: #0D9488; }
+        .guarantee-badge { display: inline-block; background: rgba(255, 255, 255, 0.2); color: #ffffff; font-size: 14px; padding: 10px 25px; border-radius: 50px; margin-top: 20px; border: 2px solid rgba(255, 255, 255, 0.3); position: relative; z-index: 1; }
+        .testimonial { background: #ffffff; padding: 40px; margin: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
+        .testimonial-text { font-size: 18px; color: #475569; line-height: 1.8; font-style: italic; margin-bottom: 20px; }
+        .testimonial-author { display: flex; align-items: center; }
+        .testimonial-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #EC4899 0%, #DB2777 100%); display: flex; align-items: center; justify-content: center; font-size: 28px; margin-right: 15px; }
+        .testimonial-info strong { font-size: 16px; color: #0F172A; display: block; }
+        .testimonial-info span { font-size: 14px; color: #64748B; }
+        .footer { padding: 40px 30px; text-align: center; background: #0F172A; color: #94A3B8; }
+        .footer .footer-logo { font-size: 24px; font-weight: 800; color: #14B8A6; margin-bottom: 15px; }
+        .footer p { font-size: 14px; margin-bottom: 10px; line-height: 1.6; }
+        .footer a { color: #14B8A6; text-decoration: none; font-weight: 600; }
+        .footer .unsubscribe { font-size: 12px; color: #64748B; margin-top: 25px; }
+        
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 28px; }
+            .hero p { font-size: 16px; }
+            .stat-box .number { font-size: 40px; }
+            .solution-grid { grid-template-columns: 1fr; }
+            .results-banner .stat-row { flex-direction: column; gap: 20px; }
+            .cta-section h2 { font-size: 26px; }
+            .cta-button { font-size: 18px; padding: 16px 40px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🐾 Ivy.AI</div>
+            <div class="logo-sub">AI for Pet Businesses</div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="hero">
+            <div class="location-badge">📍 Serving Illinois Pet Businesses</div>
+            <div class="emoji">😰</div>
+            <h1>Stop Losing <span class="highlight">$150 Per No-Show</span></h1>
+            <p>Every empty appointment slot is money walking out the door. And it's happening more than you think.</p>
+        </div>
+
+        <!-- Shocking Stat -->
+        <div class="stat-box">
+            <div class="number">$47,000</div>
+            <div class="label">Average annual revenue lost to no-shows and cancellations</div>
+            <div class="sublabel">For a typical pet grooming salon in Chicago</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <h2>{{first_name}}, here's the brutal truth...</h2>
+            <p>Your pet business at <strong>{{company_name}}</strong> is bleeding money. Not because you're bad at what you do—you're amazing with animals. But because you're still managing appointments like it's 2010.</p>
+            <p>Every day in Illinois, pet businesses lose thousands of dollars to:</p>
+        </div>
+
+        <!-- Pain Points -->
+        <div class="pain-points">
+            <div class="pain-point">
+                <div class="pain-icon">📅</div>
+                <div class="pain-text">
+                    <strong>Last-Minute Cancellations</strong>
+                    <span>Client texts "sorry can't make it" 30 minutes before their grooming appointment. Your groomer sits idle. You lose $150.</span>
+                </div>
+            </div>
+            <div class="pain-point">
+                <div class="pain-icon">😴</div>
+                <div class="pain-text">
+                    <strong>Forgotten Appointments</strong>
+                    <span>Clients genuinely forget. You send one reminder email they never see. Slot stays empty. Another $150 gone.</span>
+                </div>
+            </div>
+            <div class="pain-point">
+                <div class="pain-icon">📞</div>
+                <div class="pain-text">
+                    <strong>Missed Follow-Ups</strong>
+                    <span>You're too busy during the day to call clients for rebooking. They go to PetSmart instead. Lifetime value: $2,400 lost.</span>
+                </div>
+            </div>
+            <div class="pain-point">
+                <div class="pain-icon">🎄</div>
+                <div class="pain-text">
+                    <strong>Seasonal Chaos</strong>
+                    <span>Holiday boarding season hits. You're manually managing waitlists on sticky notes. Clients book elsewhere. $8,000+ in December revenue missed.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solution -->
+        <div class="solution-section">
+            <h2>What if your appointments managed themselves?</h2>
+            <p class="subtitle">Ivy.AI deploys specialized AI agents that run your customer experience on autopilot</p>
+            
+            <div class="solution-grid">
+                <div class="solution-card">
+                    <div class="solution-icon">🤖</div>
+                    <h3>Ivy-Engage</h3>
+                    <p>Sends SMS + email reminders 48hrs, 24hrs, and 2hrs before appointments. No-show rate drops to 8%.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">💬</div>
+                    <h3>Ivy-Solve</h3>
+                    <p>Answers common questions 24/7: "What's your grooming price?" "Do you board cats?" "Are vaccines required?"</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">🎯</div>
+                    <h3>Ivy-Nurture</h3>
+                    <p>Sends birthday offers, seasonal promotions, vaccine reminders. Repeat customer rate increases 156%.</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">📊</div>
+                    <h3>Ivy-Prospect</h3>
+                    <p>Targets pet owners within 5 miles with personalized Facebook/Instagram ads. New client acquisition up 89%.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-banner">
+            <h3 style="font-size: 22px; color: #92400E; margin-bottom: 10px;">Real Results from Illinois Pet Businesses</h3>
+            <div class="stat-row">
+                <div class="stat-item">
+                    <div class="stat-number">92%</div>
+                    <div class="stat-label">Show-Up Rate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">156%</div>
+                    <div class="stat-label">Repeat Customers</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">$47K</div>
+                    <div class="stat-label">Added Revenue/Year</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testimonial -->
+        <div class="testimonial">
+            <div class="testimonial-text">
+                "We were losing $12,000 a year to no-shows at our Naperville grooming salon. Ivy.AI cut that to under $1,500. The AI sends reminders, handles rebooking, and even upsells add-on services. It's like having a full-time receptionist who never takes a day off."
+            </div>
+            <div class="testimonial-author">
+                <div class="testimonial-avatar">🐕</div>
+                <div class="testimonial-info">
+                    <strong>Sarah Martinez</strong>
+                    <span>Owner, Paws & Claws Grooming | Naperville, IL</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <h2>See How It Works for Illinois Pet Businesses</h2>
+            <p>Watch a 4-minute demo showing exactly how Ivy.AI reduced no-shows by 89% for a Chicago vet clinic</p>
+            <a href="https://ivy-ai-platform-production.up.railway.app/?utm_source=email&utm_medium=pet_ecosystem&utm_campaign=illinois_no_shows" class="cta-button">Watch Demo Now →</a>
+            <div class="guarantee-badge">✅ 60-Day Money-Back Guarantee</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-logo">🐾 Ivy.AI</div>
+            <p><strong>Serving Pet Businesses Across Illinois</strong></p>
+            <p>Chicago • Naperville • Aurora • Rockford • Peoria • Springfield</p>
+            <p style="margin-top: 20px;">Questions? Reply to this email or call <a href="tel:+13125551234">(312) 555-1234</a></p>
+            <p>Visit us at <a href="https://ivy-ai-platform-production.up.railway.app">ivy.ai/pet-businesses</a></p>
+            <p class="unsubscribe">You're receiving this because you own a pet business in Illinois. <a href="#">Unsubscribe</a> | <a href="#">Update Preferences</a></p>
+        </div>
+    </div>
+</body>
+</html>

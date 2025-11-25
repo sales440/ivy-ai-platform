@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_contacts FROM fagorContacts;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT COUNT(*) as total_contacts FROM fagorContacts;",
+  "rows": [
+    {
+      "total_contacts": "20"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_contacts\n20\n",
+  "stderr": "",
+  "execution_time_ms": 135
+}
