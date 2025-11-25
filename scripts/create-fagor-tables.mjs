@@ -29,8 +29,15 @@ async function main() {
       const sqlPath = path.join(__dirname, 'create-fagor-tables.sql');
       const sql = fs.readFileSync(sqlPath, 'utf-8');
       
-      // Split by statement separator and execute each statement
-      const statements = sql.split('-->').map(s => s.trim()).filter(s => s && !s.startsWith('--'));
+      // Remove comments and split by semicolon
+      const sqlWithoutComments = sql.split('\n')
+        .filter(line => !line.trim().startsWith('--'))
+        .join('\n');
+      
+      const statements = sqlWithoutComments
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
       
       for (const statement of statements) {
         if (statement.trim()) {
