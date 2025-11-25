@@ -52,6 +52,17 @@ export function serveStatic(app: Express) {
     process.env.NODE_ENV === "development"
       ? path.resolve(import.meta.dirname, "../..", "dist", "public")
       : path.resolve(import.meta.dirname, "public");
+  
+  console.log(`[Static Files] NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`[Static Files] import.meta.dirname: ${import.meta.dirname}`);
+  console.log(`[Static Files] Resolved distPath: ${distPath}`);
+  console.log(`[Static Files] distPath exists: ${fs.existsSync(distPath)}`);
+  
+  if (fs.existsSync(distPath)) {
+    const files = fs.readdirSync(distPath);
+    console.log(`[Static Files] Files in distPath: ${files.join(', ')}`);
+  }
+  
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
