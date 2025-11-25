@@ -2033,3 +2033,47 @@
 - [x] Add toast notifications in UI when events occur (severity-based: critical/warning/success/info)
 - [x] Create RealtimeNotificationsPanel component with live status indicator
 - [x] Integrate WebSocket notifications into milestone system
+
+
+## Ivy.AI Self-Promotion Branding
+
+### Core Brand Identity (Ivy.AI Platform)
+- [x] Redefine Ivy.AI positioning as "AI agents that sell themselves"
+- [x] Create master brand guidelines for self-promotion approach
+- [x] Design unified visual system that works across all agents
+- [x] Establish meta-messaging framework (agents demonstrating while selling)
+- [x] Define proof-of-concept narrative (we use our own platform to sell our platform)
+
+### Individual Agent Identities
+- [x] Create Ivy-Prospect agent persona (prospecting specialist, cold outreach expert)
+- [x] Create Ivy-Closer agent persona (deal closer, objection handler, ROI demonstrator)
+- [x] Create Ivy-Solve agent persona (technical problem solver, solution architect)
+- [x] Create Ivy-Nurture agent persona (relationship builder, long-term engagement)
+- [x] Create Ivy-Qualify agent persona (lead scorer, qualification specialist)
+- [x] Create Ivy-Engage agent persona (multi-channel engagement coordinator)
+- [x] Design unique visual identity for each agent (colors, icons, signatures)
+- [x] Define personality traits and communication styles per agent
+
+### Self-Referential Email Templates
+- [x] Create "Meet Your AI Sales Team" campaign template
+- [x] Design agent introduction emails (each agent introduces themselves)
+- [x] Create "See Me In Action" templates (agent demonstrates capability while pitching)
+- [x] Design ROI calculator emails (showing Ivy.AI's own metrics)
+- [x] Create case study templates (Ivy.AI selling Ivy.AI as the case study)
+
+### Meta-Campaign Content
+- [x] Write Ivy-Prospect cold outreach sequence (prospecting for Ivy.AI customers)
+- [x] Write Ivy-Closer conversion sequence (closing Ivy.AI platform sales)
+- [x] Write Ivy-Solve technical demo sequence (solving "how to implement AI agents" problem)
+- [x] Write Ivy-Nurture long-term engagement sequence (building relationships with prospects)
+- [x] Write Ivy-Qualify qualification sequence (ensuring fit before demo)
+- [x] Write Ivy-Engage orchestration sequence (coordinating all agents)
+- [x] Create "Behind the Curtain" content (showing how each email was generated)
+- [x] Document complete 6-email campaign with performance benchmarks
+
+### Multi-Agent Brand System
+- [ ] Implement agent selector in campaign creation UI
+- [ ] Create agent signature blocks component for emails
+- [ ] Build agent performance dashboard (showing which agent converts best)
+- [ ] Add "Powered by Ivy.AI" branding to all agent communications
+- [ ] Create agent switching logic (Ivy-Prospect → Ivy-Closer handoff)
