@@ -43,6 +43,7 @@ const menuItems = [
   { icon: Zap, label: "Multi-Channel Campaigns", path: "/multi-channel-campaigns" },
   { icon: Briefcase, label: "FAGOR Executive Summary", path: "/executive-summary" },
   { icon: Bot, label: "FAGOR Agents Dashboard", path: "/agents-dashboard" },
+  { icon: Bot, label: "Agent Management", path: "/agents/manage" },
   { icon: LineChart, label: "FAGOR Agent Trends", path: "/agent-trends" },
   { icon: FlaskConical, label: "FAGOR A/B Testing", path: "/ab-testing" },
   { icon: AlertTriangle, label: "FAGOR Churn Risk", path: "/churn-risk" },
