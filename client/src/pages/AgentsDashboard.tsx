@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import { 
   Bot, Mail, TrendingUp, DollarSign, Target, Clock, 
-  RefreshCw, Calendar, Filter 
+  RefreshCw, Calendar, Filter, Download 
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +38,64 @@ export default function AgentsDashboard() {
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [selectedAgent, setSelectedAgent] = useState<string>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
+
+  // Export to CSV function
+  const handleExportCSV = () => {
+    if (!metrics || !metrics.agents || metrics.agents.length === 0) {
+      return;
+    }
+
+    // CSV headers
+    const headers = [
+      'Agent ID',
+      'Agent Name',
+      'Department',
+      'Campaign',
+      'Emails Sent',
+      'Emails Opened',
+      'Emails Clicked',
+      'Open Rate (%)',
+      'Click Rate (%)',
+      'Leads Generated',
+      'Conversions',
+      'Conversion Rate (%)',
+      'Avg Response Time (hours)',
+      'ROI (%)'
+    ];
+
+    // CSV rows
+    const rows = metrics.agents.map(agent => [
+      agent.agentId,
+      agent.agentName,
+      agent.department,
+      agent.campaignName,
+      agent.emailsSent,
+      agent.emailsOpened,
+      agent.emailsClicked,
+      agent.openRate.toFixed(1),
+      agent.clickRate.toFixed(1),
+      agent.leadsGenerated,
+      agent.conversions,
+      agent.conversionRate.toFixed(1),
+      agent.avgResponseTime.toFixed(1),
+      agent.roi.toFixed(0)
+    ]);
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fagor-agents-metrics-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Query agent metrics
   const { data: metrics, isLoading, refetch } = trpc.fagor.getAgentMetrics.useQuery({
@@ -140,6 +198,15 @@ export default function AgentsDashboard() {
               <Clock className="h-4 w-4 mr-2" />
               Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              disabled={!metrics || metrics.agents.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
           </div>
         </div>
 
@@ -178,8 +245,16 @@ export default function AgentsDashboard() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Tabs for Overview and Comparison */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="comparison">Agent Comparison</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Emails Sent</CardTitle>
@@ -388,6 +463,12 @@ export default function AgentsDashboard() {
             </CardContent>
           </Card>
         </div>
+          </TabsContent>
+
+          <TabsContent value="comparison" className="space-y-6">
+            <AgentComparison agents={filteredAgents} />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

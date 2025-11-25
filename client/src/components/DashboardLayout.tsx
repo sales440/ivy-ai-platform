@@ -57,6 +57,7 @@ const menuItems = [
   { icon: Plug, label: "Integraciones CRM", path: "/admin/integrations", adminOnly: true },
   { icon: Shield, label: "Gestión de Permisos", path: "/admin/permissions", adminOnly: true },
   { icon: Upload, label: "Importar Leads", path: "/admin/import-leads", adminOnly: true },
+  { icon: Settings, label: "Milestone Configuration", path: "/admin/milestone-config", adminOnly: true },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";

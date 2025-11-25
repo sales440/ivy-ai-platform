@@ -1929,3 +1929,27 @@
 - [x] Create notification triggers in agent metrics router
 - [x] Integrate scheduled milestone checks (runs every hour)
 - [x] Test notifications appear in NotificationBell component
+
+
+## FAGOR Advanced Features
+
+### Milestone Configuration Page
+- [x] Create /admin/milestone-config page with admin-only access
+- [x] Implement UI for editing milestone thresholds (conversions, conversion_rate, ROI, emails_sent, open_rate)
+- [x] Create backend endpoint to save/load milestone configuration
+- [x] Add validation for milestone values
+- [x] Test configuration persistence across server restarts
+
+### Agent Metrics Export
+- [x] Add "Export to CSV" button to /agents-dashboard
+- [x] Implement CSV generation with all agent metrics
+- [x] Include date range filter in export
+- [x] Add campaign filter to export
+- [x] Test CSV download with large datasets
+
+### Agent Comparison View
+- [x] Create side-by-side comparison component in agents dashboard
+- [x] Add agent selector (multi-select) for comparison
+- [x] Display comparison charts (bar charts for metrics)
+- [x] Show percentage differences between agents
+- [x] Add "Best Performer" and "Needs Improvement" indicators

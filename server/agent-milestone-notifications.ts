@@ -59,7 +59,7 @@ export async function checkAgentMilestones(): Promise<AgentMilestone[]> {
       const enrollments = await db
         .select()
         .from(fagorCampaignEnrollments)
-        .where(eq(fagorCampaignEnrollments.campaignId, agent.campaignId));
+        .where(eq(fagorCampaignEnrollments.campaignName, agent.campaignId));
 
       if (enrollments.length === 0) continue;
 
