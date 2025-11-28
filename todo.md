@@ -2160,6 +2160,15 @@
 - [x] Update fagorCampaignEnrollments table with email2SentAt timestamp
 
 ## Production Bug Fix
-- [ ] Fix missing BookOpen icon import causing blank screen in production
-- [ ] Test fix locally before deploying
-- [ ] Deploy fix to Railway and verify
+- [x] Fix missing BookOpen icon import causing blank screen in production
+- [x] Test fix locally before deploying
+- [x] Deploy fix to Railway and verify
+
+## OAuth Configuration Fix
+- [ ] Add Railway redirect URI to Manus OAuth Dashboard
+- [ ] Verify OAuth login works in production
+
+## Temporary OAuth Bypass
+- [ ] Disable OAuth authentication temporarily for testing
+- [ ] Deploy to Railway
+- [ ] Re-enable OAuth after testing

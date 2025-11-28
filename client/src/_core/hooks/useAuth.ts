@@ -41,18 +41,36 @@ export function useAuth(options?: UseAuthOptions) {
     }
   }, [logoutMutation, utils]);
 
+  // TEMPORARY: Bypass OAuth for testing
+  const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
+  
+  const mockUser = BYPASS_AUTH ? {
+    id: 999,
+    openId: 'mock-user',
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'admin' as const,
+    loginMethod: 'mock',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastSignedIn: new Date(),
+  } : null;
+
   const state = useMemo(() => {
+    const user = BYPASS_AUTH ? mockUser : meQuery.data;
     localStorage.setItem(
       "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
+      JSON.stringify(user)
     );
     return {
-      user: meQuery.data ?? null,
-      loading: meQuery.isLoading || logoutMutation.isPending,
-      error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      user: user ?? null,
+      loading: BYPASS_AUTH ? false : (meQuery.isLoading || logoutMutation.isPending),
+      error: BYPASS_AUTH ? null : (meQuery.error ?? logoutMutation.error ?? null),
+      isAuthenticated: BYPASS_AUTH ? true : Boolean(meQuery.data),
     };
   }, [
+    BYPASS_AUTH,
+    mockUser,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
