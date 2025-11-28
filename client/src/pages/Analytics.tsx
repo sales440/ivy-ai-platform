@@ -19,6 +19,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useMemo } from 'react';
 
 const COLORS = ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899'];
 
@@ -33,14 +34,14 @@ export default function Analytics() {
   const agents = agentsData?.agents || [];
   const kpis = kpisData?.kpis || [];
 
-  // Prepare data for charts
-  const agentPerformanceData = agents.map(agent => ({
+  // Prepare data for charts - use useMemo to prevent unnecessary recalculations
+  const agentPerformanceData = useMemo(() => agents.map(agent => ({
     name: agent.name,
     tasks: agent.kpis.tasks_completed || 0,
     success: agent.kpis.success_rate || 0,
-  }));
+  })), [agents]);
 
-  const departmentData = agents.reduce((acc, agent) => {
+  const departmentData = useMemo(() => agents.reduce((acc, agent) => {
     const dept = agent.department;
     if (!acc[dept]) {
       acc[dept] = { name: dept, agents: 0, tasks: 0 };
@@ -48,33 +49,33 @@ export default function Analytics() {
     acc[dept].agents += 1;
     acc[dept].tasks += agent.kpis.tasks_completed || 0;
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, any>), [agents]);
 
-  const departmentChartData = Object.values(departmentData);
+  const departmentChartData = useMemo(() => Object.values(departmentData), [departmentData]);
 
-  const statusDistribution = agents.reduce((acc, agent) => {
+  const statusDistribution = useMemo(() => agents.reduce((acc, agent) => {
     const status = agent.status;
     if (!acc[status]) {
       acc[status] = 0;
     }
     acc[status] += 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [agents]);
 
-  const statusChartData = Object.entries(statusDistribution).map(([name, value]) => ({
+  const statusChartData = useMemo(() => Object.entries(statusDistribution).map(([name, value]) => ({
     name: name.charAt(0).toUpperCase() + name.slice(1),
     value
-  }));
+  })), [statusDistribution]);
 
   // Mock time series data (in real app, this would come from API)
-  const timeSeriesData = [
+  const timeSeriesData = useMemo(() => [
     { time: '00:00', tasks: 12, success: 10 },
     { time: '04:00', tasks: 8, success: 7 },
     { time: '08:00', tasks: 25, success: 22 },
     { time: '12:00', tasks: 35, success: 32 },
     { time: '16:00', tasks: 42, success: 38 },
     { time: '20:00', tasks: 28, success: 25 },
-  ];
+  ], []);
 
   // Calculate overall metrics
   const totalTasks = agents.reduce((sum, a) => sum + (a.kpis.tasks_completed || 0), 0);
@@ -178,7 +179,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={agentPerformanceData}>
+                  <BarChart data={agentPerformanceData} key="agent-performance-chart">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="name" className="text-xs" />
                     <YAxis className="text-xs" />
@@ -203,7 +204,7 @@ export default function Analytics() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
+                  <PieChart key="status-distribution-chart">
                     <Pie
                       data={statusChartData}
                       cx="50%"
@@ -215,7 +216,7 @@ export default function Analytics() {
                       dataKey="value"
                     >
                       {statusChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${entry.name}-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip
@@ -241,7 +242,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={departmentChartData}>
+                <BarChart data={departmentChartData} key="department-performance-chart">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="name" className="text-xs" />
                   <YAxis className="text-xs" />
@@ -292,7 +293,7 @@ export default function Analytics() {
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={timeSeriesData}>
+                <LineChart data={timeSeriesData} key="trends-chart">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="time" className="text-xs" />
                   <YAxis className="text-xs" />
@@ -350,20 +351,23 @@ export default function Analytics() {
                     <div className="text-xs text-muted-foreground">Tasks</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {agent.kpis.success_rate || 0}%
-                    </div>
+                    <div className="text-2xl font-bold">{agent.kpis.success_rate || 0}%</div>
                     <div className="text-xs text-muted-foreground">Success</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">{agent.kpis.avg_response_time || 0}s</div>
                     <div className="text-xs text-muted-foreground">Avg Time</div>
                   </div>
-                  <Badge variant="outline" className={
-                    agent.status === 'active' ? 'bg-green-500/10 text-green-600 border-green-500/20' :
-                    agent.status === 'error' ? 'bg-red-500/10 text-red-600 border-red-500/20' :
-                    'bg-muted text-muted-foreground'
-                  }>
+                  <Badge
+                    variant={
+                      agent.status === 'active'
+                        ? 'default'
+                        : agent.status === 'idle'
+                        ? 'secondary'
+                        : 'outline'
+                    }
+                    className="capitalize"
+                  >
                     {agent.status}
                   </Badge>
                 </div>

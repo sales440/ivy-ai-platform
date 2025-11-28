@@ -16,16 +16,28 @@ export function CompanySelector() {
     return (
       <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
         <Building2 className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{selectedCompany?.name}</span>
+        <span className="text-sm font-medium">{selectedCompany?.name || 'No company'}</span>
+      </div>
+    );
+  }
+
+  // Si no hay empresas disponibles, mostrar mensaje
+  if (companies.length === 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+        <Building2 className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">No companies available</span>
       </div>
     );
   }
 
   return (
     <Select
-      value={selectedCompany?.id}
+      value={selectedCompany?.id || undefined}
       onValueChange={(value) => {
+        console.log('CompanySelector: Selected value:', value);
         const company = companies.find((c) => c.id === value);
+        console.log('CompanySelector: Found company:', company);
         if (company) {
           setSelectedCompany(company);
         }
@@ -34,7 +46,9 @@ export function CompanySelector() {
       <SelectTrigger className="w-[220px] bg-background">
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-muted-foreground" />
-          <SelectValue placeholder="Select company" />
+          <SelectValue placeholder="Select company">
+            {selectedCompany?.name || 'Select company'}
+          </SelectValue>
         </div>
       </SelectTrigger>
       <SelectContent>
