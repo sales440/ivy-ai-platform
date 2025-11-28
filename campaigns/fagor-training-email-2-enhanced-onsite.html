@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Results from Real Customers - FAGOR CNC Training</title>
+    <style>
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 0;
+        }
+        .letterhead {
+            background-color: #ffffff;
+            padding: 30px 40px 20px 40px;
+            border-bottom: 3px solid #E30613;
+        }
+        .letterhead-content {
+            display: table;
+            width: 100%;
+        }
+        .logo-section {
+            display: table-cell;
+            vertical-align: middle;
+            width: 50%;
+        }
+        .logo-section img {
+            max-width: 280px;
+            height: auto;
+        }
+        .address-section {
+            display: table-cell;
+            vertical-align: middle;
+            width: 50%;
+            text-align: right;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #666666;
+        }
+        .address-section strong {
+            color: #E30613;
+            font-size: 13px;
+        }
+        .content {
+            padding: 40px 40px 30px 40px;
+        }
+        .hero-title {
+            color: #E30613;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
+        }
+        .hero-subtitle {
+            font-size: 18px;
+            color: #666666;
+            font-style: italic;
+            margin: 0 0 25px 0;
+        }
+        h2 {
+            color: #E30613;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 30px 0 15px 0;
+        }
+        h3 {
+            color: #E30613;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 25px 0 12px 0;
+        }
+        p {
+            margin: 0 0 15px 0;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .highlight-box {
+            background-color: #FFF5F5;
+            border-left: 4px solid #E30613;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .onsite-emphasis-box {
+            background: linear-gradient(135deg, #E30613 0%, #C00510 100%);
+            color: #ffffff;
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(227, 6, 19, 0.2);
+        }
+        .onsite-emphasis-box h3 {
+            color: #ffffff;
+            margin-top: 0;
+            font-size: 24px;
+            text-align: center;
+        }
+        .onsite-emphasis-box p {
+            color: #ffffff;
+            font-size: 16px;
+        }
+        .onsite-emphasis-box strong {
+            color: #FFD700;
+        }
+        .onsite-benefits {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .onsite-benefit-item {
+            margin: 15px 0;
+            padding-left: 30px;
+            position: relative;
+            color: #ffffff;
+        }
+        .onsite-benefit-item:before {
+            content: "✓";
+            color: #FFD700;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 20px;
+        }
+        .course-box {
+            background-color: #f9f9f9;
+            border: 2px solid #E30613;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 5px;
+        }
+        .course-box h3 {
+            margin-top: 0;
+            font-size: 20px;
+        }
+        .course-description {
+            font-style: italic;
+            color: #666666;
+            margin: 10px 0 20px 0;
+        }
+        .benefit-item {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .benefit-item:before {
+            content: "✓";
+            color: #E30613;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+        }
+        .differentiator-box {
+            background-color: #f9f9f9;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #E30613;
+        }
+        .differentiator-title {
+            font-weight: bold;
+            color: #E30613;
+            font-size: 17px;
+            margin-bottom: 10px;
+        }
+        .video-box {
+            background-color: #FFF5F5;
+            border: 2px solid #E30613;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .video-link {
+            color: #E30613;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        .video-link:hover {
+            text-decoration: underline;
+        }
+        .cta-section {
+            background-color: #E30613;
+            color: #ffffff;
+            padding: 30px;
+            margin: 35px 0;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .cta-section h3 {
+            color: #ffffff;
+            margin-top: 0;
+        }
+        .cta-section p {
+            color: #ffffff;
+            font-size: 16px;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #ffffff;
+            color: #E30613;
+            padding: 15px 35px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 16px;
+        }
+        .cta-button:hover {
+            background-color: #f0f0f0;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 25px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #666666;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer-brand {
+            color: #E30613;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .divider {
+            border: 0;
+            border-top: 2px solid #E30613;
+            margin: 30px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .letterhead-content {
+                display: block;
+            }
+            .logo-section, .address-section {
+                display: block;
+                width: 100%;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            .content {
+                padding: 25px 20px;
+            }
+            .hero-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- LETTERHEAD -->
+        <div class="letterhead">
+            <div class="letterhead-content">
+                <div class="logo-section">
+                    <img src="https://ivy-ai-platform-production.up.railway.app/fagor-logo.jpg" alt="FAGOR Automation" />
+                </div>
+                <div class="address-section">
+                    <strong>FAGOR Automation Corp.</strong><br>
+                    4020 Winnetka Avenue<br>
+                    Rolling Meadows, IL 60008<br>
+                    Phone: (847) 981-1500<br>
+                    Email: service@fagor-automation.com
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="content">
+            <!-- HERO -->
+            <h1 class="hero-title">Real Results from Real Customers</h1>
+            <p class="hero-subtitle">See what FAGOR CNC Training has done for companies like yours</p>
+
+            <p>Three days ago, we introduced you to FAGOR CNC System Training. Today, we want to show you what happens when companies invest in their team's CNC expertise.</p>
+
+            <p><strong>These aren't hypothetical benefits. These are real results from real customers.</strong></p>
+
+            <hr class="divider">
+
+            <!-- ON-SITE TRAINING EMPHASIS -->
+            <div class="onsite-emphasis-box">
+                <h3>🏭 The Most Effective Training Happens at YOUR Facility</h3>
+                
+                <div class="onsite-benefits">
+                    <div class="benefit-item" style="color: #333333;"><strong style="color: #E30613;">Train on YOUR Machines:</strong> Your operators practice on the exact FAGOR CNC systems they use every day—not generic equipment. This means immediate, practical application of every skill learned.</div>
+                    
+                    <div class="benefit-item" style="color: #333333;"><strong style="color: #E30613;">Real Production Environment:</strong> Training happens in your actual production environment, with your specific workflows, challenges, and configurations. No theoretical scenarios—only real-world solutions.</div>
+                    
+                    <div class="benefit-item" style="color: #333333;"><strong style="color: #E30613;">Train Your Entire Team:</strong> Operators, programmers, and maintenance personnel learn together, creating a unified knowledge base across your organization. No travel costs, no production disruption.</div>
+                    
+                    <div class="benefit-item" style="color: #333333;"><strong style="color: #E30613;">Customized to Your Needs:</strong> We adapt the curriculum to your specific applications, part types, and production requirements. You learn exactly what you need—nothing generic.</div>
+                    
+                    <div class="benefit-item" style="color: #333333;"><strong style="color: #E30613;">Maximize Knowledge Retention:</strong> Hands-on practice with your own machines leads to deeper understanding and better retention. Skills learned Monday are applied to production Tuesday.</div>
+                    
+                    <div class="benefit-item" style="color: #333333;"><strong style="color: #E30613;">Optimize Quality & Reduce Cycle Time:</strong> By mastering your FAGOR CNC systems in-depth, your team will produce higher quality parts in less time, directly impacting your bottom line.</div>
+                </div>
+
+                <p style="text-align: center; font-size: 18px; margin-top: 25px;"><strong>On-site training delivers the highest ROI because your team learns on the machines that matter most—yours.</strong></p>
+            </div>
+
+            <!-- CASE STUDIES -->
+            <h2>Real Companies, Real Results</h2>
+
+            <!-- Case Study 1 -->
+            <div class="course-box">
+                <h3>Case Study 1: Midwest Precision Manufacturing</h3>
+                
+                <p><strong>Challenge:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li>5 FAGOR CNC machines running at 40% efficiency</li>
+                    <li>Operators struggling with basic programming</li>
+                    <li>High scrap rate due to programming errors</li>
+                    <li>Excessive downtime for "troubleshooting"</li>
+                </ul>
+
+                <p><strong>Solution:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li>On-site training for 8 operators (Basic CNC System Training)</li>
+                    <li>2 lead operators completed Advanced Training</li>
+                    <li>Training conducted on their actual production machines</li>
+                </ul>
+
+                <p><strong>Results (Within 3 Months):</strong></p>
+                <div class="benefit-item">Machine efficiency increased to 78%</div>
+                <div class="benefit-item">Scrap rate reduced by 65%</div>
+                <div class="benefit-item">Programming time cut in half</div>
+                <div class="benefit-item">Unplanned downtime reduced by 40%</div>
+                <div class="benefit-item">ROI achieved in 4.5 months</div>
+
+                <div class="highlight-box">
+                    <p style="font-style: italic;">"The training paid for itself in less than 6 months. But the real value is that our operators are now confident and proactive. They're not just running programs—they're optimizing them."</p>
+                    <p style="text-align: right; margin: 10px 0 0 0;"><strong>— Production Manager</strong></p>
+                </div>
+            </div>
+
+            <!-- Case Study 2 -->
+            <div class="course-box">
+                <h3>Case Study 2: Aerospace Component Manufacturer</h3>
+                
+                <p><strong>Challenge:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li>Complex 5-axis machining operations</li>
+                    <li>Difficulty attracting skilled CNC programmers</li>
+                    <li>Needed to develop internal expertise</li>
+                    <li>Pressure to reduce reliance on external consultants</li>
+                </ul>
+
+                <p><strong>Solution:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li>4 engineers enrolled in Advanced CNC System Training</li>
+                    <li>Customized curriculum focused on 5-axis applications</li>
+                    <li>On-site follow-up training on specific projects</li>
+                </ul>
+
+                <p><strong>Results (Within 6 Months):</strong></p>
+                <div class="benefit-item">Eliminated $180K/year in consultant fees</div>
+                <div class="benefit-item">Reduced programming time by 35%</div>
+                <div class="benefit-item">Developed 3 internal "CNC experts"</div>
+                <div class="benefit-item">Created custom macros saving 20+ hours/week</div>
+                <div class="benefit-item">Improved first-article success rate to 95%</div>
+
+                <div class="highlight-box">
+                    <p style="font-style: italic;">"FAGOR's engineers didn't just teach us how to use the system—they taught us how to think like system designers. That's transformed our capabilities."</p>
+                    <p style="text-align: right; margin: 10px 0 0 0;"><strong>— Engineering Director</strong></p>
+                </div>
+            </div>
+
+            <!-- Case Study 3 -->
+            <div class="course-box">
+                <h3>Case Study 3: Job Shop with Mixed Equipment</h3>
+                
+                <p><strong>Challenge:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li>3 different FAGOR CNC models</li>
+                    <li>Inconsistent operator knowledge across shifts</li>
+                    <li>Training new operators took 6+ months</li>
+                    <li>Quality issues due to knowledge gaps</li>
+                </ul>
+
+                <p><strong>Solution:</strong></p>
+                <ul style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li>Comprehensive on-site training program for all 12 operators</li>
+                    <li>Mix of Basic and Advanced training based on role</li>
+                    <li>Created internal "training champions"</li>
+                </ul>
+
+                <p><strong>Results (Within 4 Months):</strong></p>
+                <div class="benefit-item">New operator onboarding reduced to 6 weeks</div>
+                <div class="benefit-item">Quality defects down 55%</div>
+                <div class="benefit-item">All operators can run all machines</div>
+                <div class="benefit-item">Overtime reduced by 30%</div>
+                <div class="benefit-item">Customer satisfaction scores up 40%</div>
+
+                <div class="highlight-box">
+                    <p style="font-style: italic;">"The best investment we've made in our people. Period. Every operator is now a problem-solver, not just a button-pusher."</p>
+                    <p style="text-align: right; margin: 10px 0 0 0;"><strong>— Shop Owner</strong></p>
+                </div>
+            </div>
+
+            <!-- ROI CALCULATION -->
+            <h2>The Real ROI of Training</h2>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">Immediate Benefits (Week 1-4)</div>
+                <p>Reduced programming errors • Faster program creation • Better system utilization • Fewer "I don't know how" moments</p>
+            </div>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">Short-Term Benefits (Month 2-6)</div>
+                <p>Measurable efficiency gains • Reduced scrap and rework • Lower downtime • Improved quality metrics</p>
+            </div>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">Long-Term Benefits (6+ Months)</div>
+                <p>Internal expertise development • Reduced consultant dependency • Innovation and optimization • Competitive advantage</p>
+            </div>
+
+            <div class="highlight-box">
+                <h3 style="margin-top: 0;">Typical ROI Calculation</h3>
+                
+                <p><strong>Investment:</strong></p>
+                <ul style="margin: 10px 0 10px 20px;">
+                    <li>Basic Training: $2,500 per course (maximum 4 people)</li>
+                    <li>Advanced Training: $3,500 per course (maximum 4 people)</li>
+                    <li>Maximum 4 participants per course for optimal pedagogical effectiveness</li>
+                </ul>
+
+                <p><strong>Typical Returns (First Year):</strong></p>
+                <ul style="margin: 10px 0 10px 20px;">
+                    <li>Efficiency gains: $25,000 - $50,000</li>
+                    <li>Scrap reduction: $15,000 - $30,000</li>
+                    <li>Downtime reduction: $20,000 - $40,000</li>
+                    <li>Consultant savings: $10,000 - $180,000</li>
+                </ul>
+
+                <p style="font-size: 18px; font-weight: bold; color: #E30613; margin-top: 20px;">Average ROI: 400-800% in first year</p>
+                
+                <p style="margin-top: 20px; font-size: 13px; color: #666666; font-style: italic; border-top: 1px solid #ddd; padding-top: 15px;"><strong>Note:</strong> For on-site training, FAGOR instructor travel expenses (airfare, lodging, meals) are not included in the training fees listed above. For a formal quotation including all costs, please contact FAGOR Technical Service at <a href="mailto:service@fagor-automation.com" style="color: #E30613; text-decoration: none;">service@fagor-automation.com</a></p>
+            </div>
+
+            <!-- WHAT MAKES IT DIFFERENT -->
+            <h2>What Makes FAGOR Training Different</h2>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">1. Taught by FAGOR Engineers, Not Generic Trainers</div>
+                <p>Our instructors are the people who design and develop FAGOR technology. You're learning from the source, not from someone who read a manual.</p>
+            </div>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">2. Hands-On, Practical Focus</div>
+                <p>Real equipment. Real scenarios. Real solutions you'll use immediately when you return to your plant. No theory-only lectures.</p>
+            </div>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">3. On-Site Training at YOUR Facility (Recommended)</div>
+                <p><strong>Train on your actual machines with your specific applications.</strong> We bring FAGOR engineers to your facility to deliver customized training on your equipment. Your entire team learns together without travel costs or production disruption. This delivers the highest ROI and best knowledge retention.</p>
+                <p style="margin-top: 10px;"><em>Alternative: Training at FAGOR Automation (Rolling Meadows, IL) is also available for immersive experience at our state-of-the-art facility.</em></p>
+            </div>
+
+            <div class="differentiator-box">
+                <div class="differentiator-title">4. Immediate Application & ROI</div>
+                <p>Skills learned on Monday are applied to production on Tuesday. One avoided machine crash pays for the training. One week of reduced downtime pays for the training. One optimized process pays for the training.</p>
+            </div>
+
+            <!-- VIDEO PREVIEW -->
+            <div class="video-box">
+                <h3 style="margin-top: 0; color: #E30613;">📺 See Our Training In Action</h3>
+                <p>Before you commit, preview what FAGOR training looks like:</p>
+                <p><strong>Full Course on Lathe Conversational Programming</strong> (35 min)<br>
+                35,000+ professionals have watched this free preview.<br>
+                <a href="https://www.youtube.com/@FagorUS/videos" class="video-link">Watch Free Training Preview →</a></p>
+            </div>
+
+            <!-- CTA -->
+            <div class="cta-section">
+                <h3>Ready to See These Results in Your Shop?</h3>
+                <p><strong>Let's talk about what FAGOR CNC Training can do for your operation.</strong></p>
+                <p>We'll discuss:</p>
+                <ul style="text-align: left; display: inline-block; margin: 15px 0;">
+                    <li>Your current challenges</li>
+                    <li>Your team's skill levels</li>
+                    <li>Expected ROI for your situation</li>
+                    <li>On-site vs. factory training options</li>
+                    <li>Flexible scheduling to minimize disruption</li>
+                </ul>
+                <p style="margin-top: 20px;"><strong>No pressure. No sales pitch. Just honest conversation about whether training makes sense for you.</strong></p>
+                <a href="mailto:service@fagor-automation.com?subject=CNC Training Information Request" class="cta-button">Request Training Information</a>
+                <p style="margin-top: 20px; font-size: 16px;"><strong>Or call us directly: (847) 981-1500</strong></p>
+            </div>
+
+            <p style="text-align: center; font-style: italic; color: #666666; margin-top: 30px;">
+                In our next message, we'll share details about our 2026 training schedule and early registration benefits. Spots fill up fast—especially for on-site training.
+            </p>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-brand">FAGOR CNC System Training</div>
+            <div style="font-style: italic; margin: 5px 0;">Open to your world</div>
+            <div style="margin: 15px 0;">
+                <strong>FAGOR Automation Corp.</strong><br>
+                4020 Winnetka Avenue, Rolling Meadows, IL 60008<br>
+                Phone: (847) 981-1500 | Email: service@fagor-automation.com
+            </div>
+            <div style="font-style: italic; color: #999999; margin-top: 10px;">
+                www.fagorautomation.com/en-us/
+            </div>
+        </div>
+    </div>
+</body>
+</html>
