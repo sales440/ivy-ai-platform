@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { initSentry, addSentryErrorHandler } from "./sentry";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -30,6 +31,9 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  
+  // Initialize Sentry (must be first)
+  initSentry(app);
   
   // Initialize WebSocket server for real-time notifications
   const { initializeWebSocket } = await import("../websocket-notifications");
@@ -71,6 +75,9 @@ async function startServer() {
   } else {
     serveStatic(app);
   }
+
+  // Add Sentry error handler (must be after all routes)
+  addSentryErrorHandler(app);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

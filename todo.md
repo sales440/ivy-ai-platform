@@ -2145,3 +2145,11 @@
 - [x] Populate database with 6 Ivy.AI agents (Prospect, Closer, Solve, Nurture, Qualify, Engage)
 - [x] Create UI component for agent recommendations in /fagor-campaign
 - [x] Integrate campaignAgentMatcher API with campaign creation flow
+
+
+## Monitoring y Producción
+- [x] Verificar métricas FAGOR en SendGrid (opens, clicks, bounces)
+- [x] Implementar Sentry para error tracking
+- [x] Configurar UptimeRobot para uptime monitoring
+- [x] Crear dashboard de monitoring consolidado
+- [x] Documentar proceso de alertas y respuesta a incidentes
