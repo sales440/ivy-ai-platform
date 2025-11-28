@@ -6,6 +6,12 @@ export const APP_LOGO = "https://placehold.co/128x128/8B5CF6/FFFFFF?text=Ivy";
 
 // Generate login URL at runtime so redirect URI reflects the current origin.
 export const getLoginUrl = () => {
+  // TEMPORARY: If bypass is enabled, return home page instead of OAuth portal
+  const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
+  if (BYPASS_AUTH) {
+    return '/'; // Just reload the page, useAuth will handle the mock user
+  }
+  
   const oauthPortalUrl = import.meta.env.VITE_OAUTH_PORTAL_URL;
   const appId = import.meta.env.VITE_APP_ID;
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
