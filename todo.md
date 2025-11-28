@@ -2158,3 +2158,8 @@
 - [x] Update database to mark Email 2 as sent for all 20 contacts
 - [x] Enhance Email 2 template emphasizing on-site training benefits
 - [x] Update fagorCampaignEnrollments table with email2SentAt timestamp
+
+## Production Bug Fix
+- [ ] Fix missing BookOpen icon import causing blank screen in production
+- [ ] Test fix locally before deploying
+- [ ] Deploy fix to Railway and verify
