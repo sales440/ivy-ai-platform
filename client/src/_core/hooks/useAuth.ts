@@ -13,9 +13,26 @@ export function useAuth(options?: UseAuthOptions) {
     options ?? {};
   const utils = trpc.useUtils();
 
+  // TEMPORARY: Bypass OAuth for testing - check this FIRST before any API calls
+  const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
+  
+  const mockUser = {
+    id: 999,
+    openId: 'mock-admin-user',
+    name: 'Admin User (Bypass)',
+    email: 'admin@ivybai.com',
+    role: 'admin' as const,
+    loginMethod: 'bypass',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastSignedIn: new Date(),
+  };
+
+  // Only make API call if bypass is NOT enabled
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    enabled: !BYPASS_AUTH, // Disable query when bypass is active
   });
 
   const logoutMutation = trpc.auth.logout.useMutation({
@@ -25,6 +42,13 @@ export function useAuth(options?: UseAuthOptions) {
   });
 
   const logout = useCallback(async () => {
+    if (BYPASS_AUTH) {
+      // In bypass mode, just clear local storage and reload
+      localStorage.removeItem("manus-runtime-user-info");
+      window.location.href = '/';
+      return;
+    }
+    
     try {
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
@@ -39,29 +63,19 @@ export function useAuth(options?: UseAuthOptions) {
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
-  }, [logoutMutation, utils]);
-
-  // TEMPORARY: Bypass OAuth for testing
-  const BYPASS_AUTH = import.meta.env.VITE_BYPASS_AUTH === 'true';
-  
-  const mockUser = BYPASS_AUTH ? {
-    id: 999,
-    openId: 'mock-user',
-    name: 'Test User',
-    email: 'test@example.com',
-    role: 'admin' as const,
-    loginMethod: 'mock',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    lastSignedIn: new Date(),
-  } : null;
+  }, [BYPASS_AUTH, logoutMutation, utils]);
 
   const state = useMemo(() => {
     const user = BYPASS_AUTH ? mockUser : meQuery.data;
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(user)
-    );
+    
+    // Store user info in localStorage for other components
+    if (user) {
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(user)
+      );
+    }
+    
     return {
       user: user ?? null,
       loading: BYPASS_AUTH ? false : (meQuery.isLoading || logoutMutation.isPending),
@@ -70,7 +84,6 @@ export function useAuth(options?: UseAuthOptions) {
     };
   }, [
     BYPASS_AUTH,
-    mockUser,
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
@@ -79,6 +92,9 @@ export function useAuth(options?: UseAuthOptions) {
   ]);
 
   useEffect(() => {
+    // Don't redirect if bypass is enabled - user is always authenticated
+    if (BYPASS_AUTH) return;
+    
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
@@ -87,6 +103,7 @@ export function useAuth(options?: UseAuthOptions) {
 
     window.location.href = redirectPath
   }, [
+    BYPASS_AUTH,
     redirectOnUnauthenticated,
     redirectPath,
     logoutMutation.isPending,
@@ -96,7 +113,7 @@ export function useAuth(options?: UseAuthOptions) {
 
   return {
     ...state,
-    refresh: () => meQuery.refetch(),
+    refresh: () => BYPASS_AUTH ? Promise.resolve({ data: mockUser }) : meQuery.refetch(),
     logout,
   };
 }

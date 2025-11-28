@@ -2169,6 +2169,6 @@
 - [ ] Verify OAuth login works in production
 
 ## Temporary OAuth Bypass
-- [ ] Disable OAuth authentication temporarily for testing
-- [ ] Deploy to Railway
+- [x] Disable OAuth authentication temporarily for testing
+- [x] Deploy to Railway
 - [ ] Re-enable OAuth after testing
