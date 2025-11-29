@@ -242,4 +242,87 @@ export const seedCompaniesRouter = router({
       throw new Error(`Failed to seed FAGOR contacts: ${error.message}`);
     }
   }),
+
+  /**
+   * Enroll all FAGOR contacts in CNC Training 2026 campaign
+   * Admin only - enrolls all contacts from fagorContacts table
+   */
+  enrollAllFagorContacts: adminProcedure.mutation(async () => {
+    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+
+    try {
+      // Get all FAGOR contacts
+      const [contacts] = await connection.execute(
+        "SELECT id, name, email, company, role FROM fagorContacts"
+      );
+
+      if (!Array.isArray(contacts) || contacts.length === 0) {
+        await connection.end();
+        return {
+          success: false,
+          message: 'No FAGOR contacts found',
+          summary: { enrolled: 0, skipped: 0, errors: 0, total: 0 },
+        };
+      }
+
+      const results = {
+        enrolled: [] as string[],
+        skipped: [] as string[],
+        errors: [] as string[],
+      };
+
+      // Check if enrollments table exists
+      const [tables] = await connection.execute(
+        "SHOW TABLES LIKE 'fagorCampaignEnrollments'"
+      );
+
+      if (!Array.isArray(tables) || tables.length === 0) {
+        await connection.end();
+        throw new Error('fagorCampaignEnrollments table does not exist');
+      }
+
+      for (const contact of contacts as any[]) {
+        try {
+          // Check if already enrolled
+          const [existing] = await connection.execute(
+            "SELECT id FROM fagorCampaignEnrollments WHERE contactId = ?",
+            [contact.id]
+          );
+
+          if (Array.isArray(existing) && existing.length > 0) {
+            results.skipped.push(`${contact.name} (${contact.email})`);
+            continue;
+          }
+
+          // Enroll contact
+          await connection.execute(
+            `INSERT INTO fagorCampaignEnrollments (
+              contactId, currentStep, status, enrolledAt, lastEmailSent
+            ) VALUES (?, 0, 'active', NOW(), NULL)`,
+            [contact.id]
+          );
+
+          results.enrolled.push(`${contact.name} (${contact.company})`);
+        } catch (error: any) {
+          results.errors.push(`${contact.name}: ${error.message}`);
+        }
+      }
+
+      await connection.end();
+
+      return {
+        success: true,
+        results,
+        summary: {
+          enrolled: results.enrolled.length,
+          skipped: results.skipped.length,
+          errors: results.errors.length,
+          total: (contacts as any[]).length,
+        },
+      };
+    } catch (error: any) {
+      await connection.end();
+      throw new Error(`Failed to enroll FAGOR contacts: ${error.message}`);
+    }
+  }),
 });
