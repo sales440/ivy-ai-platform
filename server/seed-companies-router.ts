@@ -328,10 +328,7 @@ export const seedCompaniesRouter = router({
 
     // Seed 27 US appliance service clients for training campaign
     seedUSClients: adminProcedure.mutation(async () => {
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
-
-      const connection = await db.getConnection();
+      const connection = await mysql.createConnection(process.env.DATABASE_URL!);
       const results = {
         created: [] as string[],
         enrolled: [] as string[],
@@ -407,7 +404,7 @@ export const seedCompaniesRouter = router({
           },
         };
       } finally {
-        connection.release();
+        await connection.end();
       }
     }),
 });
