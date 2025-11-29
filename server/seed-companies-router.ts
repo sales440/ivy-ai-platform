@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { adminProcedure, router } from "./_core/trpc";
-import { getDb } from "./db";
+import mysql from "mysql2/promise";
 
 /**
  * Seed Companies Router
@@ -13,10 +13,8 @@ export const seedCompaniesRouter = router({
    * Admin only - creates the two main companies if they don't exist
    */
   seedMainCompanies: adminProcedure.mutation(async () => {
-    const db = await getDb();
-    if (!db) {
-      throw new Error("Database not available");
-    }
+    // Create direct connection for raw SQL
+    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
 
     const companies = [
       {
@@ -56,18 +54,18 @@ export const seedCompaniesRouter = router({
     for (const company of companies) {
       try {
         // Check if company exists
-        const existing = await db.execute(
+        const [rows] = await connection.execute(
           "SELECT id FROM companies WHERE id = ?",
           [company.id]
         );
 
-        if (existing[0] && Array.isArray(existing[0]) && existing[0].length > 0) {
+        if (Array.isArray(rows) && rows.length > 0) {
           results.skipped.push(`${company.name} (ID: ${company.id})`);
           continue;
         }
 
         // Insert company
-        await db.execute(
+        await connection.execute(
           `INSERT INTO companies (
             id, name, slug, industry, plan, logo, website, 
             contactEmail, contactPhone, address, isActive, createdAt, updatedAt
@@ -92,6 +90,8 @@ export const seedCompaniesRouter = router({
         results.errors.push(`${company.name}: ${error.message}`);
       }
     }
+
+    await connection.end();
 
     return {
       success: true,
