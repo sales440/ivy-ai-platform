@@ -294,11 +294,11 @@ export const seedCompaniesRouter = router({
             continue;
           }
 
-          // Enroll contact
+          // Enroll contact in CNC Training 2026 campaign
           await connection.execute(
             `INSERT INTO fagorCampaignEnrollments (
-              contactId, currentStep, status, enrolledAt, lastEmailSent
-            ) VALUES (?, 0, 'active', NOW(), NULL)`,
+              contactId, campaignName, currentStep, status, createdAt, updatedAt
+            ) VALUES (?, 'FAGOR_CNC_Training_2026', 0, 'active', NOW(), NOW())`,
             [contact.id]
           );
 
