@@ -2319,3 +2319,12 @@
 - [ ] Enrollar automáticamente en campaña FAGOR CNC Training 2026
 - [ ] Verificar enrollment exitoso
 - [ ] Actualizar dashboard de campaña
+
+- [x] Load 27 new US appliance service clients for training campaign
+- [x] Create seed endpoint for new clients
+- [x] Enroll new clients in FAGOR CNC Training 2026 campaign
+- [x] Fix company selector "No companies available" issue
+- [x] Create companies table in production
+- [x] Seed FAGOR and Ivy.AI companies
+- [x] Fix fagorContacts schema mismatch
+- [x] Deploy all fixes to Railway production
