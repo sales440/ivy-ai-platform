@@ -9,6 +9,45 @@ import mysql from "mysql2/promise";
  */
 export const seedCompaniesRouter = router({
   /**
+   * Create companies table if it doesn't exist
+   * Admin only - creates the companies table structure
+   */
+  createCompaniesTable: adminProcedure.mutation(async () => {
+    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+
+    try {
+      // Create companies table
+      await connection.execute(`
+        CREATE TABLE IF NOT EXISTS companies (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) NOT NULL UNIQUE,
+          industry VARCHAR(100),
+          plan ENUM('starter', 'professional', 'enterprise') DEFAULT 'starter' NOT NULL,
+          logo TEXT,
+          website VARCHAR(500),
+          contactEmail VARCHAR(320),
+          contactPhone VARCHAR(50),
+          address TEXT,
+          isActive BOOLEAN DEFAULT TRUE NOT NULL,
+          createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL
+        )
+      `);
+
+      await connection.end();
+
+      return {
+        success: true,
+        message: 'Companies table created successfully',
+      };
+    } catch (error: any) {
+      await connection.end();
+      throw new Error(`Failed to create companies table: ${error.message}`);
+    }
+  }),
+
+  /**
    * Seed FAGOR and Ivy.AI companies
    * Admin only - creates the two main companies if they don't exist
    */
