@@ -76,7 +76,7 @@ export default function UserCompanies() {
   });
 
   const assignments = assignmentsData?.assignments || [];
-  const companies = companiesData?.companies || [];
+  const companies = companiesData || [];
   const users = usersData?.users || [];
 
   // Filter assignments

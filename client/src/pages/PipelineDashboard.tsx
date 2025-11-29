@@ -34,8 +34,7 @@ export default function PipelineDashboard() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch companies for filter
-  const { data: companiesData } = trpc.companies.list.useQuery();
-  const companies = companiesData?.companies || [];
+  const { data: companies } = trpc.companies.listActive.useQuery();
 
   // Fetch pipeline metrics
   const { data: metrics, isLoading } = trpc.analytics.pipelineMetrics.useQuery(
@@ -48,7 +47,7 @@ export default function PipelineDashboard() {
   );
 
   // Transform data for funnel chart
-  const funnelData = metrics?.stages.map((stage, index) => ({
+  const funnelData = metrics?.stages.map((stage: any, index: number) => ({
     name: stage.stage,
     value: stage.count,
     fill: COLORS[index % COLORS.length],

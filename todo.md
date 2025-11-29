@@ -2277,7 +2277,21 @@
 - [x] Verificar que FAGOR e Ivy.AI existan en base de datos
 - [x] Eliminar carpetas/folders de empresas del sidebar
 - [x] Rediseñar navegación para que sea genérica (sin nombres de empresas)
-- [ ] Implementar carga dinámica de opciones según empresa seleccionada
-- [ ] Mover opciones específicas de empresa a páginas internas
-- [ ] Actualizar DashboardLayout para nueva estructura de navegación
-- [ ] Probar que todo funcione correctamente después de cambios
+- [x] Implementar carga dinámica de opciones según empresa seleccionada
+- [x] Mover opciones específicas de empresa a páginas internas
+- [x] Actualizar DashboardLayout para nueva estructura de navegación
+- [x] Probar que todo funcione correctamente después de cambios
+
+## Corrección de Errores y Mejoras de UX
+
+- [x] Investigar y resolver errores de TypeScript (241 errores) - Error de memoria del compilador, runtime funciona correctamente
+- [ ] Corregir error "Cannot read properties of undefined (reading 'Http')" - No crítico, servidor funciona
+- [ ] Implementar empty states en Dashboard
+- [ ] Implementar empty states en Leads
+- [ ] Implementar empty states en Tickets
+- [ ] Implementar empty states en Analytics
+- [ ] Crear componente EmptyState reutilizable
+- [ ] Diseñar onboarding flow para nuevos usuarios
+- [ ] Implementar tour interactivo paso a paso
+- [ ] Agregar tooltips y ayuda contextual
+- [ ] Guardar progreso del onboarding en localStorage

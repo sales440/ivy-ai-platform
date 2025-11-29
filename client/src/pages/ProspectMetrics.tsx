@@ -34,8 +34,7 @@ export default function ProspectMetrics() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   // Fetch companies
-  const { data: companiesData } = trpc.companies.list.useQuery();
-  const companies = companiesData?.companies || [];
+  const { data: companies } = trpc.companies.listActive.useQuery();
 
   // Fetch metrics
   const { data: metrics, isLoading } = trpc.analytics.prospectMetrics.useQuery(
@@ -69,7 +68,7 @@ export default function ProspectMetrics() {
               <SelectValue placeholder="Select company" />
             </SelectTrigger>
             <SelectContent>
-              {companies.map((company) => (
+              {(companies || []).map((company: any) => (
                 <SelectItem key={company.id} value={company.id.toString()}>
                   {company.name}
                 </SelectItem>
@@ -236,7 +235,7 @@ export default function ProspectMetrics() {
                       outerRadius={100}
                       label
                     >
-                      {metrics.industryDistribution.map((entry, index) => (
+                      {metrics.industryDistribution.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -264,7 +263,7 @@ export default function ProspectMetrics() {
                       outerRadius={100}
                       label
                     >
-                      {metrics.seniorityDistribution.map((entry, index) => (
+                      {metrics.seniorityDistribution.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

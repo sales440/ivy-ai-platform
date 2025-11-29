@@ -22,8 +22,7 @@ export default function CompanyReports() {
   const [endDate, setEndDate] = useState<string>('');
   const [dateFilterActive, setDateFilterActive] = useState(false);
 
-  const { data: companiesData, isLoading: companiesLoading } = trpc.companies.list.useQuery();
-  const companies = companiesData?.companies || [];
+  const { data: companies = [], isLoading: companiesLoading } = trpc.companies.list.useQuery();
 
   // Fetch metrics for all companies
   const companyMetrics = companies.map(company => {
