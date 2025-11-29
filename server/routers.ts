@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { seedRouter } from "./seed-router";
+import { seedCompaniesRouter } from "./seed-companies-router";
 import { notificationsRouter } from "./notifications-router";
 import { exportRouter } from "./export-router";
 import { companiesRouter } from "./companies-router";
@@ -114,6 +115,7 @@ export const appRouter = router({
   emailTracking: emailTrackingRouter,
   system: systemRouter,
   seed: seedRouter,
+  seedCompanies: seedCompaniesRouter,
   notifications: notificationsRouter,
   export: exportRouter,
   companies: companiesRouter,

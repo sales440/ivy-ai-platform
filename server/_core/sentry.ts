@@ -17,19 +17,18 @@ export function initSentry(app: Express) {
     return;
   }
 
-  Sentry.init({
-    dsn: SENTRY_CONFIG.dsn,
-    environment: SENTRY_CONFIG.environment,
-    release: SENTRY_CONFIG.release,
-    tracesSampleRate: SENTRY_CONFIG.tracesSampleRate,
-    debug: SENTRY_CONFIG.debug,
-    
-    // Integrate with Express
-    integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Sentry.Integrations.Express({ app }),
-    ],
-  });
+  try {
+    Sentry.init({
+      dsn: SENTRY_CONFIG.dsn,
+      environment: SENTRY_CONFIG.environment,
+      release: SENTRY_CONFIG.release,
+      tracesSampleRate: SENTRY_CONFIG.tracesSampleRate,
+      debug: SENTRY_CONFIG.debug,
+    });
+  } catch (error) {
+    console.error('[Sentry] Failed to initialize:', error);
+    return;
+  }
 
   // Request handler must be the first middleware
   app.use(Sentry.Handlers.requestHandler());

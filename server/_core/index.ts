@@ -33,7 +33,8 @@ async function startServer() {
   const server = createServer(app);
   
   // Initialize Sentry (must be first)
-  initSentry(app);
+  // TEMPORARILY DISABLED - Sentry causing crashes
+  // initSentry(app);
   
   // Initialize WebSocket server for real-time notifications
   const { initializeWebSocket } = await import("../websocket-notifications");
@@ -77,7 +78,8 @@ async function startServer() {
   }
 
   // Add Sentry error handler (must be after all routes)
-  addSentryErrorHandler(app);
+  // TEMPORARILY DISABLED - Sentry causing crashes
+  // addSentryErrorHandler(app);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
