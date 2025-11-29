@@ -323,7 +323,8 @@ export const seedCompaniesRouter = router({
     } catch (error: any) {
       await connection.end();
       throw new Error(`Failed to enroll FAGOR contacts: ${error.message}`);
-    }),
+    }
+  }),
 
     // Seed 27 US appliance service clients for training campaign
     seedUSClients: publicProcedure.mutation(async () => {
@@ -409,5 +410,4 @@ export const seedCompaniesRouter = router({
         connection.release();
       }
     }),
-  }),
 });
