@@ -143,4 +143,103 @@ export const seedCompaniesRouter = router({
       },
     };
   }),
+
+  /**
+   * Seed FAGOR contacts to production
+   * Admin only - creates the 20 FAGOR manufacturing contacts
+   */
+  seedFagorContacts: adminProcedure.mutation(async () => {
+    const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+
+    const contacts = [
+      { name: "John Martinez", email: "jmartinez@lspceram.com", company: "LSP INDUSTRIAL CERAMICS", role: "CNC Operator" },
+      { name: "Sarah Chen", email: "schen@markforged.com", company: "MARKFORGED", role: "Manufacturing Engineer" },
+      { name: "Mike Johnson", email: "mjohnson@qsiautomation.com", company: "QSI AUTOMATION", role: "Maintenance Manager" },
+      { name: "Emily Rodriguez", email: "erodriguez@guillevin.com", company: "GUILLEVIN INTERNATIONAL", role: "Operations Director" },
+      { name: "David Kim", email: "dkim@jbtc.com", company: "JBT FOODTECH", role: "Service Coordinator" },
+      { name: "Lisa Wang", email: "lwang@bwpackaging.com", company: "BARRY-WEHMILLER", role: "Plant Manager" },
+      { name: "James Thompson", email: "jthompson@mersen.com", company: "MERSEN USA", role: "Procurement Manager" },
+      { name: "Maria Garcia", email: "mgarcia@schunk.com", company: "SCHUNK", role: "Technical Support Lead" },
+      { name: "Robert Lee", email: "rlee@hainbuch.com", company: "HAINBUCH AMERICA", role: "IT Manager" },
+      { name: "Jennifer Brown", email: "jbrown@erowa.com", company: "EROWA", role: "VP Operations" },
+      { name: "William Davis", email: "wdavis@roemheld.com", company: "ROEMHELD", role: "Machinist" },
+      { name: "Patricia Miller", email: "pmiller@lang-technik.com", company: "LANG TECHNIK", role: "Quality Manager" },
+      { name: "Michael Wilson", email: "mwilson@ok-vise.com", company: "OK-VISE", role: "Facility Director" },
+      { name: "Linda Moore", email: "lmoore@5th-axis.com", company: "5TH AXIS", role: "Supply Chain Manager" },
+      { name: "Richard Taylor", email: "rtaylor@toolsusa.com", company: "TOOLS USA", role: "Automation Engineer" },
+      { name: "Barbara Anderson", email: "banderson@heimatec.com", company: "HEIMATEC", role: "CTO" },
+      { name: "Thomas Jackson", email: "tjackson@royal-products.com", company: "ROYAL PRODUCTS", role: "Technician" },
+      { name: "Susan White", email: "swhite@carr-lane.com", company: "CARR LANE", role: "Production Supervisor" },
+      { name: "Christopher Harris", email: "charris@jergens.com", company: "JERGENS INC", role: "Buyer" },
+      { name: "Nancy Martin", email: "nmartin@miteebiteprod.com", company: "MITEE-BITE", role: "CEO" }
+    ];
+
+    const results = {
+      created: [] as string[],
+      skipped: [] as string[],
+      errors: [] as string[],
+    };
+
+    try {
+      // Check if table exists
+      const [tables] = await connection.execute(
+        "SHOW TABLES LIKE 'fagorContacts'"
+      );
+
+      if (!Array.isArray(tables) || tables.length === 0) {
+        // Create table
+        await connection.execute(`
+          CREATE TABLE fagorContacts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(320) NOT NULL UNIQUE,
+            company VARCHAR(255) NOT NULL,
+            role VARCHAR(255),
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+          )
+        `);
+      }
+
+      for (const contact of contacts) {
+        try {
+          // Check if contact exists
+          const [rows] = await connection.execute(
+            "SELECT id FROM fagorContacts WHERE email = ?",
+            [contact.email]
+          );
+
+          if (Array.isArray(rows) && rows.length > 0) {
+            results.skipped.push(`${contact.name} (${contact.email})`);
+            continue;
+          }
+
+          // Insert contact
+          await connection.execute(
+            `INSERT INTO fagorContacts (name, email, company, role, createdAt) VALUES (?, ?, ?, ?, NOW())`,
+            [contact.name, contact.email, contact.company, contact.role]
+          );
+
+          results.created.push(`${contact.name} (${contact.company})`);
+        } catch (error: any) {
+          results.errors.push(`${contact.name}: ${error.message}`);
+        }
+      }
+
+      await connection.end();
+
+      return {
+        success: true,
+        results,
+        summary: {
+          created: results.created.length,
+          skipped: results.skipped.length,
+          errors: results.errors.length,
+          total: contacts.length,
+        },
+      };
+    } catch (error: any) {
+      await connection.end();
+      throw new Error(`Failed to seed FAGOR contacts: ${error.message}`);
+    }
+  }),
 });
