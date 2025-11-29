@@ -2295,3 +2295,19 @@
 - [ ] Implementar tour interactivo paso a paso
 - [ ] Agregar tooltips y ayuda contextual
 - [ ] Guardar progreso del onboarding en localStorage
+
+## Configuración de Agentes para FAGOR
+
+- [x] Revisar historial para encontrar especificaciones de campaña FAGOR
+- [x] Configurar Ivy-Prospect para FAGOR → CNC Training 2026
+- [x] Configurar Ivy-Closer para FAGOR → Warranty Extension
+- [x] Configurar Ivy-Solve para FAGOR → Equipment Repair Services
+- [x] Configurar Ivy-Logic para FAGOR → EOL Parts + Preventive Maintenance
+- [x] Configurar Ivy-Talent para FAGOR → CNC Upgrades (3 tipos)
+- [x] Configurar Ivy-Insight para FAGOR → Digital Suite + Modernization
+- [x] Crear 10 campañas para FAGOR en base de datos (más de las 8 requeridas)
+- [ ] Crear 18 email templates (3 por campaña de 6 agentes) - Ya existen en SQL
+- [x] Documentar mapeo agentes-campañas
+- [ ] Configurar integración agente-campaña vía tRPC
+- [ ] Verificar webhook SendGrid para tracking
+- [ ] Probar configuración completa de agentes y campañas
