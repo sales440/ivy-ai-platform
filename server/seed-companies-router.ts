@@ -371,9 +371,20 @@ export const seedCompaniesRouter = router({
             // Insert contact
             const [insertResult] = await connection.execute(
               `INSERT INTO fagorContacts (
-                name, email, company, phone, address, industry, country, createdAt, updatedAt
-              ) VALUES (?, ?, ?, ?, ?, 'Appliance Service & Repair', 'USA', NOW(), NOW())`,
-              [client.name, client.email, client.company, client.phone, `${client.address}, ${client.state}`]
+                name, email, company, phone, role, source, customFields, createdAt, updatedAt
+              ) VALUES (?, ?, ?, ?, 'Service Manager', 'us_appliance_import', ?, NOW(), NOW())`,
+              [
+                client.name,
+                client.email,
+                client.company,
+                client.phone,
+                JSON.stringify({
+                  address: `${client.address}, ${client.state}`,
+                  state: client.state,
+                  industry: 'Appliance Service & Repair',
+                  country: 'USA'
+                })
+              ]
             );
 
             const contactId = (insertResult as any).insertId;
