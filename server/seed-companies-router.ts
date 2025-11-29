@@ -327,7 +327,7 @@ export const seedCompaniesRouter = router({
   }),
 
     // Seed 27 US appliance service clients for training campaign
-    seedUSClients: publicProcedure.mutation(async () => {
+    seedUSClients: adminProcedure.mutation(async () => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
 
