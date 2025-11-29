@@ -323,6 +323,91 @@ export const seedCompaniesRouter = router({
     } catch (error: any) {
       await connection.end();
       throw new Error(`Failed to enroll FAGOR contacts: ${error.message}`);
-    }
+    }),
+
+    // Seed 27 US appliance service clients for training campaign
+    seedUSClients: publicProcedure.mutation(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+      const connection = await db.getConnection();
+      const results = {
+        created: [] as string[],
+        enrolled: [] as string[],
+        errors: [] as string[],
+      };
+
+      const usClients = [
+        { name: 'Mike Ponder', email: 'service@cullmanheating.com', company: 'Cullman Heating & Cooling', phone: '(256) 734-2120', address: '1765 AL-157, Cullman, AL 35058', state: 'Alabama' },
+        { name: 'Sales Department', email: 'sales@tsappliance.com', company: 'T & S Appliance', phone: '(520) 887-2222', address: '2747 N Palo Verde Blvd, Tucson, AZ 85712', state: 'Arizona' },
+        { name: 'Parts Department', email: 'sales@appliancepartscenter.com', company: 'Appliance Parts Center', phone: '(501) 455-5800', address: '9200 Stagecoach Rd, Little Rock, AR 72210', state: 'Arkansas' },
+        { name: 'Customer Service', email: 'customerservice@friedmansappliance.com', company: 'Friedmans Appliance', phone: '(415) 456-1500', address: '1650 2nd St, San Rafael, CA 94901', state: 'California' },
+        { name: 'Sales Department', email: 'sales@universaldist.com', company: 'Universal Distributors', phone: '(305) 591-9700', address: '7900 NW 25th St, Doral, FL 33122', state: 'Florida' },
+        { name: 'Service Manager', email: 'service@georgiaappliancerepair.com', company: 'Georgia Appliance Repair', phone: '(404) 885-7474', address: '2156 Howell Mill Rd NW, Atlanta, GA 30318', state: 'Georgia' },
+        { name: 'Sales Team', email: 'info@andersonapplianceinc.com', company: "The 'New' Anderson Appliance", phone: '(708) 449-2400', address: '1800 S Wolf Rd, Hillside, IL 60162', state: 'Illinois' },
+        { name: 'General Manager', email: 'info@hucksinc.com', company: "Huck's Inc.", phone: '(317) 272-9200', address: '5715 E US Highway 36, Avon, IN 46123', state: 'Indiana' },
+        { name: 'Service Department', email: 'service@homeapplianceservice.net', company: 'Home Appliance Service', phone: '(502) 969-3495', address: '3701 Fern Valley Rd, Louisville, KY 40219', state: 'Kentucky' },
+        { name: 'Customer Service', email: 'customerservice@brayandscarff.com', company: 'Bray & Scarff', phone: '(410) 740-9000', address: '9219 Red Branch Rd, Columbia, MD 21045', state: 'Maryland' },
+        { name: 'Sales Department', email: 'sales@altvaters.com', company: "Altvater's", phone: '(517) 546-7200', address: '2441 E Grand River Ave, Howell, MI 48843', state: 'Michigan' },
+        { name: 'Service Center', email: 'service@warnersstellian.com', company: "Warners' Stellian", phone: '(651) 224-8491', address: '425 Sibley St, St Paul, MN 55101', state: 'Minnesota' },
+        { name: 'Sales Staff', email: 'info@ruppertsappliance.com', company: "Ruppert's Appliance", phone: '(314) 822-3333', address: '1235 S Kirkwood Rd, Kirkwood, MO 63122', state: 'Missouri' },
+        { name: 'Sales Team', email: 'sales@karlsappliance.com', company: "Karl's Appliance", phone: '(201) 445-2000', address: '95 E Ridgewood Ave, Ridgewood, NJ 07450', state: 'New Jersey' },
+        { name: 'Service Manager', email: 'info@universalapplianceserviceny.com', company: 'Universal Appliance Service', phone: '(631) 423-1100', address: '620 New York Ave, Huntington Station, NY 11746', state: 'New York' },
+        { name: 'Sales Department', email: 'sales@airportappliance.com', company: 'Airport Appliance', phone: '(919) 467-3942', address: '1150 Airport Rd, Morrisville, NC 27560', state: 'North Carolina' },
+        { name: 'Service Department', email: 'service@uasohio.com', company: 'Universal Appliance & Service', phone: '(440) 449-0200', address: '5900 Mayfield Rd, Mayfield Heights, OH 44124', state: 'Ohio' },
+        { name: 'Service Coordinator', email: 'info@handhappliance.com', company: 'H&H Appliance Service', phone: '(918) 254-8541', address: '4725 S Mingo Rd, Tulsa, OK 74145', state: 'Oklahoma' },
+        { name: 'Customer Service', email: 'customerservice@standardtv.com', company: 'Standard TV & Appliance', phone: '(503) 233-3100', address: '7400 SE Powell Blvd, Portland, OR 97202', state: 'Oregon' },
+        { name: 'Sales Team', email: 'sales@karlsappliance.com', company: 'Karl\'s Appliance (PA)', phone: '(610) 687-1600', address: '255 W Lancaster Ave, Devon, PA 19333', state: 'Pennsylvania' },
+        { name: 'Sales Department', email: 'info@appliancesalesandsc.com', company: 'Appliance Sales & Service', phone: '(864) 627-0171', address: '401 N Main St, Mauldin, SC 29662', state: 'South Carolina' },
+        { name: 'Parts Department', email: 'parts@a1applianceparts.com', company: 'A-1 Appliance Parts', phone: '(615) 256-1900', address: '1122 Murfreesboro Pike, Nashville, TN 37217', state: 'Tennessee' },
+        { name: 'Service Manager', email: 'service@uastx.com', company: 'Universal Appliance Service', phone: '(512) 834-6111', address: '12222 N Interstate 35, Austin, TX 78753', state: 'Texas' },
+        { name: 'Customer Service', email: 'customerservice@rcwilley.com', company: 'RC Willey', phone: '(801) 464-2000', address: '2301 S 300 W, Salt Lake City, UT 84115', state: 'Utah' },
+        { name: 'Sales Staff', email: 'info@warnersappliance.com', company: "Warner's Appliance", phone: '(804) 285-2800', address: '8220 Willow Oaks Corporate Dr, Richmond, VA 23294', state: 'Virginia' },
+        { name: 'Customer Service', email: 'customerservice@albertlee.com', company: 'Albert Lee Appliance', phone: '(206) 623-4510', address: '5301 6th Ave S, Seattle, WA 98108', state: 'Washington' },
+        { name: 'Sales Department', email: 'info@american.tv', company: 'American TV & Appliance', phone: '(608) 271-1000', address: '5501 Lacy Rd, Fitchburg, WI 53711', state: 'Wisconsin' },
+      ];
+
+      try {
+        for (const client of usClients) {
+          try {
+            // Insert contact
+            const [insertResult] = await connection.execute(
+              `INSERT INTO fagorContacts (
+                name, email, company, phone, address, industry, country, createdAt, updatedAt
+              ) VALUES (?, ?, ?, ?, ?, 'Appliance Service & Repair', 'USA', NOW(), NOW())`,
+              [client.name, client.email, client.company, client.phone, `${client.address}, ${client.state}`]
+            );
+
+            const contactId = (insertResult as any).insertId;
+            results.created.push(`${client.name} (${client.company})`);
+
+            // Enroll in CNC Training 2026 campaign
+            await connection.execute(
+              `INSERT INTO fagorCampaignEnrollments (
+                contactId, campaignName, currentStep, status, createdAt, updatedAt
+              ) VALUES (?, 'FAGOR_CNC_Training_2026', 0, 'active', NOW(), NOW())`,
+              [contactId]
+            );
+
+            results.enrolled.push(`${client.name} (${client.company})`);
+          } catch (error: any) {
+            results.errors.push(`${client.name}: ${error.message}`);
+          }
+        }
+
+        return {
+          success: true,
+          results,
+          summary: {
+            created: results.created.length,
+            enrolled: results.enrolled.length,
+            errors: results.errors.length,
+            total: usClients.length,
+          },
+        };
+      } finally {
+        connection.release();
+      }
+    }),
   }),
 });

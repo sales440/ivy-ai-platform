@@ -2311,3 +2311,11 @@
 - [ ] Configurar integración agente-campaña vía tRPC
 - [ ] Verificar webhook SendGrid para tracking
 - [ ] Probar configuración completa de agentes y campañas
+
+## Carga de Nuevos Clientes US para Training Campaign
+- [ ] Crear endpoint para seed de 27 nuevos clientes US
+- [ ] Parsear datos de clientes desde archivo de texto
+- [ ] Insertar clientes en tabla fagorContacts
+- [ ] Enrollar automáticamente en campaña FAGOR CNC Training 2026
+- [ ] Verificar enrollment exitoso
+- [ ] Actualizar dashboard de campaña
