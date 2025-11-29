@@ -2203,3 +2203,81 @@
 - [ ] Run database migration (pnpm db:push)
 - [ ] Verify company selector works in production
 - [ ] Test multi-company access control
+
+## Seguridad - Mejoras Inmediatas (Fase 1: Meses 1-3)
+- [ ] Implementar audit logging completo para todas las acciones
+- [ ] Crear tabla de audit_logs en base de datos
+- [ ] Implementar middleware de logging en tRPC
+- [ ] Registrar todos los eventos de autenticación
+- [ ] Registrar todos los accesos a datos sensibles
+- [ ] Registrar todas las modificaciones de datos
+- [ ] Implementar MFA obligatorio para todos los usuarios
+- [ ] Añadir soporte para TOTP (Google Authenticator)
+- [ ] Crear flujo de configuración de MFA
+- [ ] Forzar MFA en primer login
+- [ ] Implementar rate limiting en API endpoints
+- [ ] Configurar límites por usuario
+- [ ] Configurar límites por endpoint
+- [ ] Implementar respuesta gradual a violaciones
+- [ ] Añadir encriptación field-level para datos sensibles
+- [ ] Implementar DLP básico (Data Loss Prevention)
+- [ ] Monitorear exportaciones masivas de datos
+- [ ] Alertar sobre accesos anormales
+
+## Preparación para Fundraising
+- [ ] Crear pitch deck profesional
+- [ ] Crear financial projections (3-5 años)
+- [ ] Preparar one-pager ejecutivo
+- [ ] Crear demo video de la plataforma
+- [ ] Preparar lista de inversores objetivo
+- [ ] Investigar aceleradoras e incubadoras
+- [ ] Preparar materiales de due diligence
+
+## Bugs Críticos - Railway Deployment
+
+- [ ] FAGOR no aparece en la plataforma desplegada en Railway - investigar por qué no se muestra en selector de empresas
+
+## Bugs Críticos - Railway Deployment
+
+- [ ] Investigar por qué FAGOR no aparece en Railway (revisar logs, base de datos, seed scripts)
+- [ ] Verificar que tablas FAGOR existan en Railway database
+- [ ] Verificar que FAGOR esté en tabla companies
+- [ ] Corregir cualquier problema de migración o seed data
+
+## Nueva Feature: Ivy.AI como Empresa Auto-Promocional
+
+- [ ] Crear empresa "Ivy.AI" en base de datos con datos completos
+- [ ] Configurar Ivy.AI como empresa demo/showcase
+- [ ] Crear leads demo para Ivy.AI mostrando auto-promoción
+- [ ] Crear tickets demo para Ivy.AI mostrando auto-soporte
+- [ ] Configurar los 6 agentes para Ivy.AI con configuraciones optimizadas
+- [ ] Crear workflows de auto-promoción (Prospect → Closer para vender servicios)
+- [ ] Implementar página pública de servicios de Ivy.AI (/services)
+- [ ] Crear landing page para cada agente explicando sus capacidades
+- [ ] Implementar sistema de pricing para servicios de Ivy.AI
+- [ ] Crear formulario de contacto/demo request
+- [ ] Implementar sistema de leads para clientes potenciales de Ivy.AI
+- [ ] Configurar Ivy-Prospect para generar leads de empresas que necesiten AI agents
+- [ ] Configurar Ivy-Closer para hacer follow-up y cerrar ventas
+- [ ] Crear dashboard de monetización para Ivy.AI (revenue, conversiones, pipeline)
+
+## Redes Sociales - Ivy.AI
+
+- [x] Crear perfiles de redes sociales para Ivy.AI (LinkedIn, Twitter/X, Facebook, Instagram)
+- [x] Diseñar bios y descripciones profesionales para cada plataforma
+- [x] Crear estrategia de contenido para redes sociales
+- [x] Preparar posts iniciales de lanzamiento
+- [x] Crear calendario de publicaciones
+- [ ] Diseñar assets visuales (banners, profile pictures)
+- [x] Documentar guía de manejo de redes sociales
+
+## Auditoría y Rediseño de Navegación
+
+- [x] Auditar funcionamiento completo del sitio en Railway
+- [x] Verificar que FAGOR e Ivy.AI existan en base de datos
+- [x] Eliminar carpetas/folders de empresas del sidebar
+- [x] Rediseñar navegación para que sea genérica (sin nombres de empresas)
+- [ ] Implementar carga dinámica de opciones según empresa seleccionada
+- [ ] Mover opciones específicas de empresa a páginas internas
+- [ ] Actualizar DashboardLayout para nueva estructura de navegación
+- [ ] Probar que todo funcione correctamente después de cambios

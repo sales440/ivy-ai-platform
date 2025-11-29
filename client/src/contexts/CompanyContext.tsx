@@ -23,8 +23,8 @@ const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  // Use userCompanies.myCompanies which filters by user assignments (or returns all for admins)
-  const { data: companiesData, isLoading } = trpc.userCompanies.myCompanies.useQuery();
+  // Use companies.listActive which shows all active companies to all users
+  const { data: companiesData, isLoading } = trpc.companies.listActive.useQuery();
   
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
@@ -32,14 +32,15 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === "admin";
 
   // Convertir companies de la DB al formato del contexto
-  const companies: Company[] = companiesData?.companies?.map((c: any) => ({
+  // listActive returns array directly, not wrapped in {companies: []}
+  const companies: Company[] = (companiesData || []).map((c: any) => ({
     id: c.id.toString(),
     name: c.name,
     slug: c.slug,
     industry: c.industry || undefined,
     plan: c.plan,
     logo: c.logo || undefined,
-  })) || [];
+  }));
 
   // Seleccionar empresa inicial cuando se cargan los datos
   useEffect(() => {

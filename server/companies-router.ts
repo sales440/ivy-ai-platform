@@ -21,10 +21,17 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 });
 
 export const companiesRouter = router({
-  // List all companies (admin only)
+  // List all companies (admin only - full details)
   list: adminProcedure.query(async () => {
     const companies = await getAllCompanies();
     return companies || [];
+  }),
+
+  // List active companies (public - for company selector)
+  listActive: protectedProcedure.query(async () => {
+    const allCompanies = await getAllCompanies();
+    // Filter only active companies for regular users
+    return allCompanies.filter(c => c.isActive) || [];
   }),
 
   // Get single company by ID (admin only)
