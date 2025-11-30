@@ -418,6 +418,13 @@ async function generateConversationalResponse(
     }
 
     // Call LLM to generate response
+    console.log("[Chat Handler] Calling LLM with:", {
+      temperature: 0.8,
+      messageCount: 2,
+      tsErrors: tsStats.total,
+      health: health.status,
+    });
+    
     const response = await invokeLLM({
       messages: [
         { 
@@ -459,8 +466,10 @@ Be conversational, helpful, and show personality. You're not just a command exec
     return { response: content };
   } catch (error: any) {
     console.error("[Chat Handler] Error generating conversational response:", error);
+    console.error("[Chat Handler] Error stack:", error.stack);
+    console.error("[Chat Handler] Error details:", JSON.stringify(error, null, 2));
     return {
-      response: "Disculpa, tuve un problema procesando tu mensaje. Intenta usar un comando específico como 'status' o 'help'.",
+      response: `Disculpa, tuve un problema procesando tu mensaje: ${error.message}. Intenta usar un comando específico como 'status' o 'help'.`,
     };
   }
 }

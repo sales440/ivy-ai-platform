@@ -2895,3 +2895,13 @@
 - [x] Handle greetings, questions, and casual conversation
 - [x] Add error handling to prevent failures from agent analysis
 - [ ] Deploy fix to production
+
+
+## META-AGENT LLM DEBUGGING (CRITICAL)
+- [x] Add detailed error logging to chat handler
+- [x] Add temperature parameter support to invokeLLM
+- [x] Add topP parameter support to invokeLLM
+- [x] Add maxTokens parameter support to invokeLLM
+- [x] Add console.log before LLM call for debugging
+- [ ] Deploy fix to production
+- [ ] Test in production and verify error message
