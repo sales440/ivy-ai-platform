@@ -2929,4 +2929,6 @@
 ## LLM DNS Resolution Error in Production (CRITICAL - Current Sprint)
 - [x] Add retry logic with exponential backoff for DNS failures
 - [x] Test retry logic locally
-- [ ] Deploy to production and verify LLM works
+- [x] Extract correct Forge API credentials from local environment
+- [ ] Update BUILT_IN_FORGE_API_KEY in Railway with correct value
+- [ ] Verify LLM works in production after Railway redeploy
