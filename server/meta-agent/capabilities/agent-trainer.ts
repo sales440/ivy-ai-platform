@@ -27,6 +27,12 @@ export async function analyzeAllAgentsPerformance(): Promise<AgentPerformance[]>
     const agentsResult = await db.execute("SELECT * FROM agents WHERE status = 'active'");
     const agents = agentsResult.rows as any[];
 
+    // Validate agents is iterable
+    if (!agents || !Array.isArray(agents)) {
+      console.warn("[Agent Trainer] Agents query returned invalid data");
+      return [];
+    }
+
     const performances: AgentPerformance[] = [];
 
     // Analyze each agent

@@ -63,6 +63,7 @@ COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/campaigns ./campaigns
 RUN chmod +x ./scripts/start-production.sh
 
 # Set environment

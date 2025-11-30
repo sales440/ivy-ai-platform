@@ -200,6 +200,12 @@ export class PlatformMaintenance {
       const result = await db.execute("SELECT * FROM agents");
       const agents = result.rows as any[];
 
+      // Validate agents is iterable
+      if (!agents || !Array.isArray(agents)) {
+        console.warn("[Platform Maintenance] Agents query returned invalid data");
+        return;
+      }
+
       for (const agent of agents) {
         // Check if agent has recent activity
         const activityResult = await db.execute(
