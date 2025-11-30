@@ -392,28 +392,31 @@ async function generateConversationalResponse(
   userMessage: string,
   conversationHistory: ChatMessage[]
 ): Promise<{ response: string }> {
-  // Get current system status
-  const status = metaAgent.getStatus();
-  const health = await checkPlatformHealth();
-  const tsStats = await getErrorStatistics();
-  const performances = await analyzeAllAgentsPerformance();
-
-  // Build conversation history string
-  const historyString = conversationHistory
-    .slice(-5) // Last 5 messages
-    .map(msg => `${msg.role}: ${msg.content}`)
-    .join("\n");
-
-  // Prepare prompt
-  const prompt = LLM_PROMPTS.CHAT_RESPONSE
-    .replace("{{conversationHistory}}", historyString)
-    .replace("{{userMessage}}", userMessage)
-    .replace("{{tsErrors}}", tsStats.total.toString())
-    .replace("{{platformHealth}}", health.status)
-    .replace("{{activeAgents}}", performances.length.toString())
-    .replace("{{runningTasks}}", status.activeTasks.toString());
-
   try {
+    // Get current system status (with fallbacks)
+    const status = metaAgent.getStatus();
+    
+    let health;  
+    try {
+      health = await checkPlatformHealth();
+    } catch (e) {
+      health = { status: "unknown" };
+    }
+    
+    let tsStats;
+    try {
+      tsStats = await getErrorStatistics();
+    } catch (e) {
+      tsStats = { total: 0 };
+    }
+    
+    let performances = [];
+    try {
+      performances = await analyzeAllAgentsPerformance();
+    } catch (e) {
+      // Agent analysis failed, continue without it
+    }
+
     // Call LLM to generate response
     const response = await invokeLLM({
       messages: [
@@ -433,16 +436,12 @@ You can:
 When users greet you or ask casual questions, respond naturally and warmly. When they ask about the system, provide helpful information based on the current status.
 
 Current system status:
-- TypeScript errors: {{tsErrors}}
-- Platform health: {{platformHealth}}
-- Active agents: {{activeAgents}}
-- Running tasks: {{runningTasks}}
+- TypeScript errors: ${tsStats.total}
+- Platform health: ${health.status}
+- Active agents: ${performances.length}
+- Running tasks: ${status.activeTasks}
 
 Be conversational, helpful, and show personality. You're not just a command executor - you're an intelligent assistant.`
-            .replace("{{tsErrors}}", tsStats.total.toString())
-            .replace("{{platformHealth}}", health.status)
-            .replace("{{activeAgents}}", performances.length.toString())
-            .replace("{{runningTasks}}", status.activeTasks.toString())
         },
         { role: "user", content: userMessage },
       ],
