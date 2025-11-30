@@ -268,8 +268,47 @@ const normalizeResponseFormat = ({
   };
 };
 
+/**
+ * Retry a function with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | undefined;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Don't retry on certain errors
+      if (error.message?.includes('401') || error.message?.includes('403')) {
+        throw error; // Auth errors shouldn't be retried
+      }
+      
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`[LLM] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   assertApiKey();
+  
+  return retryWithBackoff(async () => {
+    return await invokeLLMInternal(params);
+  }, 3, 1000);
+}
+
+async function invokeLLMInternal(params: InvokeParams): Promise<InvokeResult> {
 
   const {
     messages,

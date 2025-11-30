@@ -2923,11 +2923,10 @@
 - [x] Review SendGrid API key configuration in fagor-drip-scheduler.ts
 - [x] Check if SENDGRID_API_KEY environment variable is set correctly
 - [x] Verify SendGrid API key has correct permissions
-- [x] Test email sending locally with configured API key
-- [x] Deploy fix to production and verify emails sending (pending Railway update by user)
+- [ ] Test email sending locally with configured API key
+- [ ] Deploy fix to production and verify emails sending
 
-## Meta-Agent Chat "fetch failed" Error (CRITICAL - Current Sprint)
-- [x] Diagnose root cause of fetch failed error in chat handler
-- [x] Fix network/API issue causing fetch to fail
-- [x] Test chat responses locally
-- [ ] Deploy fix to production and verify 100% functionality
+## LLM DNS Resolution Error in Production (CRITICAL - Current Sprint)
+- [x] Add retry logic with exponential backoff for DNS failures
+- [x] Test retry logic locally
+- [ ] Deploy to production and verify LLM works
