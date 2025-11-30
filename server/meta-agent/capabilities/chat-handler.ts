@@ -36,19 +36,25 @@ export async function generateChatResponse(
 
 /**
  * Parse user message to detect commands
+ * Only detects explicit commands, everything else goes to conversational LLM
  */
 function parseCommand(message: string): string | null {
   const lowerMessage = message.toLowerCase().trim();
 
-  // Check each command category
+  // Only detect commands if they are explicit (start with command word or are exact match)
+  // This allows natural conversation to pass through to LLM
+  
+  // Check for exact command matches first
   for (const [commandName, variants] of Object.entries(META_AGENT_COMMANDS)) {
     for (const variant of variants) {
-      if (lowerMessage.includes(variant)) {
+      // Only match if message starts with command or is exact match
+      if (lowerMessage === variant || lowerMessage.startsWith(variant + " ")) {
         return commandName;
       }
     }
   }
 
+  // If no explicit command found, return null to use conversational LLM
   return null;
 }
 
@@ -411,10 +417,36 @@ async function generateConversationalResponse(
     // Call LLM to generate response
     const response = await invokeLLM({
       messages: [
-        { role: "system", content: "You are the Meta-Agent, an autonomous AI system." },
-        { role: "user", content: prompt },
+        { 
+          role: "system", 
+          content: `You are the Meta-Agent, an autonomous AI assistant that maintains the Ivy.AI platform 24/7. 
+
+You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
+
+You can:
+- Monitor and fix TypeScript errors automatically
+- Train AI agents to improve their performance
+- Maintain platform health 24/7
+- Analyze campaign metrics and agent performance
+- Answer questions about the system
+
+When users greet you or ask casual questions, respond naturally and warmly. When they ask about the system, provide helpful information based on the current status.
+
+Current system status:
+- TypeScript errors: {{tsErrors}}
+- Platform health: {{platformHealth}}
+- Active agents: {{activeAgents}}
+- Running tasks: {{runningTasks}}
+
+Be conversational, helpful, and show personality. You're not just a command executor - you're an intelligent assistant.`
+            .replace("{{tsErrors}}", tsStats.total.toString())
+            .replace("{{platformHealth}}", health.status)
+            .replace("{{activeAgents}}", performances.length.toString())
+            .replace("{{runningTasks}}", status.activeTasks.toString())
+        },
+        { role: "user", content: userMessage },
       ],
-      temperature: 0.7,
+      temperature: 0.8,
     });
 
     const content = response.choices[0]?.message?.content;

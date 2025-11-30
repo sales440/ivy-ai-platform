@@ -1,0 +1,6 @@
+tree bb10acc52d00045d58b8ae1cd6c9338a48ee2ea0
+parent 80310bc58733c201af8ee7fd4a4b976670eccb04
+author Manus Sandbox <sandbox@manus.ai> 1764531257 -0500
+committer Manus Sandbox <sandbox@manus.ai> 1764531257 -0500
+
+Remove files with secrets
