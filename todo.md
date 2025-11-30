@@ -2918,3 +2918,10 @@
 - [x] Monitor Railway logs for FAGOR drip email success
 - [x] Verify no more "agents2 is not iterable" errors in logs
 - [x] Confirm campaigns/ folder deployed correctly to /app/campaigns/
+
+## SendGrid "Unauthorized" Error Investigation (Current Sprint)
+- [x] Review SendGrid API key configuration in fagor-drip-scheduler.ts
+- [x] Check if SENDGRID_API_KEY environment variable is set correctly
+- [x] Verify SendGrid API key has correct permissions
+- [ ] Test email sending locally with configured API key
+- [ ] Deploy fix to production and verify emails sending
