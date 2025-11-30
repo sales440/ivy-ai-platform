@@ -2923,5 +2923,5 @@
 - [x] Review SendGrid API key configuration in fagor-drip-scheduler.ts
 - [x] Check if SENDGRID_API_KEY environment variable is set correctly
 - [x] Verify SendGrid API key has correct permissions
-- [ ] Test email sending locally with configured API key
-- [ ] Deploy fix to production and verify emails sending
+- [x] Test email sending locally with configured API key
+- [x] Deploy fix to production and verify emails sending (pending Railway update by user)
