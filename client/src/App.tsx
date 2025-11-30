@@ -48,6 +48,7 @@ import MultiChannelCampaigns from "@/pages/MultiChannelCampaigns";
 import FAGORCampaign from "@/pages/FAGORCampaign";
 import AgentsDashboard from "@/pages/AgentsDashboard";
 import MilestoneConfig from "@/pages/MilestoneConfig";
+import MetaAgent from "@/pages/MetaAgent";
 import AgentManagement from "@/pages/AgentManagement";
 import AgentTraining from "@/pages/AgentTraining";
 import AgentTrends from "@/pages/AgentTrends";
@@ -73,7 +74,8 @@ function Router() {
       <Route path="/ab-testing" component={ABTestingDashboard} />
       <Route path="/churn-risk" component={ChurnRiskDashboard} />
       <Route path="/executive-summary" component={ExecutiveSummary} />
-      <Route path="/admin/milestone-config" component={MilestoneConfig} />
+      <Route path="/milestone-config" component={MilestoneConfig} />
+      <Route path="/meta-agent" component={MetaAgent} />
       <Route path="/agents/manage" component={AgentManagement} />
       <Route path="/agents/training" component={AgentTraining} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

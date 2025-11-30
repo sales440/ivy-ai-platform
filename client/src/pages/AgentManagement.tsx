@@ -47,8 +47,9 @@ export default function AgentManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  const [viewingPerformance, setViewingPerformance] = useState<Agent | null>(null);;
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [viewingPerformance, setViewingPerformance] = useState<Agent | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({

@@ -112,6 +112,14 @@ async function startServer() {
         console.error('[AgentMilestones] Error in initial check:', err);
       });
     }, 60 * 1000);
+
+    // Start Meta-Agent (autonomous maintenance system)
+    const { startMetaAgent } = await import('../meta-agent-startup');
+    setTimeout(() => {
+      startMetaAgent().catch(err => {
+        console.error('[Meta-Agent] Error starting Meta-Agent:', err);
+      });
+    }, 5000); // Start after 5 seconds to allow server to fully initialize
   });
 }
 

@@ -39,6 +39,8 @@ import { churnPredictionRouter } from "./churn-prediction-router";
 import { executiveSummaryPdfRouter } from "./executive-summary-pdf-router";
 import { agentManagementRouter } from "./agent-management-router";
 import { campaignAgentMatcherRouter } from "./campaign-agent-matcher-router";
+import { aiChatRouter } from "./routers/ai-chat-router";
+import { metaAgentRouter } from "./meta-agent-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -86,6 +88,8 @@ function parseCommand(input: string): ParsedCommand {
 // ============================================================================
 
 export const appRouter = router({
+  metaAgent: metaAgentRouter,
+  aiChat: aiChatRouter,
   migration: migrationRouter,
   fagor: fagorAgentsMetricsRouter,
   agentMilestones: agentMilestonesRouter,
