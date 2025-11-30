@@ -329,14 +329,39 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetch(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  // Fetch with timeout and retry logic
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  
+  let response;
+  try {
+    response = await fetch(resolveApiUrl(), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${ENV.forgeApiKey}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+  } catch (fetchError: any) {
+    clearTimeout(timeoutId);
+    
+    // Better error messages for common fetch failures
+    if (fetchError.name === 'AbortError') {
+      throw new Error(`LLM invoke timeout after 30 seconds - the API is taking too long to respond`);
+    }
+    if (fetchError.cause?.code === 'ENOTFOUND') {
+      throw new Error(`LLM invoke failed: Cannot resolve API hostname - check network connectivity`);
+    }
+    if (fetchError.cause?.code === 'ECONNREFUSED') {
+      throw new Error(`LLM invoke failed: Connection refused - API server may be down`);
+    }
+    
+    throw new Error(`LLM invoke failed: ${fetchError.message}`);
+  }
+  
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorText = await response.text();

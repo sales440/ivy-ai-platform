@@ -468,8 +468,22 @@ Be conversational, helpful, and show personality. You're not just a command exec
     console.error("[Chat Handler] Error generating conversational response:", error);
     console.error("[Chat Handler] Error stack:", error.stack);
     console.error("[Chat Handler] Error details:", JSON.stringify(error, null, 2));
+    
+    // Provide helpful fallback based on error type
+    if (error.message?.includes('timeout')) {
+      return {
+        response: `¡Hola! Estoy experimentando un poco de latencia en este momento. Mientras tanto, puedes usar comandos como:\n\n• **status** - Ver el estado del sistema\n• **help** - Ver todos los comandos disponibles\n• **show tasks** - Ver tareas activas\n\n¿En qué puedo ayudarte?`,
+      };
+    }
+    
+    if (error.message?.includes('network') || error.message?.includes('ENOTFOUND')) {
+      return {
+        response: `¡Hola! Hay un problema de conectividad temporal. Puedo ayudarte con comandos específicos como:\n\n• **status** - Estado del sistema\n• **fix errors** - Corregir errores\n• **train agents** - Entrenar agentes\n\n¿Qué necesitas?`,
+      };
+    }
+    
     return {
-      response: `Disculpa, tuve un problema procesando tu mensaje: ${error.message}. Intenta usar un comando específico como 'status' o 'help'.`,
+      response: `¡Hola! Tuve un problema procesando tu mensaje de forma conversacional, pero puedo ayudarte con comandos específicos:\n\n• **status** - Ver estado del sistema\n• **help** - Ver todos los comandos\n• **show metrics** - Ver métricas\n\n¿Qué comando quieres ejecutar?`,
     };
   }
 }
