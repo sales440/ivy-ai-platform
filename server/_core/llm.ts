@@ -113,6 +113,9 @@ export type ResponseFormat =
   | { type: "json_object" }
   | { type: "json_schema"; json_schema: JsonSchema };
 
+// LLM Provider types
+type LLMProvider = "openai" | "manus";
+
 const ensureArray = (
   value: MessageContent | MessageContent[]
 ): MessageContent[] => (Array.isArray(value) ? value : [value]);
@@ -212,17 +215,6 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
-
-const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
-  }
-};
-
 const normalizeResponseFormat = ({
   responseFormat,
   response_format,
@@ -269,47 +261,127 @@ const normalizeResponseFormat = ({
 };
 
 /**
- * Retry a function with exponential backoff
+ * Determine which LLM provider to use based on available API keys
  */
-async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  baseDelay: number = 1000
-): Promise<T> {
-  let lastError: Error | undefined;
-  
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      lastError = error;
-      
-      // Don't retry on certain errors
-      if (error.message?.includes('401') || error.message?.includes('403')) {
-        throw error; // Auth errors shouldn't be retried
-      }
-      
-      if (attempt < maxRetries - 1) {
-        const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`[LLM] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
-    }
+function selectProvider(): LLMProvider {
+  // Check if OpenAI API key is available
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey && openaiKey.trim().length > 0) {
+    console.log("[LLM] Using OpenAI as primary provider");
+    return "openai";
   }
-  
-  throw lastError;
+
+  // Fallback to Manus Forge
+  if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
+    console.log("[LLM] Using Manus Forge as fallback provider");
+    return "manus";
+  }
+
+  throw new Error("No LLM provider available - missing API keys");
 }
 
-export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
-  
-  return retryWithBackoff(async () => {
-    return await invokeLLMInternal(params);
-  }, 3, 1000);
+/**
+ * Invoke OpenAI API
+ */
+async function invokeOpenAI(params: InvokeParams): Promise<InvokeResult> {
+  const {
+    messages,
+    tools,
+    toolChoice,
+    tool_choice,
+    outputSchema,
+    output_schema,
+    responseFormat,
+    response_format,
+    temperature,
+    topP,
+    top_p,
+    maxTokens,
+    max_tokens,
+  } = params;
+
+  const payload: Record<string, unknown> = {
+    model: "gpt-4o-mini", // Using GPT-4o-mini for cost efficiency and speed
+    messages: messages.map(normalizeMessage),
+  };
+
+  // Add optional parameters
+  if (temperature !== undefined) {
+    payload.temperature = temperature;
+  }
+  if (topP !== undefined || top_p !== undefined) {
+    payload.top_p = topP || top_p;
+  }
+
+  if (tools && tools.length > 0) {
+    payload.tools = tools;
+  }
+
+  const normalizedToolChoice = normalizeToolChoice(
+    toolChoice || tool_choice,
+    tools
+  );
+  if (normalizedToolChoice) {
+    payload.tool_choice = normalizedToolChoice;
+  }
+
+  // Set max_tokens (use provided value or default)
+  if (maxTokens || max_tokens) {
+    payload.max_tokens = maxTokens || max_tokens;
+  }
+
+  const normalizedResponseFormat = normalizeResponseFormat({
+    responseFormat,
+    response_format,
+    outputSchema,
+    output_schema,
+  });
+
+  if (normalizedResponseFormat) {
+    payload.response_format = normalizedResponseFormat;
+  }
+
+  // Fetch with timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `OpenAI API failed: ${response.status} ${response.statusText} – ${errorText}`
+      );
+    }
+
+    return (await response.json()) as InvokeResult;
+  } catch (fetchError: any) {
+    clearTimeout(timeoutId);
+
+    // Better error messages for common fetch failures
+    if (fetchError.name === 'AbortError') {
+      throw new Error(`OpenAI API timeout after 30 seconds`);
+    }
+
+    throw new Error(`OpenAI API failed: ${fetchError.message}`);
+  }
 }
 
-async function invokeLLMInternal(params: InvokeParams): Promise<InvokeResult> {
-
+/**
+ * Invoke Manus Forge API
+ */
+async function invokeManusForge(params: InvokeParams): Promise<InvokeResult> {
   const {
     messages,
     tools,
@@ -368,13 +440,16 @@ async function invokeLLMInternal(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  // Fetch with timeout and retry logic
+  const apiUrl = ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
+    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
+    : "https://forge.manus.ai/v1/chat/completions";
+
+  // Fetch with timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-  
-  let response;
+
   try {
-    response = await fetch(resolveApiUrl(), {
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -383,31 +458,111 @@ async function invokeLLMInternal(params: InvokeParams): Promise<InvokeResult> {
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Manus Forge API failed: ${response.status} ${response.statusText} – ${errorText}`
+      );
+    }
+
+    return (await response.json()) as InvokeResult;
   } catch (fetchError: any) {
     clearTimeout(timeoutId);
-    
+
     // Better error messages for common fetch failures
     if (fetchError.name === 'AbortError') {
-      throw new Error(`LLM invoke timeout after 30 seconds - the API is taking too long to respond`);
+      throw new Error(`Manus Forge API timeout after 30 seconds`);
     }
     if (fetchError.cause?.code === 'ENOTFOUND') {
-      throw new Error(`LLM invoke failed: Cannot resolve API hostname - check network connectivity`);
+      throw new Error(`Manus Forge API failed: Cannot resolve hostname`);
     }
     if (fetchError.cause?.code === 'ECONNREFUSED') {
-      throw new Error(`LLM invoke failed: Connection refused - API server may be down`);
+      throw new Error(`Manus Forge API failed: Connection refused`);
     }
-    
-    throw new Error(`LLM invoke failed: ${fetchError.message}`);
-  }
-  
-  clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+    throw new Error(`Manus Forge API failed: ${fetchError.message}`);
+  }
+}
+
+/**
+ * Retry a function with exponential backoff
+ */
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Don't retry on certain errors
+      if (error.message?.includes('401') || error.message?.includes('403')) {
+        throw error; // Auth errors shouldn't be retried
+      }
+
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelay * Math.pow(2, attempt);
+        console.log(`[LLM] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
 
-  return (await response.json()) as InvokeResult;
+  throw lastError;
+}
+
+/**
+ * Main LLM invocation function with automatic provider selection and fallback
+ */
+export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
+  const provider = selectProvider();
+
+  try {
+    if (provider === "openai") {
+      console.log("[LLM] Calling OpenAI GPT-4o-mini...");
+      return await retryWithBackoff(() => invokeOpenAI(params), 2, 1000);
+    } else {
+      console.log("[LLM] Calling Manus Forge...");
+      return await retryWithBackoff(() => invokeManusForge(params), 2, 1000);
+    }
+  } catch (primaryError: any) {
+    console.error(`[LLM] Primary provider (${provider}) failed:`, primaryError.message);
+
+    // Try fallback provider if primary fails
+    if (provider === "openai") {
+      // Try Manus Forge as fallback
+      if (ENV.forgeApiKey && ENV.forgeApiKey.trim().length > 0) {
+        console.log("[LLM] Falling back to Manus Forge...");
+        try {
+          return await retryWithBackoff(() => invokeManusForge(params), 2, 1000);
+        } catch (fallbackError: any) {
+          console.error("[LLM] Fallback provider (Manus Forge) also failed:", fallbackError.message);
+          throw new Error(`All LLM providers failed. Primary: ${primaryError.message}, Fallback: ${fallbackError.message}`);
+        }
+      }
+    } else if (provider === "manus") {
+      // Try OpenAI as fallback
+      const openaiKey = process.env.OPENAI_API_KEY;
+      if (openaiKey && openaiKey.trim().length > 0) {
+        console.log("[LLM] Falling back to OpenAI...");
+        try {
+          return await retryWithBackoff(() => invokeOpenAI(params), 2, 1000);
+        } catch (fallbackError: any) {
+          console.error("[LLM] Fallback provider (OpenAI) also failed:", fallbackError.message);
+          throw new Error(`All LLM providers failed. Primary: ${primaryError.message}, Fallback: ${fallbackError.message}`);
+        }
+      }
+    }
+
+    // No fallback available
+    throw primaryError;
+  }
 }
