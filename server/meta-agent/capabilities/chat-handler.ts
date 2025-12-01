@@ -12,7 +12,7 @@ import { metaAgent } from "../index";
 import { detectTypeScriptErrors, getErrorStatistics } from "./typescript-fixer";
 import { checkPlatformHealth } from "./platform-healer";
 import { analyzeAllAgentsPerformance } from "./agent-trainer";
-import { META_AGENT_TOOL_DEFINITIONS, executeToolCall } from "./meta-agent-tools";
+import { EXTENDED_TOOL_DEFINITIONS, executeExtendedToolCall } from "./meta-agent-tools-extended";
 
 /**
  * Generate a chat response to user message
@@ -424,7 +424,7 @@ async function generateConversationalResponse(
       messageCount: 2,
       tsErrors: tsStats.total,
       health: health.status,
-      toolsAvailable: META_AGENT_TOOL_DEFINITIONS.length,
+      toolsAvailable: EXTENDED_TOOL_DEFINITIONS.length,
     });
     
     const response = await invokeLLM({
@@ -435,15 +435,18 @@ async function generateConversationalResponse(
 
 You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
 
-You have EXECUTIVE POWERS - you can execute actions directly using the available tools. When users ask you to do something, USE THE TOOLS to actually do it instead of just explaining how.
+You have EXECUTIVE POWERS with 49 tools available - you can execute actions directly. When users ask you to do something, USE THE TOOLS to actually do it instead of just explaining how.
 
 You can:
-- Create new agents (use createAgent tool)
-- Fix TypeScript errors automatically (use fixTypeScriptErrors tool)
-- Check and heal platform health (use checkPlatformHealth and healPlatform tools)
-- Train agents to improve performance (use trainAgent tool)
-- Update agent status (use updateAgentStatus tool)
-- Get agent metrics (use getAgentMetrics tool)
+- **Agents**: create, pause, restart, clone, delete, train, update status, bulk update
+- **Campaigns**: pause, adjust budget, analyze ROI, create from template, schedule
+- **Database**: run migrations, cleanup data, optimize indexes, backup, analyze performance
+- **Monitoring**: create alerts, analyze logs, monitor resources, detect anomalies, generate health reports
+- **Workflows**: create, pause, optimize, retry failed workflows
+- **Code**: run tests, rollback deployments, clear cache, restart server, update dependencies
+- **Analytics**: performance reports, identify bottlenecks, predict resource needs, compare agents, export metrics
+- **Security**: scan vulnerabilities, update patches, audit permissions, detect suspicious activity
+- **Communication**: notify owner, create tickets, send Slack alerts, email reports
 
 When users ask you to do something:
 1. Use the appropriate tool to execute the action
@@ -462,7 +465,7 @@ Be proactive, helpful, and take action. You're not just an advisor - you're an e
         { role: "user", content: userMessage },
       ],
       temperature: 0.8,
-      tools: META_AGENT_TOOL_DEFINITIONS,
+      tools: EXTENDED_TOOL_DEFINITIONS,
       tool_choice: "auto",
     });
 
@@ -485,7 +488,7 @@ Be proactive, helpful, and take action. You're not just an advisor - you're an e
         const toolArgs = JSON.parse(toolCall.function.arguments);
         
         console.log(`[Chat Handler] Executing tool: ${toolName}`, toolArgs);
-        const result = await executeToolCall(toolName, toolArgs);
+        const result = await executeExtendedToolCall(toolName, toolArgs);
         toolResults.push(result);
       }
       
