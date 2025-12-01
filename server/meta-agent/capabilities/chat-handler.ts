@@ -12,6 +12,7 @@ import { metaAgent } from "../index";
 import { detectTypeScriptErrors, getErrorStatistics } from "./typescript-fixer";
 import { checkPlatformHealth } from "./platform-healer";
 import { analyzeAllAgentsPerformance } from "./agent-trainer";
+import { META_AGENT_TOOL_DEFINITIONS, executeToolCall } from "./meta-agent-tools";
 
 /**
  * Generate a chat response to user message
@@ -417,12 +418,13 @@ async function generateConversationalResponse(
       // Agent analysis failed, continue without it
     }
 
-    // Call LLM to generate response
-    console.log("[Chat Handler] Calling LLM with:", {
+    // Call LLM to generate response with tool calling enabled
+    console.log("[Chat Handler] Calling LLM with tool calling enabled:", {
       temperature: 0.8,
       messageCount: 2,
       tsErrors: tsStats.total,
       health: health.status,
+      toolsAvailable: META_AGENT_TOOL_DEFINITIONS.length,
     });
     
     const response = await invokeLLM({
@@ -433,14 +435,21 @@ async function generateConversationalResponse(
 
 You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
 
-You can:
-- Monitor and fix TypeScript errors automatically
-- Train AI agents to improve their performance
-- Maintain platform health 24/7
-- Analyze campaign metrics and agent performance
-- Answer questions about the system
+You have EXECUTIVE POWERS - you can execute actions directly using the available tools. When users ask you to do something, USE THE TOOLS to actually do it instead of just explaining how.
 
-When users greet you or ask casual questions, respond naturally and warmly. When they ask about the system, provide helpful information based on the current status.
+You can:
+- Create new agents (use createAgent tool)
+- Fix TypeScript errors automatically (use fixTypeScriptErrors tool)
+- Check and heal platform health (use checkPlatformHealth and healPlatform tools)
+- Train agents to improve performance (use trainAgent tool)
+- Update agent status (use updateAgentStatus tool)
+- Get agent metrics (use getAgentMetrics tool)
+
+When users ask you to do something:
+1. Use the appropriate tool to execute the action
+2. Then explain what you did in a friendly way
+
+When users greet you or ask casual questions, respond naturally and warmly.
 
 Current system status:
 - TypeScript errors: ${tsStats.total}
@@ -448,15 +457,62 @@ Current system status:
 - Active agents: ${performances.length}
 - Running tasks: ${status.activeTasks}
 
-Be conversational, helpful, and show personality. You're not just a command executor - you're an intelligent assistant.`
+Be proactive, helpful, and take action. You're not just an advisor - you're an executor.`
         },
         { role: "user", content: userMessage },
       ],
       temperature: 0.8,
+      tools: META_AGENT_TOOL_DEFINITIONS,
+      tool_choice: "auto",
     });
 
-    const content = response.choices[0]?.message?.content;
+    const message = response.choices[0]?.message;
     
+    if (!message) {
+      return {
+        response: "Lo siento, no pude procesar tu mensaje. ¿Podrías reformularlo?",
+      };
+    }
+
+    // Check if LLM wants to call tools
+    if (message.tool_calls && message.tool_calls.length > 0) {
+      console.log(`[Chat Handler] LLM requested ${message.tool_calls.length} tool calls`);
+      
+      // Execute all tool calls
+      const toolResults = [];
+      for (const toolCall of message.tool_calls) {
+        const toolName = toolCall.function.name;
+        const toolArgs = JSON.parse(toolCall.function.arguments);
+        
+        console.log(`[Chat Handler] Executing tool: ${toolName}`, toolArgs);
+        const result = await executeToolCall(toolName, toolArgs);
+        toolResults.push(result);
+      }
+      
+      // Generate final response incorporating tool results
+      const finalResponse = await invokeLLM({
+        messages: [
+          { 
+            role: "system", 
+            content: `You are the Meta-Agent. You just executed some actions. Now explain to the user what you did in a friendly, conversational way in Spanish.`
+          },
+          { role: "user", content: userMessage },
+          { role: "assistant", content: message.content || "", tool_calls: message.tool_calls },
+          ...message.tool_calls.map((tc: any, i: number) => ({
+            role: "tool" as const,
+            tool_call_id: tc.id,
+            content: JSON.stringify(toolResults[i]),
+          })),
+        ],
+        temperature: 0.8,
+      });
+      
+      const finalContent = finalResponse.choices[0]?.message?.content;
+      return { response: finalContent || "Acción ejecutada exitosamente." };
+    }
+    
+    // No tool calls, just return conversational response
+    const content = message.content;
     if (!content) {
       return {
         response: "Lo siento, no pude procesar tu mensaje. ¿Podrías reformularlo?",

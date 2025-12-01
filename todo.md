@@ -2954,3 +2954,10 @@
 - [ ] Test provider fallback mechanism
 - [ ] Verify all Meta-Agent commands work correctly
 - [ ] Create checkpoint with working Meta-Agent
+
+## Meta-Agent Tool Calling (Ejecución Automática)
+- [x] Diseñar sistema de tool calling para Meta-Agent
+- [x] Implementar tools: createAgent, fixErrors, updateAgentStatus, etc.
+- [x] Integrar tool calling en chat handler del Meta-Agent
+- [ ] Agregar UI feedback para mostrar acciones ejecutadas
+- [ ] Probar Meta-Agent ejecutando acciones automáticamente
