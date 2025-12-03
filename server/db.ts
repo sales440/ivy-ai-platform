@@ -1,4 +1,4 @@
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import { 
@@ -1678,3 +1678,254 @@ export const SCORING_RULES = {
   UNSUBSCRIBED: -15,
   BOUNCED_EMAIL: -2,
 };
+
+/**
+ * Create call transcript
+ */
+export async function createCallTranscript(data: InsertCallTranscript): Promise<CallTranscript> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(callTranscripts).values(data);
+  const [transcript] = await db.select().from(callTranscripts).where(eq(callTranscripts.id, Number(result.insertId)));
+  return transcript;
+}
+
+/**
+ * Get transcripts by call ID
+ */
+export async function getTranscriptsByCallId(callId: number): Promise<CallTranscript[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(callTranscripts)
+    .where(eq(callTranscripts.callId, callId))
+    .orderBy(asc(callTranscripts.timestamp));
+}
+
+/**
+ * Create SMS message record
+ */
+export async function createSMS(data: InsertSmsMessage): Promise<SmsMessage> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(smsMessages).values(data);
+  const [sms] = await db.select().from(smsMessages).where(eq(smsMessages.id, Number(result.insertId)));
+  return sms;
+}
+
+/**
+ * Get SMS messages by company ID
+ */
+export async function getSMSByCompanyId(companyId: number, limit: number = 50): Promise<SmsMessage[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(smsMessages)
+    .where(eq(smsMessages.companyId, companyId))
+    .orderBy(desc(smsMessages.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Get SMS messages by lead ID
+ */
+export async function getSMSByLeadId(leadId: number): Promise<SmsMessage[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(smsMessages)
+    .where(eq(smsMessages.leadId, leadId))
+    .orderBy(desc(smsMessages.createdAt));
+}
+
+/**
+ * Update SMS status
+ */
+export async function updateSMSStatus(
+  id: number,
+  status: string,
+  deliveredAt?: Date,
+  errorCode?: string,
+  errorMessage?: string
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(smsMessages)
+    .set({
+      status: status as any,
+      ...(deliveredAt && { deliveredAt }),
+      ...(errorCode && { errorCode }),
+      ...(errorMessage && { errorMessage })
+    })
+    .where(eq(smsMessages.id, id));
+}
+
+/**
+ * Create WhatsApp conversation
+ */
+export async function createWhatsAppConversation(data: InsertWhatsappConversation): Promise<WhatsappConversation> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(whatsappConversations).values(data);
+  const [conversation] = await db.select().from(whatsappConversations).where(eq(whatsappConversations.id, Number(result.insertId)));
+  return conversation;
+}
+
+/**
+ * Get WhatsApp conversation by phone number
+ */
+export async function getWhatsAppConversationByPhone(
+  companyId: number,
+  phoneNumber: string
+): Promise<WhatsappConversation | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const [conversation] = await db.select().from(whatsappConversations)
+    .where(and(
+      eq(whatsappConversations.companyId, companyId),
+      eq(whatsappConversations.phoneNumber, phoneNumber)
+    ));
+  return conversation;
+}
+
+/**
+ * Create WhatsApp message
+ */
+export async function createWhatsAppMessage(data: InsertWhatsappMessage): Promise<WhatsappMessage> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db.insert(whatsappMessages).values(data);
+  const [message] = await db.select().from(whatsappMessages).where(eq(whatsappMessages.id, Number(result.insertId)));
+  return message;
+}
+
+/**
+ * Get WhatsApp messages by conversation ID
+ */
+export async function getWhatsAppMessagesByConversationId(conversationId: number): Promise<WhatsappMessage[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(whatsappMessages)
+    .where(eq(whatsappMessages.conversationId, conversationId))
+    .orderBy(desc(whatsappMessages.createdAt));
+}
+
+/**
+ * Update WhatsApp message status
+ */
+export async function updateWhatsAppMessageStatus(
+  id: number,
+  status: string,
+  deliveredAt?: Date,
+  readAt?: Date
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(whatsappMessages)
+    .set({
+      status: status as any,
+      ...(deliveredAt && { deliveredAt }),
+      ...(readAt && { readAt })
+    })
+    .where(eq(whatsappMessages.id, id));
+}
+
+/**
+ * Get communication analytics by company and date range
+ */
+export async function getCommunicationAnalytics(
+  companyId: number,
+  startDate: string,
+  endDate: string
+): Promise<CommunicationAnalytics[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(communicationAnalytics)
+    .where(and(
+      eq(communicationAnalytics.companyId, companyId),
+      gte(communicationAnalytics.date, startDate),
+      lte(communicationAnalytics.date, endDate)
+    ))
+    .orderBy(desc(communicationAnalytics.date));
+}
+
+/**
+ * Create or update communication analytics
+ */
+export async function upsertCommunicationAnalytics(data: InsertCommunicationAnalytics): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(communicationAnalytics)
+    .values(data)
+    .onDuplicateKeyUpdate({
+      set: {
+        totalMessages: data.totalMessages,
+        successfulMessages: data.successfulMessages,
+        failedMessages: data.failedMessages,
+        totalCost: data.totalCost,
+        averageDuration: data.averageDuration,
+        positiveInteractions: data.positiveInteractions,
+        neutralInteractions: data.neutralInteractions,
+        negativeInteractions: data.negativeInteractions,
+        updatedAt: new Date()
+      }
+    });
+}
+
+/**
+ * Get total communication costs by company
+ */
+export async function getTotalCommunicationCosts(
+  companyId: number,
+  startDate?: string,
+  endDate?: string
+): Promise<{ voice: number; sms: number; whatsapp: number; total: number }> {
+  const db = await getDb();
+  if (!db) return { voice: 0, sms: 0, whatsapp: 0, total: 0 };
+
+  const conditions = [eq(calls.companyId, companyId)];
+  if (startDate) conditions.push(gte(calls.createdAt, new Date(startDate)));
+  if (endDate) conditions.push(lte(calls.createdAt, new Date(endDate)));
+
+  // Get voice costs
+  const voiceCosts = await db.select({ total: sum(calls.cost) })
+    .from(calls)
+    .where(and(...conditions));
+
+  // Get SMS costs
+  const smsCosts = await db.select({ total: sum(smsMessages.cost) })
+    .from(smsMessages)
+    .where(and(...conditions.map(c => {
+      const str = c.toString();
+      return str.replace('calls', 'smsMessages');
+    })));
+
+  // Get WhatsApp costs
+  const whatsappCosts = await db.select({ total: sum(whatsappMessages.cost) })
+    .from(whatsappMessages)
+    .where(and(...conditions.map(c => {
+      const str = c.toString();
+      return str.replace('calls', 'whatsappMessages');
+    })));
+
+  const voice = Number(voiceCosts[0]?.total || 0);
+  const sms = Number(smsCosts[0]?.total || 0);
+  const whatsapp = Number(whatsappCosts[0]?.total || 0);
+
+  return {
+    voice,
+    sms,
+    whatsapp,
+    total: voice + sms + whatsapp
+  };
+}

@@ -4,7 +4,7 @@
  */
 
 import { IvyAgent, AgentType } from '../agents/core';
-import { IvyProspect, IvySolve, IvyCloser, IvyLogic, IvyTalent, IvyInsight } from '../agents';
+import { IvyProspect, IvySolve, IvyCloser, IvyLogic, IvyTalent, IvyInsight, IvyCall } from '../agents';
 import * as db from '../db';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -58,6 +58,7 @@ export class HiveOrchestrator {
     const logic = new IvyLogic();
     const talent = new IvyTalent();
     const insight = new IvyInsight();
+    const call = new IvyCall();
 
     // Initialize all agents
     await prospect.initialize();
@@ -66,6 +67,7 @@ export class HiveOrchestrator {
     await logic.initialize();
     await talent.initialize();
     await insight.initialize();
+    await call.initialize();
 
     // Register agents
     this.registerAgent(prospect);
@@ -74,8 +76,9 @@ export class HiveOrchestrator {
     this.registerAgent(logic);
     this.registerAgent(talent);
     this.registerAgent(insight);
+    this.registerAgent(call);
 
-    console.log("[The Hive] Orchestrator initialized with 6 agents");
+    console.log("[The Hive] Orchestrator initialized with 7 agents");
   }
 
   /**

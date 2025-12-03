@@ -1,4 +1,4 @@
-import { boolean, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, date, decimal, int, json, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -441,25 +441,29 @@ export type SavedSearch = typeof savedSearches.$inferSelect;
 export type InsertSavedSearch = typeof savedSearches.$inferInsert;
 
 /**
- * Calls - Para Ivy-Call (Telnyx integration)
+ * Calls - Historial de llamadas telefónicas (Telnyx Voice API)
  */
 export const calls = mysqlTable("calls", {
   id: int("id").autoincrement().primaryKey(),
-  leadId: int("leadId").notNull(),
   companyId: int("companyId").notNull(),
-  userId: int("userId").notNull(), // Who initiated the call
-  telnyxCallId: varchar("telnyxCallId", { length: 255 }), // Telnyx call control ID
-  phoneNumber: varchar("phoneNumber", { length: 50 }).notNull(),
-  status: mysqlEnum("status", ["initiated", "ringing", "answered", "completed", "failed", "no-answer"]).default("initiated").notNull(),
-  duration: int("duration"), // Duration in seconds
-  transcript: text("transcript"),
-  recordingUrl: varchar("recordingUrl", { length: 500 }),
+  leadId: int("leadId"), // Opcional: si la llamada está relacionada con un lead
+  userId: int("userId"), // Usuario que inició la llamada
+  callSid: varchar("callSid", { length: 255 }).unique(), // Telnyx Call ID
+  direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
+  from: varchar("from", { length: 50 }).notNull(), // Número de teléfono origen
+  to: varchar("to", { length: 50 }).notNull(), // Número de teléfono destino
+  status: mysqlEnum("status", ["initiated", "ringing", "answered", "completed", "failed", "busy", "no-answer"]).notNull(),
+  duration: int("duration").default(0), // Duración en segundos
+  recordingUrl: text("recordingUrl"), // URL de la grabación
+  cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"), // Costo de la llamada
   sentiment: mysqlEnum("sentiment", ["positive", "neutral", "negative"]),
   outcome: mysqlEnum("outcome", ["interested", "callback", "not-interested", "voicemail", "no-answer", "wrong-number"]),
   notes: text("notes"),
   metadata: json("metadata"),
+  startedAt: timestamp("startedAt"),
+  answeredAt: timestamp("answeredAt"),
+  endedAt: timestamp("endedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  completedAt: timestamp("completedAt"),
 });
 
 export type Call = typeof calls.$inferSelect;
@@ -768,3 +772,111 @@ export const fagorEmailEvents = mysqlTable("fagorEmailEvents", {
 
 export type FagorEmailEvent = typeof fagorEmailEvents.$inferSelect;
 export type InsertFagorEmailEvent = typeof fagorEmailEvents.$inferInsert;
+
+/**
+ * Call Transcripts - Transcripciones de llamadas con IA
+ */
+export const callTranscripts = mysqlTable("callTranscripts", {
+  id: int("id").autoincrement().primaryKey(),
+  callId: int("callId").notNull(), // Relación con calls
+  speaker: mysqlEnum("speaker", ["agent", "customer"]).notNull(),
+  text: text("text").notNull(),
+  sentiment: mysqlEnum("sentiment", ["positive", "neutral", "negative"]),
+  sentimentScore: decimal("sentimentScore", { precision: 5, scale: 2 }), // -1.00 a 1.00
+  timestamp: int("timestamp").notNull(), // Timestamp en segundos desde inicio de llamada
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CallTranscript = typeof callTranscripts.$inferSelect;
+export type InsertCallTranscript = typeof callTranscripts.$inferInsert;
+
+/**
+ * SMS Messages - Mensajes SMS (Telnyx SMS API)
+ */
+export const smsMessages = mysqlTable("smsMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  leadId: int("leadId"), // Opcional: si el SMS está relacionado con un lead
+  messageSid: varchar("messageSid", { length: 255 }).notNull().unique(), // Telnyx Message ID
+  direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
+  from: varchar("from", { length: 50 }).notNull(),
+  to: varchar("to", { length: 50 }).notNull(),
+  body: text("body").notNull(),
+  status: mysqlEnum("status", ["queued", "sending", "sent", "delivered", "failed", "undelivered"]).notNull(),
+  mediaUrl: text("mediaUrl"), // URL de imagen/video si es MMS
+  cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"),
+  errorCode: varchar("errorCode", { length: 50 }),
+  errorMessage: text("errorMessage"),
+  sentAt: timestamp("sentAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SmsMessage = typeof smsMessages.$inferSelect;
+export type InsertSmsMessage = typeof smsMessages.$inferInsert;
+
+/**
+ * WhatsApp Conversations - Conversaciones de WhatsApp Business API
+ */
+export const whatsappConversations = mysqlTable("whatsappConversations", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  leadId: int("leadId"), // Opcional: si la conversación está relacionada con un lead
+  conversationId: varchar("conversationId", { length: 255 }).notNull().unique(), // Telnyx Conversation ID
+  phoneNumber: varchar("phoneNumber", { length: 50 }).notNull(), // Número del cliente
+  status: mysqlEnum("status", ["active", "closed"]).default("active").notNull(),
+  lastMessageAt: timestamp("lastMessageAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type WhatsappConversation = typeof whatsappConversations.$inferSelect;
+export type InsertWhatsappConversation = typeof whatsappConversations.$inferInsert;
+
+/**
+ * WhatsApp Messages - Mensajes individuales de WhatsApp
+ */
+export const whatsappMessages = mysqlTable("whatsappMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  conversationId: int("conversationId").notNull(), // Relación con whatsappConversations
+  messageSid: varchar("messageSid", { length: 255 }).notNull().unique(), // Telnyx Message ID
+  direction: mysqlEnum("direction", ["inbound", "outbound"]).notNull(),
+  messageType: mysqlEnum("messageType", ["text", "image", "video", "document", "audio", "template"]).notNull(),
+  body: text("body"),
+  mediaUrl: text("mediaUrl"),
+  status: mysqlEnum("status", ["queued", "sending", "sent", "delivered", "read", "failed"]).notNull(),
+  conversationType: mysqlEnum("conversationType", ["marketing", "utility", "authentication", "service"]),
+  cost: decimal("cost", { precision: 10, scale: 4 }).default("0.0000"),
+  errorCode: varchar("errorCode", { length: 50 }),
+  errorMessage: text("errorMessage"),
+  sentAt: timestamp("sentAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WhatsappMessage = typeof whatsappMessages.$inferSelect;
+export type InsertWhatsappMessage = typeof whatsappMessages.$inferInsert;
+
+/**
+ * Communication Analytics - Métricas y analytics de comunicaciones
+ */
+export const communicationAnalytics = mysqlTable("communicationAnalytics", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  date: date("date").notNull(), // Fecha del reporte
+  channel: mysqlEnum("channel", ["voice", "sms", "whatsapp"]).notNull(),
+  totalMessages: int("totalMessages").default(0),
+  successfulMessages: int("successfulMessages").default(0),
+  failedMessages: int("failedMessages").default(0),
+  totalCost: decimal("totalCost", { precision: 10, scale: 2 }).default("0.00"),
+  averageDuration: int("averageDuration").default(0), // Solo para llamadas, en segundos
+  positiveInteractions: int("positiveInteractions").default(0),
+  neutralInteractions: int("neutralInteractions").default(0),
+  negativeInteractions: int("negativeInteractions").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CommunicationAnalytics = typeof communicationAnalytics.$inferSelect;
+export type InsertCommunicationAnalytics = typeof communicationAnalytics.$inferInsert;

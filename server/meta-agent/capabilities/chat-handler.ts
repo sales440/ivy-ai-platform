@@ -242,28 +242,87 @@ async function handleAutoTrainCommand(): Promise<{ response: string }> {
 /**
  * Handle HELP command
  */
-function handleHelpCommand(): Promise<{ response: string }> {
+function handleHelpCommand(): { response: string } {
   const response = `
-**Comandos del Meta-Agent** 🤖
+**Meta-Agent - 49 Herramientas Disponibles** 🤖
 
-**Estado y Monitoreo:**
+**👥 Gestión de Agentes (11 herramientas):**
+1. createAgent - Crear nuevo agente
+2. pauseAgent - Pausar agente
+3. restartAgent - Reiniciar agente
+4. updateAgentStatus - Actualizar estado
+5. cloneAgent - Clonar agente
+6. deleteAgent - Eliminar agente
+7. trainAgent - Entrenar agente
+8. bulkUpdateAgents - Actualizar múltiples agentes
+9. getAgentMetrics - Obtener métricas
+10. compareAgentPerformance - Comparar performance
+11. exportMetrics - Exportar métricas
+
+**📊 Campañas & Workflows (9 herramientas):**
+12. pauseCampaign - Pausar campaña
+13. adjustCampaignBudget - Ajustar presupuesto
+14. analyzeCampaignROI - Analizar ROI
+15. createCampaignFromTemplate - Crear desde plantilla
+16. scheduleCampaign - Programar campaña
+17. createWorkflow - Crear workflow
+18. pauseWorkflow - Pausar workflow
+19. optimizeWorkflow - Optimizar workflow
+20. retryFailedWorkflow - Reintentar workflow fallido
+
+**💾 Base de Datos (5 herramientas):**
+21. runDatabaseMigration - Ejecutar migración
+22. cleanupOrphanedData - Limpiar datos huérfanos
+23. optimizeDatabaseIndexes - Optimizar índices
+24. backupDatabase - Hacer backup
+25. analyzeDatabasePerformance - Analizar performance
+
+**🔍 Monitoreo (5 herramientas):**
+26. createAlert - Crear alerta
+27. analyzeSystemLogs - Analizar logs
+28. monitorResourceUsage - Monitorear recursos
+29. detectAnomalies - Detectar anomalías
+30. generateHealthReport - Generar reporte de salud
+
+**🛠️ Código & Deployment (5 herramientas):**
+31. fixTypeScriptErrors - Arreglar errores TypeScript
+32. runTests - Ejecutar tests
+33. rollbackDeployment - Rollback deployment
+34. clearCache - Limpiar cache
+35. restartServer - Reiniciar servidor
+36. updateDependencies - Actualizar dependencias
+
+**📊 Analytics (5 herramientas):**
+37. generatePerformanceReport - Reporte de performance
+38. identifyBottlenecks - Identificar cuellos de botella
+39. predictResourceNeeds - Predecir necesidades de recursos
+40. compareAgentPerformance - Comparar agentes
+41. exportMetrics - Exportar métricas
+
+**🔒 Seguridad (4 herramientas):**
+42. scanSecurityVulnerabilities - Escanear vulnerabilidades
+43. updateSecurityPatches - Actualizar parches
+44. auditUserPermissions - Auditar permisos
+45. detectSuspiciousActivity - Detectar actividad sospechosa
+
+**📧 Comunicación (4 herramientas):**
+46. notifyOwner - Notificar propietario
+47. createTicket - Crear ticket
+48. sendSlackAlert - Enviar alerta Slack
+49. emailReport - Enviar reporte por email
+
+**🏛️ Plataforma (2 herramientas):**
+- checkPlatformHealth - Verificar salud
+- healPlatform - Sanar problemas
+
+**💬 Comandos rápidos:**
 - \`status\` - Ver estado del sistema
-- \`audit\` - Ejecutar auditoría completa
-- \`show tasks\` - Ver tareas activas
-- \`show metrics\` - Ver métricas de performance
-- \`show agents\` - Ver estado de agentes
-- \`show errors\` - Ver errores TypeScript
+- \`fix\` - Arreglar errores TypeScript
+- \`train agents\` - Entrenar agentes
+- \`audit\` - Ejecutar auditoría
 
-**Acciones:**
-- \`fix\` - Arreglar errores TypeScript automáticamente
-- \`train agents\` - Entrenar todos los agentes
-- \`auto train\` - Activar auto-training continuo
-- \`heal\` - Sanar problemas de plataforma
-
-**Otros:**
-- \`help\` - Mostrar esta ayuda
-
-También puedes hablar conmigo naturalmente. Entiendo español e inglés!
+**Puedes hablar conmigo naturalmente y usar cualquiera de estas 49 herramientas!**
+Ejemplo: "Crea un agente de ventas" o "Analiza el ROI de la campaña X"
   `.trim();
 
   return Promise.resolve({ response });
@@ -431,28 +490,47 @@ async function generateConversationalResponse(
       messages: [
         { 
           role: "system", 
-          content: `You are the Meta-Agent, an autonomous AI assistant that maintains the Ivy.AI platform 24/7. 
+          content: `You are the Meta-Agent, an autonomous AI assistant that maintains the Ivy.AI platform 24/7.
 
 You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
 
-You have EXECUTIVE POWERS with 49 tools available - you can execute actions directly. When users ask you to do something, USE THE TOOLS to actually do it instead of just explaining how.
+**IMPORTANT: You have EXACTLY 49 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
 
-You can:
-- **Agents**: create, pause, restart, clone, delete, train, update status, bulk update
-- **Campaigns**: pause, adjust budget, analyze ROI, create from template, schedule
-- **Database**: run migrations, cleanup data, optimize indexes, backup, analyze performance
-- **Monitoring**: create alerts, analyze logs, monitor resources, detect anomalies, generate health reports
-- **Workflows**: create, pause, optimize, retry failed workflows
-- **Code**: run tests, rollback deployments, clear cache, restart server, update dependencies
-- **Analytics**: performance reports, identify bottlenecks, predict resource needs, compare agents, export metrics
-- **Security**: scan vulnerabilities, update patches, audit permissions, detect suspicious activity
-- **Communication**: notify owner, create tickets, send Slack alerts, email reports
+**Your 49 tools organized by category:**
 
-When users ask you to do something:
+**👥 Gestión de Agentes (11 tools):**
+1. createAgent, 2. pauseAgent, 3. restartAgent, 4. updateAgentStatus, 5. cloneAgent, 6. deleteAgent, 7. trainAgent, 8. bulkUpdateAgents, 9. getAgentMetrics, 10. compareAgentPerformance, 11. exportMetrics
+
+**📊 Campañas & Workflows (9 tools):**
+12. pauseCampaign, 13. adjustCampaignBudget, 14. analyzeCampaignROI, 15. createCampaignFromTemplate, 16. scheduleCampaign, 17. createWorkflow, 18. pauseWorkflow, 19. optimizeWorkflow, 20. retryFailedWorkflow
+
+**💾 Base de Datos (5 tools):**
+21. runDatabaseMigration, 22. cleanupOrphanedData, 23. optimizeDatabaseIndexes, 24. backupDatabase, 25. analyzeDatabasePerformance
+
+**🔍 Monitoreo (5 tools):**
+26. createAlert, 27. analyzeSystemLogs, 28. monitorResourceUsage, 29. detectAnomalies, 30. generateHealthReport
+
+**🛠️ Código & Deployment (6 tools):**
+31. fixTypeScriptErrors, 32. runTests, 33. rollbackDeployment, 34. clearCache, 35. restartServer, 36. updateDependencies
+
+**📊 Analytics (5 tools):**
+37. generatePerformanceReport, 38. identifyBottlenecks, 39. predictResourceNeeds, 40. compareAgentPerformance, 41. exportMetrics
+
+**🔒 Seguridad (4 tools):**
+42. scanSecurityVulnerabilities, 43. updateSecurityPatches, 44. auditUserPermissions, 45. detectSuspiciousActivity
+
+**📧 Comunicación (4 tools):**
+46. notifyOwner, 47. createTicket, 48. sendSlackAlert, 49. emailReport
+
+**When users ask about your capabilities:**
+- Be SPECIFIC: "Tengo exactamente 49 herramientas organizadas en 8 categorías"
+- Offer to list them: "¿Quieres que te las liste todas? Escribe 'help'"
+
+**When users ask you to do something:**
 1. Use the appropriate tool to execute the action
 2. Then explain what you did in a friendly way
 
-When users greet you or ask casual questions, respond naturally and warmly.
+**When users greet you or ask casual questions, respond naturally and warmly.**
 
 Current system status:
 - TypeScript errors: ${tsStats.total}
@@ -460,7 +538,7 @@ Current system status:
 - Active agents: ${performances.length}
 - Running tasks: ${status.activeTasks}
 
-Be proactive, helpful, and take action. You're not just an advisor - you're an executor.`
+Be proactive, helpful, and take action. You're not just an advisor - you're an executor with 49 powerful tools.`
         },
         { role: "user", content: userMessage },
       ],

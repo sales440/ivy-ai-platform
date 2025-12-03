@@ -47,7 +47,7 @@ async function startServer() {
   
   // Telnyx webhook endpoint
   app.post("/api/webhooks/telnyx", async (req, res) => {
-    const { handleTelnyxWebhook } = await import("../webhooks/telnyx");
+    const { handleTelnyxWebhook } = await import("../webhooks/telnyx-webhook");
     return handleTelnyxWebhook(req, res);
   });
 

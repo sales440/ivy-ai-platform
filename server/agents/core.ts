@@ -29,7 +29,8 @@ export enum AgentType {
   SOLVE = "solve",
   LOGIC = "logic",
   TALENT = "talent",
-  INSIGHT = "insight"
+  INSIGHT = "insight",
+  CALL = "call"
 }
 
 export interface TaskInput {
@@ -251,5 +252,12 @@ export abstract class IvyAgent {
    */
   getStatus(): AgentStatus {
     return this.status;
+  }
+
+  /**
+   * Get agent capabilities
+   */
+  getCapabilities(): string[] {
+    return [...this.capabilities];
   }
 }

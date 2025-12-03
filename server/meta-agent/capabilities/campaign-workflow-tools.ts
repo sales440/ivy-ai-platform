@@ -5,7 +5,7 @@
  */
 
 import { getDb } from "../../db";
-import { campaigns, workflowExecutions } from "../../../drizzle/schema";
+import { workflowExecutions } from "../../../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 
 // ============================================================================

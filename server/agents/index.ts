@@ -11,3 +11,4 @@ export { IvyCloser } from './closer';
 export { IvyLogic } from './logic';
 export { IvyTalent } from './talent';
 export { IvyInsight } from './insight';
+export { IvyCall } from './call';

@@ -2974,3 +2974,113 @@
 - [x] Communication: notifyOwner, createTicket, sendSlackAlert, emailReport
 - [x] Integrar todas las 49 herramientas en Meta-Agent chat handler
 - [ ] Desplegar y probar Meta-Agent con 49 herramientas
+
+
+## Agente Ivy-Call - Comunicación Multicanal (Telnyx)
+
+### Base de Datos
+- [ ] Crear tabla calls (historial de llamadas)
+- [ ] Crear tabla call_transcripts (transcripciones)
+- [ ] Crear tabla sms_messages (mensajes SMS)
+- [ ] Crear tabla whatsapp_conversations (conversaciones WhatsApp)
+- [ ] Crear tabla communication_analytics (métricas y analytics)
+- [ ] Ejecutar migración de base de datos
+
+### Backend - Integración Telnyx
+- [ ] Instalar dependencia telnyx npm package
+- [ ] Configurar variables de entorno TELNYX_API_KEY, TELNYX_CONNECTION_ID
+- [ ] Crear módulo server/services/telnyx-voice.ts (Voice API)
+- [ ] Crear módulo server/services/telnyx-sms.ts (SMS API)
+- [ ] Crear módulo server/services/telnyx-whatsapp.ts (WhatsApp API)
+- [ ] Implementar webhook handler para Telnyx Voice
+- [ ] Implementar webhook handler para Telnyx SMS
+- [ ] Implementar webhook handler para Telnyx WhatsApp
+
+### Backend - Agente Ivy-Call
+- [ ] Crear clase IvyCallAgent en server/agents/ivy-call.ts
+- [ ] Implementar makeCall() - iniciar llamada telefónica
+- [ ] Implementar sendSMS() - enviar mensaje SMS
+- [ ] Implementar sendWhatsApp() - enviar mensaje WhatsApp
+- [ ] Integrar con OpenAI GPT-4o-mini para conversaciones
+- [ ] Implementar Speech-to-Text (transcripción en tiempo real)
+- [ ] Implementar Text-to-Speech (síntesis de voz)
+- [ ] Implementar análisis de sentimiento durante llamadas
+- [ ] Crear sistema de scripts personalizados por lead
+
+### Backend - Database Functions
+- [ ] Crear función saveCall() en server/db.ts
+- [ ] Crear función saveTranscript() en server/db.ts
+- [ ] Crear función saveSMS() en server/db.ts
+- [ ] Crear función saveWhatsAppMessage() en server/db.ts
+- [ ] Crear función getCommunicationHistory() en server/db.ts
+- [ ] Crear función getCommunicationAnalytics() en server/db.ts
+
+### Backend - tRPC Routers
+- [ ] Crear router communications en server/routers.ts
+- [ ] Endpoint: communications.makeCall (iniciar llamada)
+- [ ] Endpoint: communications.sendSMS (enviar SMS)
+- [ ] Endpoint: communications.sendWhatsApp (enviar WhatsApp)
+- [ ] Endpoint: communications.getCallHistory (historial de llamadas)
+- [ ] Endpoint: communications.getSMSHistory (historial SMS)
+- [ ] Endpoint: communications.getWhatsAppHistory (historial WhatsApp)
+- [ ] Endpoint: communications.getTranscript (obtener transcripción)
+- [ ] Endpoint: communications.getAnalytics (métricas y analytics)
+
+### Frontend - Páginas
+- [ ] Crear página /communications (dashboard principal)
+- [ ] Crear página /communications/calls (gestión de llamadas)
+- [ ] Crear página /communications/sms (gestión de SMS)
+- [ ] Crear página /communications/whatsapp (gestión de WhatsApp)
+- [ ] Crear página /communications/analytics (analytics y reportes)
+
+### Frontend - Componentes
+- [ ] Crear componente CallHistoryTable (tabla de llamadas)
+- [ ] Crear componente SMSHistoryTable (tabla de SMS)
+- [ ] Crear componente WhatsAppConversationList (lista de conversaciones)
+- [ ] Crear componente CallTranscriptViewer (visor de transcripciones)
+- [ ] Crear componente CommunicationAnalyticsChart (gráficos de métricas)
+- [ ] Crear componente MakeCallDialog (diálogo para iniciar llamada)
+- [ ] Crear componente SendSMSDialog (diálogo para enviar SMS)
+- [ ] Crear componente SendWhatsAppDialog (diálogo para enviar WhatsApp)
+
+### Testing
+- [ ] Probar integración de Telnyx Voice API
+- [ ] Probar integración de Telnyx SMS API
+- [ ] Probar integración de WhatsApp Business API
+- [ ] Probar conversaciones con IA (Ivy-Call)
+- [ ] Probar transcripción en tiempo real
+- [ ] Probar análisis de sentimiento
+- [ ] Probar webhooks de Telnyx
+- [ ] Probar dashboard de comunicaciones
+
+### Documentación
+- [ ] Documentar configuración de Telnyx
+- [ ] Documentar flujo de llamadas automatizadas
+- [ ] Documentar sistema de webhooks
+- [ ] Crear guía de uso de Ivy-Call
+- [ ] Documentar precios y costos de Telnyx
+
+
+## Agente Ivy-Call - Comunicación Multicanal
+
+- [x] Actualizar schema de base de datos para comunicaciones multicanal
+- [x] Instalar Telnyx SDK y configurar variables de entorno
+- [x] Crear agente Ivy-Call integrado con The Hive
+- [x] Implementar servicios de Telnyx (Voice, SMS, WhatsApp)
+- [x] Implementar funciones de base de datos para comunicaciones
+- [x] Crear routers tRPC para comunicaciones multicanal
+- [x] Implementar webhooks de Telnyx para eventos en tiempo real
+- [x] Crear workflows automatizados que incluyan Ivy-Call
+- [x] Implementar dashboard y páginas de gestión de comunicaciones
+- [x] Probar integración completa y crear checkpoint
+
+
+## BUG: Meta-Agente solo muestra 7 herramientas en lugar de 49
+
+- [x] Investigar por qué el Meta-Agente solo muestra 7 herramientas básicas
+- [x] Verificar la carga de herramientas en el sistema de capabilities (49 herramientas confirmadas)
+- [x] Actualizar comando help para mostrar las 49 herramientas organizadas
+- [x] Actualizar system prompt del LLM para ser específico sobre las 49 herramientas
+- [ ] Agregar pestaña "Tools" en la UI para visualizar herramientas
+- [ ] Probar y verificar que todas las herramientas funcionen correctamente
+- [ ] Crear checkpoint y hacer deployment con la corrección

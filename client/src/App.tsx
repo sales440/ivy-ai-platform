@@ -55,6 +55,7 @@ import AgentTrends from "@/pages/AgentTrends";
 import ABTestingDashboard from "@/pages/ABTestingDashboard";
 import ChurnRiskDashboard from "@/pages/ChurnRiskDashboard";
 import ExecutiveSummary from "@/pages/ExecutiveSummary";
+import CommunicationsDashboard from "@/pages/CommunicationsDashboard";
 
 function Router() {
   return (
@@ -97,6 +98,7 @@ function Router() {
       <Route path="/analytics/prospect-metrics" component={ProspectMetrics} />
       <Route path="/analytics/pipeline" component={PipelineDashboard} />
       <Route path="/calls" component={CallHistory} />
+      <Route path="/communications" component={CommunicationsDashboard} />
       <Route path="/scheduled-tasks" component={ScheduledTasksManagement} />
       <Route path={"/analytics/tasks"} component={TaskAnalytics} />
       <Route path={"/email-templates"} component={EmailTemplates} />
