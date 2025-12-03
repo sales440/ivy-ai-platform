@@ -6,10 +6,12 @@
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
-import * as telnyxVoice from "./services/telnyx-voice";
-import * as telnyxSMS from "./services/telnyx-sms";
-import * as telnyxWhatsApp from "./services/telnyx-whatsapp";
 import { IvyCall } from "./agents/call";
+
+// Lazy load Telnyx services to avoid initialization errors when credentials are not configured
+const getTelnyxVoice = () => import("./services/telnyx-voice");
+const getTelnyxSMS = () => import("./services/telnyx-sms");
+const getTelnyxWhatsApp = () => import("./services/telnyx-whatsapp");
 
 // Initialize Ivy-Call agent
 let ivyCallAgent: IvyCall | null = null;

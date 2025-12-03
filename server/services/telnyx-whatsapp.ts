@@ -6,8 +6,18 @@
 import Telnyx from 'telnyx';
 import { ENV } from '../_core/env';
 
-// Initialize Telnyx client
-const telnyx = new Telnyx(ENV.telnyxApiKey);
+// Lazy initialize Telnyx client only when needed
+let telnyx: Telnyx | null = null;
+
+function getTelnyxClient(): Telnyx {
+  if (!telnyx) {
+    if (!ENV.telnyxApiKey) {
+      throw new Error('Telnyx API key not configured. Please set TELNYX_API_KEY environment variable.');
+    }
+    telnyx = new Telnyx(ENV.telnyxApiKey);
+  }
+  return telnyx;
+}
 
 export interface SendWhatsAppParams {
   to: string;
@@ -75,7 +85,7 @@ export async function sendWhatsAppMessage(params: SendWhatsAppParams): Promise<W
       messageData.webhook_url_method = 'POST';
     }
 
-    const message = await telnyx.messages.create(messageData);
+    const message = await getTelnyxClient().messages.create(messageData);
 
     return {
       messageId: message.data.id,
@@ -182,7 +192,7 @@ export async function sendWhatsAppAudio(
  */
 export async function getWhatsAppMessageStatus(messageId: string): Promise<any> {
   try {
-    const message = await telnyx.messages.retrieve(messageId);
+    const message = await getTelnyxClient().messages.retrieve(messageId);
     return message.data;
   } catch (error: any) {
     console.error('[Telnyx WhatsApp] Error getting message status:', error);

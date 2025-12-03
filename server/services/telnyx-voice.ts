@@ -6,8 +6,18 @@
 import Telnyx from 'telnyx';
 import { ENV } from '../_core/env';
 
-// Initialize Telnyx client
-const telnyx = new Telnyx(ENV.telnyxApiKey);
+// Lazy initialize Telnyx client only when needed
+let telnyx: Telnyx | null = null;
+
+function getTelnyxClient(): Telnyx {
+  if (!telnyx) {
+    if (!ENV.telnyxApiKey) {
+      throw new Error('Telnyx API key not configured. Please set TELNYX_API_KEY environment variable.');
+    }
+    telnyx = new Telnyx(ENV.telnyxApiKey);
+  }
+  return telnyx;
+}
 
 export interface MakeCallParams {
   to: string;
@@ -29,7 +39,7 @@ export interface CallResponse {
  */
 export async function makeCall(params: MakeCallParams): Promise<CallResponse> {
   try {
-    const call = await telnyx.calls.create({
+    const call = await getTelnyxClient().calls.create({
       connection_id: ENV.telnyxConnectionId,
       to: params.to,
       from: params.from || ENV.telnyxPhoneNumber,
@@ -57,7 +67,7 @@ export async function makeCall(params: MakeCallParams): Promise<CallResponse> {
  */
 export async function answerCall(callControlId: string, webhookUrl?: string): Promise<void> {
   try {
-    await telnyx.calls.answer(callControlId, {
+    await getTelnyxClient().calls.answer(callControlId, {
       ...(webhookUrl && { 
         webhook_url: webhookUrl,
         webhook_url_method: 'POST'
@@ -74,7 +84,7 @@ export async function answerCall(callControlId: string, webhookUrl?: string): Pr
  */
 export async function hangupCall(callControlId: string): Promise<void> {
   try {
-    await telnyx.calls.hangup(callControlId);
+    await getTelnyxClient().calls.hangup(callControlId);
   } catch (error: any) {
     console.error('[Telnyx Voice] Error hanging up call:', error);
     throw new Error(`Failed to hangup call: ${error.message}`);
@@ -91,7 +101,7 @@ export async function speakText(
   language: string = 'es-MX'
 ): Promise<void> {
   try {
-    await telnyx.calls.speak(callControlId, {
+    await getTelnyxClient().calls.speak(callControlId, {
       payload: text,
       voice: voice,
       language: language
@@ -112,7 +122,7 @@ export async function gatherInput(
   timeout: number = 5000
 ): Promise<void> {
   try {
-    await telnyx.calls.gather(callControlId, {
+    await getTelnyxClient().calls.gather(callControlId, {
       payload: prompt,
       max_digits: maxDigits,
       timeout_millis: timeout,
@@ -132,7 +142,7 @@ export async function startRecording(
   channels: 'single' | 'dual' = 'single'
 ): Promise<void> {
   try {
-    await telnyx.calls.record_start(callControlId, {
+    await getTelnyxClient().calls.record_start(callControlId, {
       channels: channels,
       format: 'mp3'
     });
@@ -147,7 +157,7 @@ export async function startRecording(
  */
 export async function stopRecording(callControlId: string): Promise<void> {
   try {
-    await telnyx.calls.record_stop(callControlId);
+    await getTelnyxClient().calls.record_stop(callControlId);
   } catch (error: any) {
     console.error('[Telnyx Voice] Error stopping recording:', error);
     throw new Error(`Failed to stop recording: ${error.message}`);
@@ -162,7 +172,7 @@ export async function transferCall(
   to: string
 ): Promise<void> {
   try {
-    await telnyx.calls.transfer(callControlId, {
+    await getTelnyxClient().calls.transfer(callControlId, {
       to: to
     });
   } catch (error: any) {
@@ -179,7 +189,7 @@ export async function bridgeCalls(
   targetCallControlId: string
 ): Promise<void> {
   try {
-    await telnyx.calls.bridge(callControlId, {
+    await getTelnyxClient().calls.bridge(callControlId, {
       call_control_id: targetCallControlId
     });
   } catch (error: any) {
@@ -193,7 +203,7 @@ export async function bridgeCalls(
  */
 export async function getCallStatus(callControlId: string): Promise<any> {
   try {
-    const call = await telnyx.calls.retrieve(callControlId);
+    const call = await getTelnyxClient().calls.retrieve(callControlId);
     return call.data;
   } catch (error: any) {
     console.error('[Telnyx Voice] Error getting call status:', error);

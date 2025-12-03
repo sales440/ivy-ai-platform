@@ -6,8 +6,18 @@
 import Telnyx from 'telnyx';
 import { ENV } from '../_core/env';
 
-// Initialize Telnyx client
-const telnyx = new Telnyx(ENV.telnyxApiKey);
+// Lazy initialize Telnyx client only when needed
+let telnyx: Telnyx | null = null;
+
+function getTelnyxClient(): Telnyx {
+  if (!telnyx) {
+    if (!ENV.telnyxApiKey) {
+      throw new Error('Telnyx API key not configured. Please set TELNYX_API_KEY environment variable.');
+    }
+    telnyx = new Telnyx(ENV.telnyxApiKey);
+  }
+  return telnyx;
+}
 
 export interface SendSMSParams {
   to: string;
@@ -30,7 +40,7 @@ export interface SMSResponse {
  */
 export async function sendSMS(params: SendSMSParams): Promise<SMSResponse> {
   try {
-    const message = await telnyx.messages.create({
+    const message = await getTelnyxClient().messages.create({
       from: params.from || ENV.telnyxPhoneNumber,
       to: params.to,
       text: params.text,
@@ -73,7 +83,7 @@ export async function sendMMS(params: SendSMSParams): Promise<SMSResponse> {
  */
 export async function getMessageStatus(messageId: string): Promise<any> {
   try {
-    const message = await telnyx.messages.retrieve(messageId);
+    const message = await getTelnyxClient().messages.retrieve(messageId);
     return message.data;
   } catch (error: any) {
     console.error('[Telnyx SMS] Error getting message status:', error);
