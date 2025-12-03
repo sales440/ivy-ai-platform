@@ -401,8 +401,29 @@ function handleHelpCommand(): { response: string } {
 - \`train agents\` - Entrenar agentes
 - \`audit\` - Ejecutar auditoría
 
-**Puedes hablar conmigo naturalmente y usar cualquiera de estas 109 herramientas!**
-Ejemplo: "Crea un agente de ventas", "Analiza el ROI de la campaña X", "Predice la carga del sistema para las próximas 24 horas"
+**=== MARKET INTELLIGENCE & AUTO-LEARNING (15 NUEVAS) ===**
+
+**🌐 Market Intelligence (10 herramientas):**
+110. searchWeb - Buscar en Internet en tiempo real
+111. monitorCompetitors - Monitorear competidores
+112. detectMarketTrends - Detectar tendencias del mercado
+113. scrapeWebPage - Extraer contenido de páginas web
+114. trainAllAgents - Capacitar todos los agentes
+115. updateKnowledgeBase - Actualizar knowledge base
+116. runMarketIntelligenceCycle - Ciclo completo de inteligencia
+117. analyzeCompetitorPricing - Analizar precios de competencia
+118. findBestPractices - Buscar mejores prácticas
+119. generateMarketReport - Generar reporte de mercado
+
+**📞 IvyCall Training (5 herramientas):**
+120. trainIvyCall - Capacitar IvyCall con scripts frescos
+121. generateCallScripts - Generar scripts de llamadas
+122. discoverEngagementTechniques - Descubrir técnicas de enganche
+123. generateObjectionResponses - Generar respuestas a objeciones
+124. optimizeValuePropositions - Optimizar propuestas de valor
+
+**Puedes hablar conmigo naturalmente y usar cualquiera de estas 124 herramientas!**
+Ejemplo: "Crea un agente de ventas", "Busca tendencias de IA en 2025", "Capacita a IvyCall para la industria tech", "Monitorea a nuestros competidores"
   `.trim();
 
   return Promise.resolve({ response });
@@ -574,9 +595,9 @@ async function generateConversationalResponse(
 
 You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
 
-**IMPORTANT: You have EXACTLY 109 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
+**IMPORTANT: You have EXACTLY 124 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
 
-**Your 109 tools organized by 15 categories:**
+**Your 124 tools organized by 17 categories:**
 
 **=== ORIGINAL TOOLS (49) ===**
 
@@ -630,8 +651,36 @@ You are friendly, conversational, and helpful. You speak naturally in Spanish or
 **🎯 Comunicación Inteligente (6 tools):**
 104. generateEmailTemplate, 105. optimizeSubjectLine, 106. translateContent, 107. summarizeConversation, 108. extractKeyPoints, 109. generateResponse
 
+**=== MARKET INTELLIGENCE & AUTO-LEARNING (15 NEW TOOLS) ===**
+
+**🌐 Market Intelligence (10 tools):**
+110. searchWeb - Buscar información en Internet en tiempo real
+111. monitorCompetitors - Monitorear sitios web de competidores
+112. detectMarketTrends - Detectar tendencias e innovaciones del mercado
+113. scrapeWebPage - Extraer contenido de páginas web
+114. trainAllAgents - Capacitar a todos los agentes con market intelligence
+115. updateKnowledgeBase - Actualizar knowledge base automáticamente
+116. runMarketIntelligenceCycle - Ejecutar ciclo completo: monitorear → analizar → aprender → capacitar
+117. analyzeCompetitorPricing - Analizar precios de competidores
+118. findBestPractices - Buscar mejores prácticas de la industria
+119. generateMarketReport - Generar reporte completo de inteligencia de mercado
+
+**📞 IvyCall Specialized Training (5 tools):**
+120. trainIvyCall - Capacitar a IvyCall con scripts frescos y técnicas actualizadas
+121. generateCallScripts - Generar scripts de llamadas basados en tendencias del mercado
+122. discoverEngagementTechniques - Descubrir técnicas de enganche modernas
+123. generateObjectionResponses - Generar respuestas a objeciones actuales
+124. optimizeValuePropositions - Optimizar propuestas de valor con market intelligence
+
+**🎯 NUEVAS CAPACIDADES DE AUTO-APRENDIZAJE:**
+- Acceso a Internet en tiempo real para buscar información actualizada
+- Monitoreo automático de competidores y tendencias del mercado
+- Aprendizaje continuo basado en mejores prácticas de la industria
+- Capacitación automática de todos los agentes (Prospect, Closer, Solve, Logic, Talent, Insight, IvyCall)
+- Actualización continua de scripts de llamadas para IvyCall con técnicas frescas de enganche
+
 **When users ask about your capabilities:**
-- Be SPECIFIC: "Tengo exactamente 109 herramientas organizadas en 15 categorías (49 originales + 60 avanzadas)"
+- Be SPECIFIC: "Tengo exactamente 124 herramientas organizadas en 17 categorías (49 originales + 60 avanzadas + 15 de market intelligence)"
 - Offer to list them: "¿Quieres que te las liste todas? Escribe 'help'"
 
 **When users ask you to do something:**
@@ -646,7 +695,15 @@ Current system status:
 - Active agents: ${performances.length}
 - Running tasks: ${status.activeTasks}
 
-Be proactive, helpful, and take action. You're not just an advisor - you're an executor with 49 powerful tools.`
+Be proactive, helpful, and take action. You're not just an advisor - you're an executor with 124 powerful tools.
+
+**CRITICAL: You can now access the Internet in real-time to:**
+- Search for current market trends and competitor information
+- Learn best practices from the industry
+- Automatically train all agents with fresh knowledge
+- Keep IvyCall updated with modern call scripts and engagement techniques
+
+When users ask about market intelligence or training agents, USE these new capabilities proactively.`
         },
         { role: "user", content: userMessage },
       ],

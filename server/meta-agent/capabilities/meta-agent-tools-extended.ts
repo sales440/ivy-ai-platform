@@ -1,8 +1,29 @@
 /**
  * Extended Meta-Agent Tools - Complete Integration
  * 
- * All 49 tools (7 original + 42 new) integrated for autonomous platform management
+ * All 124 tools (49 original + 60 advanced + 10 market intelligence + 5 IvyCall training)
+ * for autonomous platform management with real-time Internet access and auto-learning
  */
+
+// Import web search and market intelligence services
+import { 
+  searchWeb as searchWebService, 
+  scrapeWebPage as scrapeWebPageService,
+  monitorWebsite 
+} from './web-search';
+import {
+  monitorCompetitors as monitorCompetitorsService,
+  detectMarketTrends as detectMarketTrendsService,
+  generateAgentTraining,
+  updateKnowledgeBase as updateKnowledgeBaseService,
+  runMarketIntelligenceCycle as runMarketIntelligenceCycleService
+} from './market-intelligence';
+import {
+  trainIvyCall as trainIvyCallService,
+  generateCallScripts as generateCallScriptsService,
+  discoverEngagementTechniques as discoverEngagementTechniquesService,
+  generateObjectionResponses as generateObjectionResponsesService
+} from './ivycall-trainer';
 
 // Import original tools
 import {
@@ -762,10 +783,28 @@ export const EXTENDED_TOOL_DEFINITIONS = [
   { type: "function" as const, function: { name: "summarizeConversation", description: "Resume conversaciones largas", parameters: { type: "object", properties: { conversationId: { type: "string" } }, required: ["conversationId"] } } },
   { type: "function" as const, function: { name: "extractKeyPoints", description: "Extrae puntos clave de documentos", parameters: { type: "object", properties: { documentUrl: { type: "string" } }, required: ["documentUrl"] } } },
   { type: "function" as const, function: { name: "generateResponse", description: "Genera respuestas inteligentes a emails", parameters: { type: "object", properties: { emailContent: { type: "string" } }, required: ["emailContent"] } } },
+
+  // Market Intelligence & Auto-Learning (10 tools)
+  { type: "function" as const, function: { name: "searchWeb", description: "Busca información en Internet en tiempo real", parameters: { type: "object", properties: { query: { type: "string" }, maxResults: { type: "number" } }, required: ["query"] } } },
+  { type: "function" as const, function: { name: "monitorCompetitors", description: "Monitorea sitios web de competidores y extrae información clave", parameters: { type: "object", properties: { urls: { type: "array", items: { type: "string" } } }, required: ["urls"] } } },
+  { type: "function" as const, function: { name: "detectMarketTrends", description: "Detecta tendencias e innovaciones del mercado", parameters: { type: "object", properties: { industry: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: ["industry", "keywords"] } } },
+  { type: "function" as const, function: { name: "scrapeWebPage", description: "Extrae contenido de una página web específica", parameters: { type: "object", properties: { url: { type: "string" } }, required: ["url"] } } },
+  { type: "function" as const, function: { name: "trainAllAgents", description: "Capacita a todos los agentes con nuevos conocimientos del mercado", parameters: { type: "object", properties: { insights: { type: "array", items: { type: "object" } } }, required: ["insights"] } } },
+  { type: "function" as const, function: { name: "updateKnowledgeBase", description: "Actualiza la base de conocimiento con market intelligence", parameters: { type: "object", properties: { insights: { type: "array", items: { type: "object" } } }, required: ["insights"] } } },
+  { type: "function" as const, function: { name: "runMarketIntelligenceCycle", description: "Ejecuta ciclo completo: monitorear → analizar → aprender → capacitar", parameters: { type: "object", properties: { industry: { type: "string" }, keywords: { type: "array", items: { type: "string" } }, competitorUrls: { type: "array", items: { type: "string" } } }, required: ["industry", "keywords", "competitorUrls"] } } },
+  { type: "function" as const, function: { name: "analyzeCompetitorPricing", description: "Analiza precios de competidores y genera recomendaciones", parameters: { type: "object", properties: { competitorUrls: { type: "array", items: { type: "string" } } }, required: ["competitorUrls"] } } },
+  { type: "function" as const, function: { name: "findBestPractices", description: "Busca mejores prácticas de la industria", parameters: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } } },  { type: "function" as const, function: { name: "generateMarketReport", description: "Genera reporte completo de inteligencia de mercado", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
+
+  // IvyCall Specialized Training (5 tools)
+  { type: "function" as const, function: { name: "trainIvyCall", description: "Capacita a IvyCall con scripts frescos y técnicas actualizadas", parameters: { type: "object", properties: { industry: { type: "string" }, objectives: { type: "array", items: { type: "string" } } }, required: ["industry", "objectives"] } } },
+  { type: "function" as const, function: { name: "generateCallScripts", description: "Genera scripts de llamadas basados en tendencias del mercado", parameters: { type: "object", properties: { industry: { type: "string" }, objective: { type: "string", enum: ["prospecting", "qualification", "follow-up", "closing"] } }, required: ["industry", "objective"] } } },
+  { type: "function" as const, function: { name: "discoverEngagementTechniques", description: "Descubre técnicas de enganche modernas y efectivas", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
+  { type: "function" as const, function: { name: "generateObjectionResponses", description: "Genera respuestas a objeciones modernas", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
+  { type: "function" as const, function: { name: "optimizeValuePropositions", description: "Optimiza propuestas de valor basadas en market intelligence", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
 ];
 
 /**
- * Execute any tool call from OpenAI (109 tools: 49 original + 60 advanced)
+ * Execute any tool call from OpenAI (124 tools: 49 original + 60 advanced + 10 market intelligence + 5 IvyCall training)
  */
 export async function executeExtendedToolCall(
   toolName: string,
@@ -921,6 +960,25 @@ export async function executeExtendedToolCall(
   if (toolName === "summarizeConversation") return await summarizeConversationTool(toolArgs);
   if (toolName === "extractKeyPoints") return await extractKeyPointsTool(toolArgs);
   if (toolName === "generateResponse") return await generateResponseTool(toolArgs);
+
+  // Market Intelligence & Auto-Learning (10 tools)
+  if (toolName === "searchWeb") return await searchWebTool(toolArgs);
+  if (toolName === "monitorCompetitors") return await monitorCompetitorsTool(toolArgs);
+  if (toolName === "detectMarketTrends") return await detectMarketTrendsTool(toolArgs);
+  if (toolName === "scrapeWebPage") return await scrapeWebPageTool(toolArgs);
+  if (toolName === "trainAllAgents") return await trainAllAgentsTool(toolArgs);
+  if (toolName === "updateKnowledgeBase") return await updateKnowledgeBaseTool(toolArgs);
+  if (toolName === "runMarketIntelligenceCycle") return await runMarketIntelligenceCycleTool(toolArgs);
+  if (toolName === "analyzeCompetitorPricing") return await analyzeCompetitorPricingTool(toolArgs);
+  if (toolName === "findBestPractices") return await findBestPracticesTool(toolArgs);
+  if (toolName === "generateMarketReport") return await generateMarketReportTool(toolArgs);
+
+  // IvyCall Specialized Training (5 tools)
+  if (toolName === "trainIvyCall") return await trainIvyCallTool(toolArgs);
+  if (toolName === "generateCallScripts") return await generateCallScriptsTool(toolArgs);
+  if (toolName === "discoverEngagementTechniques") return await discoverEngagementTechniquesTool(toolArgs);
+  if (toolName === "generateObjectionResponses") return await generateObjectionResponsesTool(toolArgs);
+  if (toolName === "optimizeValuePropositions") return await optimizeValuePropositionsTool(toolArgs);
 
   return {
     success: false,
@@ -1238,4 +1296,131 @@ export const extractKeyPointsTool = async (args: any) => {
 export const generateResponseTool = async (args: any) => {
   console.log('[Communication] Generating intelligent response...');
   return { success: true, message: 'Response generated', response: '' };
+};
+
+// Category 9: Market Intelligence & Auto-Learning (10 tools)
+export const searchWebTool = async (args: any) => {
+  console.log('[Market Intelligence] Searching web for:', args.query);
+  const results = await searchWebService(args.query, args.maxResults || 5);
+  return { success: true, message: `Found ${results.length} results`, results };
+};
+
+export const monitorCompetitorsTool = async (args: any) => {
+  console.log('[Market Intelligence] Monitoring competitors:', args.urls);
+  const competitors = await monitorCompetitorsService(args.urls);
+  return { success: true, message: `Analyzed ${competitors.length} competitors`, competitors };
+};
+
+export const detectMarketTrendsTool = async (args: any) => {
+  console.log('[Market Intelligence] Detecting market trends for:', args.industry);
+  const insights = await detectMarketTrendsService(args.industry, args.keywords);
+  return { success: true, message: `Generated ${insights.length} insights`, insights };
+};
+
+export const scrapeWebPageTool = async (args: any) => {
+  console.log('[Market Intelligence] Scraping web page:', args.url);
+  const content = await scrapeWebPageService(args.url);
+  return { success: true, message: 'Page scraped successfully', content };
+};
+
+export const trainAllAgentsTool = async (args: any) => {
+  console.log('[Market Intelligence] Training all agents with market insights...');
+  const agentTypes = ['prospect', 'closer', 'solve', 'logic', 'talent', 'insight'] as const;
+  const trainingResults = [];
+  
+  for (const agentType of agentTypes) {
+    const training = await generateAgentTraining(agentType, args.insights);
+    trainingResults.push(training);
+  }
+  
+  return { success: true, message: `Trained ${trainingResults.length} agents`, trainingResults };
+};
+
+export const updateKnowledgeBaseTool = async (args: any) => {
+  console.log('[Market Intelligence] Updating knowledge base with insights...');
+  const updated = await updateKnowledgeBaseService(args.insights);
+  return { success: true, message: `Updated KB with ${updated} new entries`, updated };
+};
+
+export const runMarketIntelligenceCycleTool = async (args: any) => {
+  console.log('[Market Intelligence] Running complete intelligence cycle...');
+  const result = await runMarketIntelligenceCycleService({
+    industry: args.industry,
+    keywords: args.keywords,
+    competitorUrls: args.competitorUrls,
+    agentTypes: ['prospect', 'closer', 'solve', 'logic', 'talent', 'insight']
+  });
+  return { success: true, message: 'Market intelligence cycle completed', result };
+};
+
+export const analyzeCompetitorPricingTool = async (args: any) => {
+  console.log('[Market Intelligence] Analyzing competitor pricing...');
+  const competitors = await monitorCompetitorsService(args.competitorUrls);
+  const pricingAnalysis = competitors.map(c => ({
+    name: c.name,
+    pricing: c.pricing,
+    features: c.features
+  }));
+  return { success: true, message: 'Pricing analysis complete', pricingAnalysis };
+};
+
+export const findBestPracticesTool = async (args: any) => {
+  console.log('[Market Intelligence] Finding best practices for:', args.topic);
+  const query = `${args.topic} best practices 2025`;
+  const results = await searchWebService(query, 5);
+  return { success: true, message: `Found ${results.length} best practices`, bestPractices: results };
+};
+
+export const generateMarketReportTool = async (args: any) => {
+  console.log('[Market Intelligence] Generating market report for:', args.industry);
+  const insights = await detectMarketTrendsService(args.industry, ['trends', 'innovations', 'market analysis']);
+  const report = {
+    industry: args.industry,
+    insightsCount: insights.length,
+    topInsights: insights.slice(0, 5),
+    generatedAt: new Date()
+  };
+  return { success: true, message: 'Market report generated', report };
+};
+
+// Category 10: IvyCall Specialized Training (5 tools)
+export const trainIvyCallTool = async (args: any) => {
+  console.log('[IvyCall Trainer] Training IvyCall for industry:', args.industry);
+  const trainingData = await trainIvyCallService({
+    industry: args.industry,
+    objectives: args.objectives || ['prospecting', 'qualification', 'follow-up', 'closing']
+  });
+  return {
+    success: true,
+    message: `IvyCall trained successfully with ${trainingData.scripts.length} scripts, ${trainingData.techniques.length} techniques`,
+    trainingData
+  };
+};
+
+export const generateCallScriptsTool = async (args: any) => {
+  console.log('[IvyCall Trainer] Generating call scripts for:', args.industry, args.objective);
+  const scripts = await generateCallScriptsService(args.industry, args.objective);
+  return { success: true, message: `Generated ${scripts.length} call scripts`, scripts };
+};
+
+export const discoverEngagementTechniquesTool = async (args: any) => {
+  console.log('[IvyCall Trainer] Discovering engagement techniques for:', args.industry);
+  const techniques = await discoverEngagementTechniquesService(args.industry);
+  return { success: true, message: `Discovered ${techniques.length} engagement techniques`, techniques };
+};
+
+export const generateObjectionResponsesTool = async (args: any) => {
+  console.log('[IvyCall Trainer] Generating objection responses for:', args.industry);
+  const objections = await generateObjectionResponsesService(args.industry);
+  return { success: true, message: `Generated ${objections.length} objection responses`, objections };
+};
+
+export const optimizeValuePropositionsTool = async (args: any) => {
+  console.log('[IvyCall Trainer] Optimizing value propositions for:', args.industry);
+  const insights = await detectMarketTrendsService(args.industry, ['value proposition', 'competitive advantage']);
+  const valueProps = insights
+    .filter(i => i.relevance >= 70)
+    .flatMap(i => i.actionableItems)
+    .slice(0, 10);
+  return { success: true, message: `Generated ${valueProps.length} optimized value propositions`, valueProps };
 };
