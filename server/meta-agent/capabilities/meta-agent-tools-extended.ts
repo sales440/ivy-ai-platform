@@ -421,7 +421,17 @@ export const EXTENDED_TOOL_DEFINITIONS = [
         type: "object",
         properties: {
           name: { type: "string" },
-          steps: { type: "array" },
+          steps: { 
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                agentType: { type: "string" },
+                task: { type: "object" }
+              }
+            }
+          },
         },
         required: ["name", "steps"],
       },
