@@ -401,3 +401,5 @@ export class IvyCall extends IvyAgent {
 
     // TODO: Implement agent communication logging if needed
     // await db.createAgentCommunication({ ... });
+  }
+}
