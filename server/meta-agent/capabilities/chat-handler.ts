@@ -244,7 +244,9 @@ async function handleAutoTrainCommand(): Promise<{ response: string }> {
  */
 function handleHelpCommand(): { response: string } {
   const response = `
-**Meta-Agent - 49 Herramientas Disponibles** 🤖
+**Meta-Agent - 109 Herramientas Disponibles** 🤖
+
+**=== HERRAMIENTAS ORIGINALES (49) ===**
 
 **👥 Gestión de Agentes (11 herramientas):**
 1. createAgent - Crear nuevo agente
@@ -315,14 +317,92 @@ function handleHelpCommand(): { response: string } {
 - checkPlatformHealth - Verificar salud
 - healPlatform - Sanar problemas
 
+**=== HERRAMIENTAS AVANZADAS (60) ===**
+
+**🧠 Auto-Aprendizaje & Optimización (8 herramientas):**
+50. analyzeUserBehavior - Analizar comportamiento de usuarios
+51. predictSystemLoad - Predecir carga del sistema
+52. optimizeDatabaseQueriesAdvanced - Optimizar queries lentas
+53. learnFromErrors - Aprender de errores pasados
+54. suggestCodeImprovements - Sugerir mejoras de código
+55. autoTunePerformance - Ajustar performance automáticamente
+56. detectPatterns - Detectar patrones en datos
+57. generateInsights - Generar insights accionables
+
+**🔗 Integración & Conectividad (10 herramientas):**
+58. connectToAPI - Conectar con APIs externas
+59. syncWithCRM - Sincronizar con CRMs (Salesforce, HubSpot, Pipedrive)
+60. importFromCSV - Importar datos desde CSV/Excel
+61. exportToGoogleSheets - Exportar a Google Sheets
+62. sendToWebhook - Enviar eventos a webhooks
+63. pullFromZapier - Obtener datos de Zapier
+64. pushToSlack - Enviar notificaciones a Slack
+65. syncCalendar - Sincronizar con Google Calendar
+66. fetchFromNotion - Obtener datos de Notion
+67. integrateStripe - Gestionar pagos vía Stripe
+
+**⚡ Automatización Avanzada (8 herramientas):**
+68. scheduleTask - Programar tareas futuras
+69. createRecurringJob - Crear jobs recurrentes
+70. pauseAllCampaigns - Pausar todas las campañas
+71. resumeAllCampaigns - Reanudar todas las campañas
+72. bulkUpdateLeads - Actualizar leads en masa
+73. autoAssignLeads - Asignar leads automáticamente
+74. triggerWorkflow - Disparar workflows por eventos
+75. chainWorkflows - Encadenar múltiples workflows
+
+**📈 Análisis & Reportes (7 herramientas):**
+76. generateDailyReport - Generar reporte diario
+77. generateWeeklyReport - Generar reporte semanal
+78. compareTimeframes - Comparar métricas entre períodos
+79. detectAnomaliesAdvanced - Detectar anomalías en métricas
+80. forecastRevenue - Predecir revenue futuro
+81. calculateROI - Calcular ROI de campañas
+82. visualizeData - Generar gráficos y visualizaciones
+
+**🔐 Seguridad & Compliance (6 herramientas):**
+83. auditAccessLogs - Auditar logs de acceso
+84. detectSuspiciousLogin - Detectar logins sospechosos
+85. enforceRateLimits - Aplicar rate limits
+86. rotateAPIKeys - Rotar API keys
+87. checkGDPRCompliance - Verificar cumplimiento GDPR
+88. anonymizeData - Anonimizar datos sensibles
+
+**💡 Inteligencia de Negocio (8 herramientas):**
+89. identifyChurnRisk - Identificar riesgo de churn
+90. recommendNextAction - Recomendar próxima acción
+91. scoreLeadQuality - Puntuar calidad de leads
+92. optimizeCampaignBudget - Optimizar presupuesto
+93. predictConversion - Predecir probabilidad de conversión
+94. segmentAudience - Segmentar audiencia
+95. personalizeContent - Personalizar contenido
+96. detectBestTime - Detectar mejor momento para contactar
+
+**🚀 DevOps & Infraestructura (7 herramientas):**
+97. scaleResources - Escalar recursos automáticamente
+98. createBackup - Crear backup de base de datos
+99. restoreBackup - Restaurar desde backup
+100. monitorUptime - Monitorear uptime de servicios
+101. deployToProduction - Deployar a producción
+102. rollbackDeploymentAdvanced - Rollback de deployment
+103. checkDiskSpace - Verificar espacio en disco
+
+**🎯 Comunicación Inteligente (6 herramientas):**
+104. generateEmailTemplate - Generar templates de email con IA
+105. optimizeSubjectLine - Optimizar subject lines
+106. translateContent - Traducir contenido automáticamente
+107. summarizeConversation - Resumir conversaciones
+108. extractKeyPoints - Extraer puntos clave de documentos
+109. generateResponse - Generar respuestas inteligentes
+
 **💬 Comandos rápidos:**
 - \`status\` - Ver estado del sistema
 - \`fix\` - Arreglar errores TypeScript
 - \`train agents\` - Entrenar agentes
 - \`audit\` - Ejecutar auditoría
 
-**Puedes hablar conmigo naturalmente y usar cualquiera de estas 49 herramientas!**
-Ejemplo: "Crea un agente de ventas" o "Analiza el ROI de la campaña X"
+**Puedes hablar conmigo naturalmente y usar cualquiera de estas 109 herramientas!**
+Ejemplo: "Crea un agente de ventas", "Analiza el ROI de la campaña X", "Predice la carga del sistema para las próximas 24 horas"
   `.trim();
 
   return Promise.resolve({ response });
@@ -494,14 +574,16 @@ async function generateConversationalResponse(
 
 You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
 
-**IMPORTANT: You have EXACTLY 49 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
+**IMPORTANT: You have EXACTLY 109 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
 
-**Your 49 tools organized by category:**
+**Your 109 tools organized by 15 categories:**
+
+**=== ORIGINAL TOOLS (49) ===**
 
 **👥 Gestión de Agentes (11 tools):**
 1. createAgent, 2. pauseAgent, 3. restartAgent, 4. updateAgentStatus, 5. cloneAgent, 6. deleteAgent, 7. trainAgent, 8. bulkUpdateAgents, 9. getAgentMetrics, 10. compareAgentPerformance, 11. exportMetrics
 
-**📊 Campañas & Workflows (9 tools):**
+**📈 Campañas & Workflows (9 tools):**
 12. pauseCampaign, 13. adjustCampaignBudget, 14. analyzeCampaignROI, 15. createCampaignFromTemplate, 16. scheduleCampaign, 17. createWorkflow, 18. pauseWorkflow, 19. optimizeWorkflow, 20. retryFailedWorkflow
 
 **💾 Base de Datos (5 tools):**
@@ -513,7 +595,7 @@ You are friendly, conversational, and helpful. You speak naturally in Spanish or
 **🛠️ Código & Deployment (6 tools):**
 31. fixTypeScriptErrors, 32. runTests, 33. rollbackDeployment, 34. clearCache, 35. restartServer, 36. updateDependencies
 
-**📊 Analytics (5 tools):**
+**📈 Analytics (5 tools):**
 37. generatePerformanceReport, 38. identifyBottlenecks, 39. predictResourceNeeds, 40. compareAgentPerformance, 41. exportMetrics
 
 **🔒 Seguridad (4 tools):**
@@ -522,8 +604,34 @@ You are friendly, conversational, and helpful. You speak naturally in Spanish or
 **📧 Comunicación (4 tools):**
 46. notifyOwner, 47. createTicket, 48. sendSlackAlert, 49. emailReport
 
+**=== ADVANCED TOOLS (60) ===**
+
+**🧠 Auto-Aprendizaje & Optimización (8 tools):**
+50. analyzeUserBehavior, 51. predictSystemLoad, 52. optimizeDatabaseQueriesAdvanced, 53. learnFromErrors, 54. suggestCodeImprovements, 55. autoTunePerformance, 56. detectPatterns, 57. generateInsights
+
+**🔗 Integración & Conectividad (10 tools):**
+58. connectToAPI, 59. syncWithCRM, 60. importFromCSV, 61. exportToGoogleSheets, 62. sendToWebhook, 63. pullFromZapier, 64. pushToSlack, 65. syncCalendar, 66. fetchFromNotion, 67. integrateStripe
+
+**⚡ Automatización Avanzada (8 tools):**
+68. scheduleTask, 69. createRecurringJob, 70. pauseAllCampaigns, 71. resumeAllCampaigns, 72. bulkUpdateLeads, 73. autoAssignLeads, 74. triggerWorkflow, 75. chainWorkflows
+
+**📈 Análisis & Reportes (7 tools):**
+76. generateDailyReport, 77. generateWeeklyReport, 78. compareTimeframes, 79. detectAnomaliesAdvanced, 80. forecastRevenue, 81. calculateROI, 82. visualizeData
+
+**🔐 Seguridad & Compliance (6 tools):**
+83. auditAccessLogs, 84. detectSuspiciousLogin, 85. enforceRateLimits, 86. rotateAPIKeys, 87. checkGDPRCompliance, 88. anonymizeData
+
+**💡 Inteligencia de Negocio (8 tools):**
+89. identifyChurnRisk, 90. recommendNextAction, 91. scoreLeadQuality, 92. optimizeCampaignBudget, 93. predictConversion, 94. segmentAudience, 95. personalizeContent, 96. detectBestTime
+
+**🚀 DevOps & Infraestructura (7 tools):**
+97. scaleResources, 98. createBackup, 99. restoreBackup, 100. monitorUptime, 101. deployToProduction, 102. rollbackDeploymentAdvanced, 103. checkDiskSpace
+
+**🎯 Comunicación Inteligente (6 tools):**
+104. generateEmailTemplate, 105. optimizeSubjectLine, 106. translateContent, 107. summarizeConversation, 108. extractKeyPoints, 109. generateResponse
+
 **When users ask about your capabilities:**
-- Be SPECIFIC: "Tengo exactamente 49 herramientas organizadas en 8 categorías"
+- Be SPECIFIC: "Tengo exactamente 109 herramientas organizadas en 15 categorías (49 originales + 60 avanzadas)"
 - Offer to list them: "¿Quieres que te las liste todas? Escribe 'help'"
 
 **When users ask you to do something:**
