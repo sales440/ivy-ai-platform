@@ -1,10 +1,10 @@
 import { eq, and, desc, asc, sql, gte, lte, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { 
-  InsertUser, 
-  users, 
-  companies, 
+import {
+  InsertUser,
+  users,
+  companies,
   InsertCompany,
   userCompanies,
   InsertUserCompany,
@@ -12,7 +12,7 @@ import {
   userPreferences,
   InsertUserPreferences,
   UserPreferences,
-  agents, 
+  agents,
   InsertAgent,
   Agent,
   tasks,
@@ -65,6 +65,12 @@ const RECONNECT_INTERVAL = 5000; // 5 seconds
 // Create connection pool with automatic reconnection
 export async function getDb() {
   if (!process.env.DATABASE_URL) {
+    return null;
+  }
+
+  // Prevent mysql2 from trying to connect to a file (SQLite) URL
+  if (process.env.DATABASE_URL.startsWith('file:')) {
+    console.warn("[Database] SQLite connection string detected but MySQL driver is active. Database features will be disabled.");
     return null;
   }
 
@@ -210,7 +216,7 @@ export async function createAgent(agent: InsertAgent): Promise<Agent> {
 
   const result = await db.insert(agents).values(agent);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(agents).where(eq(agents.id, insertedId)).limit(1);
   return created[0];
 }
@@ -292,7 +298,7 @@ export async function createTask(task: InsertTask): Promise<Task> {
 
   const result = await db.insert(tasks).values(task);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(tasks).where(eq(tasks.id, insertedId)).limit(1);
   return created[0];
 }
@@ -336,7 +342,7 @@ export async function createWorkflow(workflow: InsertWorkflow): Promise<Workflow
 
   const result = await db.insert(workflows).values(workflow);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(workflows).where(eq(workflows.id, insertedId)).limit(1);
   return created[0];
 }
@@ -362,7 +368,7 @@ export async function createWorkflowExecution(execution: InsertWorkflowExecution
 
   const result = await db.insert(workflowExecutions).values(execution);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(workflowExecutions).where(eq(workflowExecutions.id, insertedId)).limit(1);
   return created[0];
 }
@@ -384,7 +390,7 @@ export async function createLead(lead: InsertLead): Promise<Lead> {
 
   const result = await db.insert(leads).values(lead);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(leads).where(eq(leads.id, insertedId)).limit(1);
   return created[0];
 }
@@ -474,7 +480,7 @@ export async function createTicket(ticket: InsertTicket): Promise<Ticket> {
     )
   `);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(tickets).where(eq(tickets.id, insertedId)).limit(1);
   return created[0];
 }
@@ -540,7 +546,7 @@ export async function createKnowledgeArticle(article: InsertKnowledgeArticle): P
 
   const result = await db.insert(knowledgeBase).values(article);
   const insertedId = Number(result[0].insertId);
-  
+
   const created = await db.select().from(knowledgeBase).where(eq(knowledgeBase.id, insertedId)).limit(1);
   return created[0];
 }
@@ -560,14 +566,14 @@ export async function searchKnowledgeBase(query: string, category?: string): Pro
 
     // Simple keyword matching (in production, use vector search or full-text search)
     const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3);
-    
+
     const scored = articles.map(article => {
       const content = `${article.title} ${article.content} ${article.tags?.join(' ') || ''}`.toLowerCase();
       const score = keywords.reduce((acc, keyword) => {
         const count = (content.match(new RegExp(keyword, 'g')) || []).length;
         return acc + count;
       }, 0);
-      
+
       return { article, score };
     });
 
@@ -643,7 +649,7 @@ export async function getCommandHistory(userId: number, limit: number = 50): Pro
 export async function getUserNotifications(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const { notifications } = await import("../drizzle/schema");
   const result = await db
     .select()
@@ -651,14 +657,14 @@ export async function getUserNotifications(userId: number) {
     .where(eq(notifications.userId, userId))
     .orderBy(desc(notifications.createdAt))
     .limit(50);
-  
+
   return result;
 }
 
 export async function markNotificationAsRead(notificationId: number, userId: number) {
   const db = await getDb();
   if (!db) return;
-  
+
   const { notifications } = await import("../drizzle/schema");
   await db
     .update(notifications)
@@ -674,7 +680,7 @@ export async function markNotificationAsRead(notificationId: number, userId: num
 export async function markAllNotificationsAsRead(userId: number) {
   const db = await getDb();
   if (!db) return;
-  
+
   const { notifications } = await import("../drizzle/schema");
   await db
     .update(notifications)
@@ -685,7 +691,7 @@ export async function markAllNotificationsAsRead(userId: number) {
 export async function deleteNotification(notificationId: number, userId: number) {
   const db = await getDb();
   if (!db) return;
-  
+
   const { notifications } = await import("../drizzle/schema");
   await db
     .delete(notifications)
@@ -707,7 +713,7 @@ export async function createNotification(data: {
 }) {
   const db = await getDb();
   if (!db) return null;
-  
+
   const { notifications } = await import("../drizzle/schema");
   const result = await db.insert(notifications).values({
     userId: data.userId,
@@ -718,7 +724,7 @@ export async function createNotification(data: {
     relatedId: data.relatedId,
     isRead: false,
   });
-  
+
   return result;
 }
 
@@ -729,26 +735,26 @@ export async function createNotification(data: {
 export async function getAllLeadsForExport() {
   const db = await getDb();
   if (!db) return [];
-  
+
   const { leads } = await import("../drizzle/schema");
   const result = await db
     .select()
     .from(leads)
     .orderBy(desc(leads.createdAt));
-  
+
   return result;
 }
 
 export async function getAllTicketsForExport() {
   const db = await getDb();
   if (!db) return [];
-  
+
   const { tickets } = await import("../drizzle/schema");
   const result = await db
     .select()
     .from(tickets)
     .orderBy(desc(tickets.createdAt));
-  
+
   return result;
 }
 
@@ -769,7 +775,7 @@ export async function getUserPreferences(userId: number): Promise<UserPreference
       .from(userPreferences)
       .where(eq(userPreferences.userId, userId))
       .limit(1);
-    
+
     return result.length > 0 ? result[0] : undefined;
   } catch (error) {
     console.error("[Database] Failed to get user preferences:", error);
@@ -975,8 +981,8 @@ export async function removeUserFromCompany(userId: number, companyId: number) {
 }
 
 export async function updateUserCompanyRole(
-  userId: number, 
-  companyId: number, 
+  userId: number,
+  companyId: number,
   role: "viewer" | "member" | "admin"
 ) {
   const db = await getDb();
@@ -1041,7 +1047,7 @@ export async function getCompanyMetrics(companyId: number, startDate?: string, e
     const companyLeads = await db.select().from(leads).where(and(...leadsConditions));
     const qualifiedLeads = companyLeads.filter(l => l.status === 'qualified' || l.status === 'converted');
     const convertedLeads = companyLeads.filter(l => l.status === 'converted');
-    
+
     // Get tickets metrics with date filter
     const ticketDateConditions = [];
     if (startDate) {
@@ -1054,22 +1060,22 @@ export async function getCompanyMetrics(companyId: number, startDate?: string, e
     const companyTickets = await db.select().from(tickets).where(and(...ticketsConditions));
     const openTickets = companyTickets.filter(t => t.status === 'open' || t.status === 'in_progress');
     const resolvedTickets = companyTickets.filter(t => t.status === 'resolved' || t.status === 'closed');
-    
+
     // Get agents metrics
     const companyAgents = await db.select().from(agents).where(eq(agents.companyId, companyId));
     const activeAgents = companyAgents.filter(a => a.status === 'active');
-    
+
     // Calculate average qualification score
     const avgQualificationScore = companyLeads.length > 0
       ? companyLeads.reduce((sum, l) => sum + (l.qualificationScore || 0), 0) / companyLeads.length
       : 0;
-    
+
     // Calculate average resolution time (in hours)
     const ticketsWithResolutionTime = companyTickets.filter(t => t.resolutionTime !== null);
     const avgResolutionTime = ticketsWithResolutionTime.length > 0
       ? ticketsWithResolutionTime.reduce((sum, t) => sum + (t.resolutionTime || 0), 0) / ticketsWithResolutionTime.length
       : 0;
-    
+
     return {
       companyId,
       leads: {
@@ -1105,7 +1111,7 @@ export async function getAllCompaniesMetrics() {
     const allCompanies = await db.select().from(companies);
     const metricsPromises = allCompanies.map(company => getCompanyMetrics(company.id));
     const metrics = await Promise.all(metricsPromises);
-    
+
     return metrics.filter(m => m !== null);
   } catch (error) {
     console.error("[Database] Failed to get all companies metrics:", error);
@@ -1220,7 +1226,7 @@ export async function getAllAuditLogs(filters?: {
 
   try {
     const conditions = [];
-    
+
     if (filters?.userId) {
       conditions.push(eq(auditLogs.userId, filters.userId));
     }
@@ -1240,7 +1246,7 @@ export async function getAllAuditLogs(filters?: {
     if (conditions.length > 0) {
       return await db.select().from(auditLogs).where(and(...conditions)).orderBy(desc(auditLogs.createdAt));
     }
-    
+
     return await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt));
   } catch (error) {
     console.error("[Database] Failed to get audit logs:", error);
@@ -1255,14 +1261,14 @@ export async function getAllAuditLogs(filters?: {
 export async function getCrmIntegrations(companyId: number) {
   const db = await getDb();
   if (!db) return [];
-  
+
   return await db.select().from(crmIntegrations).where(eq(crmIntegrations.companyId, companyId));
 }
 
 export async function getCrmIntegrationById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  
+
   const result = await db.select().from(crmIntegrations).where(eq(crmIntegrations.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -1354,7 +1360,7 @@ export async function getProspectSearchMetrics(companyId: number, filters?: {
 
   try {
     const conditions = [eq(prospectSearches.companyId, companyId)];
-    
+
     if (filters?.startDate) {
       conditions.push(sql`${prospectSearches.createdAt} >= ${filters.startDate}`);
     }
@@ -1378,9 +1384,9 @@ export async function getProspectSearchMetrics(companyId: number, filters?: {
 export async function getLeadsByProspectSearchIds(searchIds: number[]) {
   const db = await getDb();
   if (!db) return [];
-  
+
   if (searchIds.length === 0) return [];
-  
+
   return await db
     .select()
     .from(leads)
@@ -1392,7 +1398,7 @@ export async function getLeadsByProspectSearchIds(searchIds: number[]) {
 export async function createSavedSearch(data: InsertSavedSearch) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const [result] = await db.insert(savedSearches).values(data);
   return result.insertId;
 }
@@ -1400,12 +1406,12 @@ export async function createSavedSearch(data: InsertSavedSearch) {
 export async function getSavedSearches(userId: number, companyId?: number | null) {
   const db = await getDb();
   if (!db) return [];
-  
+
   const conditions = [eq(savedSearches.userId, userId)];
   if (companyId) {
     conditions.push(eq(savedSearches.companyId, companyId));
   }
-  
+
   return await db
     .select()
     .from(savedSearches)
@@ -1416,10 +1422,10 @@ export async function getSavedSearches(userId: number, companyId?: number | null
 export async function updateSavedSearchUsage(searchId: number) {
   const db = await getDb();
   if (!db) return;
-  
+
   await db
     .update(savedSearches)
-    .set({ 
+    .set({
       usageCount: sql`${savedSearches.usageCount} + 1`,
       updatedAt: new Date()
     })
@@ -1429,7 +1435,7 @@ export async function updateSavedSearchUsage(searchId: number) {
 export async function deleteSavedSearch(searchId: number, userId: number) {
   const db = await getDb();
   if (!db) return;
-  
+
   await db
     .delete(savedSearches)
     .where(and(
@@ -1459,7 +1465,7 @@ export async function getPipelineMetrics(filters: {
 
   // Get all leads with filters
   let query = db.select().from(leads);
-  
+
   const conditions = [];
   if (filters.companyId) {
     conditions.push(eq(leads.companyId, filters.companyId));
@@ -1470,11 +1476,11 @@ export async function getPipelineMetrics(filters: {
   if (filters.endDate) {
     conditions.push(sql`${leads.createdAt} <= ${filters.endDate}`);
   }
-  
+
   if (conditions.length > 0) {
     query = query.where(and(...conditions)) as any;
   }
-  
+
   const allLeads = await query;
 
   // Define pipeline stages in order
@@ -1543,10 +1549,10 @@ export async function createCall(call: InsertCall): Promise<Call> {
 
   const result = await db.insert(calls).values(call);
   const insertedId = Number(result[0].insertId);
-  
+
   const insertedCall = await getCallById(insertedId);
   if (!insertedCall) throw new Error("Failed to retrieve inserted call");
-  
+
   return insertedCall;
 }
 
@@ -1625,7 +1631,7 @@ export async function updateLeadScore(
     // Get current lead
     const leadResult = await db.select().from(leads).where(eq(leads.id, leadId)).limit(1);
     const lead = leadResult[0];
-    
+
     if (!lead) {
       throw new Error(`Lead ${leadId} not found`);
     }
