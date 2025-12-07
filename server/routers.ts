@@ -41,6 +41,7 @@ import { agentManagementRouter } from "./agent-management-router";
 import { campaignAgentMatcherRouter } from "./campaign-agent-matcher-router";
 import { aiChatRouter } from "./routers/ai-chat-router";
 import { metaAgentRouter } from "./meta-agent-router";
+import { metaAgentDashboardRouter } from "./meta-agent-dashboard-router";
 import { communicationRouter } from "./communication-router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
@@ -91,6 +92,7 @@ function parseCommand(input: string): ParsedCommand {
 export const appRouter = router({
   communication: communicationRouter,
   metaAgent: metaAgentRouter,
+  metaAgentDashboard: metaAgentDashboardRouter,
   aiChat: aiChatRouter,
   migration: migrationRouter,
   fagor: fagorAgentsMetricsRouter,

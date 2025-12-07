@@ -24,6 +24,14 @@ import {
   discoverEngagementTechniques as discoverEngagementTechniquesService,
   generateObjectionResponses as generateObjectionResponsesService
 } from './ivycall-trainer';
+import {
+  startMarketIntelligenceScheduler,
+  stopMarketIntelligenceScheduler,
+  getSchedulerStatus,
+  updateSchedulerConfig,
+  triggerMarketIntelligenceCycle,
+  getSchedulerStats
+} from './market-intelligence-scheduler';
 
 // Import original tools
 import {
@@ -801,10 +809,18 @@ export const EXTENDED_TOOL_DEFINITIONS = [
   { type: "function" as const, function: { name: "discoverEngagementTechniques", description: "Descubre técnicas de enganche modernas y efectivas", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
   { type: "function" as const, function: { name: "generateObjectionResponses", description: "Genera respuestas a objeciones modernas", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
   { type: "function" as const, function: { name: "optimizeValuePropositions", description: "Optimiza propuestas de valor basadas en market intelligence", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
+
+  // Market Intelligence Scheduler (6 tools)
+  { type: "function" as const, function: { name: "startScheduler", description: "Inicia scheduler automático de Market Intelligence (24-48h)", parameters: { type: "object", properties: { intervalHours: { type: "number" }, industries: { type: "array", items: { type: "string" } }, competitorUrls: { type: "array", items: { type: "string" } }, keywords: { type: "array", items: { type: "string" } } }, required: ["intervalHours"] } } },
+  { type: "function" as const, function: { name: "stopScheduler", description: "Detiene scheduler automático de Market Intelligence", parameters: { type: "object", properties: {}, required: [] } } },
+  { type: "function" as const, function: { name: "getSchedulerStatus", description: "Obtiene estado actual del scheduler", parameters: { type: "object", properties: {}, required: [] } } },
+  { type: "function" as const, function: { name: "updateSchedulerConfig", description: "Actualiza configuración del scheduler", parameters: { type: "object", properties: { intervalHours: { type: "number" }, industries: { type: "array", items: { type: "string" } }, competitorUrls: { type: "array", items: { type: "string" } } }, required: [] } } },
+  { type: "function" as const, function: { name: "triggerCycleNow", description: "Ejecuta ciclo de Market Intelligence inmediatamente", parameters: { type: "object", properties: { industry: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: [] } } },
+  { type: "function" as const, function: { name: "getSchedulerStats", description: "Obtiene estadísticas del scheduler", parameters: { type: "object", properties: {}, required: [] } } },
 ];
 
 /**
- * Execute any tool call from OpenAI (124 tools: 49 original + 60 advanced + 10 market intelligence + 5 IvyCall training)
+ * Execute any tool call from OpenAI (130 tools: 49 original + 60 advanced + 10 market intelligence + 5 IvyCall training + 6 scheduler)
  */
 export async function executeExtendedToolCall(
   toolName: string,
@@ -979,6 +995,14 @@ export async function executeExtendedToolCall(
   if (toolName === "discoverEngagementTechniques") return await discoverEngagementTechniquesTool(toolArgs);
   if (toolName === "generateObjectionResponses") return await generateObjectionResponsesTool(toolArgs);
   if (toolName === "optimizeValuePropositions") return await optimizeValuePropositionsTool(toolArgs);
+
+  // Market Intelligence Scheduler (6 tools)
+  if (toolName === "startScheduler") return await startSchedulerTool(toolArgs);
+  if (toolName === "stopScheduler") return await stopSchedulerTool();
+  if (toolName === "getSchedulerStatus") return await getSchedulerStatusTool();
+  if (toolName === "updateSchedulerConfig") return await updateSchedulerConfigTool(toolArgs);
+  if (toolName === "triggerCycleNow") return await triggerCycleNowTool(toolArgs);
+  if (toolName === "getSchedulerStats") return await getSchedulerStatsTool();
 
   return {
     success: false,
@@ -1423,4 +1447,47 @@ export const optimizeValuePropositionsTool = async (args: any) => {
     .flatMap(i => i.actionableItems)
     .slice(0, 10);
   return { success: true, message: `Generated ${valueProps.length} optimized value propositions`, valueProps };
+};
+
+// Category 11: Market Intelligence Scheduler (6 tools)
+export const startSchedulerTool = async (args: any) => {
+  console.log('[Scheduler] Starting Market Intelligence scheduler:', args);
+  await startMarketIntelligenceScheduler({
+    intervalHours: args.intervalHours || 24,
+    industries: args.industries || [],
+    competitorUrls: args.competitorUrls || [],
+    keywords: args.keywords || [],
+    trainIvyCallEnabled: true
+  });
+  return { success: true, message: `Scheduler started with ${args.intervalHours || 24}h interval` };
+};
+
+export const stopSchedulerTool = async () => {
+  console.log('[Scheduler] Stopping Market Intelligence scheduler');
+  stopMarketIntelligenceScheduler();
+  return { success: true, message: 'Scheduler stopped successfully' };
+};
+
+export const getSchedulerStatusTool = async () => {
+  console.log('[Scheduler] Getting scheduler status');
+  const status = getSchedulerStatus();
+  return { success: true, status };
+};
+
+export const updateSchedulerConfigTool = async (args: any) => {
+  console.log('[Scheduler] Updating scheduler config:', args);
+  await updateSchedulerConfig(args);
+  return { success: true, message: 'Scheduler configuration updated' };
+};
+
+export const triggerCycleNowTool = async (args: any) => {
+  console.log('[Scheduler] Triggering Market Intelligence cycle now:', args);
+  await triggerMarketIntelligenceCycle(args);
+  return { success: true, message: 'Market Intelligence cycle completed' };
+};
+
+export const getSchedulerStatsTool = async () => {
+  console.log('[Scheduler] Getting scheduler statistics');
+  const stats = getSchedulerStats();
+  return { success: true, stats };
 };
