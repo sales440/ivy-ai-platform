@@ -1,0 +1,8 @@
+{
+  "query": "SELECT \n  campaignName,\n  COUNT(*) as total_enrollments,\n  SUM(CASE WHEN email1Sent = 1 THEN 1 ELSE 0 END) as email1_sent,\n  SUM(CASE WHEN email2Sent = 1 THEN 1 ELSE 0 END) as email2_sent,\n  SUM(CASE WHEN email3Sent = 1 THEN 1 ELSE 0 END) as email3_sent,\n  SUM(CASE WHEN converted = 1 THEN 1 ELSE 0 END) as conversions\nFROM fagorCampaignEnrollments \nGROUP BY campaignName;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT \n  campaignName,\n  COUNT(*) as total_enrollments,\n  SUM(CASE WHEN email1Sent = 1 THEN 1 ELSE 0 END) as email1_sent,\n  SUM(CASE WHEN email2Sent = 1 THEN 1 ELSE 0 END) as email2_sent,\n  SUM(CASE WHEN email3Sent = 1 THEN 1 ELSE 0 END) as email3_sent,\n  SUM(CASE WHEN converted = 1 THEN 1 ELSE 0 END) as conversions\nFROM fagorCampaignEnrollments \nGROUP BY campaignName;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'email1sent' in 'group statement'"
+  ]
+}

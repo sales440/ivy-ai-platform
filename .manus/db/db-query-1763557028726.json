@@ -1,0 +1,16 @@
+{
+  "query": "SELECT \n  (SELECT COUNT(*) FROM leads) as lead_count,\n  (SELECT COUNT(*) FROM tickets) as ticket_count,\n  (SELECT COUNT(*) FROM companies) as company_count,\n  (SELECT COUNT(*) FROM agents) as agent_count",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT \n  (SELECT COUNT(*) FROM leads) as lead_count,\n  (SELECT COUNT(*) FROM tickets) as ticket_count,\n  (SELECT COUNT(*) FROM companies) as company_count,\n  (SELECT COUNT(*) FROM agents) as agent_count",
+  "rows": [
+    {
+      "lead_count": "157",
+      "ticket_count": "76",
+      "company_count": "4",
+      "agent_count": "924"
+    }
+  ],
+  "messages": [],
+  "stdout": "lead_count\tticket_count\tcompany_count\tagent_count\n157\t76\t4\t924\n",
+  "stderr": "",
+  "execution_time_ms": 58
+}

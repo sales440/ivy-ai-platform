@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS campaignExecutions (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  campaignId INT NOT NULL,\n  leadId INT NOT NULL,\n  currentStepNumber INT NOT NULL DEFAULT 0,\n  status ENUM('pending', 'in_progress', 'completed', 'failed') NOT NULL DEFAULT 'pending',\n  startedAt TIMESTAMP NULL,\n  completedAt TIMESTAMP NULL,\n  lastExecutedAt TIMESTAMP NULL,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (campaignId) REFERENCES multiChannelCampaigns(id) ON DELETE CASCADE,\n  FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS campaignExecutions (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  campaignId INT NOT NULL,\n  leadId INT NOT NULL,\n  currentStepNumber INT NOT NULL DEFAULT 0,\n  status ENUM('pending', 'in_progress', 'completed', 'failed') NOT NULL DEFAULT 'pending',\n  startedAt TIMESTAMP NULL,\n  completedAt TIMESTAMP NULL,\n  lastExecutedAt TIMESTAMP NULL,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (campaignId) REFERENCES multiChannelCampaigns(id) ON DELETE CASCADE,\n  FOREIGN KEY (leadId) REFERENCES leads(id) ON DELETE CASCADE\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 272
+}

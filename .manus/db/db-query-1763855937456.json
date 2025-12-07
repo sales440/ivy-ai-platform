@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS linkedInPosts (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  postType ENUM('thought_leadership', 'case_study', 'product_update', 'industry_insight', 'customer_success') NOT NULL,\n  content TEXT NOT NULL,\n  tone VARCHAR(50) DEFAULT 'professional' NOT NULL,\n  status ENUM('pending', 'scheduled', 'published', 'failed') DEFAULT 'pending' NOT NULL,\n  scheduledFor TIMESTAMP NULL,\n  publishedAt TIMESTAMP NULL,\n  linkedInPostId VARCHAR(255) NULL,\n  publishedUrl VARCHAR(512) NULL,\n  generatedBy VARCHAR(100) DEFAULT 'Ivy-Content' NOT NULL,\n  error TEXT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS linkedInPosts (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  postType ENUM('thought_leadership', 'case_study', 'product_update', 'industry_insight', 'customer_success') NOT NULL,\n  content TEXT NOT NULL,\n  tone VARCHAR(50) DEFAULT 'professional' NOT NULL,\n  status ENUM('pending', 'scheduled', 'published', 'failed') DEFAULT 'pending' NOT NULL,\n  scheduledFor TIMESTAMP NULL,\n  publishedAt TIMESTAMP NULL,\n  linkedInPostId VARCHAR(255) NULL,\n  publishedUrl VARCHAR(512) NULL,\n  generatedBy VARCHAR(100) DEFAULT 'Ivy-Content' NOT NULL,\n  error TEXT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 102
+}

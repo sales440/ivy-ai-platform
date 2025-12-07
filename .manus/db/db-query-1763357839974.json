@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO `companies` (`name`, `slug`, `industry`, `plan`, `contactEmail`, `isActive`) VALUES\n('Demo Company', 'demo-company', 'Technology', 'professional', 'contact@democompany.com', true),\n('Acme Corporation', 'acme-corp', 'Manufacturing', 'enterprise', 'info@acmecorp.com', true),\n('Startup Inc', 'startup-inc', 'SaaS', 'starter', 'hello@startupinc.com', true),\n('Global Services LLC', 'global-services', 'Consulting', 'professional', 'contact@globalservices.com', true)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute INSERT INTO `companies` (`name`, `slug`, `industry`, `plan`, `contactEmail`, `isActive`) VALUES\n('Demo Company', 'demo-company', 'Technology', 'professional', 'contact@democompany.com', true),\n('Acme Corporation', 'acme-corp', 'Manufacturing', 'enterprise', 'info@acmecorp.com', true),\n('Startup Inc', 'startup-inc', 'SaaS', 'starter', 'hello@startupinc.com', true),\n('Global Services LLC', 'global-services', 'Consulting', 'professional', 'contact@globalservices.com', true)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 62
+}

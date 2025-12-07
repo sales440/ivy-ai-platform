@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAGOR Technical Academy - Transform Your Career</title>
+    <style>
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 0;
+        }
+        .letterhead {
+            background-color: #ffffff;
+            padding: 30px 40px 20px 40px;
+            border-bottom: 3px solid #E30613;
+        }
+        .letterhead-content {
+            display: table;
+            width: 100%;
+        }
+        .logo-section {
+            display: table-cell;
+            vertical-align: middle;
+            width: 50%;
+        }
+        .logo-section img {
+            max-width: 280px;
+            height: auto;
+        }
+        .address-section {
+            display: table-cell;
+            vertical-align: middle;
+            width: 50%;
+            text-align: right;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #666666;
+        }
+        .address-section strong {
+            color: #E30613;
+            font-size: 13px;
+        }
+        .content {
+            padding: 40px 40px 30px 40px;
+        }
+        .hero-title {
+            color: #E30613;
+            font-size: 32px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+            line-height: 1.2;
+        }
+        .hero-subtitle {
+            color: #E30613;
+            font-size: 20px;
+            font-weight: normal;
+            margin: 0 0 30px 0;
+            font-style: italic;
+        }
+        h2 {
+            color: #E30613;
+            font-size: 22px;
+            font-weight: bold;
+            margin: 30px 0 15px 0;
+        }
+        h3 {
+            color: #E30613;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 25px 0 12px 0;
+        }
+        p {
+            margin: 0 0 15px 0;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .highlight-box {
+            background-color: #FFF5F5;
+            border-left: 4px solid #E30613;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .highlight-box p {
+            margin: 0 0 10px 0;
+        }
+        .highlight-box p:last-child {
+            margin: 0;
+        }
+        .certification-track {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .certification-track h3 {
+            margin-top: 0;
+        }
+        .level-item {
+            margin: 12px 0 12px 20px;
+            font-size: 15px;
+        }
+        .level-title {
+            font-weight: bold;
+            color: #333333;
+        }
+        .level-description {
+            color: #666666;
+            font-size: 14px;
+            margin-top: 3px;
+        }
+        .checkmark {
+            color: #E30613;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .benefit-list {
+            margin: 15px 0;
+        }
+        .benefit-item {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .benefit-item:before {
+            content: "✓";
+            color: #E30613;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+            font-size: 18px;
+        }
+        .cta-section {
+            background-color: #E30613;
+            color: #ffffff;
+            padding: 30px;
+            margin: 35px 0;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .cta-section h3 {
+            color: #ffffff;
+            margin-top: 0;
+        }
+        .cta-section p {
+            color: #ffffff;
+            font-size: 16px;
+        }
+        .contact-info {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 10px 0;
+        }
+        .contact-info a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 25px 40px;
+            text-align: center;
+            font-size: 13px;
+            color: #666666;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer-brand {
+            color: #E30613;
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .footer-tagline {
+            font-style: italic;
+            color: #999999;
+            margin-top: 10px;
+        }
+        .divider {
+            border: 0;
+            border-top: 2px solid #E30613;
+            margin: 30px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .letterhead-content {
+                display: block;
+            }
+            .logo-section, .address-section {
+                display: block;
+                width: 100%;
+                text-align: center;
+                margin-bottom: 15px;
+            }
+            .content {
+                padding: 25px 20px;
+            }
+            .hero-title {
+                font-size: 26px;
+            }
+            .hero-subtitle {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- LETTERHEAD -->
+        <div class="letterhead">
+            <div class="letterhead-content">
+                <div class="logo-section">
+                    <img src="/home/ubuntu/ivy-ai-platform/public/fagor-logo.jpg" alt="FAGOR Automation" />
+                </div>
+                <div class="address-section">
+                    <strong>FAGOR Automation USA</strong><br>
+                    4020 Winnetka Avenue<br>
+                    Rolling Meadows, IL 60008<br>
+                    Phone: (847) 981-1500<br>
+                    Email: service@fagor-automation.com
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="content">
+            <!-- HERO -->
+            <h1 class="hero-title">FAGOR Technical Academy</h1>
+            <p class="hero-subtitle">Where Expertise Becomes Excellence</p>
+
+            <hr class="divider">
+
+            <p>Hay una diferencia fundamental entre saber operar un equipo CNC y dominarlo completamente.</p>
+
+            <p>La diferencia no está en los años de experiencia.<br>
+            Está en la <strong>calidad del conocimiento</strong>.</p>
+
+            <!-- SECTION 1 -->
+            <h2>Por Qué Existe FAGOR Technical Academy</h2>
+
+            <p>Durante 45 años, FAGOR ha estado en el corazón de la manufactura industrial global.</p>
+
+            <p>Hemos visto cómo las empresas más exitosas tienen algo en común: <strong>técnicos certificados que conocen sus equipos a nivel experto</strong>.</p>
+
+            <p>No técnicos que "se las arreglan".<br>
+            No operadores que "aprenden sobre la marcha".<br>
+            <strong>Expertos certificados que dominan cada aspecto de la tecnología.</strong></p>
+
+            <p>Por eso creamos FAGOR Technical Academy.</p>
+
+            <!-- HIGHLIGHT BOX -->
+            <div class="highlight-box">
+                <h3 style="margin-top: 0;">Nuestro Compromiso</h3>
+                <p><strong>No es solo training. Es transformación profesional.</strong></p>
+                <p>Cuando un técnico completa nuestros programas de certificación:</p>
+                <div class="benefit-list">
+                    <div class="benefit-item"><strong>Domina la tecnología</strong> - No solo la usa, la entiende profundamente</div>
+                    <div class="benefit-item"><strong>Obtiene credencial oficial</strong> - Certificación FAGOR reconocida internacionalmente</div>
+                    <div class="benefit-item"><strong>Accede a conocimiento exclusivo</strong> - Técnicas que solo ingenieros de fábrica conocen</div>
+                    <div class="benefit-item"><strong>Se une a una comunidad</strong> - Red global de profesionales certificados FAGOR</div>
+                </div>
+            </div>
+
+            <!-- CERTIFICATION TRACKS -->
+            <h2>Nuestros Programas de Certificación</h2>
+
+            <!-- TRACK 1 -->
+            <div class="certification-track">
+                <h3>CNC SYSTEMS CERTIFICATION TRACK</h3>
+                
+                <div class="level-item">
+                    <div class="level-title">Level 1: CNC Fundamentals & Operation</div>
+                    <div class="level-description">Fundamentos sólidos. Operación correcta. Programación básica. Mantenimiento preventivo.</div>
+                </div>
+
+                <div class="level-item">
+                    <div class="level-title">Level 2: Advanced Programming & Optimization</div>
+                    <div class="level-description">G-code avanzado. Macros. Optimización de ciclos. Técnicas de alta productividad.</div>
+                </div>
+
+                <div class="level-item">
+                    <div class="level-title">Level 3: Troubleshooting & Diagnostics Expert</div>
+                    <div class="level-description">Diagnóstico sistemático. Identificación de causa raíz. Soluciones permanentes. Mantenimiento predictivo.</div>
+                </div>
+
+                <div class="level-item">
+                    <div class="level-title">Level 4: FAGOR Digital Suite Specialist</div>
+                    <div class="level-description">Integración Industry 4.0. Monitoreo remoto. Analytics avanzados. Toma de decisiones basada en datos.</div>
+                </div>
+            </div>
+
+            <!-- TRACK 2 -->
+            <div class="certification-track">
+                <h3>MAINTENANCE CERTIFICATION TRACK</h3>
+                
+                <div class="level-item">
+                    <div class="level-title">Electrical/Mechanical Maintenance</div>
+                    <div class="level-description">Sistemas eléctricos. Componentes mecánicos. Calibración de precisión. Protocolos de seguridad.</div>
+                </div>
+
+                <div class="level-item">
+                    <div class="level-title">Preventive & Predictive Maintenance</div>
+                    <div class="level-description">Mantenimiento programado. Identificación temprana de fallas. Extensión de vida útil. Reducción de downtime.</div>
+                </div>
+            </div>
+
+            <!-- TRACK 3 -->
+            <div class="certification-track">
+                <h3>SPECIALIZED APPLICATIONS TRACK</h3>
+                
+                <div class="level-item">
+                    <div class="level-title">High-Precision Machining</div>
+                    <div class="level-description">Tolerancias extremas. Acabados superficiales. Compensación térmica. Técnicas avanzadas.</div>
+                </div>
+
+                <div class="level-item">
+                    <div class="level-title">Multi-Axis Programming</div>
+                    <div class="level-description">4-axis y 5-axis machining. Programación compleja. Optimización de trayectorias.</div>
+                </div>
+            </div>
+
+            <!-- WHAT MAKES IT UNIQUE -->
+            <h2>Lo Que Hace Única la Certificación FAGOR</h2>
+
+            <h3>Conocimiento Directo de Fábrica</h3>
+            <p>Nuestros instructores son ingenieros FAGOR. No son trainers genéricos. Son las mismas personas que diseñan y desarrollan la tecnología.</p>
+
+            <h3>Certificación Oficial Internacional</h3>
+            <p>No es un certificado de "asistencia". Es una credencial profesional que valida dominio real de la tecnología FAGOR.</p>
+
+            <h3>Material de Referencia Permanente</h3>
+            <p>Manuales técnicos exclusivos. Videos de procedimientos. Checklists de diagnóstico. Recursos que usarás toda tu carrera.</p>
+
+            <h3>Soporte Técnico Prioritario</h3>
+            <p>Certificados FAGOR tienen acceso a línea directa con ingeniería. Cuando tengas una pregunta compleja, sabrás a quién llamar.</p>
+
+            <h3>Comunidad Global de Expertos</h3>
+            <p>Acceso a red privada de profesionales certificados FAGOR. Intercambio de conocimiento. Soluciones colaborativas.</p>
+
+            <!-- TRAINING MODALITIES -->
+            <h2>Modalidades de Training</h2>
+
+            <p><strong style="color: #E30613;">AT FAGOR TECHNICAL ACADEMY - Rolling Meadows, IL:</strong><br>
+            Experiencia inmersiva en nuestras instalaciones de última generación. Equipos reales. Laboratorios especializados. Networking con otros profesionales.</p>
+
+            <p><strong style="color: #E30613;">VIRTUAL LIVE TRAINING:</strong><br>
+            Training en tiempo real con instructores FAGOR. Interacción completa. Práctica supervisada remota. Flexibilidad sin sacrificar calidad.</p>
+
+            <p><strong style="color: #E30613;">ON-SITE CORPORATE PROGRAMS:</strong><br>
+            Llevamos FAGOR Technical Academy a tu planta. Programa personalizado para tu equipo y tus equipos específicos. Certificación de todo tu equipo técnico simultáneamente.</p>
+
+            <p><strong style="color: #E30613;">AUTHORIZED TRAINING PARTNERS:</strong><br>
+            Red de centros autorizados FAGOR en ubicaciones estratégicas. Mismo curriculum. Misma certificación. Más cerca de ti.</p>
+
+            <!-- CURRICULUM PATHS -->
+            <h2>Curriculum Paths Recomendados</h2>
+
+            <p><strong>PARA OPERADORES NUEVOS:</strong><br>
+            Fundamentals → Advanced Programming → Certification Exam</p>
+
+            <p><strong>PARA TÉCNICOS EXPERIMENTADOS:</strong><br>
+            Assessment → Advanced Track → Specialist Certification</p>
+
+            <p><strong>PARA EQUIPOS COMPLETOS:</strong><br>
+            Custom Corporate Program → Team Certification → Ongoing Support</p>
+
+            <!-- CTA -->
+            <div class="cta-section">
+                <h3>Tu Próximo Paso</h3>
+                <p>La diferencia entre un técnico y un experto certificado FAGOR es una decisión.</p>
+                <p><strong>¿Estás listo para transformar tu carrera profesional?</strong><br>
+                <strong>¿Estás listo para que tu equipo alcance nivel de excelencia?</strong></p>
+                <p style="margin-top: 25px; margin-bottom: 5px;"><strong>Próximas sesiones:</strong> Febrero-Marzo 2025<br>
+                <strong>Inscripciones:</strong> Abiertas ahora</p>
+                <div class="contact-info">
+                    <p>Para información completa sobre programas, fechas, modalidades y certificación:</p>
+                    <p>📧 <a href="mailto:service@fagor-automation.com">service@fagor-automation.com</a><br>
+                    📞 <a href="tel:+18479811500">(847) 981-1500</a></p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div class="footer-brand">FAGOR Technical Academy</div>
+            <div style="font-style: italic; margin: 5px 0;">Where Expertise Becomes Excellence</div>
+            <div style="margin: 15px 0;">
+                <strong>FAGOR Automation USA</strong><br>
+                4020 Winnetka Avenue, Rolling Meadows IL 60008
+            </div>
+            <div class="footer-tagline">
+                Get the most out of your machines increasing your capability with Fagor systems.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

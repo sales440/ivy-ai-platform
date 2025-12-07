@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO emailSequences (name, description, targetStage, isActive) VALUES ('Consideration Stage - Demo Request', 'Email sequence for leads who downloaded ROI calculator and are evaluating solutions', 'consideration', true)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute INSERT INTO emailSequences (name, description, targetStage, isActive) VALUES ('Consideration Stage - Demo Request', 'Email sequence for leads who downloaded ROI calculator and are evaluating solutions', 'consideration', true)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 64
+}

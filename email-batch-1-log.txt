@@ -1,0 +1,123 @@
+
+📧 Sending Email 1 - Batch of 99
+================================================================================
+📊 Found 99 contacts to receive Email 1
+
+❌ [1/99] DONGHEE KAUTEX: "[object Object]" is not valid JSON
+❌ [2/99] LEE BRASS CO: "[object Object]" is not valid JSON
+❌ [3/99] KTH LEESBURG: "[object Object]" is not valid JSON
+❌ [4/99] L&L MACHINE: "[object Object]" is not valid JSON
+❌ [5/99] G&E MACHINE WRK: "[object Object]" is not valid JSON
+❌ [6/99] ATAP: "[object Object]" is not valid JSON
+❌ [7/99] ARKAL AUTOMOTIVE: "[object Object]" is not valid JSON
+❌ [8/99] KEVIN AVERETTE: "[object Object]" is not valid JSON
+❌ [9/99] Toyota Motor Mfg: "[object Object]" is not valid JSON
+❌ [10/99] STURM RUGER: "[object Object]" is not valid JSON
+❌ [11/99] BD MEDICAL: "[object Object]" is not valid JSON
+❌ [12/99] TAKATA INC.: "[object Object]" is not valid JSON
+❌ [13/99] NAMMO TALLY: "[object Object]" is not valid JSON
+❌ [14/99] CBM ENGINEERING: "[object Object]" is not valid JSON
+❌ [15/99] RAYTHEON: "[object Object]" is not valid JSON
+❌ [16/99] YUMA PROVING GRD: "[object Object]" is not valid JSON
+❌ [17/99] BALL METAL: "[object Object]" is not valid JSON
+❌ [18/99] AUTO LIV SAFETY: "[object Object]" is not valid JSON
+❌ [19/99] SAXTON: "[object Object]" is not valid JSON
+❌ [20/99] Triumph Insulation: "[object Object]" is not valid JSON
+❌ [21/99] SFMTA CABLE CAR: "[object Object]" is not valid JSON
+❌ [22/99] SACRAMENTO / CITY: "[object Object]" is not valid JSON
+❌ [23/99] NAVAIR - WD: "[object Object]" is not valid JSON
+❌ [24/99] Sonoma Photonics: "[object Object]" is not valid JSON
+❌ [25/99] HUBBELL lighting: "[object Object]" is not valid JSON
+❌ [26/99] WSCA / WATER: "[object Object]" is not valid JSON
+❌ [27/99] SUN-MAID: "[object Object]" is not valid JSON
+❌ [28/99] MILGARD MFG: "[object Object]" is not valid JSON
+❌ [29/99] HARBERT MACHINE: "[object Object]" is not valid JSON
+❌ [30/99] DD MACHINE: "[object Object]" is not valid JSON
+❌ [31/99] COLORADO STATE: "[object Object]" is not valid JSON
+❌ [32/99] Tim Nath Mid Sch: "[object Object]" is not valid JSON
+❌ [33/99] Fountain Valley Treat: "[object Object]" is not valid JSON
+❌ [34/99] ROW AMERICA: "[object Object]" is not valid JSON
+❌ [35/99] J&L MACHINE: "[object Object]" is not valid JSON
+❌ [36/99] MOSSBERG & SON: "[object Object]" is not valid JSON
+❌ [37/99] BOEHRINGER: "[object Object]" is not valid JSON
+❌ [38/99] SCI. & ENG. SERV.: "[object Object]" is not valid JSON
+❌ [39/99] DEXMET: "[object Object]" is not valid JSON
+❌ [40/99] NAVAL RESEARCH: "[object Object]" is not valid JSON
+❌ [41/99] FENWAL INT.: "[object Object]" is not valid JSON
+❌ [42/99] UNISON: "[object Object]" is not valid JSON
+❌ [43/99] BK PLASTICS: "[object Object]" is not valid JSON
+❌ [44/99] LOCKHEED: "[object Object]" is not valid JSON
+❌ [45/99] FLORIDA AERO: "[object Object]" is not valid JSON
+❌ [46/99] QUIET FLEX: "[object Object]" is not valid JSON
+❌ [47/99] ACTION METAL: "[object Object]" is not valid JSON
+❌ [48/99] DELTA AIRLINES: "[object Object]" is not valid JSON
+❌ [49/99] SHAW INDUSTRIES: "[object Object]" is not valid JSON
+❌ [50/99] Chattahoochee Tech: "[object Object]" is not valid JSON
+❌ [51/99] KIHOMAC: "[object Object]" is not valid JSON
+❌ [52/99] ENERGY ENGINES: "[object Object]" is not valid JSON
+❌ [53/99] JMX: "[object Object]" is not valid JSON
+❌ [54/99] ELIXIR: "[object Object]" is not valid JSON
+❌ [55/99] Sterling Engineering: "[object Object]" is not valid JSON
+❌ [56/99] TALON ARMAMENT: "[object Object]" is not valid JSON
+❌ [57/99] UNION CTY H.S.: "[object Object]" is not valid JSON
+❌ [58/99] LAKE REGIONAL MED: "[object Object]" is not valid JSON
+❌ [59/99] Eastech Trade Show: "[object Object]" is not valid JSON
+❌ [60/99] American Technology: "[object Object]" is not valid JSON
+❌ [61/99] TYDEN BROOKS: "[object Object]" is not valid JSON
+❌ [62/99] SAIC - USN: "[object Object]" is not valid JSON
+❌ [63/99] UNIV / HAWAII: "[object Object]" is not valid JSON
+❌ [64/99] ENVIRO TECH: "[object Object]" is not valid JSON
+❌ [65/99] UNIV IDAHO: "[object Object]" is not valid JSON
+❌ [66/99] HOLLEY/FLOMASTER: "[object Object]" is not valid JSON
+❌ [67/99] ARCHER WIRE: "[object Object]" is not valid JSON
+❌ [68/99] T. J. WIRE: "[object Object]" is not valid JSON
+❌ [69/99] QMI SECUR SOLUTI: "[object Object]" is not valid JSON
+❌ [70/99] JEM TOOL: "[object Object]" is not valid JSON
+❌ [71/99] MISCHAWAKA H.S.: "[object Object]" is not valid JSON
+❌ [72/99] DXP/AM GENERAL: "[object Object]" is not valid JSON
+❌ [73/99] BENNINGTON MARINE: "[object Object]" is not valid JSON
+❌ [74/99] CANPACK: "[object Object]" is not valid JSON
+❌ [75/99] EXIDE Technologies: "[object Object]" is not valid JSON
+❌ [76/99] WEBASTO: "[object Object]" is not valid JSON
+❌ [77/99] CONTINENTAL APPL: "[object Object]" is not valid JSON
+❌ [78/99] ROBERT BOSCH: "[object Object]" is not valid JSON
+❌ [79/99] INTRALOX: "[object Object]" is not valid JSON
+❌ [80/99] MIRANT MID ATLANTI: "[object Object]" is not valid JSON
+❌ [81/99] Naval Research Lab: "[object Object]" is not valid JSON
+❌ [82/99] SCHLUMBERGER: "[object Object]" is not valid JSON
+❌ [83/99] DYNO MACHINE: "[object Object]" is not valid JSON
+❌ [84/99] AUTO DESK: "[object Object]" is not valid JSON
+❌ [85/99] CLARK UNIVERSITY: "[object Object]" is not valid JSON
+❌ [86/99] P&G GILLETTE: "[object Object]" is not valid JSON
+❌ [87/99] STAFFORD: "[object Object]" is not valid JSON
+❌ [88/99] AUTOSYSTEMS AME: "[object Object]" is not valid JSON
+❌ [89/99] KALAMAZOO C. C.: "[object Object]" is not valid JSON
+❌ [90/99] UNIV. MICHIGAN: "[object Object]" is not valid JSON
+❌ [91/99] GENERAL MOTORS: "[object Object]" is not valid JSON
+❌ [92/99] JR AUTOMATION: "[object Object]" is not valid JSON
+❌ [93/99] COOPER STANDARD: "[object Object]" is not valid JSON
+❌ [94/99] WOOLF AIRCRAFT: "[object Object]" is not valid JSON
+❌ [95/99] FORD Motor Co: "[object Object]" is not valid JSON
+❌ [96/99] NOVARES US LLC: "[object Object]" is not valid JSON
+❌ [97/99] J. H. Bennett / FORD: "[object Object]" is not valid JSON
+❌ [98/99] BRIAN'S REPAIR: "[object Object]" is not valid JSON
+❌ [99/99] American Crystal Sug: "[object Object]" is not valid JSON
+
+📊 BATCH SENDING SUMMARY
+================================================================================
+✅ Successfully sent: 0 emails
+❌ Failed: 99 emails
+📊 Total processed: 99 emails
+
+❌ Errors:
+   - DONGHEE KAUTEX (info@dongheekautex.com): "[object Object]" is not valid JSON
+   - LEE BRASS CO (info@leebrassco.com): "[object Object]" is not valid JSON
+   - KTH LEESBURG (info@kthleesburg.com): "[object Object]" is not valid JSON
+   - L&L MACHINE (info@llmachine.com): "[object Object]" is not valid JSON
+   - G&E MACHINE WRK (info@gemachinewrk.com): "[object Object]" is not valid JSON
+   ... and 94 more errors
+
+📬 Remaining contacts for Email 1: 201
+
+⏭️  To send the next batch, run:
+   node scripts/send-campaign-batch.mjs 1 99

@@ -1,0 +1,823 @@
+import { COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "./_core/cookies";
+import { systemRouter } from "./_core/systemRouter";
+import { seedRouter } from "./seed-router";
+import { seedCompaniesRouter } from "./seed-companies-router";
+import { notificationsRouter } from "./notifications-router";
+import { exportRouter } from "./export-router";
+import { companiesRouter } from "./companies-router";
+import { userCompaniesRouter } from "./user-companies-router";
+import { agentConfigRouter } from "./agent-config-router";
+import { auditLogRouter } from "./audit-log-router";
+import { prospectRouter } from "./prospect-router";
+import { analyticsRouter } from "./analytics-router";
+import { savedSearchesRouter } from "./saved-searches-router";
+import { callsRouter } from "./calls-router";
+import { emailsRouter } from "./emails-router";
+import { emailCampaignsRouter } from "./email-campaigns-router";
+import { scheduledTasksRouter } from "./scheduled-tasks-router";
+import { mlScoringRouter } from "./routers/ml-scoring-router";
+import { importRouter } from "./routers/import-router";
+import { emailTrackingRouter } from "./routers/email-tracking-router";
+import { marketingRouter } from "./marketing";
+import { leadAssignmentRouter } from "./lead-assignment";
+import { agentsRouter } from "./agents-router";
+import { linkedInRouter } from "./linkedin-router";
+import { linkedInPostsRouter } from "./linkedin-posts-router";
+import { workflowsRouter } from "./workflows-router";
+import { emailWorkflowsRouter } from "./email-workflows-router";
+import { linkedInOAuthRouter } from "./linkedin-oauth-router";
+import { emailAnalyticsRouter } from "./email-analytics-router";
+import { multiChannelCampaignsRouter } from "./multi-channel-campaigns-router";
+import { fagorCampaignRouter } from "./fagor-campaign-router";
+import { migrationRouter } from "./migration-router";
+import { agentCampaignRouter } from "./agent-campaign-integration";
+import { fagorAgentsMetricsRouter } from "./fagor-agents-metrics-router";
+import { agentMilestonesRouter } from "./agent-milestones-router";
+import { agentRecommendationsRouter } from "./agent-recommendations-router";
+import { churnPredictionRouter } from "./churn-prediction-router";
+import { executiveSummaryPdfRouter } from "./executive-summary-pdf-router";
+import { agentManagementRouter } from "./agent-management-router";
+import { campaignAgentMatcherRouter } from "./campaign-agent-matcher-router";
+import { aiChatRouter } from "./routers/ai-chat-router";
+import { metaAgentRouter } from "./meta-agent-router";
+import { metaAgentDashboardRouter } from "./meta-agent-dashboard-router";
+import { communicationRouter } from "./communication-router";
+import * as notificationHelper from "./notification-helper";
+import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
+import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
+import { z } from "zod";
+import { getHive } from "./hive/orchestrator";
+import { AgentType } from "./agents/core";
+import * as db from "./db";
+
+// ============================================================================
+// COMMAND PARSER
+// ============================================================================
+
+interface ParsedCommand {
+  command: string;
+  subcommand?: string;
+  args: Record<string, any>;
+}
+
+function parseCommand(input: string): ParsedCommand {
+  const parts = input.trim().split(/\s+/);
+  let command = parts[0];
+  
+  // Add leading slash if not present
+  if (!command.startsWith('/')) {
+    command = '/' + command;
+  }
+  const subcommand = parts[1];
+  const args: Record<string, any> = {};
+
+  // Parse arguments
+  for (let i = 2; i < parts.length; i++) {
+    if (parts[i].includes('=')) {
+      const [key, value] = parts[i].split('=');
+      args[key] = value;
+    } else {
+      args[`arg${i - 1}`] = parts[i];
+    }
+  }
+
+  return { command, subcommand, args };
+}
+
+// ============================================================================
+// MAIN ROUTER
+// ============================================================================
+
+export const appRouter = router({
+  communication: communicationRouter,
+  metaAgent: metaAgentRouter,
+  metaAgentDashboard: metaAgentDashboardRouter,
+  aiChat: aiChatRouter,
+  migration: migrationRouter,
+  fagor: fagorAgentsMetricsRouter,
+  agentMilestones: agentMilestonesRouter,
+  agentRecommendations: agentRecommendationsRouter,
+  churnPrediction: churnPredictionRouter,
+  executiveSummaryPdf: executiveSummaryPdfRouter,
+  agentManagement: agentManagementRouter,
+  campaignAgentMatcher: campaignAgentMatcherRouter,
+  fagorCampaign: fagorCampaignRouter,
+  agentCampaign: agentCampaignRouter,
+  marketing: marketingRouter,
+  leadAssignment: leadAssignmentRouter,
+  agents: agentsRouter,
+  linkedin: linkedInRouter,
+  linkedInPosts: linkedInPostsRouter,
+  workflows: workflowsRouter,
+  emailWorkflows: emailWorkflowsRouter,
+  linkedInOAuth: linkedInOAuthRouter,
+  emailAnalytics: emailAnalyticsRouter,
+  multiChannelCampaigns: multiChannelCampaignsRouter,
+  calls: callsRouter,
+  emails: emailsRouter,
+  emailCampaigns: emailCampaignsRouter,
+  scheduledTasks: scheduledTasksRouter,
+  mlScoring: mlScoringRouter,
+  import: importRouter,
+  emailTracking: emailTrackingRouter,
+  system: systemRouter,
+  seed: seedRouter,
+  seedCompanies: seedCompaniesRouter,
+  notifications: notificationsRouter,
+  export: exportRouter,
+  companies: companiesRouter,
+  userCompanies: userCompaniesRouter,
+  agentConfig: agentConfigRouter,
+  auditLog: auditLogRouter,
+  analytics: analyticsRouter,
+  savedSearches: savedSearchesRouter,
+  
+  auth: router({
+    me: publicProcedure.query(opts => opts.ctx.user),
+    logout: publicProcedure.mutation(({ ctx }) => {
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return {
+        success: true,
+      } as const;
+    }),
+  }),
+
+  // ============================================================================
+  // USER PREFERENCES ROUTER
+  // ============================================================================
+  
+  preferences: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const prefs = await db.getUserPreferences(ctx.user.id);
+      
+      // Si no existen preferencias, crear las predeterminadas
+      if (!prefs) {
+        await db.createDefaultUserPreferences(ctx.user.id);
+        return await db.getUserPreferences(ctx.user.id);
+      }
+      
+      return prefs;
+    }),
+
+    update: protectedProcedure
+      .input(z.object({
+        theme: z.enum(["light", "dark", "system"]).optional(),
+        language: z.string().optional(),
+        notificationsEnabled: z.boolean().optional(),
+        emailNotifications: z.boolean().optional(),
+        workflowNotifications: z.boolean().optional(),
+        leadNotifications: z.boolean().optional(),
+        ticketNotifications: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Obtener preferencias actuales
+        const currentPrefs = await db.getUserPreferences(ctx.user.id);
+        
+        // Merge con nuevos valores
+        const updatedPrefs = {
+          userId: ctx.user.id,
+          theme: input.theme ?? currentPrefs?.theme ?? "dark",
+          language: input.language ?? currentPrefs?.language ?? "en",
+          notificationsEnabled: input.notificationsEnabled ?? currentPrefs?.notificationsEnabled ?? true,
+          emailNotifications: input.emailNotifications ?? currentPrefs?.emailNotifications ?? true,
+          workflowNotifications: input.workflowNotifications ?? currentPrefs?.workflowNotifications ?? true,
+          leadNotifications: input.leadNotifications ?? currentPrefs?.leadNotifications ?? true,
+          ticketNotifications: input.ticketNotifications ?? currentPrefs?.ticketNotifications ?? true,
+        };
+        
+        await db.upsertUserPreferences(updatedPrefs);
+        
+        return {
+          success: true,
+          preferences: updatedPrefs
+        };
+      }),
+  }),
+
+  // ============================================================================
+  // LEADS ROUTER
+  // ============================================================================
+  
+  leads: router({
+    list: protectedProcedure
+      .input(z.object({ companyId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const leads = await db.getAllLeads(input?.companyId);
+        return { leads };
+      }),
+
+    byStatus: protectedProcedure
+      .input(z.object({ 
+        status: z.enum(["new", "contacted", "qualified", "nurture", "converted", "lost"]),
+        companyId: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        const leads = await db.getLeadsByStatus(input.status, input.companyId);
+        return { leads };
+      }),
+
+    create: protectedProcedure
+      .use(requirePermission("leads", "create"))
+      .input(z.object({
+        companyId: z.number(),
+        name: z.string(),
+        email: z.string().optional(),
+        company: z.string().optional(),
+        title: z.string().optional(),
+        industry: z.string().optional(),
+        location: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { v4: uuidv4 } = await import('uuid');
+        const lead = await db.createLead({
+          leadId: uuidv4(),
+          companyId: input.companyId,
+          name: input.name,
+          email: input.email,
+          company: input.company,
+          title: input.title,
+          industry: input.industry,
+          location: input.location,
+          status: "new"
+        });
+        
+        // If lead is VIP (score > 80), create VIP notification and auto-enrich
+        if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore > 80) {
+          await notificationHelper.notifyVIPLead(
+            lead.name,
+            lead.company || 'Unknown Company',
+            lead.qualificationScore,
+            lead.title,
+            lead.email,
+            lead.id,
+            ctx.user.id
+          );
+          
+          // Auto-enrich VIP lead if LinkedIn URL is available
+          if (lead.linkedinUrl) {
+            try {
+              console.log(`[Auto-Enrich] Enriching VIP lead ${lead.name} (ID: ${lead.id})`);
+              
+              // Extract username from LinkedIn URL
+              const urlMatch = lead.linkedinUrl.match(/linkedin\.com\/in\/([^\/\?]+)/);
+              const username = urlMatch ? urlMatch[1] : null;
+              
+              if (username) {
+                // Call LinkedIn profile API
+                const profileResult = await callDataApi('LinkedIn/get_user_profile_by_username', {
+                  query: { username }
+                });
+                
+                if (profileResult && profileResult.id) {
+                  // Extract enriched data
+                  const enrichedData = {
+                    skills: (profileResult.skills || [])
+                      .sort((a: any, b: any) => (b.endorsementsCount || 0) - (a.endorsementsCount || 0))
+                      .slice(0, 10)
+                      .map((skill: any) => ({
+                        name: skill.name,
+                        endorsements: skill.endorsementsCount || 0,
+                      })),
+                    experience: (profileResult.position || []).map((pos: any) => ({
+                      title: pos.title || '',
+                      company: pos.companyName || '',
+                      duration: pos.end && pos.end.year ? `${pos.start?.year || ''}-${pos.end.year}` : `${pos.start?.year || ''}-Present`,
+                    })),
+                    education: (profileResult.educations || []).map((edu: any) => ({
+                      school: edu.schoolName || '',
+                      degree: edu.degree || '',
+                      field: edu.fieldOfStudy || '',
+                    })),
+                    languages: (profileResult.languages || []).map((lang: any) => lang.name),
+                    badges: {
+                      isTopVoice: profileResult.isTopVoice || false,
+                      isCreator: profileResult.isCreator || false,
+                      isPremium: profileResult.isPremium || false,
+                    },
+                  };
+                  
+                  // Update lead with enriched metadata
+                  await db.updateLeadMetadata(lead.id, enrichedData);
+                  console.log(`[Auto-Enrich] Successfully enriched VIP lead ${lead.name}`);
+                }
+              }
+            } catch (error) {
+              console.error(`[Auto-Enrich] Failed to enrich VIP lead ${lead.id}:`, error);
+              // Don't throw - enrichment failure shouldn't block lead creation
+            }
+          }
+        }
+        // Otherwise if qualified (score >= 70), create standard notification
+        else if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore >= 70) {
+          await notificationHelper.notifyLeadQualified(
+            lead.name,
+            lead.company || 'Unknown Company',
+            lead.qualificationScore,
+            ctx.user.id
+          );
+        }
+        
+        return { lead };
+      }),
+
+    delete: protectedProcedure
+      .use(requirePermission("leads", "delete"))
+      .input(z.object({
+        companyId: z.number(),
+        leadId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Get lead info before deleting for audit
+        const lead = await db.getLeadById(input.leadId);
+        
+        if (!lead) {
+          throw new Error('Lead not found');
+        }
+        
+        // Verify lead belongs to the specified company
+        if (lead.companyId !== input.companyId) {
+          throw new Error('Lead does not belong to this company');
+        }
+        
+        await db.deleteLead(input.leadId);
+        
+        return { success: true };
+      }),
+
+    bulkUpdateStatus: protectedProcedure
+      .use(requirePermission("leads", "update"))
+      .input(z.object({
+        ids: z.array(z.number()),
+        status: z.enum(["new", "contacted", "qualified", "converted", "lost"]),
+      }))
+      .mutation(async ({ input }) => {
+        for (const id of input.ids) {
+          await db.updateLeadStatus(id, input.status);
+        }
+        return { success: true, updated: input.ids.length };
+      }),
+
+    /**
+   * Update lead score with history tracking
+   */
+  updateScore: protectedProcedure
+    .input(z.object({
+      leadId: z.number(),
+      scoreChange: z.number(),
+      reason: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await db.updateLeadScore(
+        input.leadId,
+        input.scoreChange,
+        input.reason,
+        ctx.user.id
+      );
+      return { success: true };
+    }),
+
+  bulkDelete: protectedProcedure
+      .use(requirePermission("leads", "delete"))
+      .input(z.object({
+        ids: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        for (const id of input.ids) {
+          await db.deleteLead(id);
+        }
+        return { success: true, deleted: input.ids.length };
+      }),
+  }),
+
+  // ============================================================================
+  // TICKETS ROUTER
+  // ============================================================================
+  
+  tickets: router({
+    list: protectedProcedure
+      .input(z.object({ companyId: z.number().optional() }).optional())
+      .query(async ({ input }) => {
+        const tickets = await db.getAllTickets(input?.companyId);
+        return { tickets };
+      }),
+
+    byStatus: protectedProcedure
+      .input(z.object({ 
+        status: z.enum(["open", "in_progress", "resolved", "escalated", "closed"]),
+        companyId: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        const tickets = await db.getTicketsByStatus(input.status, input.companyId);
+        return { tickets };
+      }),
+
+    create: protectedProcedure
+      .use(requirePermission("tickets", "create"))
+      .input(z.object({
+        companyId: z.number(),
+        subject: z.string(),
+        issue: z.string(),
+        customerEmail: z.string().optional(),
+        priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { v4: uuidv4 } = await import('uuid');
+        const ticket = await db.createTicket({
+          ticketId: uuidv4(),
+          companyId: input.companyId,
+          ...input,
+          customerId: ctx.user?.id,
+          status: "open",
+          priority: input.priority || "medium"
+        });
+        return { ticket };
+      }),
+
+    resolve: protectedProcedure
+      .use(requirePermission("tickets", "update"))
+      .input(z.object({
+        companyId: z.number(),
+        ticketId: z.number(),
+        resolution: z.string()
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Get ticket info before resolving
+        const ticket = await db.getTicketById(input.ticketId);
+        
+        await db.updateTicketStatus(input.ticketId, "resolved", input.resolution);
+        
+        // Create notification for ticket resolution
+        if (ctx.user && ticket) {
+          const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+          const resolvedAt = new Date();
+          const resolutionTime = Math.round((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60)); // minutes
+          
+          await notificationHelper.notifyTicketResolved(
+            ticket.ticketId,
+            ticket.subject,
+            ctx.user.id,
+            `${resolutionTime} minutes`
+          );
+        }
+        
+        return { success: true };
+      }),
+
+    update: protectedProcedure
+      .use(requirePermission("tickets", "update"))
+      .input(z.object({
+        companyId: z.number(),
+        ticketId: z.number(),
+        subject: z.string().optional(),
+        issue: z.string().optional(),
+        status: z.enum(["open", "in_progress", "resolved", "escalated", "closed"]).optional(),
+        priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+        assignedTo: z.number().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Get ticket info before updating
+        const ticket = await db.getTicketById(input.ticketId);
+        
+        if (!ticket) {
+          throw new Error('Ticket not found');
+        }
+        
+        // Verify ticket belongs to the specified company
+        if (ticket.companyId !== input.companyId) {
+          throw new Error('Ticket does not belong to this company');
+        }
+        
+        await db.updateTicket(input.ticketId, {
+          subject: input.subject,
+          issue: input.issue,
+          status: input.status,
+          priority: input.priority,
+          assignedTo: input.assignedTo,
+        });
+        
+        return { success: true };
+      }),
+
+    autoResolve: protectedProcedure
+      .use(requirePermission("tickets", "update"))
+      .input(z.object({
+        companyId: z.number(),
+        ticketId: z.number(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { invokeLLM } = await import('./_core/llm');
+        
+        // Get ticket details
+        const ticket = await db.getTicketById(input.ticketId);
+        if (!ticket) {
+          throw new Error('Ticket not found');
+        }
+
+        // Search knowledge base for relevant articles
+        const query = `${ticket.subject} ${ticket.issue}`;
+        const articles = await db.searchKnowledgeBase(query, ticket.category || undefined);
+
+        if (articles.length === 0) {
+          return { 
+            success: false, 
+            message: 'No relevant knowledge base articles found. Manual resolution required.' 
+          };
+        }
+
+        // Build context from KB articles
+        const kbContext = articles.map(a => 
+          `Title: ${a.title}\nContent: ${a.content}`
+        ).join('\n\n---\n\n');
+
+        // Generate resolution using LLM
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: 'system',
+              content: 'You are Ivy-Solve, a customer support AI agent. Your job is to resolve customer tickets using the knowledge base. Provide clear, helpful, and professional responses.'
+            },
+            {
+              role: 'user',
+              content: `Customer Issue:\nSubject: ${ticket.subject}\nIssue: ${ticket.issue}\n\nRelevant Knowledge Base Articles:\n${kbContext}\n\nPlease provide a resolution for this customer issue based on the knowledge base articles above.`
+            }
+          ]
+        });
+
+        const resolution = response.choices[0].message.content;
+
+        // Update ticket status
+        await db.updateTicketStatus(input.ticketId, 'resolved', resolution);
+
+        // Create notification
+        if (ctx.user) {
+          const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+          const resolvedAt = new Date();
+          const resolutionTime = Math.round((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60));
+          
+          await notificationHelper.notifyTicketResolved(
+            ticket.ticketId,
+            ticket.subject,
+            ctx.user.id,
+            `${resolutionTime} minutes (Auto-resolved by Ivy-Solve)`
+          );
+        }
+
+        return { 
+          success: true, 
+          resolution,
+          articlesUsed: articles.length
+        };
+      }),
+  }),
+
+  // ============================================================================
+  // KNOWLEDGE BASE ROUTER
+  // ============================================================================
+  
+  knowledge: router({
+    search: protectedProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => {
+        const articles = await db.searchKnowledgeBase(input.query);
+        return { articles };
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string(),
+        content: z.string(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { v4: uuidv4 } = await import('uuid');
+        const article = await db.createKnowledgeArticle({
+          articleId: uuidv4(),
+          ...input,
+          createdBy: ctx.user?.id,
+          isPublished: true
+        });
+        return { article };
+      }),
+  }),
+
+  // ============================================================================
+  // COMMAND SYSTEM ROUTER
+  // ============================================================================
+  
+  command: router({
+    execute: protectedProcedure
+      .input(z.object({ command: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const startTime = Date.now();
+        const parsed = parseCommand(input.command);
+
+        try {
+          let result: any;
+
+          // Route command to appropriate handler
+          switch (parsed.command) {
+            case "/help":
+              result = {
+                type: "help",
+                message: "Available commands:",
+                commands: [
+                  { name: "/help", description: "Show this help message" },
+                  { name: "/agents", description: "List all agents and their status" },
+                  { name: "/agent <name>", description: "Get details about a specific agent" },
+                  { name: "/workflows", description: "List all workflows" },
+                  { name: "/workflow <id>", description: "Get details about a specific workflow" },
+                  { name: "/kpis", description: "Show key performance indicators" },
+                  { name: "/analytics", description: "Show analytics dashboard" },
+                  { name: "/system", description: "Show system status" },
+                  { name: "/clear", description: "Clear console history" }
+                ]
+              };
+              break;
+            case "/agents":
+              result = await handleAgentsCommand(parsed);
+              break;
+            case "/agent":
+              result = await handleAgentCommand(parsed);
+              break;
+            case "/workflows":
+              result = await handleWorkflowsCommand(parsed);
+              break;
+            case "/workflow":
+              result = await handleWorkflowCommand(parsed);
+              break;
+            case "/kpis":
+              result = await handleKPIsCommand(parsed);
+              break;
+            case "/analytics":
+              result = await handleAnalyticsCommand(parsed);
+              break;
+            case "/system":
+              result = await handleSystemCommand(parsed);
+              break;
+            case "/clear":
+              result = {
+                type: "clear",
+                message: "Console cleared"
+              };
+              break;
+            default:
+              throw new Error(`Unknown command: ${parsed.command}. Type /help for available commands.`);
+          }
+
+          // Log command
+          await db.logCommand({
+            userId: ctx.user!.id,
+            command: input.command,
+            parsedCommand: parsed,
+            result: result,
+            status: "success",
+            executionTime: Date.now() - startTime
+          });
+
+          return {
+            success: true,
+            result,
+            executionTime: Date.now() - startTime
+          };
+        } catch (error: any) {
+          // Log failed command
+          await db.logCommand({
+            userId: ctx.user!.id,
+            command: input.command,
+            parsedCommand: parsed,
+            status: "error",
+            error: error.message,
+            executionTime: Date.now() - startTime
+          });
+
+          return {
+            success: false,
+            error: error.message,
+            executionTime: Date.now() - startTime
+          };
+        }
+      }),
+
+    history: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ input, ctx }) => {
+        const history = await db.getCommandHistory(ctx.user!.id, input.limit || 50);
+        return { history };
+      }),
+  }),
+
+  // ============================================================================
+  // IVY-PROSPECT ROUTER
+  // ============================================================================
+  
+  prospect: prospectRouter,
+});
+
+// ============================================================================
+// COMMAND HANDLERS
+// ============================================================================
+
+async function handleAgentsCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  
+  if (parsed.subcommand === "list") {
+    const agents = hive.getAllAgents();
+    return {
+      agents: agents.map(a => a.getInfo()),
+      total: agents.length
+    };
+  }
+
+  throw new Error(`Unknown subcommand: /agents ${parsed.subcommand}`);
+}
+
+async function handleAgentCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  const agentType = parsed.args.arg1 as AgentType;
+  
+  if (parsed.subcommand === "status") {
+    const agent = hive.getAgentByType(agentType);
+    if (!agent) throw new Error(`Agent not found: ${agentType}`);
+    return agent.getInfo();
+  }
+
+  if (parsed.subcommand === "execute") {
+    const agent = hive.getAgentByType(agentType);
+    if (!agent) throw new Error(`Agent not found: ${agentType}`);
+    
+    const taskType = parsed.args.arg2;
+    const result = await agent.executeTask({ type: taskType, ...parsed.args });
+    
+    return {
+      agent: agent.getName(),
+      task: taskType,
+      result
+    };
+  }
+
+  throw new Error(`Unknown subcommand: /agent ${parsed.subcommand}`);
+}
+
+async function handleWorkflowsCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  
+  if (parsed.subcommand === "available") {
+    const workflows = hive.getAvailableWorkflows();
+    return { workflows, total: workflows.length };
+  }
+
+  throw new Error(`Unknown subcommand: /workflows ${parsed.subcommand}`);
+}
+
+async function handleWorkflowCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  
+  if (parsed.subcommand === "execute") {
+    const workflowName = parsed.args.arg1;
+    const result = await hive.executeWorkflow(workflowName, parsed.args);
+    return result;
+  }
+
+  throw new Error(`Unknown subcommand: /workflow ${parsed.subcommand}`);
+}
+
+async function handleKPIsCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  const agents = hive.getAllAgents();
+  
+  const department = parsed.args.arg0;
+  
+  const kpis: Record<string, any> = {};
+  agents.forEach(agent => {
+    if (!department || agent.getInfo().department === department) {
+      kpis[agent.getName()] = agent.getKPIs();
+    }
+  });
+
+  return { kpis, department: department || "all" };
+}
+
+async function handleAnalyticsCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  
+  if (parsed.subcommand === "system") {
+    return hive.getSystemStatus();
+  }
+
+  throw new Error(`Unknown subcommand: /analytics ${parsed.subcommand}`);
+}
+
+async function handleSystemCommand(parsed: ParsedCommand) {
+  const hive = await getHive();
+  
+  if (parsed.subcommand === "status" || parsed.subcommand === "health") {
+    return hive.getSystemStatus();
+  }
+
+  throw new Error(`Unknown subcommand: /system ${parsed.subcommand}`);
+}
+
+export type AppRouter = typeof appRouter;
