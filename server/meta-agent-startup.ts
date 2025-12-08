@@ -22,14 +22,24 @@ export async function startMetaAgent(): Promise<void> {
     await platformMaintenance.start();
 
     // Generate campaigns for new clients
-    console.log("[Meta-Agent Startup] Checking for clients without campaigns...");
-    await campaignGenerator.generateCampaignsForNewClients();
+    try {
+      console.log("[Meta-Agent Startup] Checking for clients without campaigns...");
+      await campaignGenerator.generateCampaignsForNewClients();
+      console.log("[Meta-Agent Startup] ✅ Campaign generation complete");
+    } catch (campaignError: any) {
+      console.error("[Meta-Agent Startup] ❌ Campaign generator error:", campaignError);
+      console.error("[Meta-Agent Startup] Stack trace:", campaignError.stack);
+    }
 
     // Schedule campaign optimization every 30 minutes
     setInterval(async () => {
-      console.log("[Meta-Agent Startup] Running campaign optimization...");
-      await campaignGenerator.optimizeCampaigns();
-      await campaignGenerator.generateCampaignsForNewClients();
+      try {
+        console.log("[Meta-Agent Startup] Running campaign optimization...");
+        await campaignGenerator.optimizeCampaigns();
+        await campaignGenerator.generateCampaignsForNewClients();
+      } catch (intervalError: any) {
+        console.error("[Meta-Agent Startup] ❌ Campaign optimization error:", intervalError);
+      }
     }, 30 * 60 * 1000); // 30 minutes
 
     console.log("[Meta-Agent Startup] ✅ Meta-Agent system started successfully");
@@ -37,6 +47,7 @@ export async function startMetaAgent(): Promise<void> {
     console.log("[Meta-Agent Startup] 📊 Access dashboard at: /meta-agent");
   } catch (error: any) {
     console.error("[Meta-Agent Startup] ❌ Failed to start Meta-Agent:", error);
+    console.error("[Meta-Agent Startup] Stack trace:", error.stack);
     // Don't throw - allow server to start even if Meta-Agent fails
   }
 }
