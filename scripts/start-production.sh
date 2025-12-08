@@ -3,7 +3,7 @@
 
 set -e  # Exit on error
 
-echo "🚀 Starting Ivy.AI Platform..."
+echo "🚀 Starting Ivy.AI Platform v1.0.1 (Fix Applied)..."
 
 # Run database migrations
 echo "📦 Running database migrations..."
