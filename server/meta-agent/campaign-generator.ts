@@ -9,9 +9,32 @@ import { users } from '../../drizzle/schema';
 import { agentOrchestrator } from './agent-orchestrator';
 import { getCampaignTemplate } from './campaign-templates';
 import { eq, and, or } from 'drizzle-orm';
-import { leadIntelligence } from './capabilities/lead-intelligence';
-import { clientEnvironmentMonitor } from './capabilities/client-environment-monitor';
-import { campaignOptimizer } from './capabilities/campaign-optimizer';
+
+// Optional intelligence modules - gracefully handle if they fail to load
+let leadIntelligence: any = null;
+let clientEnvironmentMonitor: any = null;
+let campaignOptimizer: any = null;
+
+try {
+    const leadIntelligenceModule = require('./capabilities/lead-intelligence');
+    leadIntelligence = leadIntelligenceModule.leadIntelligence;
+} catch (error) {
+    console.warn('[Campaign Generator] Lead intelligence module not available:', error);
+}
+
+try {
+    const clientMonitorModule = require('./capabilities/client-environment-monitor');
+    clientEnvironmentMonitor = clientMonitorModule.clientEnvironmentMonitor;
+} catch (error) {
+    console.warn('[Campaign Generator] Client environment monitor not available:', error);
+}
+
+try {
+    const optimizerModule = require('./capabilities/campaign-optimizer');
+    campaignOptimizer = optimizerModule.campaignOptimizer;
+} catch (error) {
+    console.warn('[Campaign Generator] Campaign optimizer not available:', error);
+}
 
 interface ClientProfile {
     userId: number;
@@ -130,7 +153,7 @@ export class CampaignGenerator {
      * Generates a complete campaign for a specific client with real-time intelligence
      */
     async generateCampaignForClient(client: ClientProfile): Promise<void> {
-        console.log(`[Campaign Generator] 🚀 Generating INTELLIGENT campaign for ${client.name} (${client.industry})...`);
+        console.log(`[Campaign Generator] 🚀 Generating campaign for ${client.name} (${client.industry})...`);
 
         const template = getCampaignTemplate(client.industry);
 
@@ -142,170 +165,194 @@ export class CampaignGenerator {
         console.log(`[Campaign Generator] Using ${template.industry} template`);
         console.log(`[Campaign Generator] Target audience: ${template.targetAudience}`);
 
-        // ========== REAL-TIME INTELLIGENCE ==========
+        // Check if intelligence modules are available
+        const intelligenceAvailable = leadIntelligence && clientEnvironmentMonitor && campaignOptimizer;
 
-        // 1. Monitor client's business environment
-        console.log(`[Campaign Generator] 📊 Monitoring ${client.name}'s business environment...`);
-        const competitors = this.getCompetitors(client.industry);
-        const environment = await clientEnvironmentMonitor.getClientEnvironment(
-            client.userId,
-            client.name,
-            client.industry,
-            competitors
-        );
+        if (intelligenceAvailable) {
+            console.log(`[Campaign Generator] ✅ Intelligence modules available - using advanced features`);
 
-        console.log(`[Campaign Generator] Found ${environment.industryNews.length} news items, ${environment.competitors.length} competitor activities, ${environment.marketTrends.length} trends`);
+            try {
+                // ========== REAL-TIME INTELLIGENCE ==========
 
-        // 2. Optimize campaign based on market data
-        console.log(`[Campaign Generator] 🎯 Optimizing campaign with real-time data...`);
-        const optimizationResult = await campaignOptimizer.optimizeCampaign(template, environment);
+                // 1. Monitor client's business environment
+                console.log(`[Campaign Generator] 📊 Monitoring ${client.name}'s business environment...`);
+                const competitors = this.getCompetitors(client.industry);
+                const environment = await clientEnvironmentMonitor.getClientEnvironment(
+                    client.userId,
+                    client.name,
+                    client.industry,
+                    competitors
+                );
 
-        console.log(`[Campaign Generator] Made ${optimizationResult.changes.length} optimizations:`);
-        for (const change of optimizationResult.changes) {
-            console.log(`  - ${change.type}: ${change.description}`);
-        }
+                console.log(`[Campaign Generator] Found ${environment.industryNews.length} news items, ${environment.competitors.length} competitor activities, ${environment.marketTrends.length} trends`);
 
-        // 3. Generate intelligent leads
-        console.log(`[Campaign Generator] 🔍 Generating intelligent leads...`);
-        const leads = await leadIntelligence.generateIntelligentLeads({
-            industry: client.industry,
-            targetAudience: template.targetAudience,
-            count: 50,
-            useRealTimeData: true,
-        });
+                // 2. Optimize campaign based on market data
+                console.log(`[Campaign Generator] 🎯 Optimizing campaign with real-time data...`);
+                const optimizationResult = await campaignOptimizer.optimizeCampaign(template, environment);
 
-        console.log(`[Campaign Generator] Generated ${leads.length} qualified leads (avg score: ${this.calculateAverageScore(leads)})`);
+                console.log(`[Campaign Generator] Made ${optimizationResult.changes.length} optimizations:`); \n                for (const change of optimizationResult.changes) {
+                    console.log(`  - ${change.type}: ${change.description}`);
+                }
 
-        // 4. Detect trigger events for high-value opportunities
-        console.log(`[Campaign Generator] ⚡ Detecting trigger events...`);
-        const triggerEvents = await leadIntelligence.detectTriggerEvents(client.name);
+                // 3. Generate intelligent leads
+                console.log(`[Campaign Generator] 🔍 Generating intelligent leads...`);
+                const leads = await leadIntelligence.generateIntelligentLeads({
+                    industry: client.industry,
+                    targetAudience: template.targetAudience,
+                    count: 50,
+                    useRealTimeData: true,
+                });
 
-        if (triggerEvents.length > 0) {
-            console.log(`[Campaign Generator] Found ${triggerEvents.length} trigger events:`);
-            for (const event of triggerEvents.slice(0, 3)) {
-                console.log(`  - ${event.type}: ${event.description.substring(0, 100)}...`);
+                console.log(`[Campaign Generator] Generated ${leads.length} qualified leads (avg score: ${this.calculateAverageScore(leads)})`);
+
+                // 4. Detect trigger events
+                console.log(`[Campaign Generator] ⚡ Detecting trigger events...`);
+                const triggerEvents = await leadIntelligence.detectTriggerEvents(client.name);
+
+                if (triggerEvents.length > 0) {
+                    console.log(`[Campaign Generator] Found ${triggerEvents.length} trigger events:`); \n                    for (const event of triggerEvents.slice(0, 3)) {
+                        console.log(`  - ${event.type}: ${event.description.substring(0, 100)}...`);
+                    }
+                }
+
+                // 5. Create optimized campaign workflow
+                console.log(`[Campaign Generator] 📅 Creating optimized campaign workflow...`);
+                await agentOrchestrator.createCampaignWorkflow(
+                    client.userId,
+                    client.industry
+                );
+
+                // 6. Log intelligence summary
+                console.log(`\n[Campaign Generator] ✅ INTELLIGENT CAMPAIGN CREATED FOR ${client.name.toUpperCase()}`);
+                console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+                console.log(`📊 Market Intelligence:`);
+                console.log(`   - ${environment.industryNews.length} industry news items tracked`);
+                console.log(`   - ${environment.competitors.length} competitor activities monitored`);
+                console.log(`   - ${environment.marketTrends.length} market trends detected`);
+                console.log(`   - ${environment.opportunities.length} opportunities identified`);
+                console.log(`   - ${environment.threats.length} threats flagged`);
+                console.log(`\n🎯 Campaign Optimization:`);
+                console.log(`   - ${optimizationResult.changes.length} optimizations applied`);
+                console.log(`   - Expected improvement: ${optimizationResult.expectedImprovement}%`);
+                console.log(`\n🔍 Lead Intelligence:`);
+                console.log(`   - ${leads.length} qualified leads generated`);
+                console.log(`   - Average lead score: ${this.calculateAverageScore(leads)}/100`);
+                console.log(`   - ${triggerEvents.length} trigger events detected`);
+                console.log(`\n📧 Campaign Details:`);
+                console.log(`   - ${optimizationResult.optimizedTemplate.emails.length} emails in sequence`);
+                console.log(`   - Target audience: ${template.targetAudience}`);
+                console.log(`   - Lead sources: ${template.leadSources.join(', ')}`);
+                console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+            } catch (intelligenceError: any) {
+                console.error(`[Campaign Generator] ⚠️  Intelligence features failed:`, intelligenceError.message);
+                console.log(`[Campaign Generator] Falling back to basic campaign creation...`);
+
+                // Fallback to basic campaign
+                await agentOrchestrator.createCampaignWorkflow(client.userId, client.industry);
+                console.log(`[Campaign Generator] ✅ Basic campaign created for ${client.name}`);
             }
+        } else {
+            // Intelligence modules not available - use basic campaign creation
+            console.log(`[Campaign Generator] ⚠️  Intelligence modules not available - using basic campaign creation`);
+            console.log(`[Campaign Generator] ${template.emails.length} emails in sequence`);
+
+            // Create basic campaign workflow
+            await agentOrchestrator.createCampaignWorkflow(client.userId, client.industry);
+
+            console.log(`[Campaign Generator] ✅ Basic campaign created for ${client.name}`);
         }
-
-        // 5. Create optimized campaign workflow
-        console.log(`[Campaign Generator] 📅 Creating optimized campaign workflow...`);
-        await agentOrchestrator.createCampaignWorkflow(
-            client.userId,
-            client.industry
-        );
-
-        // 6. Log intelligence summary
-        console.log(`\n[Campaign Generator] ✅ INTELLIGENT CAMPAIGN CREATED FOR ${client.name.toUpperCase()}`);
-        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.log(`📊 Market Intelligence:`);
-        console.log(`   - ${environment.industryNews.length} industry news items tracked`);
-        console.log(`   - ${environment.competitors.length} competitor activities monitored`);
-        console.log(`   - ${environment.marketTrends.length} market trends detected`);
-        console.log(`   - ${environment.opportunities.length} opportunities identified`);
-        console.log(`   - ${environment.threats.length} threats flagged`);
-        console.log(`\n🎯 Campaign Optimization:`);
-        console.log(`   - ${optimizationResult.changes.length} optimizations applied`);
-        console.log(`   - Expected improvement: ${optimizationResult.expectedImprovement}%`);
-        console.log(`\n🔍 Lead Intelligence:`);
-        console.log(`   - ${leads.length} qualified leads generated`);
-        console.log(`   - Average lead score: ${this.calculateAverageScore(leads)}/100`);
-        console.log(`   - ${triggerEvents.length} trigger events detected`);
-        console.log(`\n📧 Campaign Details:`);
-        console.log(`   - ${optimizationResult.optimizedTemplate.emails.length} emails in sequence`);
-        console.log(`   - Target audience: ${template.targetAudience}`);
-        console.log(`   - Lead sources: ${template.leadSources.join(', ')}`);
-        console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     }
+}
 
     /**
      * Get competitors for an industry
      */
     private getCompetitors(industry: string): string[] {
-        const competitorMap: Record<string, string[]> = {
-            'saas': ['Intercom', 'Drift', 'HubSpot', 'Salesforce', 'Zendesk'],
-            'manufacturing': ['Siemens', 'ABB', 'Schneider Electric', 'Rockwell Automation'],
-            'pet-services': ['Rover', 'Wag', 'Chewy', 'PetSmart', 'Petco'],
-        };
+    const competitorMap: Record<string, string[]> = {
+        'saas': ['Intercom', 'Drift', 'HubSpot', 'Salesforce', 'Zendesk'],
+        'manufacturing': ['Siemens', 'ABB', 'Schneider Electric', 'Rockwell Automation'],
+        'pet-services': ['Rover', 'Wag', 'Chewy', 'PetSmart', 'Petco'],
+    };
 
-        return competitorMap[industry] || [];
-    }
+    return competitorMap[industry] || [];
+}
 
     /**
      * Calculate average lead score
      */
     private calculateAverageScore(leads: any[]): number {
-        if (leads.length === 0) return 0;
-        const total = leads.reduce((sum, lead) => sum + (lead.score || 0), 0);
-        return Math.round(total / leads.length);
-    }
+    if (leads.length === 0) return 0;
+    const total = leads.reduce((sum, lead) => sum + (lead.score || 0), 0);
+    return Math.round(total / leads.length);
+}
 
     /**
      * Optimizes existing campaigns based on performance
      */
-    async optimizeCampaigns(): Promise<void> {
-        console.log('[Campaign Generator] Optimizing campaigns...');
+    async optimizeCampaigns(): Promise < void> {
+    console.log('[Campaign Generator] Optimizing campaigns...');
 
-        const db = await getDb();
-        if (!db) {
-            console.error('[Campaign Generator] Database not available');
-            return;
-        }
+    const db = await getDb();
+    if(!db) {
+        console.error('[Campaign Generator] Database not available');
+        return;
+    }
 
         const allUsers = await db.query.users.findMany({
-            where: (u: any, { eq }: any) => eq(u.role, 'admin'),
-        });
+        where: (u: any, { eq }: any) => eq(u.role, 'admin'),
+    });
 
-        for (const user of allUsers) {
-            const status = await agentOrchestrator.getCampaignStatus(user.id);
+    for(const user of allUsers) {
+        const status = await agentOrchestrator.getCampaignStatus(user.id);
 
-            if (status.stats.failed > 3) {
-                console.log(`[Campaign Generator] ⚠️  Client ${user.id} has ${status.stats.failed} failed tasks`);
-                console.log(`[Campaign Generator] Triggering agent performance monitoring...`);
+        if (status.stats.failed > 3) {
+            console.log(`[Campaign Generator] ⚠️  Client ${user.id} has ${status.stats.failed} failed tasks`);
+            console.log(`[Campaign Generator] Triggering agent performance monitoring...`);
 
-                await agentOrchestrator.monitorAgentPerformance();
-            }
-
-            if (status.stats.completed > 10) {
-                console.log(`[Campaign Generator] ✅ Client ${user.id} campaign performing well (${status.stats.completed} completed tasks)`);
-            }
+            await agentOrchestrator.monitorAgentPerformance();
         }
 
-        console.log('[Campaign Generator] Campaign optimization complete');
+        if (status.stats.completed > 10) {
+            console.log(`[Campaign Generator] ✅ Client ${user.id} campaign performing well (${status.stats.completed} completed tasks)`);
+        }
     }
+
+        console.log('[Campaign Generator] Campaign optimization complete');
+}
 
     /**
      * Gets campaign summary for all clients
      */
-    async getCampaignSummary(): Promise<any> {
-        const db = await getDb();
-        if (!db) {
-            console.error('[Campaign Generator] Database not available');
-            return { totalClients: 0, clients: [] };
-        }
+    async getCampaignSummary(): Promise < any > {
+    const db = await getDb();
+    if(!db) {
+        console.error('[Campaign Generator] Database not available');
+        return { totalClients: 0, clients: [] };
+    }
 
         const allUsers = await db.query.users.findMany({
-            where: (u: any, { eq }: any) => eq(u.role, 'admin'),
+        where: (u: any, { eq }: any) => eq(u.role, 'admin'),
+    });
+
+    const summary = [];
+
+    for(const user of allUsers) {
+        const industry = this.detectIndustry(user.name || '', user.email);
+        const status = await agentOrchestrator.getCampaignStatus(user.id);
+
+        summary.push({
+            clientId: user.id,
+            clientName: user.name,
+            industry,
+            campaignStatus: status,
         });
-
-        const summary = [];
-
-        for (const user of allUsers) {
-            const industry = this.detectIndustry(user.name || '', user.email);
-            const status = await agentOrchestrator.getCampaignStatus(user.id);
-
-            summary.push({
-                clientId: user.id,
-                clientName: user.name,
-                industry,
-                campaignStatus: status,
-            });
-        }
+    }
 
         return {
-            totalClients: summary.length,
-            clients: summary,
-        };
-    }
+        totalClients: summary.length,
+        clients: summary,
+    };
+}
 }
 
 export const campaignGenerator = new CampaignGenerator();
