@@ -116,6 +116,9 @@ export async function getDb() {
   }
 }
 
+// Export db for backward compatibility
+export const db = await getDb();
+
 // ============================================================================
 // USER MANAGEMENT
 // ============================================================================

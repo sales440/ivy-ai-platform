@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { trpc } from '../utils/trpc';
+import { trpc } from '../lib/trpc';
 
 const CyberDashboard: React.FC = () => {
     const [currentTime, setCurrentTime] = useState(new Date());

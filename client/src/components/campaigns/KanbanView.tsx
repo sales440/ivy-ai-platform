@@ -9,7 +9,7 @@ import {
     useSensors,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Campaign, CampaignStatus, statusLabels, statusColors, agentColors, campaignTypeIcons } from '../../types/campaign';
+import { Campaign, CampaignStatus, statusLabels, statusColors } from '../../types/campaign';
 import { updateCampaignStatus } from '../../lib/campaigns';
 import CampaignCard from './CampaignCard';
 
