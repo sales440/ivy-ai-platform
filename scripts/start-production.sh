@@ -17,6 +17,11 @@ node scripts/fix-notifications.mjs || echo "⚠️  Notifications table check fa
 echo "📊 Creating FAGOR campaign tables..."
 node scripts/create-fagor-tables.mjs || echo "⚠️  FAGOR tables creation failed or already exist"
 
+# Ensure scheduledTasks table exists (Fix for missing migration)
+echo "📋 Checking scheduledTasks table..."
+node scripts/create-scheduled-tasks.mjs || echo "⚠️  scheduledTasks table check failed"
+
+
 # Start the application
 echo "✅ Starting application server..."
 exec pnpm start

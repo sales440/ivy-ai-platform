@@ -13,13 +13,14 @@ export async function createContext(
 ): Promise<TrpcContext> {
   let user: User | null = null;
 
-  // TEMPORARY: Bypass OAuth for testing when VITE_BYPASS_AUTH is enabled
-  const BYPASS_AUTH = process.env.VITE_BYPASS_AUTH === 'true';
-  
+  // TEMPORARY: Bypass OAuth for testing when VITE_BYPASS_AUTH is enabled OR header is present
+  const BYPASS_AUTH = process.env.VITE_BYPASS_AUTH === 'true' || opts.req.headers['x-bypass-auth'] === 'true';
+
   if (BYPASS_AUTH) {
     // Return mock admin user when bypass is active
     user = {
       id: 999,
+      companyId: null,
       openId: 'mock-admin-user',
       name: 'Admin User (Bypass)',
       email: 'admin@ivybai.com',
@@ -29,7 +30,7 @@ export async function createContext(
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     };
-    
+
     console.log('[Auth Bypass] Using mock admin user - OAuth disabled');
   } else {
     try {

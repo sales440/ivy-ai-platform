@@ -247,6 +247,26 @@ class MetaAgent {
           result = await generateChatResponse(task.metadata?.message, this.chatHistory);
           break;
 
+        case "predict_performance":
+          const { predictAllAgentsPerformance } = await import("./capabilities/predictive-analytics");
+          result = await predictAllAgentsPerformance();
+          break;
+
+        case "send_omni_message":
+          const { sendMessage } = await import("./capabilities/omni-channel");
+          result = await sendMessage(task.metadata?.message);
+          break;
+
+        case "make_call":
+          const { makeCall } = await import("./capabilities/voice-handler");
+          result = await makeCall(task.metadata?.to, task.metadata?.message);
+          break;
+
+        case "propose_code_change":
+          const { proposeCodeChanges } = await import("./capabilities/self-coder");
+          result = await proposeCodeChanges(task.metadata?.request);
+          break;
+
         default:
           throw new Error(`Unknown task type: ${task.type}`);
       }

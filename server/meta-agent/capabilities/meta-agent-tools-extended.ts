@@ -6,10 +6,10 @@
  */
 
 // Import web search and market intelligence services
-import { 
-  searchWeb as searchWebService, 
+import {
+  searchWeb as searchWebService,
   scrapeWebPage as scrapeWebPageService,
-  monitorWebsite 
+  monitorWebsite
 } from './web-search';
 import {
   monitorCompetitors as monitorCompetitorsService,
@@ -450,7 +450,7 @@ export const EXTENDED_TOOL_DEFINITIONS = [
         type: "object",
         properties: {
           name: { type: "string" },
-          steps: { 
+          steps: {
             type: "array",
             items: {
               type: "object",
@@ -801,7 +801,7 @@ export const EXTENDED_TOOL_DEFINITIONS = [
   { type: "function" as const, function: { name: "updateKnowledgeBase", description: "Actualiza la base de conocimiento con market intelligence", parameters: { type: "object", properties: { insights: { type: "array", items: { type: "object" } } }, required: ["insights"] } } },
   { type: "function" as const, function: { name: "runMarketIntelligenceCycle", description: "Ejecuta ciclo completo: monitorear → analizar → aprender → capacitar", parameters: { type: "object", properties: { industry: { type: "string" }, keywords: { type: "array", items: { type: "string" } }, competitorUrls: { type: "array", items: { type: "string" } } }, required: ["industry", "keywords", "competitorUrls"] } } },
   { type: "function" as const, function: { name: "analyzeCompetitorPricing", description: "Analiza precios de competidores y genera recomendaciones", parameters: { type: "object", properties: { competitorUrls: { type: "array", items: { type: "string" } } }, required: ["competitorUrls"] } } },
-  { type: "function" as const, function: { name: "findBestPractices", description: "Busca mejores prácticas de la industria", parameters: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } } },  { type: "function" as const, function: { name: "generateMarketReport", description: "Genera reporte completo de inteligencia de mercado", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
+  { type: "function" as const, function: { name: "findBestPractices", description: "Busca mejores prácticas de la industria", parameters: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } } }, { type: "function" as const, function: { name: "generateMarketReport", description: "Genera reporte completo de inteligencia de mercado", parameters: { type: "object", properties: { industry: { type: "string" } }, required: ["industry"] } } },
 
   // IvyCall Specialized Training (5 tools)
   { type: "function" as const, function: { name: "trainIvyCall", description: "Capacita a IvyCall con scripts frescos y técnicas actualizadas", parameters: { type: "object", properties: { industry: { type: "string" }, objectives: { type: "array", items: { type: "string" } } }, required: ["industry", "objectives"] } } },
@@ -817,6 +817,89 @@ export const EXTENDED_TOOL_DEFINITIONS = [
   { type: "function" as const, function: { name: "updateSchedulerConfig", description: "Actualiza configuración del scheduler", parameters: { type: "object", properties: { intervalHours: { type: "number" }, industries: { type: "array", items: { type: "string" } }, competitorUrls: { type: "array", items: { type: "string" } } }, required: [] } } },
   { type: "function" as const, function: { name: "triggerCycleNow", description: "Ejecuta ciclo de Market Intelligence inmediatamente", parameters: { type: "object", properties: { industry: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: [] } } },
   { type: "function" as const, function: { name: "getSchedulerStats", description: "Obtiene estadísticas del scheduler", parameters: { type: "object", properties: {}, required: [] } } },
+
+  // ============================================================================
+  // NEW CAPABILITIES (4 tools)
+  // ============================================================================
+
+  // Predictive Vision
+  {
+    type: "function" as const,
+    function: {
+      name: "predictPerformance",
+      description: "Predice el rendimiento futuro de los agentes basado en datos históricos",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+
+  // Nexus Omni-Channel
+  {
+    type: "function" as const,
+    function: {
+      name: "sendOmniMessage",
+      description: "Envía mensaje por WhatsApp o SMS",
+      parameters: {
+        type: "object",
+        properties: {
+          to: { type: "string" },
+          body: { type: "string" },
+          channel: { type: "string", enum: ["whatsapp", "sms"] }
+        },
+        required: ["to", "body", "channel"]
+      }
+    }
+  },
+
+  // Ivy Voice
+  {
+    type: "function" as const,
+    function: {
+      name: "makeCall",
+      description: "Realiza una llamada de voz saliente",
+      parameters: {
+        type: "object",
+        properties: {
+          to: { type: "string" },
+          message: { type: "string" }
+        },
+        required: ["to", "message"]
+      }
+    }
+  },
+
+  // Self-Coding
+  {
+    type: "function" as const,
+    function: {
+      name: "proposeCodeChange",
+      description: "Propone cambios de código mediante Pull Request",
+      parameters: {
+        type: "object",
+        properties: {
+          request: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              body: { type: "string" },
+              changes: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    path: { type: "string" },
+                    content: { type: "string" },
+                    description: { type: "string" }
+                  }
+                }
+              }
+            },
+            required: ["title", "body", "changes"]
+          }
+        },
+        required: ["request"]
+      }
+    }
+  },
 ];
 
 /**
@@ -1351,12 +1434,12 @@ export const trainAllAgentsTool = async (args: any) => {
   console.log('[Market Intelligence] Training all agents with market insights...');
   const agentTypes = ['prospect', 'closer', 'solve', 'logic', 'talent', 'insight'] as const;
   const trainingResults = [];
-  
+
   for (const agentType of agentTypes) {
     const training = await generateAgentTraining(agentType, args.insights);
     trainingResults.push(training);
   }
-  
+
   return { success: true, message: `Trained ${trainingResults.length} agents`, trainingResults };
 };
 

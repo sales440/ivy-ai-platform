@@ -6,7 +6,7 @@
 
 export type MetaAgentStatus = "idle" | "running" | "training" | "fixing" | "auditing" | "error";
 
-export type TaskType = 
+export type TaskType =
   | "fix_typescript_errors"
   | "refactor_code"
   | "train_agent"
@@ -15,7 +15,11 @@ export type TaskType =
   | "manage_dependencies"
   | "audit_platform"
   | "heal_system"
-  | "chat_response";
+  | "chat_response"
+  | "predict_performance"
+  | "send_omni_message"
+  | "make_call"
+  | "propose_code_change";
 
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 

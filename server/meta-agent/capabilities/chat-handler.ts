@@ -55,6 +55,12 @@ function parseCommand(message: string): string | null {
     }
   }
 
+  // Check for new explicit commands
+  if (lowerMessage.startsWith("predict")) return "PREDICT";
+  if (lowerMessage.startsWith("whatsapp")) return "WHATSAPP";
+  if (lowerMessage.startsWith("call")) return "CALL";
+  if (lowerMessage.startsWith("pr")) return "PR";
+
   // If no explicit command found, return null to use conversational LLM
   return null;
 }
@@ -102,6 +108,19 @@ async function executeCommand(
 
       case "SHOW_ERRORS":
         return await handleShowErrorsCommand();
+
+      // New Explicit Commands for Capabilities
+      case "PREDICT":
+        return await handlePredictCommand();
+
+      case "WHATSAPP":
+        return await handleWhatsAppCommand(originalMessage);
+
+      case "CALL":
+        return await handleCallCommand(originalMessage);
+
+      case "PR":
+        return await handlePRCommand(originalMessage);
 
       default:
         return {
@@ -788,4 +807,100 @@ When users ask about market intelligence or training agents, USE these new capab
       response: `¡Hola! Tuve un problema procesando tu mensaje de forma conversacional, pero puedo ayudarte con comandos específicos:\n\n• **status** - Ver estado del sistema\n• **help** - Ver todos los comandos\n• **show metrics** - Ver métricas\n\n¿Qué comando quieres ejecutar?`,
     };
   }
+}
+
+/**
+ * Handle PREDICT command
+ */
+async function handlePredictCommand(): Promise<{ response: string }> {
+  const { predictAllAgentsPerformance } = await import("./predictive-analytics");
+  const results = await predictAllAgentsPerformance();
+
+  if (results.length === 0) {
+    return { response: "No hay suficientes datos históricos para generar predicciones." };
+  }
+
+  const response = `
+**🔮 Visión Predictiva (Próximos 30 días)**
+
+${results.map(r => `
+**Agente: ${r.agentId}**
+- Métrica: ${r.metric}
+- Actual: ${r.currentValue}
+- Predicción: ${r.predictedValue}
+- Tendencia: ${r.trend === 'up' ? '📈 Subiendo' : r.trend === 'down' ? '📉 Bajando' : '➡️ Estable'} (${r.confidence}% confianza)
+${r.recommendation ? `💡 ${r.recommendation}` : ''}
+`).join('\n')}
+  `.trim();
+
+  return { response };
+}
+
+/**
+ * Handle WHATSAPP command
+ * Format: WHATSAPP [number] [message]
+ */
+async function handleWhatsAppCommand(message: string): Promise<{ response: string }> {
+  const parts = message.split(' ');
+  if (parts.length < 3) {
+    return { response: "Formato incorrecto. Usa: WHATSAPP [número] [mensaje]" };
+  }
+
+  const to = parts[1];
+  const body = parts.slice(2).join(' ');
+
+  const { sendWhatsApp } = await import("./omni-channel");
+  const result = await sendWhatsApp(to, body);
+
+  return {
+    response: result.success
+      ? `✅ Mensaje de WhatsApp enviado a ${to} (ID: ${result.messageId || 'simulado'})`
+      : "❌ Error enviando mensaje."
+  };
+}
+
+/**
+ * Handle CALL command
+ * Format: CALL [number] [message]
+ */
+async function handleCallCommand(message: string): Promise<{ response: string }> {
+  const parts = message.split(' ');
+  if (parts.length < 3) {
+    return { response: "Formato incorrecto. Usa: CALL [número] [mensaje]" };
+  }
+
+  const to = parts[1];
+  const body = parts.slice(2).join(' ');
+
+  const { makeCall } = await import("./voice-handler");
+  const result = await makeCall(to, body);
+
+  return {
+    response: result.success
+      ? `✅ Llamada iniciada a ${to} (SID: ${result.callSid || 'simulado'})`
+      : "❌ Error iniciando llamada."
+  };
+}
+
+/**
+ * Handle PR command
+ * Format: PR [title]
+ */
+async function handlePRCommand(message: string): Promise<{ response: string }> {
+  const title = message.substring(3).trim() || "Mejora automática de código";
+
+  const { proposeCodeChanges } = await import("./self-coder");
+  const result = await proposeCodeChanges({
+    title,
+    body: "Esta es una mejora automática propuesta por el Meta-Agente.",
+    changes: [
+      { path: "server/index.ts", content: "// Improved error handling", description: "Better error handling" }
+    ]
+  });
+
+  return {
+    response: result.success
+      ? `✅ Pull Request creado exitosamente: ${result.prUrl}`
+      : "❌ Error creando Pull Request."
+  };
 }
