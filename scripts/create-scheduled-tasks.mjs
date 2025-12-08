@@ -2,15 +2,17 @@
 import mysql from 'mysql2/promise';
 
 async function main() {
-    const DATABASE_URL = process.env.DATABASE_URL;
+    // Railway provides these environment variables for MySQL
+    const config = {
+        host: process.env.MYSQLHOST,
+        port: process.env.MYSQLPORT || 3306,
+        user: process.env.MYSQLUSER,
+        password: process.env.MYSQLPASSWORD,
+        database: process.env.MYSQLDATABASE
+    };
 
-    if (!DATABASE_URL) {
-        console.error('❌ DATABASE_URL is not set');
-        process.exit(1);
-    }
-
-    console.log('🔧 Connecting to database to check scheduledTasks...');
-    const connection = await mysql.createConnection(DATABASE_URL);
+    console.log('🔧 Connecting to Railway MySQL database...');
+    const connection = await mysql.createConnection(config);
 
     try {
         const [tables] = await connection.query("SHOW TABLES LIKE 'scheduledTasks'");

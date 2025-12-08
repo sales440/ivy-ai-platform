@@ -6,6 +6,7 @@
 
 import { metaAgent } from "./meta-agent";
 import { platformMaintenance } from "./meta-agent/capabilities/platform-maintenance";
+import { campaignGenerator } from "./meta-agent/campaign-generator";
 
 /**
  * Initialize and start Meta-Agent
@@ -19,6 +20,17 @@ export async function startMetaAgent(): Promise<void> {
 
     // Start 24/7 Platform Maintenance
     await platformMaintenance.start();
+
+    // Generate campaigns for new clients
+    console.log("[Meta-Agent Startup] Checking for clients without campaigns...");
+    await campaignGenerator.generateCampaignsForNewClients();
+
+    // Schedule campaign optimization every 30 minutes
+    setInterval(async () => {
+      console.log("[Meta-Agent Startup] Running campaign optimization...");
+      await campaignGenerator.optimizeCampaigns();
+      await campaignGenerator.generateCampaignsForNewClients();
+    }, 30 * 60 * 1000); // 30 minutes
 
     console.log("[Meta-Agent Startup] ✅ Meta-Agent system started successfully");
     console.log("[Meta-Agent Startup] 🤖 Meta-Agent is now maintaining the platform 24/7");
@@ -35,7 +47,7 @@ export async function startMetaAgent(): Promise<void> {
 export function stopMetaAgent(): void {
   try {
     console.log("[Meta-Agent Startup] Stopping Meta-Agent...");
-    
+
     metaAgent.stop();
     platformMaintenance.stop();
 
