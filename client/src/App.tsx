@@ -58,6 +58,7 @@ import ExecutiveSummary from "@/pages/ExecutiveSummary";
 import CommunicationsDashboard from "@/pages/CommunicationsDashboard";
 import MetaAgentDashboard from "@/pages/MetaAgentDashboard";
 import CyberDashboard from "@/pages/CyberDashboard";
+import CampaignsDashboard from "@/pages/CampaignsDashboard";
 
 function Router() {
   return (
@@ -80,6 +81,7 @@ function Router() {
       <Route path="/milestone-config" component={MilestoneConfig} />
       <Route path="/meta-agent" component={MetaAgent} />
       <Route path="/meta-agent-dashboard" component={MetaAgentDashboard} />
+      <Route path="/campaigns-dashboard" component={CampaignsDashboard} />
       <Route path="/cyber-dashboard" component={CyberDashboard} />
       <Route path="/agents/manage" component={AgentManagement} />
       <Route path="/agents/training" component={AgentTraining} />

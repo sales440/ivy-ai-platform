@@ -1,0 +1,62 @@
+{
+    "campaigns": [
+        {
+            "id": "camp-001",
+            "clientId": 1,
+            "clientName": "Ivy.AI Platform",
+            "agentType": "IVY-PROSPECT",
+            "campaignType": "multi-channel",
+            "status": "active",
+            "objective": "Generar 100 leads calificados para la plataforma SaaS",
+            "targetDate": "2025-12-31",
+            "publishDate": "2025-12-08",
+            "leadsGenerated": 47,
+            "leadsConverted": 12,
+            "conversionRate": 25.5,
+            "notes": "Campaña inicial de prospección. Enfocada en CTOs y VPs de Engineering.",
+            "links": [
+                "https://ivy.ai/campaign-001"
+            ],
+            "createdAt": "2025-12-08T00:00:00Z",
+            "updatedAt": "2025-12-08T00:00:00Z"
+        },
+        {
+            "id": "camp-002",
+            "clientId": 2,
+            "clientName": "FAGOR Automation",
+            "agentType": "IVY-ENGAGE",
+            "campaignType": "email",
+            "status": "in-progress",
+            "objective": "Nutrir leads existentes con contenido técnico",
+            "targetDate": "2025-12-20",
+            "publishDate": "2025-12-10",
+            "leadsGenerated": 35,
+            "leadsConverted": 8,
+            "conversionRate": 22.9,
+            "notes": "Drip campaign de 3 emails. Enfoque en automatización industrial.",
+            "links": [
+                "https://fagor.com/campaign-002"
+            ],
+            "createdAt": "2025-12-07T00:00:00Z",
+            "updatedAt": "2025-12-07T12:00:00Z"
+        },
+        {
+            "id": "camp-003",
+            "clientId": 3,
+            "clientName": "PET LIFE 360",
+            "agentType": "IVY-QUALIFY",
+            "campaignType": "linkedin",
+            "status": "pending",
+            "objective": "Calificar leads de dueños de mascotas premium",
+            "targetDate": "2025-12-25",
+            "publishDate": "2025-12-15",
+            "leadsGenerated": 0,
+            "leadsConverted": 0,
+            "conversionRate": 0,
+            "notes": "Campaña de LinkedIn targeting. Esperando aprobación de contenido.",
+            "links": [],
+            "createdAt": "2025-12-08T00:00:00Z",
+            "updatedAt": "2025-12-08T00:00:00Z"
+        }
+    ]
+}
