@@ -6,7 +6,7 @@
 
 import { metaAgent } from "./meta-agent";
 import { platformMaintenance } from "./meta-agent/capabilities/platform-maintenance";
-import { campaignGenerator } from "./meta-agent/campaign-generator";
+import { campaignGenerator } from "./meta-agent/campaign-generator-simple";
 
 /**
  * Initialize and start Meta-Agent
