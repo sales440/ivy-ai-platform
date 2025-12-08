@@ -28,14 +28,50 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+import { db } from "../db";
+import { sql } from "drizzle-orm";
+
+// Ensure scheduledTasks table exists (Fix for production migration issue)
+async function ensureScheduledTasksTable() {
+  try {
+    console.log('[Startup] Checking scheduledTasks table...');
+    if (!db) return;
+
+    // Raw query to check/create table since Drizzle might think it exists
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS scheduledTasks (
+        id int NOT NULL AUTO_INCREMENT,
+        companyId int NOT NULL,
+        taskType enum('send-email','update-lead-score','send-notification','custom') NOT NULL,
+        taskData json NOT NULL,
+        status enum('pending','processing','completed','failed','cancelled') NOT NULL DEFAULT 'pending',
+        scheduledFor timestamp NOT NULL,
+        executedAt timestamp NULL DEFAULT NULL,
+        error text,
+        retryCount int NOT NULL DEFAULT '0',
+        maxRetries int NOT NULL DEFAULT '3',
+        createdBy int NOT NULL,
+        createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (id)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+    console.log('[Startup] ✅ scheduledTasks table verified/created');
+  } catch (error) {
+    console.error('[Startup] ⚠️ Failed to ensure scheduledTasks table:', error);
+  }
+}
+
 async function startServer() {
+  await ensureScheduledTasksTable();
   const app = express();
+
   const server = createServer(app);
-  
+
   // Initialize Sentry (must be first)
   // TEMPORARILY DISABLED - Sentry causing crashes
   // initSentry(app);
-  
+
   // Initialize WebSocket server for real-time notifications
   const { initializeWebSocket } = await import("../websocket-notifications");
   initializeWebSocket(server);
@@ -44,7 +80,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
-  
+
   // Telnyx webhook endpoint
   app.post("/api/webhooks/telnyx", async (req, res) => {
     const { handleTelnyxWebhook } = await import("../webhooks/telnyx-webhook");
@@ -58,7 +94,7 @@ async function startServer() {
   // SendGrid webhook endpoints
   const { sendgridWebhookRouter } = await import("../webhooks/sendgrid-webhook");
   app.use("/api/webhooks", sendgridWebhookRouter);
-  
+
   // SSE notifications endpoint
   const notificationsSSERouter = (await import("../routes/notifications-sse")).default;
   app.use("/api/notifications", notificationsSSERouter);
@@ -90,7 +126,7 @@ async function startServer() {
 
   server.listen(port, async () => {
     console.log(`Server running on http://localhost:${port}/`);
-    
+
     // Start scheduled tasks processor
     const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
     startScheduledTasksProcessor();
