@@ -653,6 +653,7 @@ export type InsertLinkedInPost = typeof linkedInPosts.$inferInsert;
  */
 export const multiChannelCampaigns = mysqlTable("multiChannelCampaigns", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   targetAudience: mysqlEnum("targetAudience", ["awareness", "consideration", "decision"]).notNull(),

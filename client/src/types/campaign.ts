@@ -1,21 +1,21 @@
 // Campaign Data Types
 export interface Campaign {
-    id: string;
-    clientId: number;
-    clientName: string;
-    agentType: 'IVY-PROSPECT' | 'IVY-QUALIFY' | 'IVY-ENGAGE' | 'IVY-SCHEDULE' | 'IVY-SUPPORT';
-    campaignType: 'email' | 'cold-call' | 'linkedin' | 'multi-channel';
-    status: 'pending' | 'active' | 'in-progress' | 'paused' | 'completed' | 'cancelled';
-    objective: string;
-    targetDate: string;
-    publishDate: string;
-    leadsGenerated: number;
-    leadsConverted: number;
-    conversionRate: number;
-    notes: string;
-    links: string[];
-    createdAt: string;
-    updatedAt: string;
+    id: number | string;
+    companyId: number;
+    clientName?: string;
+    agentType?: 'IVY-PROSPECT' | 'IVY-QUALIFY' | 'IVY-ENGAGE' | 'IVY-SCHEDULE' | 'IVY-SUPPORT';
+    campaignType?: 'email' | 'cold-call' | 'linkedin' | 'multi-channel';
+    status: 'draft' | 'pending' | 'active' | 'in-progress' | 'paused' | 'completed' | 'cancelled';
+    objective?: string;
+    targetDate?: string;
+    publishDate?: string;
+    leadsGenerated?: number;
+    leadsConverted?: number;
+    conversionRate?: number;
+    notes?: string;
+    links?: string[];
+    createdAt: string | Date;
+    updatedAt: string | Date;
 }
 
 export type CampaignStatus = Campaign['status'];

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { LayoutGrid, Table, Calendar, Plus, Search, Filter } from 'lucide-react';
 import { Campaign } from '../types/campaign';
-import { getCampaigns, calculateMetrics } from '../lib/campaigns';
+import { calculateMetrics } from '../lib/campaigns';
+import { trpc } from '../lib/trpc';
 import TableView from '../components/campaigns/TableView';
 import KanbanView from '../components/campaigns/KanbanView';
 import CalendarView from '../components/campaigns/CalendarView';
@@ -9,28 +10,45 @@ import CalendarView from '../components/campaigns/CalendarView';
 type ViewMode = 'table' | 'kanban' | 'calendar';
 
 export default function CampaignsDashboard() {
-    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [viewMode, setViewMode] = useState<ViewMode>('table');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
 
-    useEffect(() => {
-        loadCampaigns();
-    }, []);
+    // Fetch campaigns from server
+    const { data: campaignsData, isLoading, refetch } = trpc.multiChannelCampaigns.list.useQuery();
 
-    const loadCampaigns = () => {
-        const data = getCampaigns();
-        setCampaigns(data);
-    };
+    // Map server data to client Campaign type
+    const campaigns: Campaign[] = (campaignsData || []).map(c => ({
+        id: c.id,
+        companyId: c.companyId,
+        clientName: c.name, // Mapping name to clientName for display
+        agentType: 'IVY-ENGAGE', // Default for now
+        campaignType: 'multi-channel',
+        status: (c.status as any) || 'draft',
+        objective: c.description || '',
+        targetDate: c.endDate ? new Date(c.endDate).toISOString().split('T')[0] : '',
+        publishDate: c.startDate ? new Date(c.startDate).toISOString().split('T')[0] : '',
+        leadsGenerated: 0, // Placeholder
+        leadsConverted: 0, // Placeholder
+        conversionRate: 0, // Placeholder
+        notes: '',
+        links: [],
+        createdAt: new Date(c.createdAt),
+        updatedAt: new Date(c.updatedAt)
+    }));
 
     const metrics = calculateMetrics(campaigns);
 
     const filteredCampaigns = campaigns.filter(campaign => {
-        const matchesSearch = campaign.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            campaign.objective.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = (campaign.clientName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (campaign.objective || '').toLowerCase().includes(searchQuery.toLowerCase());
         const matchesFilter = filterStatus === 'all' || campaign.status === filterStatus;
         return matchesSearch && matchesFilter;
     });
+
+    if (isLoading) {
+        return <div className="p-6 text-white">Cargando campañas...</div>;
+    }
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white p-6">
@@ -98,6 +116,7 @@ export default function CampaignsDashboard() {
                             className="bg-[#0a0a0a] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500 transition-colors"
                         >
                             <option value="all">Todos los estados</option>
+                            <option value="draft">Borrador</option>
                             <option value="pending">Pendiente</option>
                             <option value="active">Activo</option>
                             <option value="in-progress">En Progreso</option>
@@ -133,9 +152,9 @@ export default function CampaignsDashboard() {
 
             {/* Views */}
             <div className="bg-[#1a1a1a] rounded-lg border border-gray-800 p-6">
-                {viewMode === 'table' && <TableView campaigns={filteredCampaigns} onUpdate={loadCampaigns} />}
-                {viewMode === 'kanban' && <KanbanView campaigns={filteredCampaigns} onUpdate={loadCampaigns} />}
-                {viewMode === 'calendar' && <CalendarView campaigns={filteredCampaigns} onUpdate={loadCampaigns} />}
+                {viewMode === 'table' && <TableView campaigns={filteredCampaigns} onUpdate={refetch} />}
+                {viewMode === 'kanban' && <KanbanView campaigns={filteredCampaigns} onUpdate={refetch} />}
+                {viewMode === 'calendar' && <CalendarView campaigns={filteredCampaigns} onUpdate={refetch} />}
             </div>
         </div>
     );
@@ -162,8 +181,8 @@ function ViewButton({ icon, label, active, onClick }: { icon: React.ReactNode; l
         <button
             onClick={onClick}
             className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${active
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-[#2a2a2a]'
+                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-[#2a2a2a]'
                 }`}
         >
             {icon}

@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Campaign, CampaignStatus, statusLabels, statusColors } from '../../types/campaign';
-import { updateCampaignStatus } from '../../lib/campaigns';
+import { trpc } from '../../lib/trpc';
 import CampaignCard from './CampaignCard';
 
 interface KanbanViewProps {
@@ -31,6 +31,14 @@ export default function KanbanView({ campaigns, onUpdate }: KanbanViewProps) {
         })
     );
 
+    const utils = trpc.useContext();
+    const updateStatus = trpc.multiChannelCampaigns.updateStatus.useMutation({
+        onSuccess: () => {
+            utils.multiChannelCampaigns.list.invalidate();
+            onUpdate();
+        }
+    });
+
     const handleDragStart = (event: DragStartEvent) => {
         setActiveId(event.active.id as string);
     };
@@ -40,8 +48,10 @@ export default function KanbanView({ campaigns, onUpdate }: KanbanViewProps) {
 
         if (over && active.id !== over.id) {
             const newStatus = over.id as CampaignStatus;
-            updateCampaignStatus(active.id as string, newStatus);
-            onUpdate();
+            updateStatus.mutate({
+                id: Number(active.id),
+                status: newStatus
+            });
         }
 
         setActiveId(null);

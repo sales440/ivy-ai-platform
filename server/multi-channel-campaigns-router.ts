@@ -13,7 +13,7 @@ export const multiChannelCampaignsRouter = router({
   /**
    * List all campaigns
    */
-  list: protectedProcedure.query(async () => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
     if (!db) {
       throw new Error("Database not available");
@@ -22,6 +22,7 @@ export const multiChannelCampaignsRouter = router({
     const campaigns = await db
       .select()
       .from(multiChannelCampaigns)
+      .where(eq(multiChannelCampaigns.companyId, ctx.user.companyId || 1))
       .orderBy(desc(multiChannelCampaigns.createdAt));
 
     return campaigns;
@@ -89,6 +90,7 @@ export const multiChannelCampaignsRouter = router({
 
       // Create campaign
       const [result] = await db.insert(multiChannelCampaigns).values({
+        companyId: ctx.user.companyId || 1, // Default to 1 if not present
         name: input.name,
         description: input.description,
         targetAudience: input.targetAudience,
