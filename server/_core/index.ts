@@ -63,6 +63,7 @@ async function ensureScheduledTasksTable() {
 }
 
 async function startServer() {
+  console.log("!!! STARTING SERVER - VERSION 1.0.3 - DEPLOYMENT CHECK !!!");
   await ensureScheduledTasksTable();
   const app = express();
 
