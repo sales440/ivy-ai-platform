@@ -10,6 +10,8 @@ import { LLM_PROMPTS, TRAINING_CATEGORIES } from "../config";
 import { invokeLLM } from "../../_core/llm";
 import { getDb } from "../../db";
 import { searchWeb } from "./web-search";
+import { agents } from "../../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 /**
  * Analyze performance of all agents
@@ -24,12 +26,11 @@ export async function analyzeAllAgentsPerformance(): Promise<AgentPerformance[]>
   }
 
   try {
-    // Get all agents
-    const agentsResult = await db.execute("SELECT * FROM agents WHERE status = 'active'");
-    const agents = agentsResult.rows as any[];
+    // Get all agents using Drizzle
+    const agentsList = await db.select().from(agents).where(eq(agents.status, 'active'));
 
     // Validate agents is iterable
-    if (!agents || !Array.isArray(agents)) {
+    if (!agentsList || !Array.isArray(agentsList)) {
       console.warn("[Agent Trainer] Agents query returned invalid data");
       return [];
     }
@@ -37,7 +38,7 @@ export async function analyzeAllAgentsPerformance(): Promise<AgentPerformance[]>
     const performances: AgentPerformance[] = [];
 
     // Analyze each agent
-    for (const agent of agents) {
+    for (const agent of agentsList) {
       try {
         const performance = await analyzeAgentPerformance(agent.id, agent.name);
         if (performance) {

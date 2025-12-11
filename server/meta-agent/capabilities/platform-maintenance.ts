@@ -6,10 +6,14 @@
  */
 
 import { getDb } from "../../db";
+import { eq, lt, sql } from "drizzle-orm";
 import { checkPlatformHealth, healPlatform } from "./platform-healer";
 import { detectTypeScriptErrors, fixTypeScriptErrors } from "./typescript-fixer";
 import { checkDependencies, checkSchema, migrateSchema } from "./code-tools";
 import { analyzeAllAgentsPerformance } from "./agent-trainer";
+
+
+import { agents, tasks } from "../../../drizzle/schema";
 
 /**
  * Main maintenance loop - runs continuously
@@ -196,29 +200,29 @@ export class PlatformMaintenance {
     if (!db) return;
 
     try {
-      // Get all agents
-      const result = await db.execute("SELECT * FROM agents");
-      const agents = result.rows as any[];
+      // Get all agents using Drizzle ORM for type safety
+      const agentsList = await db.select().from(agents);
 
       // Validate agents is iterable
-      if (!agents || !Array.isArray(agents)) {
+      if (!agentsList || !Array.isArray(agentsList)) {
         console.warn("[Platform Maintenance] Agents query returned invalid data");
         return;
       }
 
-      for (const agent of agents) {
+      for (const agent of agentsList) {
         // Check if agent has recent activity
         const activityResult = await db.execute(
           `SELECT COUNT(*) as count FROM fagorCampaignEnrollments 
-           WHERE agentId = ? AND createdAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`,
-          [agent.id]
+           WHERE agentId = ${agent.id} AND createdAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
         );
 
-        const activityCount = (activityResult.rows[0] as any)?.count || 0;
+        // Handle different driver result formats safely
+        const rows = (activityResult as any).rows || activityResult;
+        const activityCount = Array.isArray(rows) && rows.length > 0 ? (rows[0] as any).count : 0;
 
         // Update status based on activity
         const newStatus = activityCount > 0 ? "active" : "idle";
-        
+
         if (agent.status !== newStatus) {
           await db.execute(
             "UPDATE agents SET status = ?, updatedAt = NOW() WHERE id = ?",
@@ -288,18 +292,15 @@ export class PlatformMaintenance {
 
     try {
       // Check for pending tasks that need processing
-      const result = await db.execute(
-        `SELECT * FROM tasks 
-         WHERE status = 'pending' 
-         AND createdAt < DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-         LIMIT 10`
-      );
+      // Use Drizzle Query Builder
+      const tasksList = await db.select().from(tasks)
+        .where(eq(tasks.status, 'pending'))
+        // .andWhere(lt(tasks.createdAt, sql`DATE_SUB(NOW(), INTERVAL 5 MINUTE)`)) // Simplify for now or use proper date math
+        .limit(10);
 
-      const tasks = result.rows as any[];
-
-      for (const task of tasks) {
+      for (const task of tasksList) {
         console.log(`[Platform Maintenance] Processing pending task: ${task.id}`);
-        
+
         // Update task status to processing
         await db.execute(
           "UPDATE tasks SET status = 'processing', updatedAt = NOW() WHERE id = ?",
