@@ -3,7 +3,9 @@
 
 set -e  # Exit on error
 
-echo "🚀 Starting Ivy.AI Platform v1.0.1 (Fix Applied)..."
+echo "🚀 Starting Ivy.AI Platform v1.0.3 (Deployment Fix)..."
+echo "📦 Package Version:"
+grep '"version":' package.json
 
 # Run database migrations
 echo "📦 Running database migrations..."
