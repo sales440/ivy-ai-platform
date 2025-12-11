@@ -11,7 +11,7 @@ import { invokeLLM } from "../../_core/llm";
 import { getDb } from "../../db";
 import { searchWeb } from "./web-search";
 import { agents } from "../../../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 /**
  * Analyze performance of all agents
@@ -31,7 +31,7 @@ export async function analyzeAllAgentsPerformance(): Promise<AgentPerformance[]>
 
     // Validate agents is iterable
     if (!agentsList || !Array.isArray(agentsList)) {
-      console.warn("[Agent Trainer] Agents query returned invalid data");
+      console.warn("[Agent Trainer] Agents query returned invalid data:", typeof agentsList, agentsList);
       return [];
     }
 
@@ -61,7 +61,7 @@ export async function analyzeAllAgentsPerformance(): Promise<AgentPerformance[]>
  * Analyze performance of a single agent
  */
 export async function analyzeAgentPerformance(
-  agentId: string,
+  agentId: number,
   agentName: string
 ): Promise<AgentPerformance | null> {
   const db = await getDb();
@@ -69,13 +69,11 @@ export async function analyzeAgentPerformance(
 
   try {
     // Get campaign enrollments for this agent
-    const enrollmentsResult = await db.execute(
-      `SELECT * FROM fagorCampaignEnrollments 
-       WHERE agentId = ? 
-       AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)`,
-      [agentId]
-    );
-    const enrollments = enrollmentsResult.rows as any[];
+    const [enrollments] = await db.execute<any>(
+      sql`SELECT * FROM fagorCampaignEnrollments 
+       WHERE agentId = ${agentId} 
+       AND createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)`
+    ) as unknown as [any[], any];
 
     if (enrollments.length === 0) {
       return null;
@@ -120,7 +118,7 @@ export async function analyzeAgentPerformance(
     const successRate = enrollments.length > 0 ? (conversions / enrollments.length) * 100 : 0;
 
     return {
-      agentId,
+      agentId: agentId.toString(),
       agentName,
       metrics: {
         emailsSent,
@@ -264,22 +262,21 @@ async function findSuccessfulPatterns(agentId: string): Promise<any[]> {
 
   try {
     // Find campaigns with high conversion rates
-    const result = await db.execute(
-      `SELECT 
+    const [rows] = await db.execute<any>(
+      sql`SELECT 
         campaignName,
         COUNT(*) as total,
         SUM(CASE WHEN respondedAt IS NOT NULL THEN 1 ELSE 0 END) as conversions,
         (SUM(CASE WHEN respondedAt IS NOT NULL THEN 1 ELSE 0 END) / COUNT(*)) * 100 as conversionRate
        FROM fagorCampaignEnrollments
-       WHERE agentId = ?
+       WHERE agentId = ${agentId}
        GROUP BY campaignName
        HAVING conversionRate > 20
        ORDER BY conversionRate DESC
-       LIMIT 5`,
-      [agentId]
-    );
+       LIMIT 5`
+    ) as unknown as [any[], any];
 
-    return result.rows as any[];
+    return rows as any[];
   } catch (error: any) {
     console.error("[Agent Trainer] Error finding successful patterns:", error);
     return [];
@@ -303,15 +300,15 @@ export async function trainAgent(agentId: string): Promise<{
 
   try {
     // Get agent info
-    const agentResult = await db.execute("SELECT * FROM agents WHERE id = ?", [agentId]);
-    const agent = agentResult.rows[0] as any;
+    const [agentRows] = await db.execute<any>(sql`SELECT * FROM agents WHERE id = ${Number(agentId)}`) as unknown as [any[], any];
+    const agent = agentRows[0] as any;
 
     if (!agent) {
       throw new Error(`Agent not found: ${agentId}`);
     }
 
     // Analyze performance
-    const performance = await analyzeAgentPerformance(agentId, agent.name);
+    const performance = await analyzeAgentPerformance(Number(agentId), agent.name);
     if (!performance) {
       throw new Error(`Could not analyze performance for agent ${agentId}`);
     }
@@ -353,8 +350,8 @@ async function applyRecommendation(
 
   try {
     // Get current agent configuration
-    const result = await db.execute("SELECT configuration FROM agents WHERE id = ?", [agentId]);
-    const agent = result.rows[0] as any;
+    const [rows] = await db.execute<any>(sql`SELECT configuration FROM agents WHERE id = ${agentId}`) as unknown as [any[], any];
+    const agent = rows[0] as any;
 
     if (!agent) return;
 
@@ -386,8 +383,7 @@ async function applyRecommendation(
 
     // Save updated configuration
     await db.execute(
-      "UPDATE agents SET configuration = ?, updatedAt = NOW() WHERE id = ?",
-      [JSON.stringify(config), agentId]
+      sql`UPDATE agents SET configuration = ${JSON.stringify(config)}, updatedAt = NOW() WHERE id = ${agentId}`
     );
 
     console.log(`[Agent Trainer] Applied recommendation to agent ${agentId}: ${recommendation.recommendation}`);
@@ -404,8 +400,8 @@ export async function getAgentTrainingHistory(agentId: string): Promise<any[]> {
   if (!db) return [];
 
   try {
-    const result = await db.execute("SELECT configuration FROM agents WHERE id = ?", [agentId]);
-    const agent = result.rows[0] as any;
+    const [rows] = await db.execute<any>(sql`SELECT configuration FROM agents WHERE id = ${agentId}`) as unknown as [any[], any];
+    const agent = rows[0] as any;
 
     if (!agent || !agent.configuration) return [];
 

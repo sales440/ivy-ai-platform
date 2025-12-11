@@ -205,28 +205,26 @@ export class PlatformMaintenance {
 
       // Validate agents is iterable
       if (!agentsList || !Array.isArray(agentsList)) {
-        console.warn("[Platform Maintenance] Agents query returned invalid data");
+        console.warn("[Platform Maintenance] Agents query returned invalid data:", typeof agentsList, agentsList);
         return;
       }
 
       for (const agent of agentsList) {
         // Check if agent has recent activity
-        const activityResult = await db.execute(
-          `SELECT COUNT(*) as count FROM fagorCampaignEnrollments 
+        // Check if agent has recent activity
+        const [activityRows] = await db.execute<any>(
+          sql`SELECT COUNT(*) as count FROM fagorCampaignEnrollments 
            WHERE agentId = ${agent.id} AND createdAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
-        );
+        ) as unknown as [any[], any];
 
-        // Handle different driver result formats safely
-        const rows = (activityResult as any).rows || activityResult;
-        const activityCount = Array.isArray(rows) && rows.length > 0 ? (rows[0] as any).count : 0;
+        const activityCount = activityRows?.[0]?.count || 0;
 
         // Update status based on activity
         const newStatus = activityCount > 0 ? "active" : "idle";
 
         if (agent.status !== newStatus) {
           await db.execute(
-            "UPDATE agents SET status = ?, updatedAt = NOW() WHERE id = ?",
-            [newStatus, agent.id]
+            sql`UPDATE agents SET status = ${newStatus}, updatedAt = NOW() WHERE id = ${agent.id}`
           );
           console.log(`[Platform Maintenance] Updated agent ${agent.name} status to ${newStatus}`);
         }
@@ -303,16 +301,15 @@ export class PlatformMaintenance {
 
         // Update task status to processing
         await db.execute(
-          "UPDATE tasks SET status = 'processing', updatedAt = NOW() WHERE id = ?",
-          [task.id]
+          sql`UPDATE tasks SET status = 'processing', updatedAt = NOW() WHERE id = ${task.id}`
         );
 
         // Process task based on type
         // (Implementation depends on task type)
       }
     } catch (error: any) {
-      // Tasks table might not exist yet
-      console.log("[Platform Maintenance] Tasks table not available yet");
+      // Tasks table might not exist yet or other error
+      console.error("[Platform Maintenance] Error processing pending tasks:", error);
     }
   }
 
