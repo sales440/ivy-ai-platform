@@ -64,7 +64,7 @@ COPY --from=builder /app/drizzle.config.ts ./
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/campaigns ./campaigns
-RUN chmod +x ./scripts/start-production.sh
+RUN chmod +x ./scripts/start-latest.sh
 
 # Set environment
 ENV NODE_ENV=production
@@ -77,4 +77,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application with migrations
-CMD ["sh", "scripts/start-production.sh"]
+CMD ["sh", "scripts/start-latest.sh"]
