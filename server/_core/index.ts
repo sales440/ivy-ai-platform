@@ -64,6 +64,39 @@ async function ensureScheduledTasksTable() {
 
 async function startServer() {
   console.log("!!! STARTING SERVER - VERSION 1.0.3 - DEPLOYMENT CHECK !!!");
+
+  // Run database migrations on startup
+  try {
+    console.log('[Startup] Running database migrations...');
+    const { migrate } = await import("drizzle-orm/mysql2/migrator");
+    const { db } = await import("../db");
+    if (db) {
+      // We need to import the migration function and run it. 
+      // Note: Drizzle's 'migrate' function expects a database connection.
+      // We need to point to the migrations folder.
+      // However, 'migrate' runs on the 'db' instance.
+      // We need the relative path to the migrations folder.
+      // Since we are in dist/index.js (production), the migrations folder might not be where we expect effectively.
+      // But usually it's in a 'drizzle' folder next to source.
+
+      // Safer approach for now: Use the package.json script via child_process if possible, 
+      // OR better: use child_process to run 'npm run db:push' if we are in an environment where we can spawn.
+      // But 'db:push' is aggressive. 'migrate' is safer.
+
+      // Let's try running the migration using the ORM's migrator if we can find the folder. 
+      // Assuming 'drizzle' folder is at the root.
+
+      // Actually, the simplest fix for Railway is often to run the migration command as part of the start command or in the code.
+      // Let's use the code approach with 'migrate'.
+
+      await migrate(db, { migrationsFolder: "./drizzle" });
+      console.log('[Startup] ✅ Database migrations completed successfully');
+    }
+  } catch (error) {
+    console.error('[Startup] ⚠️ Database migration failed:', error);
+    // Continue anyway, maybe tables exist but migration tracking failed
+  }
+
   await ensureScheduledTasksTable();
   const app = express();
 
