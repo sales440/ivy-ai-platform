@@ -39,6 +39,14 @@ export class PlatformMaintenance {
     // Run initial checks
     await this.runMaintenanceCycle();
 
+    // Ensure default agents exist (Auto-Seed)
+    try {
+      const { seedDefaultAgents } = await import("./agent-seeder");
+      await seedDefaultAgents();
+    } catch (err) {
+      console.error("[Platform Maintenance] Failed to run agent seeder:", err);
+    }
+
     // Schedule periodic maintenance (every 30 minutes)
     this.maintenanceIntervalId = setInterval(
       () => this.runMaintenanceCycle(),

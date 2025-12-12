@@ -41,6 +41,7 @@ const menuItems = [
   { icon: Mail, label: "Campaign Metrics", path: "/analytics/campaigns" },
   { icon: Mail, label: "Performance de Emails", path: "/analytics/email-performance" },
   { icon: Zap, label: "Multi-Channel Campaigns", path: "/multi-channel-campaigns" },
+  { icon: LayoutDashboard, label: "Dashboard de Campañas", path: "/campaigns-dashboard" }, // Added explicit link
   { icon: Briefcase, label: "Executive Summary", path: "/executive-summary" },
   { icon: Bot, label: "Agents Dashboard", path: "/agents-dashboard" },
   { icon: Bot, label: "Agent Management", path: "/agents/manage" },
