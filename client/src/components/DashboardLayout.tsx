@@ -43,6 +43,8 @@ const menuItems = [
   { icon: Zap, label: "Multi-Channel Campaigns", path: "/multi-channel-campaigns" },
   { icon: LayoutDashboard, label: "Dashboard de Campañas", path: "/campaigns-dashboard" }, // Added explicit link
   { icon: Briefcase, label: "Executive Summary", path: "/executive-summary" },
+  { icon: Bot, label: "Panel Meta Agente", path: "/meta-agent" }, // Added missing link
+  { icon: Bot, label: "Dashboard Meta Agente", path: "/meta-agent-dashboard" }, // Added missing link
   { icon: Bot, label: "Agents Dashboard", path: "/agents-dashboard" },
   { icon: Bot, label: "Agent Management", path: "/agents/manage" },
   { icon: BookOpen, label: "Agent Training", path: "/agents/training" },
