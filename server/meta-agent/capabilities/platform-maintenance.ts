@@ -205,7 +205,14 @@ export class PlatformMaintenance {
 
       // Validate agents is iterable
       if (!agentsList || !Array.isArray(agentsList)) {
-        console.warn("[Platform Maintenance] Agents query returned invalid data:", typeof agentsList, agentsList);
+        console.warn("[Platform Maintenance] Agents query returned invalid data:", typeof agentsList);
+        console.warn("[Platform Maintenance] RAW AGENTS DATA:", JSON.stringify(agentsList, null, 2));
+
+        // Attempt to handle if it's a raw MySQL2 result [rows, fields]
+        if (Array.isArray((agentsList as any)[0])) {
+          console.log("[Platform Maintenance] Detected raw MySQL result, fixing...");
+          // This logic shouldn't be needed with Drizzle, but debugging
+        }
         return;
       }
 

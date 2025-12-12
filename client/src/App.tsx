@@ -58,7 +58,7 @@ import ExecutiveSummary from "@/pages/ExecutiveSummary";
 import CommunicationsDashboard from "@/pages/CommunicationsDashboard";
 import MetaAgentDashboard from "@/pages/MetaAgentDashboard";
 import CyberDashboard from "@/pages/CyberDashboard";
-import CampaignsDashboard from "@/pages/CampaignsDashboard";
+import CampaignsDashboard from "./pages/CampaignsDashboard";
 
 function Router() {
   return (
@@ -125,6 +125,9 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
+      <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, background: 'blue', color: 'white', padding: '5px' }}>
+        APP_MOUNTED_DEBUG_CHECK
+      </div>
       <ThemeProvider
         defaultTheme="light"
       // switchable
