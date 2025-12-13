@@ -9,7 +9,7 @@ grep '"version":' package.json
 
 # Run database migrations
 echo "📦 Running database migrations..."
-pnpm db:push || echo "⚠️  Migration failed or no changes needed"
+pnpm db:migrate || echo "⚠️  Migration failed or no changes needed"
 
 # Ensure notifications table exists
 echo "🔔 Ensuring notifications table exists..."
