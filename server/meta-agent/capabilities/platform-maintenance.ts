@@ -230,13 +230,11 @@ export class PlatformMaintenance {
 
       // Double check if it's the [rows, fields] pattern even if it IS an array
       if (Array.isArray(agentsList) && agentsList.length > 0 && Array.isArray((agentsList as any)[0])) {
-        // It looks like [[...rows], [...fields]]
-        // Check if the first element looks like an agent row (has 'id')
-        const firstRow = (agentsList as any)[0][0];
-        if (firstRow && firstRow.id) {
-          console.log("[Platform Maintenance] Fixing nested agent result");
-          processedAgentsList = (agentsList as any)[0];
-        }
+        // It looks like [[...rows], [...fields]]. In raw MySQL2, the first element is the rows array.
+        // Even if empty [], it is an array. Agents are objects {id: 1}, so they are never arrays.
+        // Therefore, if the first element is an array, we MUST unwrap it.
+        console.log("[Platform Maintenance] Unwrapping nested agent result (typical MySQL2 raw packet)");
+        processedAgentsList = (agentsList as any)[0];
       }
 
       // Check validation again on the processed list
