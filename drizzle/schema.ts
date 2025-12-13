@@ -270,7 +270,9 @@ export const agentCommunications = mysqlTable("agentCommunications", {
   id: int("id").autoincrement().primaryKey(),
   communicationId: varchar("communicationId", { length: 64 }).notNull().unique(),
   fromAgent: varchar("fromAgent", { length: 100 }).notNull(), // Agent type string
+  fromAgentId: varchar("fromAgentId", { length: 100 }), // Legacy restoration to prevent interactive prompt
   toAgent: varchar("toAgent", { length: 100 }).notNull(), // Agent type string
+  toAgentId: varchar("toAgentId", { length: 100 }), // Legacy restoration
   messageType: varchar("messageType", { length: 100 }).notNull(),
   content: text("content").notNull(), // JSON string content
   status: mysqlEnum("status", ["pending", "delivered", "failed"]).default("pending").notNull(),
