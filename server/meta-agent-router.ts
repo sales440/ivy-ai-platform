@@ -251,4 +251,25 @@ export const metaAgentRouter = router({
       lastAudit: status.lastAudit,
     };
   }),
+  /**
+   * Trigger Real-Time Web Scan (Market Intelligence)
+   */
+  triggerWebScan: protectedProcedure
+    .input(z.object({
+      intensity: z.enum(['standard', 'deep']).optional().default('standard')
+    }).optional())
+    .mutation(async ({ input }) => {
+      // Trigger the specialized market intelligence cycle
+      const { triggerMarketIntelligenceCycle } = await import(
+        "./meta-agent/capabilities/market-intelligence-scheduler"
+      );
+
+      // Run it in the background so request returns immediately
+      triggerMarketIntelligenceCycle().catch(console.error);
+
+      return {
+        success: true,
+        message: "Web Scan initiated. Intelligence Hub will update shortly."
+      };
+    }),
 });

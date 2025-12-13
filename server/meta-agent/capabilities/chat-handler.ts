@@ -6,6 +6,7 @@
  */
 
 import type { ChatMessage } from "../types";
+import { META_AGENT_SYSTEM_PROMPT } from "../system-prompt";
 import { META_AGENT_COMMANDS, LLM_PROMPTS } from "../config";
 import { invokeLLM } from "../../_core/llm";
 import { metaAgent } from "../index";
@@ -610,119 +611,7 @@ async function generateConversationalResponse(
       messages: [
         {
           role: "system",
-          content: `You are the Meta-Agent, an autonomous AI assistant that maintains the Ivy.AI platform 24/7.
-
-You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
-
-**IMPORTANT: You have EXACTLY 130 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
-
-**Your 130 tools organized by 18 categories:**
-
-**=== ORIGINAL TOOLS (49) ===**
-
-**👥 Gestión de Agentes (11 tools):**
-1. createAgent, 2. pauseAgent, 3. restartAgent, 4. updateAgentStatus, 5. cloneAgent, 6. deleteAgent, 7. trainAgent, 8. bulkUpdateAgents, 9. getAgentMetrics, 10. compareAgentPerformance, 11. exportMetrics
-
-**📈 Campañas & Workflows (9 tools):**
-12. pauseCampaign, 13. adjustCampaignBudget, 14. analyzeCampaignROI, 15. createCampaignFromTemplate, 16. scheduleCampaign, 17. createWorkflow, 18. pauseWorkflow, 19. optimizeWorkflow, 20. retryFailedWorkflow
-
-**💾 Base de Datos (5 tools):**
-21. runDatabaseMigration, 22. cleanupOrphanedData, 23. optimizeDatabaseIndexes, 24. backupDatabase, 25. analyzeDatabasePerformance
-
-**🔍 Monitoreo (5 tools):**
-26. createAlert, 27. analyzeSystemLogs, 28. monitorResourceUsage, 29. detectAnomalies, 30. generateHealthReport
-
-**🛠️ Código & Deployment (6 tools):**
-31. fixTypeScriptErrors, 32. runTests, 33. rollbackDeployment, 34. clearCache, 35. restartServer, 36. updateDependencies
-
-**📈 Analytics (5 tools):**
-37. generatePerformanceReport, 38. identifyBottlenecks, 39. predictResourceNeeds, 40. compareAgentPerformance, 41. exportMetrics
-
-**🔒 Seguridad (4 tools):**
-42. scanSecurityVulnerabilities, 43. updateSecurityPatches, 44. auditUserPermissions, 45. detectSuspiciousActivity
-
-**📧 Comunicación (4 tools):**
-46. notifyOwner, 47. createTicket, 48. sendSlackAlert, 49. emailReport
-
-**=== ADVANCED TOOLS (60) ===**
-
-**🧠 Auto-Aprendizaje & Optimización (8 tools):**
-50. analyzeUserBehavior, 51. predictSystemLoad, 52. optimizeDatabaseQueriesAdvanced, 53. learnFromErrors, 54. suggestCodeImprovements, 55. autoTunePerformance, 56. detectPatterns, 57. generateInsights
-
-**🔗 Integración & Conectividad (10 tools):**
-58. connectToAPI, 59. syncWithCRM, 60. importFromCSV, 61. exportToGoogleSheets, 62. sendToWebhook, 63. pullFromZapier, 64. pushToSlack, 65. syncCalendar, 66. fetchFromNotion, 67. integrateStripe
-
-**⚡ Automatización Avanzada (8 tools):**
-68. scheduleTask, 69. createRecurringJob, 70. pauseAllCampaigns, 71. resumeAllCampaigns, 72. bulkUpdateLeads, 73. autoAssignLeads, 74. triggerWorkflow, 75. chainWorkflows
-
-**📈 Análisis & Reportes (7 tools):**
-76. generateDailyReport, 77. generateWeeklyReport, 78. compareTimeframes, 79. detectAnomaliesAdvanced, 80. forecastRevenue, 81. calculateROI, 82. visualizeData
-
-**🔐 Seguridad & Compliance (6 tools):**
-83. auditAccessLogs, 84. detectSuspiciousLogin, 85. enforceRateLimits, 86. rotateAPIKeys, 87. checkGDPRCompliance, 88. anonymizeData
-
-**💡 Inteligencia de Negocio (8 tools):**
-89. identifyChurnRisk, 90. recommendNextAction, 91. scoreLeadQuality, 92. optimizeCampaignBudget, 93. predictConversion, 94. segmentAudience, 95. personalizeContent, 96. detectBestTime
-
-**🚀 DevOps & Infraestructura (7 tools):**
-97. scaleResources, 98. createBackup, 99. restoreBackup, 100. monitorUptime, 101. deployToProduction, 102. rollbackDeploymentAdvanced, 103. checkDiskSpace
-
-**🎯 Comunicación Inteligente (6 tools):**
-104. generateEmailTemplate, 105. optimizeSubjectLine, 106. translateContent, 107. summarizeConversation, 108. extractKeyPoints, 109. generateResponse
-
-**=== MARKET INTELLIGENCE & AUTO-LEARNING (15 NEW TOOLS) ===**
-
-**🌐 Market Intelligence (10 tools):**
-110. searchWeb - Buscar información en Internet en tiempo real
-111. monitorCompetitors - Monitorear sitios web de competidores
-112. detectMarketTrends - Detectar tendencias e innovaciones del mercado
-113. scrapeWebPage - Extraer contenido de páginas web
-114. trainAllAgents - Capacitar a todos los agentes con market intelligence
-115. updateKnowledgeBase - Actualizar knowledge base automáticamente
-116. runMarketIntelligenceCycle - Ejecutar ciclo completo: monitorear → analizar → aprender → capacitar
-117. analyzeCompetitorPricing - Analizar precios de competidores
-118. findBestPractices - Buscar mejores prácticas de la industria
-119. generateMarketReport - Generar reporte completo de inteligencia de mercado
-
-**📞 IvyCall Specialized Training (5 tools):**
-120. trainIvyCall - Capacitar a IvyCall con scripts frescos y técnicas actualizadas
-121. generateCallScripts - Generar scripts de llamadas basados en tendencias del mercado
-122. discoverEngagementTechniques - Descubrir técnicas de enganche modernas
-123. generateObjectionResponses - Generar respuestas a objeciones actuales
-124. optimizeValuePropositions - Optimizar propuestas de valor con market intelligence
-
-**🎯 NUEVAS CAPACIDADES DE AUTO-APRENDIZAJE:**
-- Acceso a Internet en tiempo real para buscar información actualizada
-- Monitoreo automático de competidores y tendencias del mercado
-- Aprendizaje continuo basado en mejores prácticas de la industria
-- Capacitación automática de todos los agentes (Prospect, Closer, Solve, Logic, Talent, Insight, IvyCall)
-- Actualización continua de scripts de llamadas para IvyCall con técnicas frescas de enganche
-
-**When users ask about your capabilities:**
-- Be SPECIFIC: "Tengo exactamente 130 herramientas organizadas en 18 categorías (49 originales + 60 avanzadas + 15 de market intelligence + 6 de mantenimiento)"
-- Offer to list them: "¿Quieres que te las liste todas? Escribe 'help'"
-
-**When users ask you to do something:**
-1. Use the appropriate tool to execute the action
-2. Then explain what you did in a friendly way
-
-**When users greet you or ask casual questions, respond naturally and warmly.**
-
-Current system status:
-- TypeScript errors: ${tsStats.total}
-- Platform health: ${health.status}
-- Active agents: ${performances.length}
-- Running tasks: ${status.activeTasks}
-
-Be proactive, helpful, and take action. You're not just an advisor - you're an executor with 130 powerful tools.
-
-**CRITICAL: You can now access the Internet in real-time to:**
-- Search for current market trends and competitor information
-- Learn best practices from the industry
-- Automatically train all agents with fresh knowledge
-- Keep IvyCall updated with modern call scripts and engagement techniques
-
-When users ask about market intelligence or training agents, USE these new capabilities proactively.`
+          content: META_AGENT_SYSTEM_PROMPT
         },
         { role: "user", content: userMessage },
       ],
@@ -749,7 +638,7 @@ When users ask about market intelligence or training agents, USE these new capab
         const toolName = toolCall.function.name;
         const toolArgs = JSON.parse(toolCall.function.arguments);
 
-        console.log(`[Chat Handler] Executing tool: ${toolName}`, toolArgs);
+        console.log(`[Chat Handler] Executing tool: ${toolName} `, toolArgs);
         const result = await executeExtendedToolCall(toolName, toolArgs);
         toolResults.push(result);
       }
@@ -759,7 +648,7 @@ When users ask about market intelligence or training agents, USE these new capab
         messages: [
           {
             role: "system",
-            content: `You are the Meta-Agent. You just executed some actions. Now explain to the user what you did in a friendly, conversational way in Spanish.`
+            content: `You are the Meta - Agent.You just executed some actions.Now explain to the user what you did in a friendly, conversational way in Spanish.`
           },
           { role: "user", content: userMessage },
           { role: "assistant", content: message.content || "", tool_calls: message.tool_calls },
@@ -793,18 +682,18 @@ When users ask about market intelligence or training agents, USE these new capab
     // Provide helpful fallback based on error type
     if (error.message?.includes('timeout')) {
       return {
-        response: `¡Hola! Estoy experimentando un poco de latencia en este momento. Mientras tanto, puedes usar comandos como:\n\n• **status** - Ver el estado del sistema\n• **help** - Ver todos los comandos disponibles\n• **show tasks** - Ver tareas activas\n\n¿En qué puedo ayudarte?`,
+        response: `¡Hola! Estoy experimentando un poco de latencia en este momento.Mientras tanto, puedes usar comandos como: \n\n• ** status ** - Ver el estado del sistema\n• ** help ** - Ver todos los comandos disponibles\n• ** show tasks ** - Ver tareas activas\n\n¿En qué puedo ayudarte ? `,
       };
     }
 
     if (error.message?.includes('network') || error.message?.includes('ENOTFOUND')) {
       return {
-        response: `¡Hola! Hay un problema de conectividad temporal. Puedo ayudarte con comandos específicos como:\n\n• **status** - Estado del sistema\n• **fix errors** - Corregir errores\n• **train agents** - Entrenar agentes\n\n¿Qué necesitas?`,
+        response: `¡Hola! Hay un problema de conectividad temporal.Puedo ayudarte con comandos específicos como: \n\n• ** status ** - Estado del sistema\n• ** fix errors ** - Corregir errores\n• ** train agents ** - Entrenar agentes\n\n¿Qué necesitas ? `,
       };
     }
 
     return {
-      response: `¡Hola! Tuve un problema procesando tu mensaje de forma conversacional, pero puedo ayudarte con comandos específicos:\n\n• **status** - Ver estado del sistema\n• **help** - Ver todos los comandos\n• **show metrics** - Ver métricas\n\n¿Qué comando quieres ejecutar?`,
+      response: `¡Hola! Tuve un problema procesando tu mensaje de forma conversacional, pero puedo ayudarte con comandos específicos: \n\n• ** status ** - Ver estado del sistema\n• ** help ** - Ver todos los comandos\n• ** show metrics ** - Ver métricas\n\n¿Qué comando quieres ejecutar ? `,
     };
   }
 }
@@ -821,17 +710,18 @@ async function handlePredictCommand(): Promise<{ response: string }> {
   }
 
   const response = `
-**🔮 Visión Predictiva (Próximos 30 días)**
+      **🔮 Visión Predictiva(Próximos 30 días) **
 
-${results.map(r => `
+        ${results.map(r => `
 **Agente: ${r.agentId}**
 - Métrica: ${r.metric}
 - Actual: ${r.currentValue}
 - Predicción: ${r.predictedValue}
 - Tendencia: ${r.trend === 'up' ? '📈 Subiendo' : r.trend === 'down' ? '📉 Bajando' : '➡️ Estable'} (${r.confidence}% confianza)
 ${r.recommendation ? `💡 ${r.recommendation}` : ''}
-`).join('\n')}
-  `.trim();
+`).join('\n')
+    }
+    `.trim();
 
   return { response };
 }
@@ -854,7 +744,8 @@ async function handleWhatsAppCommand(message: string): Promise<{ response: strin
 
   return {
     response: result.success
-      ? `✅ Mensaje de WhatsApp enviado a ${to} (ID: ${result.messageId || 'simulado'})`
+      ? `✅ Mensaje de WhatsApp enviado a ${to} (ID: ${result.messageId || 'simulado'
+      })`
       : "❌ Error enviando mensaje."
   };
 }
@@ -877,7 +768,8 @@ async function handleCallCommand(message: string): Promise<{ response: string }>
 
   return {
     response: result.success
-      ? `✅ Llamada iniciada a ${to} (SID: ${result.callSid || 'simulado'})`
+      ? `✅ Llamada iniciada a ${to} (SID: ${result.callSid || 'simulado'
+      })`
       : "❌ Error iniciando llamada."
   };
 }
@@ -900,7 +792,7 @@ async function handlePRCommand(message: string): Promise<{ response: string }> {
 
   return {
     response: result.success
-      ? `✅ Pull Request creado exitosamente: ${result.prUrl}`
+      ? `✅ Pull Request creado exitosamente: ${result.prUrl} `
       : "❌ Error creando Pull Request."
   };
 }

@@ -1,484 +1,202 @@
-import { useEffect, useState } from "react";
+/**
+ * Agents Dashboard - Neural Nexus
+ * 
+ * Detailed configuration and monitoring for all AI agents.
+ */
+
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-} from "recharts";
-import { 
-  Bot, Mail, TrendingUp, DollarSign, Target, Clock, 
-  RefreshCw, Calendar, Filter, Download 
-} from "lucide-react";
-import DashboardLayout from "@/components/DashboardLayout";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AgentComparison } from "@/components/AgentComparison";
-import { AgentRecommendations } from "@/components/AgentRecommendations";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface AgentMetrics {
-  agentId: string;
-  agentName: string;
-  department: string;
-  emailsSent: number;
-  emailsOpened: number;
-  emailsClicked: number;
-  leadsGenerated: number;
-  conversions: number;
-  conversionRate: number;
-  openRate: number;
-  clickRate: number;
-  avgResponseTime: number; // hours
-  roi: number;
-  campaignName: string;
-}
-
-const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+import { LayoutDashboard, Bot, Settings, Activity, Power, MessageSquare, BrainCircuit } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function AgentsDashboard() {
-  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
-  const [selectedAgent, setSelectedAgent] = useState<string>('all');
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [, setLocation] = useLocation();
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
-  // Export to CSV function
-  const handleExportCSV = () => {
-    if (!metrics || !metrics.agents || metrics.agents.length === 0) {
-      return;
+  // Queries
+  const { data: agents } = trpc.metaAgent.getAgentPerformance.useQuery();
+  const { data: status } = trpc.metaAgent.getStatus.useQuery();
+
+  // Mock data for display until real data is full
+  const agentConfigs = [
+    {
+      id: "ivy-prospect",
+      name: "Ivy-Prospect",
+      role: "Lead Generation",
+      description: "Scrapes LinkedIn and enriches lead data.",
+      status: "active",
+      efficiency: 98,
+      tasks: 1240,
+      color: "text-emerald-400",
+      bg: "bg-emerald-950/30",
+      border: "border-emerald-500/30"
+    },
+    {
+      id: "ivy-closer",
+      name: "Ivy-Closer",
+      role: "Sales Negotiation",
+      description: "Engages leads via email and books meetings.",
+      status: "active",
+      efficiency: 94,
+      tasks: 850,
+      color: "text-blue-400",
+      bg: "bg-blue-950/30",
+      border: "border-blue-500/30"
+    },
+    {
+      id: "logic",
+      name: "Logic",
+      role: "Campaign Optimization",
+      description: "Analyzes A/B tests and adjusts strategy.",
+      status: "active",
+      efficiency: 99,
+      tasks: 3400,
+      color: "text-amber-400",
+      bg: "bg-amber-950/30",
+      border: "border-amber-500/30"
+    },
+    {
+      id: "insight",
+      name: "Insight",
+      role: "Market Intelligence",
+      description: "Monitors news and trends 24/7.",
+      status: "active",
+      efficiency: 100,
+      tasks: 5600,
+      color: "text-purple-400",
+      bg: "bg-purple-950/30",
+      border: "border-purple-500/30"
     }
-
-    // CSV headers
-    const headers = [
-      'Agent ID',
-      'Agent Name',
-      'Department',
-      'Campaign',
-      'Emails Sent',
-      'Emails Opened',
-      'Emails Clicked',
-      'Open Rate (%)',
-      'Click Rate (%)',
-      'Leads Generated',
-      'Conversions',
-      'Conversion Rate (%)',
-      'Avg Response Time (hours)',
-      'ROI (%)'
-    ];
-
-    // CSV rows
-    const rows = metrics.agents.map(agent => [
-      agent.agentId,
-      agent.agentName,
-      agent.department,
-      agent.campaignName,
-      agent.emailsSent,
-      agent.emailsOpened,
-      agent.emailsClicked,
-      agent.openRate.toFixed(1),
-      agent.clickRate.toFixed(1),
-      agent.leadsGenerated,
-      agent.conversions,
-      agent.conversionRate.toFixed(1),
-      agent.avgResponseTime.toFixed(1),
-      agent.roi.toFixed(0)
-    ]);
-
-    // Create CSV content
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.join(','))
-    ].join('\n');
-
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `fagor-agents-metrics-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Query agent metrics
-  const { data: metrics, isLoading, refetch } = trpc.fagor.getAgentMetrics.useQuery({
-    dateRange,
-    agentId: selectedAgent === 'all' ? undefined : selectedAgent,
-  });
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    if (!autoRefresh) return;
-    
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, refetch]);
-
-  if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-10 w-64" />
-            <Skeleton className="h-10 w-32" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-          <Skeleton className="h-96" />
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  const agents = metrics?.agents || [];
-  const filteredAgents = agents; // All agents (filtering already done by query)
-  const totalMetrics = metrics?.totals || {
-    emailsSent: 0,
-    emailsOpened: 0,
-    emailsClicked: 0,
-    leadsGenerated: 0,
-    conversions: 0,
-    avgConversionRate: 0,
-    avgOpenRate: 0,
-    avgClickRate: 0,
-    totalROI: 0,
-  };
-
-  // Prepare chart data
-  const conversionData = agents.map(agent => ({
-    name: agent.agentName,
-    rate: agent.conversionRate,
-    conversions: agent.conversions,
-  }));
-
-  const emailPerformanceData = agents.map(agent => ({
-    name: agent.agentName,
-    opens: agent.openRate,
-    clicks: agent.clickRate,
-  }));
-
-  const roiData = agents.map(agent => ({
-    name: agent.agentName,
-    roi: agent.roi,
-  }));
-
-  const campaignDistribution = agents.map(agent => ({
-    name: agent.campaignName,
-    value: agent.emailsSent,
-  }));
+  ];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Agents Dashboard</h1>
-            <p className="text-muted-foreground">
-              Individual performance metrics for FAGOR AI agents
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            <Button
-              variant={autoRefresh ? "default" : "outline"}
-              size="sm"
-              onClick={() => setAutoRefresh(!autoRefresh)}
-            >
-              <Clock className="h-4 w-4 mr-2" />
-              Auto-refresh {autoRefresh ? 'ON' : 'OFF'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              disabled={!metrics || metrics.agents.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
-          </div>
-        </div>
-
-        {/* Filters */}
+    <div className="min-h-screen bg-black text-slate-200 font-sans">
+      {/* Header */}
+      <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-950/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="90d">Last 90 days</SelectItem>
-                <SelectItem value="all">All time</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/meta-agent")}>
+            <LayoutDashboard className="h-5 w-5 text-slate-400" />
+          </Button>
+          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+            <Bot className="h-6 w-6 text-blue-500" />
+            Agent Command Center
+          </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="border-green-900 text-green-400 bg-green-950/30">
+            Corrective Training Active
+          </Badge>
+        </div>
+      </header>
 
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Agents</SelectItem>
-                {agents.map(agent => (
-                  <SelectItem key={agent.agentId} value={agent.agentId}>
-                    {agent.agentName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      <div className="p-8 max-w-[1600px] mx-auto space-y-8">
+        {/* Agent Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {agentConfigs.map((agent) => (
+            <Card
+              key={agent.id}
+              className={`bg-slate-950 border transition-all duration-300 hover:shadow-lg cursor-pointer ${agent.border} ${selectedAgent === agent.id ? "ring-2 ring-blue-500" : ""}`}
+              onClick={() => setSelectedAgent(agent.id)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div className={`p-2 rounded-lg ${agent.bg}`}>
+                    <Bot className={`h-6 w-6 ${agent.color}`} />
+                  </div>
+                  <Switch checked={agent.status === "active"} />
+                </div>
+                <CardTitle className="mt-4 flex flex-col">
+                  <span className="text-lg font-bold text-slate-100">{agent.name}</span>
+                  <span className="text-xs font-normal text-slate-500">{agent.role}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-slate-400 h-10">{agent.description}</p>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-slate-500">
+                    <span>Efficiency</span>
+                    <span className={agent.color}>{agent.efficiency}%</span>
+                  </div>
+                  <Progress value={agent.efficiency} className="h-1 bg-slate-900" indicatorClassName={agent.color.replace('text-', 'bg-')} />
+                </div>
+
+                <div className="flex items-center gap-4 pt-2 text-xs text-slate-500 font-mono">
+                  <div className="flex items-center gap-1">
+                    <Activity className="h-3 w-3" />
+                    {agent.tasks} Ops
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <BrainCircuit className="h-3 w-3" />
+                    v2.1
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Tabs for Overview and Comparison */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="comparison">Comparison</TabsTrigger>
-            <TabsTrigger value="recommendations">AI Recommendations</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Emails Sent</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
+        {/* Configuration Panel (conditionally rendered or always visible for selected) */}
+        <Card className="bg-slate-950 border-slate-800">
+          <Tabs defaultValue="config">
+            <CardHeader className="border-b border-slate-800 pb-0">
+              <div className="flex justify-between items-center mb-4">
+                <CardTitle>Global Agent Configuration</CardTitle>
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Advanced Settings
+                </Button>
+              </div>
+              <TabsList className="bg-slate-900">
+                <TabsTrigger value="config">Configuration</TabsTrigger>
+                <TabsTrigger value="memory">Shared Memory</TabsTrigger>
+                <TabsTrigger value="logs">Training Logs</TabsTrigger>
+              </TabsList>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalMetrics.emailsSent}</div>
-              <p className="text-xs text-muted-foreground">
-                {totalMetrics.emailsOpened} opened ({totalMetrics.avgOpenRate.toFixed(1)}%)
-              </p>
-            </CardContent>
-          </Card>
+            <CardContent className="p-6">
+              <TabsContent value="config" className="mt-0 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-slate-300">Autonomy Levels</h3>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-slate-900 border border-slate-800">
+                      <div className="space-y-1">
+                        <div className="font-medium text-slate-200">Auto-Approval Mode</div>
+                        <div className="text-xs text-slate-500">Allow agents to execute campaigns without human review</div>
+                      </div>
+                      <Switch />
+                    </div>
+                    <div className="flex items-center justify-between p-4 rounded-lg bg-slate-900 border border-slate-800">
+                      <div className="space-y-1">
+                        <div className="font-medium text-slate-200">Budget Scaling</div>
+                        <div className="text-xs text-slate-500">Automatically increase budget for high-performing campaigns</div>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Conversions</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalMetrics.conversions}</div>
-              <p className="text-xs text-muted-foreground">
-                {totalMetrics.avgConversionRate.toFixed(1)}% conversion rate
-              </p>
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-slate-300">Communication Style</h3>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button variant="outline" className="border-blue-500/50 text-blue-400 bg-blue-950/20">Assertive</Button>
+                      <Button variant="outline" className="border-slate-700 text-slate-400 hover:bg-slate-800">Balanced</Button>
+                      <Button variant="outline" className="border-slate-700 text-slate-400 hover:bg-slate-800">Consultative</Button>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Current Prompt: "Act as a Senior Director. Be concise but empathetic..."
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
             </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalMetrics.avgClickRate.toFixed(1)}%</div>
-              <p className="text-xs text-muted-foreground">
-                {totalMetrics.emailsClicked} total clicks
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total ROI</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalMetrics.totalROI.toFixed(0)}%</div>
-              <p className="text-xs text-muted-foreground">
-                Across all campaigns
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Agent Performance Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Agent Performance Overview</CardTitle>
-            <CardDescription>Detailed metrics for each AI agent</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Agent</th>
-                    <th className="text-left p-2">Campaign</th>
-                    <th className="text-right p-2">Emails Sent</th>
-                    <th className="text-right p-2">Open Rate</th>
-                    <th className="text-right p-2">Click Rate</th>
-                    <th className="text-right p-2">Conversions</th>
-                    <th className="text-right p-2">Conv. Rate</th>
-                    <th className="text-right p-2">ROI</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agents.map((agent, idx) => (
-                    <tr key={agent.agentId} className="border-b hover:bg-muted/50">
-                      <td className="p-2">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4 text-purple-500" />
-                          <span className="font-medium">{agent.agentName}</span>
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <Badge variant="outline">{agent.campaignName}</Badge>
-                      </td>
-                      <td className="text-right p-2">{agent.emailsSent}</td>
-                      <td className="text-right p-2">
-                        <span className={agent.openRate >= 25 ? 'text-green-600' : 'text-yellow-600'}>
-                          {agent.openRate.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="text-right p-2">
-                        <span className={agent.clickRate >= 10 ? 'text-green-600' : 'text-yellow-600'}>
-                          {agent.clickRate.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="text-right p-2 font-medium">{agent.conversions}</td>
-                      <td className="text-right p-2">
-                        <span className={agent.conversionRate >= 15 ? 'text-green-600 font-bold' : ''}>
-                          {agent.conversionRate.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="text-right p-2">
-                        <span className="text-green-600 font-bold">
-                          {agent.roi.toFixed(0)}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
+          </Tabs>
         </Card>
-
-        {/* Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Conversion Rate Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Conversion Rate by Agent</CardTitle>
-              <CardDescription>Percentage of leads converted to customers</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={conversionData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="rate" name="Conversion Rate (%)" fill="#8b5cf6" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Email Performance Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Performance</CardTitle>
-              <CardDescription>Open and click rates by agent</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={emailPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="opens" name="Open Rate (%)" fill="#06b6d4" />
-                  <Bar dataKey="clicks" name="Click Rate (%)" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* ROI Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>ROI by Agent</CardTitle>
-              <CardDescription>Return on investment for each campaign</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={roiData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="roi" name="ROI (%)" fill="#10b981" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Campaign Distribution */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Distribution</CardTitle>
-              <CardDescription>Emails sent by campaign</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={campaignDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {campaignDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-          </TabsContent>
-
-          <TabsContent value="comparison" className="space-y-6">
-            <AgentComparison agents={filteredAgents} />
-          </TabsContent>
-
-          <TabsContent value="recommendations" className="space-y-6">
-            <AgentRecommendations />
-          </TabsContent>
-        </Tabs>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

@@ -33,6 +33,8 @@ import {
   getSchedulerStats
 } from './market-intelligence-scheduler';
 
+import { generateCampaignFromIntent } from '../../services/autonomous-campaign-manager';
+
 // Import original tools
 import {
   createAgentTool,
@@ -900,6 +902,23 @@ export const EXTENDED_TOOL_DEFINITIONS = [
       }
     }
   },
+
+
+  // Autonomous Campaign Generation
+  {
+    type: "function" as const,
+    function: {
+      name: "generateCampaignFromIntent",
+      description: "Genera una campaña multicanal completa (Email + LinkedIn) basada en un objetivo o intención",
+      parameters: {
+        type: "object",
+        properties: {
+          intent: { type: "string" },
+        },
+        required: ["intent"],
+      },
+    }
+  },
 ];
 
 /**
@@ -1086,6 +1105,9 @@ export async function executeExtendedToolCall(
   if (toolName === "updateSchedulerConfig") return await updateSchedulerConfigTool(toolArgs);
   if (toolName === "triggerCycleNow") return await triggerCycleNowTool(toolArgs);
   if (toolName === "getSchedulerStats") return await getSchedulerStatsTool();
+
+  // Autonomous Campaign Generation
+  if (toolName === "generateCampaignFromIntent") return await generateCampaignFromIntentTool(toolArgs);
 
   return {
     success: false,
@@ -1573,4 +1595,25 @@ export const getSchedulerStatsTool = async () => {
   console.log('[Scheduler] Getting scheduler statistics');
   const stats = getSchedulerStats();
   return { success: true, stats };
+};
+
+// Autonomous Campaign Generation Tool
+export const generateCampaignFromIntentTool = async (args: any) => {
+  console.log('[Meta-Agent] Generating autonomous campaign from intent:', args.intent);
+  try {
+    // Default to companyId 1 and userId 1 for autonomous actions if not specified
+    const result = await generateCampaignFromIntent(args.intent, 1, 1);
+    return {
+      success: true,
+      message: `Campaña generada exitosamente: "${result.name}". Se han creado ${result.steps.length} pasos.`,
+      campaign: {
+        id: result.id,
+        name: result.name,
+        steps: result.steps.length
+      }
+    };
+  } catch (error: any) {
+    console.error('[Meta-Agent] Failed to generate campaign:', error);
+    return { success: false, message: `Error generando campaña: ${error.message}` };
+  }
 };

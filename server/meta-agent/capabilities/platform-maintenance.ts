@@ -211,20 +211,41 @@ export class PlatformMaintenance {
       // Get all agents using Drizzle ORM for type safety
       const agentsList = await db.select().from(agents);
 
-      // Validate agents is iterable
-      if (!agentsList || !Array.isArray(agentsList)) {
-        console.warn("[Platform Maintenance] Agents query returned invalid data:", typeof agentsList);
-        console.warn("[Platform Maintenance] RAW AGENTS DATA:", JSON.stringify(agentsList, null, 2));
+      let processedAgentsList = agentsList;
 
-        // Attempt to handle if it's a raw MySQL2 result [rows, fields]
-        if (Array.isArray((agentsList as any)[0])) {
-          console.log("[Platform Maintenance] Detected raw MySQL result, fixing...");
-          // This logic shouldn't be needed with Drizzle, but debugging
+      // Handle raw MySQL2 result [rows, fields] if Drizzle returns it that way
+      if (!Array.isArray(agentsList)) {
+        // If it's not an array, it might be an object that looks like one or totally invalid
+        // But usually Drizzle select() returns an array. If it returns something else, it's very odd.
+        // Let's check if it has a 'length' property and treat it as array-like or try to cast
+        if ((agentsList as any).length !== undefined) {
+          processedAgentsList = Array.from(agentsList as any);
+        } else {
+          // Maybe it's nested?
+          // Drizzle shouldn't do this for select(), but let's be safe
+          console.warn("[Platform Maintenance] Agents query returned non-array:", typeof agentsList);
+          return;
         }
+      }
+
+      // Double check if it's the [rows, fields] pattern even if it IS an array
+      if (Array.isArray(agentsList) && agentsList.length > 0 && Array.isArray((agentsList as any)[0])) {
+        // It looks like [[...rows], [...fields]]
+        // Check if the first element looks like an agent row (has 'id')
+        const firstRow = (agentsList as any)[0][0];
+        if (firstRow && firstRow.id) {
+          console.log("[Platform Maintenance] Fixing nested agent result");
+          processedAgentsList = (agentsList as any)[0];
+        }
+      }
+
+      // Check validation again on the processed list
+      if (!processedAgentsList || !Array.isArray(processedAgentsList)) {
+        console.warn("[Platform Maintenance] Agents query returned invalid data (after processing):", typeof processedAgentsList);
         return;
       }
 
-      for (const agent of agentsList) {
+      for (const agent of processedAgentsList) {
         // Check if agent has recent activity
         // Check if agent has recent activity
         const [activityRows] = await db.execute<any>(

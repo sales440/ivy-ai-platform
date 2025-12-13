@@ -29,9 +29,30 @@ export async function analyzeAllAgentsPerformance(): Promise<AgentPerformance[]>
     // Get all agents using Drizzle
     const agentsList = await db.select().from(agents).where(eq(agents.status, 'active'));
 
-    // Validate agents is iterable
-    if (!agentsList || !Array.isArray(agentsList)) {
-      console.warn("[Agent Trainer] Agents query returned invalid data:", typeof agentsList, agentsList);
+    let processedAgentsList = agentsList;
+
+    // Handle raw MySQL2 result [rows, fields] if Drizzle returns it that way
+    if (!Array.isArray(agentsList)) {
+      if ((agentsList as any).length !== undefined) {
+        processedAgentsList = Array.from(agentsList as any);
+      } else {
+        console.warn("[Agent Trainer] Agents query returned non-array:", typeof agentsList);
+        return [];
+      }
+    }
+
+    // Double check if it's the [rows, fields] pattern even if it IS an array
+    if (Array.isArray(agentsList) && agentsList.length > 0 && Array.isArray((agentsList as any)[0])) {
+      // It looks like [[...rows], [...fields]]
+      const firstRow = (agentsList as any)[0][0];
+      if (firstRow && firstRow.id) {
+        console.log("[Agent Trainer] Fixing nested agent result");
+        processedAgentsList = (agentsList as any)[0];
+      }
+    }
+
+    if (!processedAgentsList || !Array.isArray(processedAgentsList)) {
+      console.warn("[Agent Trainer] Agents query returned invalid data:", typeof processedAgentsList);
       return [];
     }
 
