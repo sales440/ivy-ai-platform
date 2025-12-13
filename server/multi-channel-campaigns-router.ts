@@ -8,6 +8,7 @@ import {
   executeNextCampaignStep,
   processPendingCampaignExecutions,
 } from "./services/campaign-orchestrator";
+import { generateCampaignFromIntent } from "./services/autonomous-campaign-manager";
 
 export const multiChannelCampaignsRouter = router({
   /**
@@ -59,7 +60,26 @@ export const multiChannelCampaignsRouter = router({
     }),
 
   /**
-   * Create a new campaign
+   * Generate a campaign from intent (Autonomous)
+   */
+  generate: protectedProcedure
+    .input(z.object({ intent: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const result = await generateCampaignFromIntent(
+        input.intent,
+        ctx.user.companyId || 1,
+        ctx.user.id
+      );
+
+      if (!result.success) {
+        throw new Error(result.message || "Failed to generate campaign");
+      }
+
+      return { success: true, campaignId: result.campaignId };
+    }),
+
+  /**
+   * Create a new campaign (Manual)
    */
   create: protectedProcedure
     .input(

@@ -7,8 +7,10 @@ import { v4 as uuidv4 } from 'uuid';
 /**
  * Default Agents Configuration
  */
+// Default Agents Configuration with Company ID
 const DEFAULT_AGENTS = [
     {
+        companyId: 1,
         agentId: 'ivy-prospect-001',
         name: "Ivy-Prospect",
         type: "prospect" as const,
@@ -22,6 +24,7 @@ const DEFAULT_AGENTS = [
         }
     },
     {
+        companyId: 1,
         agentId: 'ivy-closer-001',
         name: "Ivy-Closer",
         type: "closer" as const,
@@ -35,6 +38,7 @@ const DEFAULT_AGENTS = [
         }
     },
     {
+        companyId: 1,
         agentId: 'ivy-solve-001',
         name: "Ivy-Solve",
         type: "solve" as const,
@@ -48,6 +52,7 @@ const DEFAULT_AGENTS = [
         }
     },
     {
+        companyId: 1,
         agentId: 'ivy-logic-001',
         name: "Ivy-Logic",
         type: "logic" as const,
@@ -60,6 +65,7 @@ const DEFAULT_AGENTS = [
         }
     },
     {
+        companyId: 1,
         agentId: 'ivy-talent-001',
         name: "Ivy-Talent",
         type: "talent" as const,
@@ -72,6 +78,7 @@ const DEFAULT_AGENTS = [
         }
     },
     {
+        companyId: 1,
         agentId: 'ivy-insight-001',
         name: "Ivy-Insight",
         type: "insight" as const,
@@ -113,7 +120,7 @@ export async function seedDefaultAgents(): Promise<void> {
             await db.insert(agents).values({
                 ...agent,
                 capabilities: agent.capabilities,
-                kpis: agent.kpis,
+                kpis: agent.kpis as any,
                 configuration: agent.configuration,
                 status: "active"
             });
