@@ -1,4 +1,4 @@
-CREATE TABLE `agentCommunications` (
+CREATE TABLE IF NOT EXISTS `agentCommunications` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`communicationId` varchar(64) NOT NULL,
 	`fromAgentId` int NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE `agentCommunications` (
 	CONSTRAINT `agentCommunications_communicationId_unique` UNIQUE(`communicationId`)
 );
 --> statement-breakpoint
-CREATE TABLE `agents` (
+CREATE TABLE IF NOT EXISTS `agents` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`agentId` varchar(64) NOT NULL,
 	`name` varchar(100) NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE `agents` (
 	CONSTRAINT `agents_agentId_unique` UNIQUE(`agentId`)
 );
 --> statement-breakpoint
-CREATE TABLE `commandHistory` (
+CREATE TABLE IF NOT EXISTS `commandHistory` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,
 	`command` text NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE `commandHistory` (
 	CONSTRAINT `commandHistory_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `knowledgeBase` (
+CREATE TABLE IF NOT EXISTS `knowledgeBase` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`articleId` varchar(64) NOT NULL,
 	`title` varchar(300) NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE `knowledgeBase` (
 	CONSTRAINT `knowledgeBase_articleId_unique` UNIQUE(`articleId`)
 );
 --> statement-breakpoint
-CREATE TABLE `leads` (
+CREATE TABLE IF NOT EXISTS `leads` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`leadId` varchar(64) NOT NULL,
 	`name` varchar(200) NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE `leads` (
 	CONSTRAINT `leads_leadId_unique` UNIQUE(`leadId`)
 );
 --> statement-breakpoint
-CREATE TABLE `systemMetrics` (
+CREATE TABLE IF NOT EXISTS `systemMetrics` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`metricType` varchar(100) NOT NULL,
 	`agentId` int,
@@ -92,7 +92,7 @@ CREATE TABLE `systemMetrics` (
 	CONSTRAINT `systemMetrics_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `tasks` (
+CREATE TABLE IF NOT EXISTS `tasks` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`taskId` varchar(64) NOT NULL,
 	`agentId` int NOT NULL,
@@ -108,7 +108,7 @@ CREATE TABLE `tasks` (
 	CONSTRAINT `tasks_taskId_unique` UNIQUE(`taskId`)
 );
 --> statement-breakpoint
-CREATE TABLE `tickets` (
+CREATE TABLE IF NOT EXISTS `tickets` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`ticketId` varchar(64) NOT NULL,
 	`customerId` int,
@@ -131,7 +131,7 @@ CREATE TABLE `tickets` (
 	CONSTRAINT `tickets_ticketId_unique` UNIQUE(`ticketId`)
 );
 --> statement-breakpoint
-CREATE TABLE `workflowExecutions` (
+CREATE TABLE IF NOT EXISTS `workflowExecutions` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`executionId` varchar(64) NOT NULL,
 	`workflowId` int NOT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE `workflowExecutions` (
 	CONSTRAINT `workflowExecutions_executionId_unique` UNIQUE(`executionId`)
 );
 --> statement-breakpoint
-CREATE TABLE `workflows` (
+CREATE TABLE IF NOT EXISTS `workflows` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`workflowId` varchar(64) NOT NULL,
 	`name` varchar(200) NOT NULL,
