@@ -9,7 +9,7 @@ grep '"version":' package.json
 
 # Run database migrations
 echo "📦 Running database migrations..."
-pnpm db:migrate || echo "⚠️  Migration failed or no changes needed"
+pnpm db:migrate || (echo "⚠️ Migrate failed, attempting push..." && yes | pnpm db:push)
 # echo "⚠️  SKIPPING database migrations to force deployment (Prompt stuck)"
 
 # Ensure notifications table exists

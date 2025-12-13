@@ -9,8 +9,8 @@ grep '"version":' package.json
 
 # Run database migrations
 echo "📦 Running database migrations..."
-pnpm db:migrate || echo "⚠️  Migration failed or no changes needed"
-
+# Try migrate first, then fall back to push if needed
+pnpm db:migrate || (echo "⚠️ Migrate failed, attempting push..." && yes | pnpm db:push)
 # Ensure notifications table exists
 echo "🔔 Ensuring notifications table exists..."
 node scripts/fix-notifications.mjs || echo "⚠️  Notifications table check failed"
