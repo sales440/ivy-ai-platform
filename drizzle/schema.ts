@@ -269,9 +269,9 @@ export type InsertKnowledgeArticle = typeof knowledgeBase.$inferInsert;
 export const agentCommunications = mysqlTable("agentCommunications", {
   id: int("id").autoincrement().primaryKey(),
   communicationId: varchar("communicationId", { length: 64 }).notNull().unique(),
-  fromAgent: varchar("fromAgent", { length: 100 }).notNull(), // Agent type string
+  fromAgent: varchar("fromAgent", { length: 100 }).default('system').notNull(), // Added default to bypass prompt
   fromAgentId: varchar("fromAgentId", { length: 100 }), // Legacy restoration to prevent interactive prompt
-  toAgent: varchar("toAgent", { length: 100 }).notNull(), // Agent type string
+  toAgent: varchar("toAgent", { length: 100 }).default('system').notNull(), // Added default
   toAgentId: varchar("toAgentId", { length: 100 }), // Legacy restoration
   messageType: varchar("messageType", { length: 100 }).notNull(),
   content: text("content").notNull(), // JSON string content
