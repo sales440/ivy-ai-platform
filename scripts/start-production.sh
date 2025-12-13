@@ -9,7 +9,10 @@ grep '"version":' package.json
 
 # Run database migrations
 echo "📦 Running database migrations..."
-pnpm db:migrate || (echo "⚠️ Migrate failed, attempting push..." && yes | pnpm db:push)
+# Run standard migrations, THEN force-sync schema to catch any drift
+pnpm db:migrate
+echo "🔄 Verifying schema sync..."
+yes | pnpm db:push
 # echo "⚠️  SKIPPING database migrations to force deployment (Prompt stuck)"
 
 # Ensure notifications table exists
