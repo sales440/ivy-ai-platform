@@ -55,9 +55,10 @@ import {
   InsertSavedSearch,
   SavedSearch,
 } from "../drizzle/schema";
+import * as schema from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
 let _pool: mysql.Pool | null = null;
 let _lastConnectionAttempt = 0;
 const RECONNECT_INTERVAL = 5000; // 5 seconds
@@ -105,7 +106,7 @@ export async function getDb() {
       keepAliveInitialDelay: 0,
     });
 
-    _db = drizzle(_pool);
+    _db = drizzle(_pool, { mode: "default", schema });
     console.log("[Database] Connected successfully");
     return _db;
   } catch (error) {
