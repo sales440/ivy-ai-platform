@@ -275,6 +275,8 @@ export const agentCommunications = mysqlTable("agentCommunications", {
   toAgentId: varchar("toAgentId", { length: 100 }), // Legacy restoration
   messageType: varchar("messageType", { length: 100 }).notNull(),
   content: text("content").notNull(), // JSON string content
+  message: text("message"), // Legacy restoration
+  workflowExecutionId: varchar("workflowExecutionId", { length: 64 }), // Legacy restoration
   status: mysqlEnum("status", ["pending", "delivered", "failed"]).default("pending").notNull(),
   sentAt: timestamp("sentAt").defaultNow().notNull(),
 });
