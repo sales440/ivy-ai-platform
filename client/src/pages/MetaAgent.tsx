@@ -13,12 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Bot, 
-  Play, 
-  Square, 
-  RefreshCw, 
-  MessageSquare, 
+import {
+  Bot,
+  Play,
+  Square,
+  RefreshCw,
+  MessageSquare,
   Send,
   Activity,
   AlertTriangle,
@@ -32,11 +32,14 @@ import {
   FileCode,
   Package,
   Table,
+  LayoutDashboard,
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 export default function MetaAgent() {
+  const [, setLocation] = useLocation();
   const [chatMessage, setChatMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -201,6 +204,14 @@ export default function MetaAgent() {
             <RefreshCw className={`h-4 w-4 mr-2 ${auditMutation.isPending ? "animate-spin" : ""}`} />
             Run Audit
           </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setLocation("/campaigns-dashboard")}
+          >
+            <LayoutDashboard className="h-4 w-4 mr-2" />
+            Manage Campaigns
+          </Button>
         </div>
       </div>
 
@@ -317,11 +328,10 @@ export default function MetaAgent() {
                           className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[80%] rounded-lg p-3 ${
-                              msg.role === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            }`}
+                            className={`max-w-[80%] rounded-lg p-3 ${msg.role === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted"
+                              }`}
                           >
                             <div className="text-xs opacity-70 mb-1">
                               {msg.role === "user" ? "You" : "Meta-Agent"}
@@ -390,9 +400,9 @@ export default function MetaAgent() {
                               <div className="flex items-center gap-2">
                                 <Badge variant={
                                   task.status === "completed" ? "default" :
-                                  task.status === "failed" ? "destructive" :
-                                  task.status === "running" ? "secondary" :
-                                  "outline"
+                                    task.status === "failed" ? "destructive" :
+                                      task.status === "running" ? "secondary" :
+                                        "outline"
                                 }>
                                   {task.status}
                                 </Badge>
@@ -559,12 +569,11 @@ export default function MetaAgent() {
                 <div className="space-y-2">
                   {health.issues.map((issue: any, index: number) => (
                     <div key={index} className="flex items-start gap-2 p-2 rounded-lg bg-muted">
-                      <AlertTriangle className={`h-4 w-4 mt-0.5 ${
-                        issue.severity === "critical" ? "text-red-500" :
+                      <AlertTriangle className={`h-4 w-4 mt-0.5 ${issue.severity === "critical" ? "text-red-500" :
                         issue.severity === "error" ? "text-orange-500" :
-                        issue.severity === "warning" ? "text-yellow-500" :
-                        "text-blue-500"
-                      }`} />
+                          issue.severity === "warning" ? "text-yellow-500" :
+                            "text-blue-500"
+                        }`} />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{issue.description}</p>
                         <p className="text-xs text-muted-foreground">
