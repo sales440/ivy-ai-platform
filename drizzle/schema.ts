@@ -795,9 +795,39 @@ export const callTranscripts = mysqlTable("callTranscripts", {
 export type CallTranscript = typeof callTranscripts.$inferSelect;
 export type InsertCallTranscript = typeof callTranscripts.$inferInsert;
 
+
 /**
- * SMS Messages - Mensajes SMS (Telnyx SMS API)
+ * Meta-Agent Memory - Persistent chat history for the Command Center
  */
+export const metaAgentMemory = mysqlTable("metaAgentMemory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // User who interacted
+  role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
+  content: text("content").notNull(),
+  metadata: json("metadata").$type<Record<string, any>>(), // Store tool calls, thoughts, sources
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type MetaAgentMemory = typeof metaAgentMemory.$inferSelect;
+export type InsertMetaAgentMemory = typeof metaAgentMemory.$inferInsert;
+
+/**
+ * Training Logs - History of agent training and supervision
+ */
+export const trainingLogs = mysqlTable("trainingLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  agentType: mysqlEnum("agentType", ["prospect", "closer", "solve", "logic", "talent", "insight"]).notNull(),
+  trainingModule: varchar("trainingModule", { length: 255 }).notNull(),
+  insights: json("insights").$type<string[]>(),
+  recommendations: json("recommendations").$type<string[]>(),
+  status: mysqlEnum("status", ["started", "completed", "failed"]).default("started").notNull(),
+  result: text("result"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type TrainingLog = typeof trainingLogs.$inferSelect;
+export type InsertTrainingLog = typeof trainingLogs.$inferInsert;
+
 export const smsMessages = mysqlTable("smsMessages", {
   id: int("id").autoincrement().primaryKey(),
   companyId: int("companyId").notNull(),

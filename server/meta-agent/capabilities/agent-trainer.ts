@@ -10,7 +10,7 @@ import { LLM_PROMPTS, TRAINING_CATEGORIES } from "../config";
 import { invokeLLM } from "../../_core/llm";
 import { getDb } from "../../db";
 import { searchWeb } from "./web-search";
-import { agents } from "../../../drizzle/schema";
+import { agents, trainingLogs } from "../../../drizzle/schema";
 import { eq, sql } from "drizzle-orm";
 
 /**
@@ -345,7 +345,19 @@ export async function trainAgent(agentId: string): Promise<{
       }
     }
 
+
     console.log(`[Agent Trainer] ✅ Trained agent ${agent.name}, applied ${applied} recommendations`);
+
+    // Log training session to persistent memory
+    await db.insert(trainingLogs).values({
+      agentType: agent.type,
+      trainingModule: "Performance Optimization",
+      insights: [JSON.stringify(performance.metrics)],
+      recommendations: recommendations.map(r => r.recommendation),
+      status: "completed",
+      result: `Applied ${applied} recommendations. Expected impact: ${recommendations.filter(r => r.priority === 'high').length} high priority improvements.`,
+      timestamp: new Date()
+    });
 
     return {
       success: true,

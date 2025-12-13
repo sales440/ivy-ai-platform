@@ -32,10 +32,12 @@ import {
   Search,
   MessageSquare,
   Send,
-  Plus
+  Plus,
+  TrendingUp
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
+import { AudienceManager } from "@/components/meta-agent/AudienceManager";
 import { useLocation } from "wouter";
 
 // --- Components ---
@@ -398,7 +400,7 @@ export default function MetaAgent() {
           {isSidebarOpen && (
             <div>
               <h1 className="font-bold text-lg tracking-wider text-white">META AGENT</h1>
-              <p className="text-[10px] text-blue-400 tracking-widest">ANTIGRAVITY AI</p>
+              <p className="text-[10px] text-blue-400 tracking-widest">Ivy.AI Sales Force System" By JCRL</p>
             </div>
           )}
         </div>
@@ -459,7 +461,8 @@ export default function MetaAgent() {
               <Activity className="h-4 w-4 mr-2" />
               Run Diagnostics
             </Button>
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] border border-blue-400/20">
+            <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)] border border-blue-400/20"
+              onClick={() => setLocation("/campaigns-dashboard")}>
               <Plus className="h-4 w-4 mr-2" />
               New Campaign
             </Button>
@@ -479,11 +482,7 @@ export default function MetaAgent() {
               <IntelligenceHub />
             )}
             {activeView === "audience" && (
-              <div className="flex flex-col items-center justify-center p-20 text-slate-500">
-                <Users className="h-16 w-16 mb-4 opacity-20" />
-                <h3 className="text-xl font-medium mb-1">Audience Manager</h3>
-                <p>Connect your CRM or import CSV to manage leads.</p>
-              </div>
+              <AudienceManager />
             )}
             {/* Add other views as needed */}
           </div>

@@ -8,6 +8,7 @@
  * - Responds to conversational commands
  */
 
+
 import { META_AGENT_CONFIG } from "./config";
 import type {
   MetaAgentStatus,
@@ -19,6 +20,9 @@ import type {
   ChatMessage,
   ChatContext,
 } from "./types";
+import { getDb } from "../db";
+import { metaAgentMemory } from "../../drizzle/schema";
+import { desc, eq } from "drizzle-orm";
 
 class MetaAgent {
   private static instance: MetaAgent;
@@ -53,6 +57,9 @@ class MetaAgent {
     console.log("[Meta-Agent] Starting autonomous system...");
     this.isRunning = true;
     this.status = "running";
+
+    // Load persistent memory
+    await this.loadChatHistory();
 
     // Run initial audit
     await this.runAudit();
@@ -97,6 +104,36 @@ class MetaAgent {
     }
 
     console.log("[Meta-Agent] Stopped");
+  }
+
+  /**
+   * Load chat history from database
+   */
+  async loadChatHistory(): Promise<void> {
+    try {
+      const db = await getDb();
+      if (!db) {
+        console.warn("[Meta-Agent] No database connection, using in-memory chat history");
+        return;
+      }
+
+      const history = await db.query.metaAgentMemory.findMany({
+        orderBy: [desc(metaAgentMemory.timestamp)],
+        limit: 100,
+      });
+
+      this.chatHistory = history.reverse().map(entry => ({
+        id: entry.id.toString(),
+        role: entry.role as "user" | "assistant" | "system",
+        content: entry.content,
+        timestamp: entry.timestamp,
+        metadata: entry.metadata as any
+      }));
+
+      console.log(`[Meta-Agent] Loaded ${this.chatHistory.length} messages from persistent memory`);
+    } catch (error) {
+      console.error("[Meta-Agent] Failed to load chat history:", error);
+    }
   }
 
   /**
@@ -334,7 +371,23 @@ class MetaAgent {
   async handleChatMessage(message: string, userId: string): Promise<ChatMessage> {
     console.log(`[Meta-Agent] Received chat message from ${userId}: ${message}`);
 
-    // Add user message to history
+    const db = await getDb();
+
+    // 1. Save user message to persistent memory
+    try {
+      if (db) {
+        await db.insert(metaAgentMemory).values({
+          userId: parseInt(userId, 10) || 1, // Default to 1 if not parseable
+          role: "user",
+          content: message,
+          timestamp: new Date(),
+        });
+      }
+    } catch (err) {
+      console.error("[Meta-Agent] Failed to save user message:", err);
+    }
+
+    // Update in-memory history
     const userMessage: ChatMessage = {
       id: `msg_${Date.now()}_user`,
       role: "user",
@@ -356,6 +409,21 @@ class MetaAgent {
 
     const task = this.tasks.get(taskId);
     const responseContent = task?.result?.response || "I'm sorry, I couldn't process that request.";
+
+    // 2. Save assistant response to persistent memory
+    try {
+      if (db) {
+        await db.insert(metaAgentMemory).values({
+          userId: parseInt(userId, 10) || 1,
+          role: "assistant",
+          content: responseContent,
+          metadata: { taskId },
+          timestamp: new Date(),
+        });
+      }
+    } catch (err) {
+      console.error("[Meta-Agent] Failed to save assistant message:", err);
+    }
 
     // Add assistant response to history
     const assistantMessage: ChatMessage = {

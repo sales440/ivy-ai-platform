@@ -80,6 +80,7 @@ import {
   analyzeCampaignROITool,
   createCampaignFromTemplateTool,
   scheduleCampaignTool,
+  autoOptimizeCampaignTool,
   createWorkflowTool,
   pauseWorkflowTool,
   optimizeWorkflowTool,
@@ -438,6 +439,21 @@ export const EXTENDED_TOOL_DEFINITIONS = [
           endDate: { type: "string" },
         },
         required: ["campaignId", "startDate"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
+      name: "autoOptimizeCampaign",
+      description: "Innova y optimiza una campaña basada en inteligencia de mercado (Auto-Innovation)",
+      parameters: {
+        type: "object",
+        properties: {
+          campaignId: { type: "string" },
+          focusArea: { type: "string", enum: ["messaging", "timing", "audience"] },
+        },
+        required: ["campaignId"],
       },
     },
   },

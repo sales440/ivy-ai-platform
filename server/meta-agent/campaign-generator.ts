@@ -190,7 +190,8 @@ export class CampaignGenerator {
                 console.log(`[Campaign Generator] 🎯 Optimizing campaign with real-time data...`);
                 const optimizationResult = await campaignOptimizer.optimizeCampaign(template, environment);
 
-                console.log(`[Campaign Generator] Made ${optimizationResult.changes.length} optimizations:`); \n                for (const change of optimizationResult.changes) {
+                console.log(`[Campaign Generator] Made ${optimizationResult.changes.length} optimizations:`);
+                for (const change of optimizationResult.changes) {
                     console.log(`  - ${change.type}: ${change.description}`);
                 }
 
@@ -210,7 +211,8 @@ export class CampaignGenerator {
                 const triggerEvents = await leadIntelligence.detectTriggerEvents(client.name);
 
                 if (triggerEvents.length > 0) {
-                    console.log(`[Campaign Generator] Found ${triggerEvents.length} trigger events:`); \n                    for (const event of triggerEvents.slice(0, 3)) {
+                    console.log(`[Campaign Generator] Found ${triggerEvents.length} trigger events:`);
+                    for (const event of triggerEvents.slice(0, 3)) {
                         console.log(`  - ${event.type}: ${event.description.substring(0, 100)}...`);
                     }
                 }
