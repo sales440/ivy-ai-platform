@@ -125,9 +125,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', zIndex: 99999, background: 'green', color: 'white', padding: '10px', fontSize: '20px', fontWeight: 'bold' }}>
-        DEBUG: V2.1 - AGENTS FIXED
-      </div>
+
       <ThemeProvider
         defaultTheme="light"
       // switchable

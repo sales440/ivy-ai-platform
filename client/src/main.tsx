@@ -1,31 +1,45 @@
-// import { trpc } from "@/lib/trpc";
-// import { UNAUTHED_ERR_MSG } from '@shared/const';
+import { trpc } from "@/lib/trpc";
+import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
-// import superjson from "superjson";
-// import App from "./App";
-// import { getLoginUrl } from "./const";
+import superjson from "superjson";
+import App from "./App";
+import { getLoginUrl } from "./const";
 import "./index.css";
 import { initSentry } from "./lib/sentry";
 
 // Initialize Sentry
-console.log("DEBUG: About to init Sentry");
-try {
-  initSentry();
-  console.log("DEBUG: Sentry init success");
-} catch (e) {
-  console.error("DEBUG: Sentry init failed", e);
-}
+initSentry();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: (failureCount, error: any) => {
+        if (error instanceof TRPCClientError && error.message === UNAUTHED_ERR_MSG) {
+          return false;
+        }
+        return failureCount < 3;
+      },
+      staleTime: 5 * 60 * 1000,
+    },
+  },
+});
+
+const trpcClient = trpc.createClient({
+  links: [
+    httpBatchLink({
+      url: "/api/trpc",
+      transformer: superjson,
+    }),
+  ],
+});
 
 createRoot(document.getElementById("root")!).render(
-  <div style={{ background: 'purple', padding: 50, fontSize: 30, color: 'white' }}>
-    <h1>STAGE 3 DEBUG MODE</h1>
-    <p>React Loaded.</p>
-    <p>Sentry Initialized (Check Console for errors).</p>
-    <p>TRPC and App DISABLED.</p>
-    <p>If you see PURPLE, Sentry is safe.</p>
-  </div>
+  <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </trpc.Provider>
 );
