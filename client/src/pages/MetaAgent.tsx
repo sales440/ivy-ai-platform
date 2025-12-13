@@ -53,7 +53,7 @@ function MissionControl({ status, stats, health, activeAgents }: any) {
             <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Campaigns</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-400">{stats?.campaigns.active || 12}</div>
+            <div className="text-3xl font-bold text-blue-400">{stats?.campaigns?.active || 0}</div>
             <p className="text-xs text-green-500 mt-1 flex items-center">
               <Zap className="h-3 w-3 mr-1" /> +2 from last 24h
             </p>
@@ -65,7 +65,7 @@ function MissionControl({ status, stats, health, activeAgents }: any) {
             <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">Leads Generated</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-emerald-400">{stats?.metrics.totalLeads || 1248}</div>
+            <div className="text-3xl font-bold text-emerald-400">{stats?.metrics?.totalLeads || 0}</div>
             <p className="text-xs text-emerald-500 mt-1 flex items-center">
               <Activity className="h-3 w-3 mr-1" /> +15% from last 24h
             </p>
@@ -77,7 +77,7 @@ function MissionControl({ status, stats, health, activeAgents }: any) {
             <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">Conversion Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-purple-400">{stats?.metrics.conversionRate || "4.8%"}</div>
+            <div className="text-3xl font-bold text-purple-400">{stats?.metrics?.conversionRate || "0%"}</div>
             <p className="text-xs text-purple-500 mt-1 flex items-center">
               <Target className="h-3 w-3 mr-1" /> +0.5% from last 24h
             </p>
@@ -89,7 +89,7 @@ function MissionControl({ status, stats, health, activeAgents }: any) {
             <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">System Load</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-amber-400">{Math.round(health?.components.server.details?.memoryUsage?.percent || 34)}%</div>
+            <div className="text-3xl font-bold text-amber-400">{Math.round(health?.components?.server?.details?.memoryUsage?.percent || 0)}%</div>
             <p className="text-xs text-amber-500 mt-1 flex items-center">
               <Cpu className="h-3 w-3 mr-1" /> Optimal
             </p>
