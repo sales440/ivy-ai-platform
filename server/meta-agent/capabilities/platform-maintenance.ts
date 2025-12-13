@@ -204,6 +204,7 @@ export class PlatformMaintenance {
    * Update agent statuses
    */
   private async updateAgentStatuses(): Promise<void> {
+    console.log("[Platform Maintenance] DIAGNOSTIC: updateAgentStatuses START (V2.1)");
     const db = await getDb();
     if (!db) return;
 
