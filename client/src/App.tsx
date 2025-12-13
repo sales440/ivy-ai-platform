@@ -125,8 +125,8 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999, background: 'blue', color: 'white', padding: '5px' }}>
-        APP_MOUNTED_DEBUG_CHECK
+      <div style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', zIndex: 99999, background: 'red', color: 'white', padding: '10px', fontSize: '20px', fontWeight: 'bold' }}>
+        DEBUG: V2 - CHECKING DEPLOYMENT
       </div>
       <ThemeProvider
         defaultTheme="light"
