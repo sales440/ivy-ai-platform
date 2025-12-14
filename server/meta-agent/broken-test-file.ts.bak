@@ -1,0 +1,10 @@
+
+export function calculateBudget(price: number, qty: number) {
+    // BUG: Division by zero possible here if qty is 0, but logical error in formula too
+    // Intention: price * qty
+    if (qty === 0) return Infinity; 
+    return price / 0; // SYNTAX/RUNTIME ERROR SIMULATION
+}
+
+// Execute
+calculateBudget(100, 2);

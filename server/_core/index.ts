@@ -97,6 +97,11 @@ async function startServer() {
     return handleTelnyxWebhook(req, res);
   });
 
+  app.post("/api/webhooks/twilio", async (req, res) => {
+    const { handleTwilioWebhook } = await import("../webhooks/twilio-webhook");
+    return handleTwilioWebhook(req, res);
+  });
+
   const { gmailWebhookRouter } = await import("../webhooks/gmail-webhook");
   app.use("/api/webhooks", gmailWebhookRouter);
 

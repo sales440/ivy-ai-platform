@@ -31,6 +31,25 @@ export async function startMetaAgent(): Promise<void> {
       console.error("[Meta-Agent Startup] Stack trace:", campaignError.stack);
     }
 
+    // Start Agent Squad Orchestration
+    try {
+      const { agentOrchestrator } = await import("./meta-agent/agent-orchestrator");
+
+      // Start monitoring loop
+      console.log("[Meta-Agent Startup] 🐝 Starting Hive Mind Orchestrator...");
+      setInterval(() => {
+        agentOrchestrator.monitorAgentPerformance().catch(console.error);
+      }, 60 * 1000); // Check every minute
+
+      // Wake up Logic (The Boss)
+      const { Logic } = await import("./meta-agent/agents/logic");
+      const logicAgent = new Logic();
+      console.log(`[Meta-Agent Startup] 🧠 ${logicAgent.getName()} is online and thinking.`);
+
+    } catch (squadError) {
+      console.error("[Meta-Agent Startup] ❌ Squad Orchestration failed to start:", squadError);
+    }
+
     // Schedule campaign optimization every 30 minutes
     setInterval(async () => {
       try {

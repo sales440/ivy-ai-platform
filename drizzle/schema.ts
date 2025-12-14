@@ -797,21 +797,40 @@ export type CallTranscript = typeof callTranscripts.$inferSelect;
 export type InsertCallTranscript = typeof callTranscripts.$inferInsert;
 
 
+
 /**
- * Meta-Agent Memory - Persistent chat history for the Command Center
+ * Knowledge Vectors - RAG Memory Store
+ * Stores semantic embeddings for long-term agent memory
  */
-export const metaAgentMemory = mysqlTable("metaAgentMemory", {
+export const knowledgeVectors = mysqlTable("knowledgeVectors", {
   id: int("id").autoincrement().primaryKey(),
-  companyId: int("companyId").notNull().default(1), // Default to 1 for migration safety
-  userId: int("userId").notNull(),
-  role: mysqlEnum("role", ["user", "assistant", "system", "decision_maker"]).notNull(),
-  content: text("content").notNull(),
-  embedding: json("embedding").$type<number[]>(), // Vector representation
-  tags: json("tags").$type<string[]>(), // Categorization tags
-  importance: int("importance").default(1), // 1-5 scale
-  metadata: json("metadata").$type<Record<string, any>>(),
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  companyId: int("companyId").notNull(),
+  content: text("content").notNull(), // The raw text chunk
+  embedding: json("embedding").$type<number[]>().notNull(), // The vector (e.g., 1536 dim for OpenAI)
+  sourceUrl: varchar("sourceUrl", { length: 500 }), // Origin of the knowledge
+  tags: json("tags").$type<string[]>(), // Metadata tags
+  metadata: json("metadata").$type<Record<string, any>>(), // Extra context
+  createdBy: varchar("createdBy", { length: 100 }).default("system"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+export type KnowledgeVector = typeof knowledgeVectors.$inferSelect;
+export type InsertKnowledgeVector = typeof knowledgeVectors.$inferInsert;
+
+ * Meta - Agent Memory - Persistent chat history for the Command Center
+  */
+export const metaAgentMemory = mysqlTable("metaAgentMemory", {
+    id: int("id").autoincrement().primaryKey(),
+    companyId: int("companyId").notNull().default(1), // Default to 1 for migration safety
+    userId: int("userId").notNull(),
+    role: mysqlEnum("role", ["user", "assistant", "system", "decision_maker"]).notNull(),
+    content: text("content").notNull(),
+    embedding: json("embedding").$type<number[]>(), // Vector representation
+    tags: json("tags").$type<string[]>(), // Categorization tags
+    importance: int("importance").default(1), // 1-5 scale
+    metadata: json("metadata").$type<Record<string, any>>(),
+    timestamp: timestamp("timestamp").defaultNow().notNull(),
+  });
 
 export type MetaAgentMemory = typeof metaAgentMemory.$inferSelect;
 export type InsertMetaAgentMemory = typeof metaAgentMemory.$inferInsert;

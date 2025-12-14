@@ -347,6 +347,13 @@ class MetaAgent {
           result = await proposeCodeChanges(task.metadata?.request);
           break;
 
+        case "execute_mission":
+          const { Logic } = await import("./agents/logic");
+          const logicAgent = new Logic();
+          // Pass the task description as the goal
+          result = await logicAgent.executeGoal(task.description, { companyId: task.metadata?.companyId || 1 });
+          break;
+
         default:
           throw new Error(`Unknown task type: ${task.type}`);
       }

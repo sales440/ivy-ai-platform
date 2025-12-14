@@ -54,18 +54,21 @@ export function WebsiteLayout({ children }: { children: React.ReactNode }) {
                             <Link key={item.href} href={item.href}>
                                 <a
                                     className={`text-sm font-medium transition-colors hover:text-primary ${location === item.href
-                                            ? "text-primary"
-                                            : scrolled
-                                                ? "text-muted-foreground"
-                                                : "text-white/90"
+                                        ? "text-primary"
+                                        : scrolled
+                                            ? "text-muted-foreground"
+                                            : "text-white/90"
                                         }`}
                                 >
                                     {item.label}
                                 </a>
                             </Link>
                         ))}
-                        <Button asChild variant={scrolled ? "default" : "secondary"} className="ml-4 rounded-full px-6">
-                            <a href={getLoginUrl()}>Portal Cliente</a>
+                        <Button asChild variant="ghost" className={`ml-4 ${scrolled ? "text-slate-600 hover:text-primary" : "text-slate-300 hover:text-white"}`}>
+                            <a href={getLoginUrl()}>Log In</a>
+                        </Button>
+                        <Button asChild className="rounded-full px-6 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20">
+                            <Link href="/demo-request">Book Demo</Link>
                         </Button>
                     </nav>
 
@@ -100,7 +103,7 @@ export function WebsiteLayout({ children }: { children: React.ReactNode }) {
                                                 <a href={getLoginUrl()}>Acceso Clientes</a>
                                             </Button>
                                             <Button asChild variant="outline" className="w-full">
-                                                <Link href="/contact">Agenda una Demo</Link>
+                                                <Link href="/demo-request">Agenda una Demo</Link>
                                             </Button>
                                         </div>
                                     </nav>

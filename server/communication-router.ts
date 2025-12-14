@@ -13,6 +13,9 @@ const getTelnyxVoice = () => import("./services/telnyx-voice");
 const getTelnyxSMS = () => import("./services/telnyx-sms");
 const getTelnyxWhatsApp = () => import("./services/telnyx-whatsapp");
 
+// Import Omni-Channel Capability
+import { sendTemplate } from "./meta-agent/capabilities/omni-channel";
+
 // Initialize Ivy-Call agent
 let ivyCallAgent: IvyCall | null = null;
 
@@ -41,7 +44,7 @@ export const communicationRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const agent = await getIvyCallAgent();
-      
+
       const result = await agent.executeTask({
         type: 'make_call',
         leadId: input.leadId,
@@ -114,7 +117,7 @@ export const communicationRouter = router({
     }))
     .mutation(async ({ input }) => {
       const agent = await getIvyCallAgent();
-      
+
       const result = await agent.executeTask({
         type: 'send_sms',
         leadId: input.leadId,
@@ -136,6 +139,7 @@ export const communicationRouter = router({
       from: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      const telnyxSMS = await getTelnyxSMS();
       return telnyxSMS.sendBulkSMS(
         input.phoneNumbers,
         input.message,
@@ -182,7 +186,7 @@ export const communicationRouter = router({
     }))
     .mutation(async ({ input }) => {
       const agent = await getIvyCallAgent();
-      
+
       const result = await agent.executeTask({
         type: 'send_whatsapp',
         leadId: input.leadId,
@@ -205,6 +209,7 @@ export const communicationRouter = router({
       from: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      const telnyxWhatsApp = await getTelnyxWhatsApp();
       return telnyxWhatsApp.sendWhatsAppTemplate(
         input.phoneNumber,
         input.templateName,
@@ -224,6 +229,7 @@ export const communicationRouter = router({
       from: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
+      const telnyxWhatsApp = await getTelnyxWhatsApp();
       return telnyxWhatsApp.sendWhatsAppImage(
         input.phoneNumber,
         input.imageUrl,

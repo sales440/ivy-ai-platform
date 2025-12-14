@@ -8,6 +8,8 @@
 import { getDb } from '../db';
 import { scheduledTasks } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
+import { analyzeCodeIssue, applyFix } from './capabilities/self-evolution';
+import * as path from "path";
 
 interface AgentTask {
     agentType: 'IVY-PROSPECT' | 'IVY-QUALIFY' | 'IVY-ENGAGE' | 'IVY-SCHEDULE' | 'IVY-SUPPORT';
@@ -17,7 +19,51 @@ interface AgentTask {
     scheduledFor: Date;
 }
 
+export interface AgentMessage {
+    id: string;
+    fromAgent: string;
+    type: string;
+    payload: any;
+    timestamp: Date;
+}
+
+type MessageHandler = (msg: AgentMessage) => void;
+
 export class AgentOrchestrator {
+    private listeners: MessageHandler[] = [];
+
+    /**
+     * Subscribe to the squad message bus
+     */
+    subscribe(handler: MessageHandler) {
+        this.listeners.push(handler);
+        return () => this.listeners = this.listeners.filter(l => l !== handler);
+    }
+
+    /**
+     * Broadcast a message to the entire squad
+     */
+    broadcastMessage(from: string, type: string, payload: any) {
+        const msg: AgentMessage = {
+            id: Math.random().toString(36).substring(7),
+            fromAgent: from,
+            type,
+            payload,
+            timestamp: new Date()
+        };
+
+        console.log(`[Hive Mind] 📡 Broadcast from ${from}: [${type}]`, payload);
+
+        // Dispatch to all listeners
+        this.listeners.forEach(handler => {
+            try {
+                handler(msg);
+            } catch (err) {
+                console.error("[Hive Mind] Listener error:", err);
+            }
+        });
+    }
+
     /**
      * Delegates a task to a specialized agent with client isolation
      */
@@ -47,6 +93,42 @@ export class AgentOrchestrator {
         });
 
         console.log(`[Agent Orchestrator] Task scheduled for ${task.scheduledFor.toISOString()}`);
+    }
+
+    /**
+     * EXPERIMENTAL: Self-Evolution / Auto-Healing
+     * Attempts to fix code errors when a task fails repeatedly.
+     */
+    async autoHeal(error: Error): Promise<boolean> {
+        if (!error.stack) return false;
+
+        console.log("[Agent Orchestrator] 🧬 Initiating Self-Evolution Auto-Heal...");
+
+        // Regex to find file paths in stack trace (simplified for MVP)
+        // Matches: (C:\path\to\file.ts:line:col) or /path/to/file.ts:line:col
+        const match = error.stack.match(/([a-zA-Z]:\\[^:\n]+| \/[^:\n]+):\d+:\d+/);
+
+        if (match && match[1]) {
+            const filePath = match[1].trim();
+            console.log(`[Agent Orchestrator] Detected failing file: ${filePath}`);
+
+            try {
+                // 1. Analyze
+                const fix = await analyzeCodeIssue(filePath, error.message);
+
+                if (fix && fix.confidence > 80) {
+                    console.log(`[Agent Orchestrator] confident fix found (${fix.confidence}%). Applying...`);
+                    // 2. Apply
+                    const success = await applyFix(fix);
+                    return success;
+                } else {
+                    console.log("[Agent Orchestrator] Fix confidence too low or analysis failed.");
+                }
+            } catch (healError) {
+                console.error("[Agent Orchestrator] Auto-Heal failed:", healError);
+            }
+        }
+        return false;
     }
 
     /**
@@ -151,6 +233,17 @@ export class AgentOrchestrator {
 
             // Retry failed tasks with increased priority
             for (const task of failedTasks) {
+                // Check if this is a repeated code failure we can heal
+                if (task.taskData?.lastError) {
+                    const error = new Error(task.taskData.lastError);
+                    if (task.taskData.stackTrace) error.stack = task.taskData.stackTrace;
+
+                    // Attempt healing on 2nd retry
+                    if (task.retryCount === 1) {
+                        await this.autoHeal(error);
+                    }
+                }
+
                 if (task.retryCount < task.maxRetries) {
                     console.log(`[Agent Orchestrator] Retrying task ${task.id} (attempt ${task.retryCount + 1}/${task.maxRetries})`);
 

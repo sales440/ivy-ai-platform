@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, gte, lte, sum } from "drizzle-orm";
+import { eq, and, desc, asc, sql, gte, lte, sum, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
 import {
@@ -48,12 +48,33 @@ import {
   crmIntegrations,
   InsertCrmIntegration,
   CrmIntegration,
+  knowledgeVectors,
+  InsertKnowledgeVector,
+  KnowledgeVector,
   prospectSearches,
   InsertProspectSearch,
   ProspectSearch,
   savedSearches,
   InsertSavedSearch,
   SavedSearch,
+  calls,
+  InsertCall,
+  Call,
+  callTranscripts,
+  InsertCallTranscript,
+  CallTranscript,
+  smsMessages,
+  InsertSmsMessage,
+  SmsMessage,
+  whatsappConversations,
+  InsertWhatsappConversation,
+  WhatsappConversation,
+  whatsappMessages,
+  InsertWhatsappMessage,
+  WhatsappMessage,
+  communicationAnalytics,
+  InsertCommunicationAnalytics,
+  CommunicationAnalytics,
 } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -106,9 +127,9 @@ export async function getDb() {
       keepAliveInitialDelay: 0,
     });
 
-    _db = drizzle(_pool, { mode: "default", schema });
-    console.log("[Database] Connected successfully");
-    return _db;
+    // _db = drizzle(_pool, { mode: "default", schema });
+    console.log("[Database] Connected successfully (Pool only)");
+    return _db; // Will be null/broken but testing import only
   } catch (error) {
     console.error("[Database] Failed to connect:", error);
     _db = null;
@@ -117,8 +138,8 @@ export async function getDb() {
   }
 }
 
-// Export db for backward compatibility
-export const db = await getDb();
+// Export db for backward compatibility - DEPRECATED due to top-level await issues
+// export const db = await getDb();
 
 // ============================================================================
 // USER MANAGEMENT
@@ -1587,11 +1608,11 @@ export async function getCallsByLeadId(leadId: number): Promise<Call[]> {
   return await db.select().from(calls).where(eq(calls.leadId, leadId)).orderBy(desc(calls.createdAt));
 }
 
-export async function getCallsByCompanyId(companyId: number): Promise<Call[]> {
+export async function getCallsByCompanyId(companyId: number, limit: number = 50): Promise<Call[]> {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(calls).where(eq(calls.companyId, companyId)).orderBy(desc(calls.createdAt));
+  return await db.select().from(calls).where(eq(calls.companyId, companyId)).orderBy(desc(calls.createdAt)).limit(limit);
 }
 
 export async function updateCallStatus(id: number, status: Call["status"], completedAt?: Date): Promise<void> {

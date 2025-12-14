@@ -68,53 +68,25 @@ function MissionControl({ status, stats, health, isLoading }: any) {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-950 border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Campaigns</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-400">{stats?.campaigns?.active || 0}</div>
-            <p className="text-xs text-green-500 mt-1 flex items-center">
-              <Zap className="h-3 w-3 mr-1" /> +2 from last 24h
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-950 border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">Leads Generated</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-emerald-400">{stats?.metrics?.totalLeads || 0}</div>
-            <p className="text-xs text-emerald-500 mt-1 flex items-center">
-              <Activity className="h-3 w-3 mr-1" /> +15% from last 24h
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-950 border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">Conversion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-400">{stats?.metrics?.conversionRate || "0%"}</div>
-            <p className="text-xs text-purple-500 mt-1 flex items-center">
-              <Target className="h-3 w-3 mr-1" /> +0.5% from last 24h
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-950 border-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-slate-400 uppercase tracking-wider">System Load</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-amber-400">{Math.round(health?.components?.server?.details?.memoryUsage?.percent || 0)}%</div>
-            <p className="text-xs text-amber-500 mt-1 flex items-center">
-              <Cpu className="h-3 w-3 mr-1" /> Optimal
-            </p>
-          </CardContent>
-        </Card>
+        {[
+          { title: "Active Campaigns", value: stats?.campaigns?.active || 0, color: "text-blue-400", sub: "+2 from last 24h", icon: Zap, subColor: "text-green-400" },
+          { title: "Leads Generated", value: stats?.metrics?.totalLeads || 0, color: "text-emerald-400", sub: "+12.5% vs avg", icon: Activity, subColor: "text-emerald-500" },
+          { title: "Conversion Rate", value: stats?.metrics?.conversionRate || "0%", color: "text-purple-400", sub: "+0.8% efficiency", icon: Target, subColor: "text-purple-500" },
+          { title: "System Load", value: (Math.round(health?.components?.server?.details?.memoryUsage?.percent || 0)) + "%", color: "text-amber-400", sub: "Optimal Performance", icon: Cpu, subColor: "text-amber-500" }
+        ].map((kpi, i) => (
+          <Card key={i} className="bg-slate-900/40 border-slate-800/60 backdrop-blur-sm hover:border-purple-500/30 hover:bg-slate-900/60 transition-all duration-300 group overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            <CardHeader className="pb-2 relative z-10">
+              <CardTitle className="text-xs font-bold text-slate-500 uppercase tracking-widest">{kpi.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              <div className={`text-4xl font-extrabold ${kpi.color} tracking-tight drop-shadow-sm`}>{kpi.value}</div>
+              <p className={`text-xs ${kpi.subColor} mt-2 flex items-center font-medium`}>
+                <kpi.icon className="h-3 w-3 mr-1" /> {kpi.sub}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -158,7 +130,7 @@ function MissionControl({ status, stats, health, isLoading }: any) {
                 <div className="flex justify-between text-xs text-slate-500">
                   <span>{i === 0 ? "Scraping LinkedIn..." : i === 1 ? "Negotiating contract..." : "Analyzing data..."}</span>
                 </div>
-                <Progress value={90 - (i * 5)} className="h-1 bg-slate-800" indicatorClassName="bg-emerald-500" />
+                <Progress value={90 - (i * 5)} className="h-1.5 bg-slate-800/50 rounded-full" indicatorClassName="bg-gradient-to-r from-emerald-600 to-emerald-400" />
               </div>
             ))}
           </CardContent>
@@ -460,7 +432,7 @@ function CampaignsView() {
                       <div><Skeleton className="h-8 w-12 bg-slate-800 mb-1" /><Skeleton className="h-3 w-10 bg-slate-800" /></div>
                       <div className="text-right flex flex-col items-end"><Skeleton className="h-8 w-12 bg-slate-800 mb-1" /><Skeleton className="h-3 w-24 bg-slate-800" /></div>
                     </div>
-                    <Skeleton className="h-1 w-full bg-slate-800" />
+                    <Skeleton className="h-1 w-full bg-slate-800/50" />
                   </CardContent>
                 </Card>
               ))
@@ -479,7 +451,7 @@ function CampaignsView() {
             ) : (
               // Real Data List
               campaigns.map((camp: any) => (
-                <Card key={camp.id} className="bg-slate-950 border-slate-800 hover:border-slate-700 transition-all group">
+                <Card key={camp.id} className="bg-slate-950/50 border-slate-800 backdrop-blur-sm hover:border-slate-600/50 hover:bg-slate-900/40 transition-all duration-300 group shadow-lg">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
                       <div className="space-y-1">
@@ -516,14 +488,34 @@ function CampaignsView() {
                         <div className="text-[10px] text-slate-600 mt-1">Updated {camp.updatedAt ? new Date(camp.updatedAt).toLocaleDateString() : 'Just now'}</div>
                       </div>
                     </div>
-                    <Progress value={camp.progress || 0} className="h-1 bg-slate-900"
-                      indicatorClassName={camp.status === 'active' ? 'bg-green-500' : camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'}
+                    <Progress value={camp.progress || 0} className="h-1.5 bg-slate-900 rounded-full overflow-hidden"
+                      indicatorClassName={camp.status === 'active' ? 'bg-gradient-to-r from-green-600 to-green-400' : camp.status === 'completed' ? 'bg-gradient-to-r from-blue-600 to-blue-400' : 'bg-gradient-to-r from-amber-600 to-amber-400'}
                     />
 
                     {/* Action Buttons (Hover Only) */}
                     <div className="mt-4 pt-4 border-t border-slate-900 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button size="sm" variant="ghost" className="h-8 text-xs text-slate-400 hover:text-white">
                         View Details
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs border-green-900/50 text-green-400 hover:bg-green-950"
+                        onClick={() => {
+                          // Mock sending to campaign leads
+                          const mockRecipients = ["+15550001", "+15550002"];
+                          toast.promise(trpc.communications.sendBulkTemplate.mutate({
+                            recipients: mockRecipients,
+                            templateSid: "promo_intro_v1",
+                            variables: { campaign: camp.name }
+                          }), {
+                            loading: 'Launching campaign...',
+                            success: (data) => `Campaign launched! Sent ${data.total} messages.`,
+                            error: 'Failed to launch campaign'
+                          });
+                        }}
+                      >
+                        <Send className="h-3 w-3 mr-1" /> Launch
                       </Button>
                       <Button size="sm" variant="outline" className="h-8 text-xs border-purple-900/50 text-purple-400 hover:bg-purple-950">
                         <Zap className="h-3 w-3 mr-1" /> Optimize
@@ -605,15 +597,17 @@ export default function MetaAgent() {
     <div className="flex h-screen bg-black text-slate-200 overflow-hidden font-sans">
 
       {/* Sidebar - Neural Nexus Style */}
-      <aside className={`bg-slate-950 border-r border-slate-800 transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-20"} flex flex-col`}>
+      <aside className={`bg-slate-950/80 backdrop-blur-xl border-r border-slate-800 z-50 transition-all duration-300 ${isSidebarOpen ? "w-64" : "w-20"} flex flex-col relative`}>
+        {/* Decorative Glow */}
+        <div className="absolute top-0 left-0 w-full h-32 bg-purple-900/20 blur-[60px] pointer-events-none" />
         <div className="p-6 flex items-center gap-3">
           <div className="bg-blue-600 rounded-lg p-2 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
             <Bot className="h-6 w-6 text-white" />
           </div>
           {isSidebarOpen && (
             <div>
-              <h1 className="font-bold text-lg tracking-wider text-white">META AGENT</h1>
-              <p className="text-[10px] text-blue-400 tracking-widest">Ivy.AI Sales Force System" By JCRL</p>
+              <h1 className="font-bold text-lg tracking-wider text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">META AGENT</h1>
+              <p className="text-[10px] text-blue-400/80 tracking-widest font-mono">Ivy.AI Neural Nexus v2.0</p>
             </div>
           )}
         </div>
@@ -623,15 +617,16 @@ export default function MetaAgent() {
             <button
               key={item.id}
               onClick={() => item.action ? item.action() : setActiveView(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group
                     ${activeView === item.id
-                  ? "bg-blue-900/20 text-blue-400 border border-blue-800/50 shadow-[0_0_10px_rgba(37,99,235,0.1)]"
-                  : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+                  ? "bg-purple-900/20 text-purple-300 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.4)] backdrop-blur-sm relative overflow-hidden"
+                  : "text-slate-400 hover:bg-slate-900/50 hover:text-slate-200"
                 }`}
             >
-              <item.icon className={`h-5 w-5 ${activeView === item.id ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300"}`} />
-              {isSidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
-              {isSidebarOpen && activeView === item.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_5px_currentColor]" />}
+              {activeView === item.id && <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-transparent opacity-50" />}
+              <item.icon className={`h-5 w-5 relative z-10 ${activeView === item.id ? "text-purple-400" : "text-slate-500 group-hover:text-slate-300 transition-colors"}`} />
+              {isSidebarOpen && <span className="font-medium text-sm relative z-10">{item.label}</span>}
+              {isSidebarOpen && activeView === item.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_currentColor] animate-pulse" />}
             </button>
           ))}
         </nav>
@@ -659,7 +654,7 @@ export default function MetaAgent() {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-black via-slate-950 to-slate-950">
         {/* Top Header */}
-        <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-950/50 backdrop-blur-sm">
+        <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-950/60 backdrop-blur-md sticky top-0 z-40">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold text-white capitalize">{activeView.replace("-", " ")}</h2>
             {activeView === "mission-control" && (

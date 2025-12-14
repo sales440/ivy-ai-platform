@@ -43,6 +43,7 @@ import { aiChatRouter } from "./routers/ai-chat-router";
 import { metaAgentRouter } from "./meta-agent-router";
 import { metaAgentDashboardRouter } from "./meta-agent-dashboard-router";
 import { communicationRouter } from "./communication-router";
+import { communicationsRouter } from "./routers/communications";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -64,7 +65,7 @@ interface ParsedCommand {
 function parseCommand(input: string): ParsedCommand {
   const parts = input.trim().split(/\s+/);
   let command = parts[0];
-  
+
   // Add leading slash if not present
   if (!command.startsWith('/')) {
     command = '/' + command;
@@ -91,6 +92,7 @@ function parseCommand(input: string): ParsedCommand {
 
 export const appRouter = router({
   communication: communicationRouter,
+  communications: communicationsRouter,
   metaAgent: metaAgentRouter,
   metaAgentDashboard: metaAgentDashboardRouter,
   aiChat: aiChatRouter,
@@ -132,7 +134,7 @@ export const appRouter = router({
   auditLog: auditLogRouter,
   analytics: analyticsRouter,
   savedSearches: savedSearchesRouter,
-  
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -147,17 +149,17 @@ export const appRouter = router({
   // ============================================================================
   // USER PREFERENCES ROUTER
   // ============================================================================
-  
+
   preferences: router({
     get: protectedProcedure.query(async ({ ctx }) => {
       const prefs = await db.getUserPreferences(ctx.user.id);
-      
+
       // Si no existen preferencias, crear las predeterminadas
       if (!prefs) {
         await db.createDefaultUserPreferences(ctx.user.id);
         return await db.getUserPreferences(ctx.user.id);
       }
-      
+
       return prefs;
     }),
 
@@ -174,7 +176,7 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         // Obtener preferencias actuales
         const currentPrefs = await db.getUserPreferences(ctx.user.id);
-        
+
         // Merge con nuevos valores
         const updatedPrefs = {
           userId: ctx.user.id,
@@ -186,9 +188,9 @@ export const appRouter = router({
           leadNotifications: input.leadNotifications ?? currentPrefs?.leadNotifications ?? true,
           ticketNotifications: input.ticketNotifications ?? currentPrefs?.ticketNotifications ?? true,
         };
-        
+
         await db.upsertUserPreferences(updatedPrefs);
-        
+
         return {
           success: true,
           preferences: updatedPrefs
@@ -199,7 +201,7 @@ export const appRouter = router({
   // ============================================================================
   // LEADS ROUTER
   // ============================================================================
-  
+
   leads: router({
     list: protectedProcedure
       .input(z.object({ companyId: z.number().optional() }).optional())
@@ -209,7 +211,7 @@ export const appRouter = router({
       }),
 
     byStatus: protectedProcedure
-      .input(z.object({ 
+      .input(z.object({
         status: z.enum(["new", "contacted", "qualified", "nurture", "converted", "lost"]),
         companyId: z.number().optional()
       }))
@@ -242,7 +244,7 @@ export const appRouter = router({
           location: input.location,
           status: "new"
         });
-        
+
         // If lead is VIP (score > 80), create VIP notification and auto-enrich
         if (ctx.user && lead && lead.qualificationScore && lead.qualificationScore > 80) {
           await notificationHelper.notifyVIPLead(
@@ -254,22 +256,22 @@ export const appRouter = router({
             lead.id,
             ctx.user.id
           );
-          
+
           // Auto-enrich VIP lead if LinkedIn URL is available
           if (lead.linkedinUrl) {
             try {
               console.log(`[Auto-Enrich] Enriching VIP lead ${lead.name} (ID: ${lead.id})`);
-              
+
               // Extract username from LinkedIn URL
               const urlMatch = lead.linkedinUrl.match(/linkedin\.com\/in\/([^\/\?]+)/);
               const username = urlMatch ? urlMatch[1] : null;
-              
+
               if (username) {
                 // Call LinkedIn profile API
                 const profileResult = await callDataApi('LinkedIn/get_user_profile_by_username', {
                   query: { username }
                 });
-                
+
                 if (profileResult && profileResult.id) {
                   // Extract enriched data
                   const enrichedData = {
@@ -297,7 +299,7 @@ export const appRouter = router({
                       isPremium: profileResult.isPremium || false,
                     },
                   };
-                  
+
                   // Update lead with enriched metadata
                   await db.updateLeadMetadata(lead.id, enrichedData);
                   console.log(`[Auto-Enrich] Successfully enriched VIP lead ${lead.name}`);
@@ -318,7 +320,7 @@ export const appRouter = router({
             ctx.user.id
           );
         }
-        
+
         return { lead };
       }),
 
@@ -331,18 +333,18 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         // Get lead info before deleting for audit
         const lead = await db.getLeadById(input.leadId);
-        
+
         if (!lead) {
           throw new Error('Lead not found');
         }
-        
+
         // Verify lead belongs to the specified company
         if (lead.companyId !== input.companyId) {
           throw new Error('Lead does not belong to this company');
         }
-        
+
         await db.deleteLead(input.leadId);
-        
+
         return { success: true };
       }),
 
@@ -362,23 +364,23 @@ export const appRouter = router({
     /**
    * Update lead score with history tracking
    */
-  updateScore: protectedProcedure
-    .input(z.object({
-      leadId: z.number(),
-      scoreChange: z.number(),
-      reason: z.string(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      await db.updateLeadScore(
-        input.leadId,
-        input.scoreChange,
-        input.reason,
-        ctx.user.id
-      );
-      return { success: true };
-    }),
+    updateScore: protectedProcedure
+      .input(z.object({
+        leadId: z.number(),
+        scoreChange: z.number(),
+        reason: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateLeadScore(
+          input.leadId,
+          input.scoreChange,
+          input.reason,
+          ctx.user.id
+        );
+        return { success: true };
+      }),
 
-  bulkDelete: protectedProcedure
+    bulkDelete: protectedProcedure
       .use(requirePermission("leads", "delete"))
       .input(z.object({
         ids: z.array(z.number()),
@@ -394,7 +396,7 @@ export const appRouter = router({
   // ============================================================================
   // TICKETS ROUTER
   // ============================================================================
-  
+
   tickets: router({
     list: protectedProcedure
       .input(z.object({ companyId: z.number().optional() }).optional())
@@ -404,7 +406,7 @@ export const appRouter = router({
       }),
 
     byStatus: protectedProcedure
-      .input(z.object({ 
+      .input(z.object({
         status: z.enum(["open", "in_progress", "resolved", "escalated", "closed"]),
         companyId: z.number().optional()
       }))
@@ -445,15 +447,15 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         // Get ticket info before resolving
         const ticket = await db.getTicketById(input.ticketId);
-        
+
         await db.updateTicketStatus(input.ticketId, "resolved", input.resolution);
-        
+
         // Create notification for ticket resolution
         if (ctx.user && ticket) {
           const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
           const resolvedAt = new Date();
           const resolutionTime = Math.round((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60)); // minutes
-          
+
           await notificationHelper.notifyTicketResolved(
             ticket.ticketId,
             ticket.subject,
@@ -461,7 +463,7 @@ export const appRouter = router({
             `${resolutionTime} minutes`
           );
         }
-        
+
         return { success: true };
       }),
 
@@ -479,16 +481,16 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         // Get ticket info before updating
         const ticket = await db.getTicketById(input.ticketId);
-        
+
         if (!ticket) {
           throw new Error('Ticket not found');
         }
-        
+
         // Verify ticket belongs to the specified company
         if (ticket.companyId !== input.companyId) {
           throw new Error('Ticket does not belong to this company');
         }
-        
+
         await db.updateTicket(input.ticketId, {
           subject: input.subject,
           issue: input.issue,
@@ -496,7 +498,7 @@ export const appRouter = router({
           priority: input.priority,
           assignedTo: input.assignedTo,
         });
-        
+
         return { success: true };
       }),
 
@@ -508,7 +510,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { invokeLLM } = await import('./_core/llm');
-        
+
         // Get ticket details
         const ticket = await db.getTicketById(input.ticketId);
         if (!ticket) {
@@ -520,14 +522,14 @@ export const appRouter = router({
         const articles = await db.searchKnowledgeBase(query, ticket.category || undefined);
 
         if (articles.length === 0) {
-          return { 
-            success: false, 
-            message: 'No relevant knowledge base articles found. Manual resolution required.' 
+          return {
+            success: false,
+            message: 'No relevant knowledge base articles found. Manual resolution required.'
           };
         }
 
         // Build context from KB articles
-        const kbContext = articles.map(a => 
+        const kbContext = articles.map(a =>
           `Title: ${a.title}\nContent: ${a.content}`
         ).join('\n\n---\n\n');
 
@@ -555,7 +557,7 @@ export const appRouter = router({
           const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
           const resolvedAt = new Date();
           const resolutionTime = Math.round((resolvedAt.getTime() - createdAt.getTime()) / (1000 * 60));
-          
+
           await notificationHelper.notifyTicketResolved(
             ticket.ticketId,
             ticket.subject,
@@ -564,8 +566,8 @@ export const appRouter = router({
           );
         }
 
-        return { 
-          success: true, 
+        return {
+          success: true,
           resolution,
           articlesUsed: articles.length
         };
@@ -575,7 +577,7 @@ export const appRouter = router({
   // ============================================================================
   // KNOWLEDGE BASE ROUTER
   // ============================================================================
-  
+
   knowledge: router({
     search: protectedProcedure
       .input(z.object({ query: z.string() }))
@@ -606,7 +608,7 @@ export const appRouter = router({
   // ============================================================================
   // COMMAND SYSTEM ROUTER
   // ============================================================================
-  
+
   command: router({
     execute: protectedProcedure
       .input(z.object({ command: z.string() }))
@@ -712,7 +714,7 @@ export const appRouter = router({
   // ============================================================================
   // IVY-PROSPECT ROUTER
   // ============================================================================
-  
+
   prospect: prospectRouter,
 });
 
@@ -722,7 +724,7 @@ export const appRouter = router({
 
 async function handleAgentsCommand(parsed: ParsedCommand) {
   const hive = await getHive();
-  
+
   if (parsed.subcommand === "list") {
     const agents = hive.getAllAgents();
     return {
@@ -737,7 +739,7 @@ async function handleAgentsCommand(parsed: ParsedCommand) {
 async function handleAgentCommand(parsed: ParsedCommand) {
   const hive = await getHive();
   const agentType = parsed.args.arg1 as AgentType;
-  
+
   if (parsed.subcommand === "status") {
     const agent = hive.getAgentByType(agentType);
     if (!agent) throw new Error(`Agent not found: ${agentType}`);
@@ -747,10 +749,10 @@ async function handleAgentCommand(parsed: ParsedCommand) {
   if (parsed.subcommand === "execute") {
     const agent = hive.getAgentByType(agentType);
     if (!agent) throw new Error(`Agent not found: ${agentType}`);
-    
+
     const taskType = parsed.args.arg2;
     const result = await agent.executeTask({ type: taskType, ...parsed.args });
-    
+
     return {
       agent: agent.getName(),
       task: taskType,
@@ -763,7 +765,7 @@ async function handleAgentCommand(parsed: ParsedCommand) {
 
 async function handleWorkflowsCommand(parsed: ParsedCommand) {
   const hive = await getHive();
-  
+
   if (parsed.subcommand === "available") {
     const workflows = hive.getAvailableWorkflows();
     return { workflows, total: workflows.length };
@@ -774,7 +776,7 @@ async function handleWorkflowsCommand(parsed: ParsedCommand) {
 
 async function handleWorkflowCommand(parsed: ParsedCommand) {
   const hive = await getHive();
-  
+
   if (parsed.subcommand === "execute") {
     const workflowName = parsed.args.arg1;
     const result = await hive.executeWorkflow(workflowName, parsed.args);
@@ -787,9 +789,9 @@ async function handleWorkflowCommand(parsed: ParsedCommand) {
 async function handleKPIsCommand(parsed: ParsedCommand) {
   const hive = await getHive();
   const agents = hive.getAllAgents();
-  
+
   const department = parsed.args.arg0;
-  
+
   const kpis: Record<string, any> = {};
   agents.forEach(agent => {
     if (!department || agent.getInfo().department === department) {
@@ -802,7 +804,7 @@ async function handleKPIsCommand(parsed: ParsedCommand) {
 
 async function handleAnalyticsCommand(parsed: ParsedCommand) {
   const hive = await getHive();
-  
+
   if (parsed.subcommand === "system") {
     return hive.getSystemStatus();
   }
@@ -812,7 +814,7 @@ async function handleAnalyticsCommand(parsed: ParsedCommand) {
 
 async function handleSystemCommand(parsed: ParsedCommand) {
   const hive = await getHive();
-  
+
   if (parsed.subcommand === "status" || parsed.subcommand === "health") {
     return hive.getSystemStatus();
   }

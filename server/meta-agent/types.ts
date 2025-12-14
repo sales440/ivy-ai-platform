@@ -19,7 +19,8 @@ export type TaskType =
   | "predict_performance"
   | "send_omni_message"
   | "make_call"
-  | "propose_code_change";
+  | "propose_code_change"
+  | "execute_mission";
 
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 
