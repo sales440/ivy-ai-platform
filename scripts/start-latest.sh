@@ -12,7 +12,7 @@ echo "📦 Running database migrations..."
 # Run standard migrations, THEN force-sync schema to catch any drift (like missing columns)
 pnpm db:migrate
 echo "🔄 Verifying schema sync..."
-yes | pnpm db:push
+# yes | pnpm db:push
 # Ensure notifications table exists
 echo "🔔 Ensuring notifications table exists..."
 node scripts/fix-notifications.mjs || echo "⚠️  Notifications table check failed"
