@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { initSentry, addSentryErrorHandler } from "./sentry";
+import { runEmergencySchemaFix } from "./schema-fix";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -100,7 +101,7 @@ async function startServer() {
 
   await ensureScheduledTasksTable();
 
-  import { runEmergencySchemaFix } from "./schema-fix";
+
 
   // ... existing imports ...
 
