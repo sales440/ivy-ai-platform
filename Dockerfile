@@ -74,9 +74,8 @@ ENV NODE_ENV=production
 EXPOSE ${PORT:-3000}
 
 # Health check
-# Health check - Relaxed constraints for startup tasks (migrations/schema fix)
-HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Health check - Removed to let Railway handle TCP checks
+# HEALTHCHECK handled by platform
 
 # Start the application with migrations
 CMD ["sh", "scripts/start-latest.sh"]
