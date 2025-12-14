@@ -65,7 +65,7 @@ async function ensureScheduledTasksTable() {
 }
 
 async function startServer() {
-  console.log("!!! FAST BOOT: STARTING SERVER - VERSION 1.0.5 !!!");
+  console.log("!!! FAST BOOT: STARTING SERVER - VERSION 1.0.6 (DIAGNOSTIC MODE) !!!");
   const app = express();
   const server = createServer(app);
 
