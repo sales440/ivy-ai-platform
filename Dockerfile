@@ -1,5 +1,5 @@
 # Multi-stage build for Ivy.AI Platform
-# Cache bust: 2025-12-10 23:55:00 UTC - Force rebuild to include new version
+# Cache bust: 2025-12-14 00:55:00 UTC - Force rebuild to include new version (Cache Bust 2)
 FROM node:22-alpine AS base
 
 # Install pnpm
