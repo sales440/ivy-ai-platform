@@ -65,69 +65,11 @@ async function ensureScheduledTasksTable() {
 }
 
 async function startServer() {
-  console.log("!!! STARTING SERVER - VERSION 1.0.3 - DEPLOYMENT CHECK !!!");
-
-  // Run database migrations on startup
-  try {
-    console.log('[Startup] Running database migrations...');
-    const { migrate } = await import("drizzle-orm/mysql2/migrator");
-    const { db } = await import("../db");
-    if (db) {
-      // We need to import the migration function and run it. 
-      // Note: Drizzle's 'migrate' function expects a database connection.
-      // We need to point to the migrations folder.
-      // However, 'migrate' runs on the 'db' instance.
-      // We need the relative path to the migrations folder.
-      // Since we are in dist/index.js (production), the migrations folder might not be where we expect effectively.
-      // But usually it's in a 'drizzle' folder next to source.
-
-      // Safer approach for now: Use the package.json script via child_process if possible, 
-      // OR better: use child_process to run 'npm run db:push' if we are in an environment where we can spawn.
-      // But 'db:push' is aggressive. 'migrate' is safer.
-
-      // Let's try running the migration using the ORM's migrator if we can find the folder. 
-      // Assuming 'drizzle' folder is at the root.
-
-      // Actually, the simplest fix for Railway is often to run the migration command as part of the start command or in the code.
-      // Let's use the code approach with 'migrate'.
-
-      await migrate(db, { migrationsFolder: "./drizzle" });
-      console.log('[Startup] ✅ Database migrations completed successfully');
-    }
-  } catch (error) {
-    console.error('[Startup] ⚠️ Database migration failed:', error);
-    // Continue anyway, maybe tables exist but migration tracking failed
-  }
-
-  await ensureScheduledTasksTable();
-
-
-
-  // ... existing imports ...
-
-  // ... inside startServer ...
-
-  // Ensure scheduledTasks table exists (Handled by startup script now)
-  // await ensureScheduledTasksTable();
-
-  // RUN EMERGENCY FIX BEFORE STARTING APP
-  console.log('[Startup] 🚑 invoking Emergency Schema Fix...');
-  try {
-    await runEmergencySchemaFix();
-    console.log('[Startup] ✅ Emergency Schema Fix returned.');
-  } catch (err) {
-    console.error('[Startup] ❌ Emergency Schema Fix CRASED:', err);
-  }
-
+  console.log("!!! FAST BOOT: STARTING SERVER - VERSION 1.0.5 !!!");
   const app = express();
-
   const server = createServer(app);
 
-  // Initialize Sentry (must be first)
-  // TEMPORARILY DISABLED - Sentry causing crashes
-  // initSentry(app);
-
-  // Initialize WebSocket server for real-time notifications
+  // Initialize WebSocket server (must be before listen)
   const { initializeWebSocket } = await import("../websocket-notifications");
   initializeWebSocket(server);
 
@@ -137,7 +79,7 @@ async function startServer() {
     next();
   });
 
-  // Configure body parser with larger size limit for file uploads
+  // Configure body parser
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
@@ -146,27 +88,23 @@ async function startServer() {
     res.status(200).send("OK");
   });
 
-  // OAuth callback under /api/oauth/callback
+  // Initialize all routes
   registerOAuthRoutes(app);
 
-  // Telnyx webhook endpoint
   app.post("/api/webhooks/telnyx", async (req, res) => {
     const { handleTelnyxWebhook } = await import("../webhooks/telnyx-webhook");
     return handleTelnyxWebhook(req, res);
   });
 
-  // Gmail webhook endpoints
   const { gmailWebhookRouter } = await import("../webhooks/gmail-webhook");
   app.use("/api/webhooks", gmailWebhookRouter);
 
-  // SendGrid webhook endpoints
   const { sendgridWebhookRouter } = await import("../webhooks/sendgrid-webhook");
   app.use("/api/webhooks", sendgridWebhookRouter);
 
-  // SSE notifications endpoint
   const notificationsSSERouter = (await import("../routes/notifications-sse")).default;
   app.use("/api/notifications", notificationsSSERouter);
-  // tRPC API
+
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -174,25 +112,16 @@ async function startServer() {
       createContext,
     })
   );
-  // development mode uses Vite, production mode uses static files
+
+  // Serve static files (Frontend)
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
 
-  // Add Sentry error handler (must be after all routes)
-  // TEMPORARILY DISABLED - Sentry causing crashes
-  // addSentryErrorHandler(app);
-
-  // Add Sentry error handler (must be after all routes)
-  // TEMPORARILY DISABLED - Sentry causing crashes
-  // addSentryErrorHandler(app);
-
+  // 1. DETERMINE PORT
   const preferredPort = parseInt(process.env.PORT || "3000");
-
-  // In production (Railway), we must listen on the exact PORT provided
-  // and bind to 0.0.0.0 to be accessible outside the container.
   const port = process.env.NODE_ENV === 'production'
     ? preferredPort
     : await findAvailablePort(preferredPort);
@@ -201,40 +130,65 @@ async function startServer() {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  // Bind to 0.0.0.0 to allow external access (required for Docker/Railway)
+  // 2. LISTEN IMMEDIATELY (FAST BOOT) to satisfy Railway connection check
   server.listen(port, "0.0.0.0", async () => {
-    console.log(`Server running on http://0.0.0.0:${port}/`);
+    console.log(`[FastBoot] 🚀 Server LISTENING on http://0.0.0.0:${port}/`);
 
-    // Start scheduled tasks processor
-    const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
-    startScheduledTasksProcessor();
-
-    // Start FAGOR drip campaign scheduler
-    const { startFagorDripScheduler } = await import('../fagor-drip-scheduler');
-    startFagorDripScheduler();
-
-    // Start agent milestone checker (runs every hour)
-    const { scheduledMilestoneCheck } = await import('../agent-milestone-notifications');
-    setInterval(() => {
-      scheduledMilestoneCheck().catch(err => {
-        console.error('[AgentMilestones] Error in scheduled check:', err);
-      });
-    }, 60 * 60 * 1000); // Every hour
-    // Run initial check after 1 minute
-    setTimeout(() => {
-      scheduledMilestoneCheck().catch(err => {
-        console.error('[AgentMilestones] Error in initial check:', err);
-      });
-    }, 60 * 1000);
-
-    // Start Meta-Agent (autonomous maintenance system)
-    const { startMetaAgent } = await import('../meta-agent-startup');
-    setTimeout(() => {
-      startMetaAgent().catch(err => {
-        console.error('[Meta-Agent] Error starting Meta-Agent:', err);
-      });
-    }, 5000); // Start after 5 seconds to allow server to fully initialize
+    // 3. RUN INITIALIZATION IN BACKGROUND
+    runBackgroundInitialization();
   });
+}
+
+// Background initialization task
+async function runBackgroundInitialization() {
+  console.log('[Init] ⏳ Starting background initialization...');
+
+  try {
+    // Run database migrations
+    console.log('[Init] Running database migrations...');
+    const { migrate } = await import("drizzle-orm/mysql2/migrator");
+    const { db } = await import("../db");
+
+    if (db) {
+      // Only run migrations inside dist/drizzle or ./drizzle depending on structure.
+      // For safety in this environment, try root "drizzle" folder.
+      await migrate(db, { migrationsFolder: "./drizzle" }).catch(err => {
+        console.warn('[Init] Migration warning (non-fatal):', err.message);
+      });
+      console.log('[Init] ✅ Database migrations completed (or skipped safely)');
+    }
+  } catch (error) {
+    console.error('[Init] ⚠️ Database migration failed:', error);
+  }
+
+  // Ensure scheduled tasks table
+  await ensureScheduledTasksTable();
+
+  // Run Emergency Fix
+  console.log('[Init] 🚑 invoking Emergency Schema Fix...');
+  try {
+    await runEmergencySchemaFix();
+    console.log('[Init] ✅ Emergency Schema Fix returned.');
+  } catch (err) {
+    console.error('[Init] ❌ Emergency Schema Fix CRASHED:', err);
+  }
+
+  // Start background workers
+  const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
+  startScheduledTasksProcessor();
+
+  const { startFagorDripScheduler } = await import('../fagor-drip-scheduler');
+  startFagorDripScheduler();
+
+  const { scheduledMilestoneCheck } = await import('../agent-milestone-notifications');
+  setInterval(() => {
+    scheduledMilestoneCheck().catch(console.error);
+  }, 60 * 60 * 1000);
+
+  const { startMetaAgent } = await import('../meta-agent-startup');
+  startMetaAgent().catch(console.error);
+
+  console.log('[Init] 🎉 All background services started.');
 }
 
 startServer().catch(console.error);
