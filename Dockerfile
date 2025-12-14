@@ -61,6 +61,7 @@ COPY --from=builder /app/dist/public ./dist/public
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/drizzle.config.ts ./
+COPY --from=builder /app/vite.config.ts ./
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/campaigns ./campaigns

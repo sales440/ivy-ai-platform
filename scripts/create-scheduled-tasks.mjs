@@ -3,13 +3,25 @@ import mysql from 'mysql2/promise';
 
 async function main() {
     // Railway provides these environment variables for MySQL
-    const config = {
-        host: process.env.MYSQLHOST,
-        port: process.env.MYSQLPORT || 3306,
-        user: process.env.MYSQLUSER,
-        password: process.env.MYSQLPASSWORD,
-        database: process.env.MYSQLDATABASE
-    };
+    let config;
+    if (process.env.DATABASE_URL) {
+        const dbUrl = new URL(process.env.DATABASE_URL);
+        config = {
+            host: dbUrl.hostname,
+            port: parseInt(dbUrl.port) || 3306,
+            user: dbUrl.username,
+            password: dbUrl.password,
+            database: dbUrl.pathname.substring(1) // Remove leading slash
+        };
+    } else {
+        config = {
+            host: process.env.MYSQLHOST,
+            port: process.env.MYSQLPORT || 3306,
+            user: process.env.MYSQLUSER,
+            password: process.env.MYSQLPASSWORD,
+            database: process.env.MYSQLDATABASE
+        };
+    }
 
     console.log('🔧 Connecting to Railway MySQL database...');
     const connection = await mysql.createConnection(config);
