@@ -3,6 +3,7 @@ import { protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import * as telnyx from "./_core/telnyx";
 import { invokeLLM } from "./_core/llm";
+import { eq } from "drizzle-orm";
 
 export const callsRouter = router({
   /**
@@ -44,7 +45,7 @@ export const callsRouter = router({
 
         // Update call with Telnyx ID
         await db.updateCallStatus(call.id, "ringing");
-        
+
         // If script provided, speak it when call is answered
         if (input.script && telnyxResponse.data.call_control_id) {
           // Note: This would be triggered by webhook when call is answered
@@ -191,7 +192,7 @@ export const callsRouter = router({
       if (!db_instance) throw new Error("Database not available");
 
       const { calls } = await import("../drizzle/schema");
-      await db_instance.update(calls).set({ notes: input.notes }).where(db.eq(calls.id, input.callId));
+      await db_instance.update(calls).set({ notes: input.notes }).where(eq(calls.id, input.callId));
 
       return { success: true };
     }),

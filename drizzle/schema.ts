@@ -914,4 +914,25 @@ export const communicationAnalytics = mysqlTable("communicationAnalytics", {
 });
 
 export type CommunicationAnalytics = typeof communicationAnalytics.$inferSelect;
+
 export type InsertCommunicationAnalytics = typeof communicationAnalytics.$inferInsert;
+
+/**
+ * Campaigns - General Marketing Campaigns (Generic) for Campaign Workflow Tools
+ */
+export const campaigns = mysqlTable("campaigns", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  status: mysqlEnum("status", ["draft", "scheduled", "active", "paused", "completed", "archived"]).default("draft").notNull(),
+  budget: decimal("budget", { precision: 10, scale: 2 }).default("0.00"),
+  targetAudience: json("targetAudience").$type<Record<string, any>>(),
+  configuration: json("configuration").$type<Record<string, any>>(),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = typeof campaigns.$inferInsert;
+

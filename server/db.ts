@@ -451,6 +451,12 @@ export async function updateLeadMetadata(id: number, metadata: any): Promise<voi
   await db.update(leads).set({ metadata }).where(eq(leads.id, id));
 }
 
+export async function deleteLead(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(leads).where(eq(leads.id, id));
+}
+
 // ============================================================================
 // TICKET MANAGEMENT
 // ============================================================================
@@ -538,6 +544,12 @@ export async function updateTicketStatus(id: number, status: Ticket["status"], r
   }
 
   await db.update(tickets).set(updateData).where(eq(tickets.id, id));
+}
+
+export async function updateTicket(id: number, data: Partial<Ticket>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(tickets).set(data).where(eq(tickets.id, id));
 }
 
 // ============================================================================
