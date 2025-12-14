@@ -1,4 +1,4 @@
-console.log("\n\n!!! FAST BOOT: STARTING SERVER - VERSION 1.0.6 (DIAGNOSTIC MODE) !!!\n\n");
+console.log("\n\n!!! FAST BOOT: STARTING SERVER - VERSION 1.0.7 (NETWORK FIX) !!!\n\n");
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
@@ -147,9 +147,10 @@ async function startServer() {
   console.log(`[FastBoot] Raw PORT env: ${JSON.stringify(process.env.PORT)}`);
   console.log(`[FastBoot] Binding to port: ${bindPort}`);
 
-  server.listen(bindPort, "0.0.0.0", async () => {
+  // REMOVED '0.0.0.0' to allow Dual Stack binding (IPv4/IPv6) which is safer for Railway
+  server.listen(bindPort, async () => {
     const address = server.address();
-    console.log(`[FastBoot] 🚀 Server LISTENING on http://0.0.0.0:${bindPort}/`);
+    console.log(`[FastBoot] 🚀 Server LISTENING on port ${bindPort} (Dual Stack support)`);
     console.log(`[FastBoot] Address info:`, address);
 
     // 3. RUN INITIALIZATION IN BACKGROUND
