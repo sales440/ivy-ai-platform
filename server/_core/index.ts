@@ -135,7 +135,11 @@ async function startServer() {
     console.log(`[FastBoot] 🚀 Server LISTENING on http://0.0.0.0:${port}/`);
 
     // 3. RUN INITIALIZATION IN BACKGROUND
-    runBackgroundInitialization();
+    // We attach a catch handler to ensure no unhandled rejections crash the process
+    runBackgroundInitialization().catch(err => {
+      console.error('[FastBoot] ❌ Background initialization CRITICAL FAILURE:', err);
+      // Do not exit process, let the server keep running
+    });
   });
 }
 
