@@ -202,9 +202,9 @@ function IntelligenceHub() {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { title: "Global Logistics Sector Faces New Regulatory Hurdles in EU", source: "Financial Times", time: "15 mins ago", impact: "High", action: "Ivy-Prospect pitch updated to emphasize compliance features" },
-              { title: "AI Adoption in Fintech Scored 40% Growth in Q3", source: "TechCrunch", time: "2 hours ago", impact: "Medium", action: "Targeting criteria expanded to include 'AI Implementation Managers'" },
-              { title: "Interest Rates Stabilize: What It Means for B2B Lending", source: "Bloomberg", time: "5 hours ago", impact: "Low", action: "Ivy-Closer objection handling matrix refreshed" }
+              { title: "Robo al transporte de carga en México repunta 15% en 2025", source: "El Economista", time: "10 mins ago", impact: "High", action: "Ivy-Prospect script updated: Emphasize 'Risk Mitigation'" },
+              { title: "Aseguradoras suben primas 22% por siniestralidad en rutas del Norte", source: "Revista Logistec", time: "1 hour ago", impact: "High", action: "Ivy-Closer objection handling: Pivot to 'ROI via Prevention'" },
+              { title: "Nuevos protocolos de seguridad en aduanas vigentes hoy", source: "T21 Noticias", time: "3 hours ago", impact: "Medium", action: "Campaign Manager: Rescheduling logistics sector outreach" }
             ].map((item, i) => (
               <div key={i} className="p-4 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/50 transition-colors">
                 <div className="flex justify-between items-start mb-2">
@@ -266,9 +266,10 @@ function IntelligenceHub() {
 }
 
 /**
- * Command Center (Chat Interface)
+ * Command Center (Chat Interface + Strategy Hub)
+ * Refactored to be embeddable
  */
-function CommandCenter() {
+function CommandCenter({ embedded = false }: { embedded?: boolean }) {
   const [chatMessage, setChatMessage] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -297,54 +298,79 @@ function CommandCenter() {
     sendMessageMutation.mutate({ message: chatMessage });
   };
 
+  // Helper to pre-fill prompt
+  const prefillPrompt = (text: string) => {
+    setChatMessage(text);
+  };
+
   return (
-    <div className="h-[calc(100vh-140px)] flex flex-col animate-in fade-in duration-500">
-      <Card className="flex-1 bg-slate-950 border-slate-800 flex flex-col overflow-hidden">
+    <div className={`flex flex-col animate-in fade-in duration-500 ${embedded ? "h-full" : "h-[calc(100vh-140px)]"}`}>
+      <Card className={`flex-1 bg-slate-950 border-slate-800 flex flex-col overflow-hidden ${embedded ? "border-0 shadow-none" : ""}`}>
         <CardHeader className="border-b border-slate-800 pb-4 bg-slate-900/50">
           <CardTitle className="flex items-center gap-2 text-blue-400">
             <Terminal className="h-5 w-5" />
-            Direct Neural Link
+            {embedded ? "Strategic Command Center" : "Direct Neural Link"}
           </CardTitle>
-          <CardDescription>Issue natural language commands to the Meta-Agent</CardDescription>
+          <CardDescription>
+            {embedded
+              ? "Interact with the Commercial Strategist to build & optimize campaigns"
+              : "Issue natural language commands to the Meta-Agent"}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="flex-1 overflow-hidden p-0 flex flex-col">
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
+              {/* Welcome / Suggestion Chips */}
+              {(!chatHistory || chatHistory.length === 0) && (
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <Button variant="outline" className="h-auto py-2 px-3 justify-start text-xs border-slate-800 hover:bg-slate-900 hover:text-blue-400 text-slate-500"
+                    onClick={() => prefillPrompt("Generate a campaign for getting 15 demos of our CRM software in companies of 50-200 employees in Mexico")}>
+                    <Plus className="h-3 w-3 mr-2" />
+                    New Campaign Strategy...
+                  </Button>
+                  <Button variant="outline" className="h-auto py-2 px-3 justify-start text-xs border-slate-800 hover:bg-slate-900 hover:text-purple-400 text-slate-500"
+                    onClick={() => prefillPrompt("Analyze the last 24h performance of the Fintech Outreach campaign and suggest improvements")}>
+                    <TrendingUp className="h-3 w-3 mr-2" />
+                    Optimize Performance...
+                  </Button>
+                </div>
+              )}
+
               {chatHistory && chatHistory.length > 0 ? (
                 chatHistory.map((msg: any) => (
                   <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[80%] rounded-lg p-4 ${msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-800 text-slate-200 border border-slate-700"
+                    <div className={`max-w-[85%] rounded-lg p-4 ${msg.role === "user"
+                      ? "bg-blue-600/90 text-white backdrop-blur-sm"
+                      : "bg-slate-900/80 text-slate-200 border border-slate-800"
                       }`}>
-                      <div className="flex items-center gap-2 mb-2 opacity-70 text-xs uppercase tracking-wider font-bold">
-                        {msg.role === "user" ? <span className="flex items-center gap-1"><Users className="h-3 w-3" /> COMMAND</span> : <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> RESPONSE</span>}
+                      <div className="flex items-center gap-2 mb-2 opacity-70 text-[10px] uppercase tracking-wider font-bold">
+                        {msg.role === "user" ? <span className="flex items-center gap-1"><Users className="h-3 w-3" /> COMMAND</span> : <span className="flex items-center gap-1"><Bot className="h-3 w-3" /> STRATEGIST</span>}
                         <span>•</span>
                         <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
                       </div>
-                      <div className="prose prose-invert prose-sm">
+                      <div className="prose prose-invert prose-sm leading-relaxed text-sm">
                         <Streamdown>{msg.content}</Streamdown>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center h-[400px] text-slate-500">
-                  <Bot className="h-16 w-16 mb-4 opacity-20" />
-                  <p>Link established. Awaiting input...</p>
+                <div className="flex flex-col items-center justify-center h-[300px] text-slate-500">
+                  <Bot className="h-12 w-12 mb-4 opacity-10" />
+                  <p className="text-sm">Link established. Awaiting strategic input...</p>
                 </div>
               )}
               <div ref={chatEndRef} />
             </div>
           </ScrollArea>
 
-          <div className="p-4 bg-slate-900 border-t border-slate-800 flex gap-2">
+          <div className="p-4 bg-slate-900/50 border-t border-slate-800 flex gap-2">
             <div className="relative flex-1">
               <Terminal className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
               <Input
                 placeholder="Generate a campaign for..."
-                className="pl-9 bg-black border-slate-700 focus:border-blue-500 text-slate-200 font-mono"
+                className="pl-9 bg-black/50 border-slate-700/50 focus:border-blue-500 text-slate-200 font-mono text-sm"
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
@@ -353,7 +379,7 @@ function CommandCenter() {
             </div>
             <Button
               onClick={handleSendMessage}
-              className="bg-blue-600 hover:bg-blue-500"
+              className="bg-blue-600 hover:bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.2)]"
               disabled={sendMessageMutation.isPending || !chatMessage.trim()}
             >
               <Send className="h-4 w-4" />
@@ -361,6 +387,164 @@ function CommandCenter() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * Campaigns View (Split Screen: List + Chat)
+ */
+function CampaignsView() {
+  const { data: campaigns } = trpc.campaigns.getAll.useQuery();
+
+  // Mock Data for UI Visualization (if API returns empty)
+  const displayCampaigns = campaigns && campaigns.length > 0 ? campaigns : [
+    {
+      id: 1,
+      name: "Fintech CTO Outreach",
+      status: "active",
+      leads: 42,
+      progress: 65,
+      lastUpdate: "2 mins ago",
+      tags: ["CMP 2025 001", "LinkedIn", "Email"]
+    },
+    {
+      id: 2,
+      name: "SaaS Demo Booking - Q4",
+      status: "completed",
+      leads: 128,
+      progress: 100,
+      lastUpdate: "1 day ago",
+      tags: ["CMP 2025 002", "Email Sequence"]
+    },
+    {
+      id: 3,
+      name: "Logistics Enterprise Expansion",
+      status: "paused",
+      leads: 0,
+      progress: 32,
+      lastUpdate: "4 hours ago",
+      tags: ["CMP 2025 003", "LinkedIn"]
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-[calc(100vh-140px)]">
+      {/* Left Column: Campaigns List */}
+      <div className="xl:col-span-7 flex flex-col gap-6 overflow-hidden">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Target className="h-6 w-6 text-green-400" />
+              Campaigns
+            </h2>
+            <p className="text-slate-400 text-sm">Manage & Monitor Active Operations</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="border-slate-800 text-slate-400">
+              Filter
+            </Button>
+          </div>
+        </div>
+
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4">
+            {displayCampaigns.map((camp: any) => (
+              <Card key={camp.id} className="bg-slate-950 border-slate-800 hover:border-slate-700 transition-all group">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${camp.status === 'active' ? 'bg-green-500 animate-pulse' :
+                          camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'
+                          }`} />
+                        <CardTitle className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
+                          {camp.name}
+                        </CardTitle>
+                      </div>
+                      <div className="flex gap-2 text-[10px] text-slate-500 font-mono uppercase">
+                        {camp.tags?.map((tag: string, i: number) => (
+                          <span key={i}>{tag} {i < camp.tags.length - 1 && "•"}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className={`uppercase text-[10px] tracking-widest ${camp.status === 'active' ? 'text-green-400 border-green-900 bg-green-950/30' :
+                      camp.status === 'completed' ? 'text-blue-400 border-blue-900 bg-blue-950/30' : 'text-amber-400 border-amber-900 bg-amber-950/30'
+                      }`}>
+                      {camp.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-8 mb-4">
+                    <div>
+                      <div className="text-3xl font-bold text-white">{camp.leads}</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Leads</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-white">{camp.progress}%</div>
+                      <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Progress</div>
+                      <div className="text-[10px] text-slate-600 mt-1">Updated {camp.lastUpdate}</div>
+                    </div>
+                  </div>
+                  <Progress value={camp.progress} className="h-1 bg-slate-900"
+                    indicatorClassName={camp.status === 'active' ? 'bg-green-500' : camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'}
+                  />
+
+                  {/* Action Buttons (Hover Only) */}
+                  <div className="mt-4 pt-4 border-t border-slate-900 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button size="sm" variant="ghost" className="h-8 text-xs text-slate-400 hover:text-white">
+                      View Details
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8 text-xs border-purple-900/50 text-purple-400 hover:bg-purple-950">
+                      <Zap className="h-3 w-3 mr-1" /> Optimize
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Right Column: Strategic Command Center */}
+      <div className="xl:col-span-5 border-l border-slate-800 pl-6 h-full flex flex-col">
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+            <BrainCircuit className="h-4 w-4" /> Command Center
+          </h3>
+          <p className="text-xs text-slate-600">Direct link to Meta Agent</p>
+        </div>
+        <div className="flex-1 border border-slate-800 rounded-xl overflow-hidden shadow-2xl bg-slate-950/50">
+          <CommandCenter embedded={true} />
+        </div>
+
+        {/* Agent Status Minimized */}
+        <div className="mt-6">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Agent Status</h3>
+          <div className="space-y-2">
+            {[
+              { name: "Ivy-Prospect", action: "Scraping LinkedIn profiles...", eff: 98, color: "text-emerald-400" },
+              { name: "Ivy-Closer", action: "Negotiating contracts...", eff: 94, color: "text-emerald-400" },
+              { name: "Logic", action: "Analyzing campaign metrics...", eff: 99, color: "text-amber-400" }
+            ].map((agent, i) => (
+              <div key={i} className="flex justify-between items-center p-2 rounded bg-slate-900/50 border border-slate-800/50">
+                <div className="flex items-center gap-2">
+                  <div className={`h-1.5 w-1.5 rounded-full ${agent.color.replace('text', 'bg')}`} />
+                  <div>
+                    <div className="text-xs font-bold text-slate-300">{agent.name}</div>
+                    <div className="text-[10px] text-slate-500 truncate max-w-[120px]">{agent.action}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className={`text-xs font-bold ${agent.color}`}>{agent.eff}%</div>
+                  <div className="text-[8px] text-slate-600">EFF</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -380,8 +564,8 @@ export default function MetaAgent() {
   // Navigation Items
   const navItems = [
     { id: "mission-control", label: "Mission Control", icon: LayoutDashboard },
-    { id: "command-center", label: "Command Center", icon: Terminal },
-    { id: "campaigns", label: "Campaigns", icon: Target, action: () => setLocation("/campaigns-dashboard") },
+    { id: "campaigns", label: "Campaigns", icon: Target }, // Removed external redirect to use inline view
+    { id: "command-center", label: "Command Center", icon: Terminal }, // Kept for legacy/direct access if needed
     { id: "audience", label: "Audience", icon: Users },
     { id: "agents", label: "Agents", icon: Bot, action: () => setLocation("/agents-dashboard") },
     { id: "intelligence", label: "Intelligence", icon: BrainCircuit },
@@ -475,8 +659,13 @@ export default function MetaAgent() {
             {activeView === "mission-control" && (
               <MissionControl status={status} stats={dashboardStats} health={health} />
             )}
+            {activeView === "campaigns" && (
+              <CampaignsView />
+            )}
             {activeView === "command-center" && (
-              <CommandCenter />
+              <div className="max-w-4xl mx-auto">
+                <CommandCenter />
+              </div>
             )}
             {activeView === "intelligence" && (
               <IntelligenceHub />
