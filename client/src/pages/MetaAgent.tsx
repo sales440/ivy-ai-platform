@@ -39,13 +39,31 @@ import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import { AudienceManager } from "@/components/meta-agent/AudienceManager";
 import { useLocation } from "wouter";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 // --- Components ---
 
 /**
  * Mission Control Dashboard
  */
-function MissionControl({ status, stats, health, activeAgents }: any) {
+function MissionControl({ status, stats, health, isLoading }: any) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="bg-slate-950 border-slate-800">
+            <CardHeader className="pb-2"><Skeleton className="h-4 w-24 bg-slate-800" /></CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-16 bg-slate-800 mb-2" />
+              <Skeleton className="h-3 w-32 bg-slate-800" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* KPI Row */}
@@ -363,10 +381,16 @@ function CommandCenter({ embedded = false }: { embedded?: boolean }) {
               )}
               <div ref={chatEndRef} />
             </div>
+
           </ScrollArea>
 
           <div className="p-4 bg-slate-900/50 border-t border-slate-800 flex gap-2">
             <div className="relative flex-1">
+              {sendMessageMutation.isPending && (
+                <div className="absolute right-3 top-3">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                </div>
+              )}
               <Terminal className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
               <Input
                 placeholder="Generate a campaign for..."
@@ -387,7 +411,7 @@ function CommandCenter({ embedded = false }: { embedded?: boolean }) {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 }
 
@@ -395,38 +419,7 @@ function CommandCenter({ embedded = false }: { embedded?: boolean }) {
  * Campaigns View (Split Screen: List + Chat)
  */
 function CampaignsView() {
-  const { data: campaigns } = trpc.campaigns.getAll.useQuery();
-
-  // Mock Data for UI Visualization (if API returns empty)
-  const displayCampaigns = campaigns && campaigns.length > 0 ? campaigns : [
-    {
-      id: 1,
-      name: "Fintech CTO Outreach",
-      status: "active",
-      leads: 42,
-      progress: 65,
-      lastUpdate: "2 mins ago",
-      tags: ["CMP 2025 001", "LinkedIn", "Email"]
-    },
-    {
-      id: 2,
-      name: "SaaS Demo Booking - Q4",
-      status: "completed",
-      leads: 128,
-      progress: 100,
-      lastUpdate: "1 day ago",
-      tags: ["CMP 2025 002", "Email Sequence"]
-    },
-    {
-      id: 3,
-      name: "Logistics Enterprise Expansion",
-      status: "paused",
-      leads: 0,
-      progress: 32,
-      lastUpdate: "4 hours ago",
-      tags: ["CMP 2025 003", "LinkedIn"]
-    }
-  ];
+  const { data: campaigns, isLoading } = trpc.campaigns.getAll.useQuery();
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-[calc(100vh-140px)]">
@@ -449,60 +442,96 @@ function CampaignsView() {
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
-            {displayCampaigns.map((camp: any) => (
-              <Card key={camp.id} className="bg-slate-950 border-slate-800 hover:border-slate-700 transition-all group">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full ${camp.status === 'active' ? 'bg-green-500 animate-pulse' :
-                          camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'
-                          }`} />
-                        <CardTitle className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
-                          {camp.name}
-                        </CardTitle>
+            {isLoading ? (
+              // Loading Skeletons
+              [1, 2, 3].map((i) => (
+                <Card key={i} className="bg-slate-950 border-slate-800">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between">
+                      <div className="flex gap-2 items-center">
+                        <Skeleton className="h-2 w-2 rounded-full bg-slate-800" />
+                        <Skeleton className="h-6 w-48 bg-slate-800" />
                       </div>
-                      <div className="flex gap-2 text-[10px] text-slate-500 font-mono uppercase">
-                        {camp.tags?.map((tag: string, i: number) => (
-                          <span key={i}>{tag} {i < camp.tags.length - 1 && "•"}</span>
-                        ))}
+                      <Skeleton className="h-5 w-16 bg-slate-800" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-8 mb-4">
+                      <div><Skeleton className="h-8 w-12 bg-slate-800 mb-1" /><Skeleton className="h-3 w-10 bg-slate-800" /></div>
+                      <div className="text-right flex flex-col items-end"><Skeleton className="h-8 w-12 bg-slate-800 mb-1" /><Skeleton className="h-3 w-24 bg-slate-800" /></div>
+                    </div>
+                    <Skeleton className="h-1 w-full bg-slate-800" />
+                  </CardContent>
+                </Card>
+              ))
+            ) : !campaigns || campaigns.length === 0 ? (
+              // Empty State
+              <div className="flex flex-col items-center justify-center p-12 border border-dashed border-slate-800 rounded-lg bg-slate-950/50">
+                <Target className="h-12 w-12 text-slate-600 mb-4" />
+                <h3 className="text-lg font-medium text-slate-400">No Active Campaigns</h3>
+                <p className="text-sm text-slate-600 text-center max-w-xs mt-2 mb-6">
+                  Launch a new campaign using the Command Center or create one manually.
+                </p>
+                <Button variant="outline" className="border-blue-900/50 text-blue-400 hover:bg-blue-950">
+                  <Plus className="h-4 w-4 mr-2" /> Create Campaign
+                </Button>
+              </div>
+            ) : (
+              // Real Data List
+              campaigns.map((camp: any) => (
+                <Card key={camp.id} className="bg-slate-950 border-slate-800 hover:border-slate-700 transition-all group">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${camp.status === 'active' ? 'bg-green-500 animate-pulse' :
+                            camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'
+                            }`} />
+                          <CardTitle className="text-base font-bold text-white group-hover:text-blue-400 transition-colors">
+                            {camp.name}
+                          </CardTitle>
+                        </div>
+                        <div className="flex gap-2 text-[10px] text-slate-500 font-mono uppercase">
+                          {camp.tags?.map((tag: string, i: number) => (
+                            <span key={i}>{tag} {i < camp.tags.length - 1 && "•"}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className={`uppercase text-[10px] tracking-widest ${camp.status === 'active' ? 'text-green-400 border-green-900 bg-green-950/30' :
+                        camp.status === 'completed' ? 'text-blue-400 border-blue-900 bg-blue-950/30' : 'text-amber-400 border-amber-900 bg-amber-950/30'
+                        }`}>
+                        {camp.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-8 mb-4">
+                      <div>
+                        <div className="text-3xl font-bold text-white">{camp.leads || 0}</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Leads</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-bold text-white">{camp.progress || 0}%</div>
+                        <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Progress</div>
+                        <div className="text-[10px] text-slate-600 mt-1">Updated {camp.updatedAt ? new Date(camp.updatedAt).toLocaleDateString() : 'Just now'}</div>
                       </div>
                     </div>
-                    <Badge variant="outline" className={`uppercase text-[10px] tracking-widest ${camp.status === 'active' ? 'text-green-400 border-green-900 bg-green-950/30' :
-                      camp.status === 'completed' ? 'text-blue-400 border-blue-900 bg-blue-950/30' : 'text-amber-400 border-amber-900 bg-amber-950/30'
-                      }`}>
-                      {camp.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-8 mb-4">
-                    <div>
-                      <div className="text-3xl font-bold text-white">{camp.leads}</div>
-                      <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Leads</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-white">{camp.progress}%</div>
-                      <div className="text-xs text-slate-500 uppercase tracking-wider font-bold">Progress</div>
-                      <div className="text-[10px] text-slate-600 mt-1">Updated {camp.lastUpdate}</div>
-                    </div>
-                  </div>
-                  <Progress value={camp.progress} className="h-1 bg-slate-900"
-                    indicatorClassName={camp.status === 'active' ? 'bg-green-500' : camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'}
-                  />
+                    <Progress value={camp.progress || 0} className="h-1 bg-slate-900"
+                      indicatorClassName={camp.status === 'active' ? 'bg-green-500' : camp.status === 'completed' ? 'bg-blue-500' : 'bg-amber-500'}
+                    />
 
-                  {/* Action Buttons (Hover Only) */}
-                  <div className="mt-4 pt-4 border-t border-slate-900 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="sm" variant="ghost" className="h-8 text-xs text-slate-400 hover:text-white">
-                      View Details
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-8 text-xs border-purple-900/50 text-purple-400 hover:bg-purple-950">
-                      <Zap className="h-3 w-3 mr-1" /> Optimize
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    {/* Action Buttons (Hover Only) */}
+                    <div className="mt-4 pt-4 border-t border-slate-900 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="ghost" className="h-8 text-xs text-slate-400 hover:text-white">
+                        View Details
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-8 text-xs border-purple-900/50 text-purple-400 hover:bg-purple-950">
+                        <Zap className="h-3 w-3 mr-1" /> Optimize
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )))}
           </div>
         </ScrollArea>
       </div>
@@ -657,7 +686,7 @@ export default function MetaAgent() {
         <ScrollArea className="flex-1 p-8">
           <div className="max-w-[1600px] mx-auto">
             {activeView === "mission-control" && (
-              <MissionControl status={status} stats={dashboardStats} health={health} />
+              <MissionControl status={status} stats={dashboardStats} health={health} isLoading={!status} />
             )}
             {activeView === "campaigns" && (
               <CampaignsView />

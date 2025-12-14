@@ -3,16 +3,19 @@
 
 set -e  # Exit on error
 
-echo "🚀 Starting Ivy.AI Platform v1.0.3 (Deployment Fix)..."
+echo "🚀 Starting Ivy.AI Platform v1.1.0 (Meta-Agent Architect Edition)..."
 echo "📦 Package Version:"
 grep '"version":' package.json
 
-# Run database migrations (Moved to inside application for FAST BOOT)
-echo "📦 FAST BOOT: Skipping external migrations to open port immediately..."
-# pnpm db:migrate
-# node scripts/fix-notifications.mjs
-# node scripts/create-fagor-tables.mjs
-# node scripts/create-scheduled-tasks.mjs
+# Run database migrations (Critical for Railway persistence)
+echo "📦 FAST BOOT: Syncing Database Schema..."
+# Using db:push is safer for rapid iteration on Railway than migrate if snapshots are missing
+pnpm db:push 
+
+# Initialize DB if needed (seeds basic data if empty)
+# node scripts/init-db.mjs
+
+echo "✅ Database synced."
 
 # Start the application
 echo "✅ Starting application server (Direct Node Mode)..."

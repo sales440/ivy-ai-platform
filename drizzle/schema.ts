@@ -802,10 +802,14 @@ export type InsertCallTranscript = typeof callTranscripts.$inferInsert;
  */
 export const metaAgentMemory = mysqlTable("metaAgentMemory", {
   id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(), // User who interacted
-  role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
+  companyId: int("companyId").notNull().default(1), // Default to 1 for migration safety
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["user", "assistant", "system", "decision_maker"]).notNull(),
   content: text("content").notNull(),
-  metadata: json("metadata").$type<Record<string, any>>(), // Store tool calls, thoughts, sources
+  embedding: json("embedding").$type<number[]>(), // Vector representation
+  tags: json("tags").$type<string[]>(), // Categorization tags
+  importance: int("importance").default(1), // 1-5 scale
+  metadata: json("metadata").$type<Record<string, any>>(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
 });
 
@@ -817,8 +821,11 @@ export type InsertMetaAgentMemory = typeof metaAgentMemory.$inferInsert;
  */
 export const trainingLogs = mysqlTable("trainingLogs", {
   id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull().default(1),
   agentType: mysqlEnum("agentType", ["prospect", "closer", "solve", "logic", "talent", "insight"]).notNull(),
   trainingModule: varchar("trainingModule", { length: 255 }).notNull(),
+  promptVersion: int("promptVersion").default(1).notNull(),
+  promptSnapshot: text("promptSnapshot"), // Copy of the system prompt used
   insights: json("insights").$type<string[]>(),
   recommendations: json("recommendations").$type<string[]>(),
   status: mysqlEnum("status", ["started", "completed", "failed"]).default("started").notNull(),

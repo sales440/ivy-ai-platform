@@ -20,7 +20,8 @@ import { EXTENDED_TOOL_DEFINITIONS, executeExtendedToolCall } from "./meta-agent
  */
 export async function generateChatResponse(
   userMessage: string,
-  conversationHistory: ChatMessage[]
+  conversationHistory: ChatMessage[],
+  companyId: number = 1
 ): Promise<{ response: string; action?: string }> {
   console.log(`[Chat Handler] Processing message: ${userMessage}`);
 
@@ -33,7 +34,7 @@ export async function generateChatResponse(
   }
 
   // Generate conversational response using LLM
-  return await generateConversationalResponse(userMessage, conversationHistory);
+  return await generateConversationalResponse(userMessage, conversationHistory, companyId);
 }
 
 /**
@@ -446,7 +447,7 @@ function handleHelpCommand(): { response: string } {
 Ejemplo: "Crea un agente de ventas", "Busca tendencias de IA en 2025", "Capacita a IvyCall para la industria tech", "Monitorea a nuestros competidores"
   `.trim();
 
-  return Promise.resolve({ response });
+  return { response };
 }
 
 /**
@@ -571,9 +572,19 @@ Usa \`fix\` para arreglar estos errores automáticamente.
  */
 async function generateConversationalResponse(
   userMessage: string,
-  conversationHistory: ChatMessage[]
+  conversationHistory: ChatMessage[],
+  companyId: number = 1
 ): Promise<{ response: string }> {
   try {
+    // 1. Retrieve relevant memory context
+    const relevantMemories = await metaAgent.retrieveRelevantMemory(userMessage, companyId);
+    let systemContext = META_AGENT_SYSTEM_PROMPT;
+
+    if (relevantMemories.length > 0) {
+      console.log(`[Chat Handler] Injected ${relevantMemories.length} relevant memories into context`);
+      systemContext += `\n\n=== RELEVANT MEMORY CONTEXT ===\n${relevantMemories.join('\n')}\n==============================\nUse this context to inform your response but do not explicitly mention that you are reading from memory unless asked.`;
+    }
+
     // Get current system status (with fallbacks)
     const status = metaAgent.getStatus();
 
@@ -611,7 +622,7 @@ async function generateConversationalResponse(
       messages: [
         {
           role: "system",
-          content: META_AGENT_SYSTEM_PROMPT
+          content: systemContext
         },
         { role: "user", content: userMessage },
       ],
@@ -633,7 +644,7 @@ async function generateConversationalResponse(
       console.log(`[Chat Handler] LLM requested ${message.tool_calls.length} tool calls`);
 
       // Execute all tool calls
-      const toolResults = [];
+      const toolResults: any[] = [];
       for (const toolCall of message.tool_calls) {
         const toolName = toolCall.function.name;
         const toolArgs = JSON.parse(toolCall.function.arguments);
@@ -651,7 +662,7 @@ async function generateConversationalResponse(
             content: `You are the Meta - Agent.You just executed some actions.Now explain to the user what you did in a friendly, conversational way in Spanish.`
           },
           { role: "user", content: userMessage },
-          { role: "assistant", content: message.content || "", tool_calls: message.tool_calls },
+          { role: "assistant", content: message.content || "", tool_calls: message.tool_calls as any },
           ...message.tool_calls.map((tc: any, i: number) => ({
             role: "tool" as const,
             tool_call_id: tc.id,
@@ -667,13 +678,19 @@ async function generateConversationalResponse(
 
     // No tool calls, just return conversational response
     const content = message.content;
-    if (!content) {
+
+    // Handle multimodal content (array)
+    const contentStr = Array.isArray(content)
+      ? content.map(c => c.type === 'text' ? c.text : '').join('')
+      : content;
+
+    if (!contentStr) {
       return {
         response: "Lo siento, no pude procesar tu mensaje. ¿Podrías reformularlo?",
       };
     }
 
-    return { response: content };
+    return { response: contentStr };
   } catch (error: any) {
     console.error("[Chat Handler] Error generating conversational response:", error);
     console.error("[Chat Handler] Error stack:", error.stack);

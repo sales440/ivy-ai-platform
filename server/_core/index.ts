@@ -1,4 +1,4 @@
-console.log("\n\n!!! FAST BOOT: STARTING SERVER - VERSION 1.0.7 (NETWORK FIX) !!!\n\n");
+console.log("\n\n!!! FAST BOOT: STARTING SERVER - VERSION 1.1.0 (ARCHITECT EDITION) !!!\n\n");
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
@@ -65,7 +65,7 @@ async function ensureScheduledTasksTable() {
 }
 
 async function startServer() {
-  console.log("!!! FAST BOOT: STARTING SERVER - VERSION 1.0.6 (DIAGNOSTIC MODE) !!!");
+  console.log("!!! FAST BOOT: STARTING SERVER - VERSION 1.1.0 (ARCHITECT EDITION) !!!");
   const app = express();
   const server = createServer(app);
 
@@ -84,8 +84,9 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // Health check endpoint (CRITICAL for Railway/Docker)
+  // Health check endpoint (CRITICAL for Railway/Docker)
   app.get("/api/health", (req, res) => {
-    res.status(200).send("OK");
+    res.status(200).json({ status: "ok", version: "1.1.0", environment: process.env.NODE_ENV });
   });
 
   // Initialize all routes

@@ -7,12 +7,15 @@
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { metaAgent } from "./meta-agent/index";
-import { 
+import {
   startMarketIntelligenceScheduler,
   stopMarketIntelligenceScheduler,
   getSchedulerStatus,
-  getSchedulerStats 
+  getSchedulerStats
 } from "./meta-agent/capabilities/market-intelligence-scheduler";
+import { getDb } from "./db";
+import { metaAgentMemory, users } from "../drizzle/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 export const metaAgentDashboardRouter = router({
   // Send message to Meta-Agent
@@ -26,7 +29,7 @@ export const metaAgentDashboardRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       console.log('[Meta-Agent Dashboard] Received message:', input.message);
-      
+
       // Add context to message if provided
       let fullMessage = input.message;
       if (input.context?.section) {
@@ -49,10 +52,37 @@ export const metaAgentDashboardRouter = router({
       limit: z.number().optional().default(50),
     }))
     .query(async ({ input, ctx }) => {
-      // TODO: Implement conversation history storage
-      return {
-        messages: [],
-      };
+      try {
+        const db = await getDb();
+        if (!db) return { messages: [] };
+
+        // Resolve user's company
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, ctx.user.id),
+          columns: { companyId: true }
+        });
+
+        const companyId = user?.companyId || 1;
+
+        const history = await db.query.metaAgentMemory.findMany({
+          where: eq(metaAgentMemory.companyId, companyId),
+          orderBy: [desc(metaAgentMemory.timestamp)],
+          limit: input.limit,
+        });
+
+        return {
+          messages: history.reverse().map(msg => ({
+            id: msg.id.toString(),
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content,
+            timestamp: msg.timestamp,
+            metadata: msg.metadata
+          })),
+        };
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+        return { messages: [] };
+      }
     }),
 
   // Search web
@@ -64,7 +94,7 @@ export const metaAgentDashboardRouter = router({
     .mutation(async ({ input }) => {
       const message = `Busca en Internet: ${input.query}`;
       const response = await metaAgent.chat(message, 'system');
-      
+
       return {
         success: true,
         results: response.response,
@@ -77,12 +107,12 @@ export const metaAgentDashboardRouter = router({
       industry: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const message = input.industry 
+      const message = input.industry
         ? `Muéstrame las tendencias de mercado para la industria: ${input.industry}`
         : 'Muéstrame las tendencias de mercado de nuestros clientes actuales';
-      
+
       const response = await metaAgent.chat(message, 'system');
-      
+
       return {
         success: true,
         trends: response.response,
@@ -94,7 +124,7 @@ export const metaAgentDashboardRouter = router({
     .query(async () => {
       const message = 'Muéstrame todos los proyectos y templates de empresas que han contratado servicios de Ivy.AI';
       const response = await metaAgent.chat(message, 'system');
-      
+
       return {
         success: true,
         library: response.response,
@@ -111,9 +141,9 @@ export const metaAgentDashboardRouter = router({
     }))
     .mutation(async ({ input }) => {
       const message = `Crea un nuevo proyecto para la empresa "${input.companyName}" de la industria ${input.industry}. Servicios contratados: ${input.services.join(', ')}. ${input.additionalInfo || ''}. Sugiere campañas y propuestas basadas en análisis de mercado en tiempo real.`;
-      
+
       const response = await metaAgent.chat(message, 'system');
-      
+
       return {
         success: true,
         project: response.response,
@@ -121,15 +151,22 @@ export const metaAgentDashboardRouter = router({
       };
     }),
 
-  // Get tasks for specific companies
+  // Get tasks for specific companies (SECURED)
   getTasks: protectedProcedure
-    .input(z.object({
-      companyIds: z.array(z.string()),
-    }))
-    .query(async ({ input }) => {
-      const message = `Muéstrame las tareas de las siguientes empresas: ${input.companyIds.join(', ')}`;
-      const response = await metaAgent.chat(message, 'system');
-      
+    .query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { success: true, tasks: "System offline" };
+
+      // Securely fetch tasks only for this user's company
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, ctx.user.id),
+        columns: { companyId: true }
+      });
+      const companyId = user?.companyId || 1;
+
+      const message = `Muéstrame las tareas activas para la empresa ID: ${companyId}`;
+      const response = await metaAgent.chat(message, ctx.user.id);
+
       return {
         success: true,
         tasks: response.response,

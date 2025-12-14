@@ -21,8 +21,8 @@ import type {
   ChatContext,
 } from "./types";
 import { getDb } from "../db";
-import { metaAgentMemory } from "../../drizzle/schema";
-import { desc, eq } from "drizzle-orm";
+import { metaAgentMemory, users } from "../../drizzle/schema";
+import { desc, eq, and, or, like } from "drizzle-orm";
 
 class MetaAgent {
   private static instance: MetaAgent;
@@ -117,9 +117,12 @@ class MetaAgent {
         return;
       }
 
+      // Default to companyId 1 for now if we don't have user context in loadChatHistory
+      // In a real scenario, this should maybe load based on active user or just be empty until needed
       const history = await db.query.metaAgentMemory.findMany({
+        where: eq(metaAgentMemory.companyId, 1),
         orderBy: [desc(metaAgentMemory.timestamp)],
-        limit: 100,
+        limit: 20, // Reduced from 100 to save context window
       });
 
       this.chatHistory = history.reverse().map(entry => ({
@@ -133,6 +136,41 @@ class MetaAgent {
       console.log(`[Meta-Agent] Loaded ${this.chatHistory.length} messages from persistent memory`);
     } catch (error) {
       console.error("[Meta-Agent] Failed to load chat history:", error);
+    }
+  }
+
+  /**
+   * Retrieve relevant memory context based on query (Simulated RAG)
+   */
+  async retrieveRelevantMemory(query: string, companyId: number): Promise<string[]> {
+    if (!query) return [];
+
+    try {
+      const db = await getDb();
+      if (!db) return [];
+
+      // Extract keywords (simplistic approach replacing vector search for now)
+      const keywords = query.split(' ').filter(w => w.length > 4).slice(0, 3);
+      if (keywords.length === 0) return [];
+
+      const searchPattern = `%${keywords[0]}%`;
+
+      const memories = await db.query.metaAgentMemory.findMany({
+        where: (mem, { and, eq, or, like }) => and(
+          eq(mem.companyId, companyId),
+          or(
+            eq(mem.role, 'system'), // Always check relevant system instructions
+            like(mem.content, searchPattern)
+          )
+        ),
+        orderBy: [desc(metaAgentMemory.importance), desc(metaAgentMemory.timestamp)],
+        limit: 5
+      });
+
+      return memories.map(m => `[${m.role.toUpperCase()} - ${m.timestamp.toISOString().split('T')[0]}] ${m.content}`);
+    } catch (error) {
+      console.error("[Meta-Agent] Error retrieving memory:", error);
+      return [];
     }
   }
 
@@ -281,7 +319,12 @@ class MetaAgent {
 
         case "chat_response":
           const { generateChatResponse } = await import("./capabilities/chat-handler");
-          result = await generateChatResponse(task.metadata?.message, this.chatHistory);
+          // Pass companyId from metadata which we now ensure is present
+          result = await generateChatResponse(
+            task.metadata?.message,
+            this.chatHistory,
+            task.metadata?.companyId || 1
+          );
           break;
 
         case "predict_performance":
@@ -372,12 +415,30 @@ class MetaAgent {
     console.log(`[Meta-Agent] Received chat message from ${userId}: ${message}`);
 
     const db = await getDb();
+    const userIdNum = parseInt(userId, 10) || 1;
+    let companyId = 1;
+
+    // Resolve companyId
+    if (db) {
+      try {
+        const user = await db.query.users.findFirst({
+          where: eq(users.id, userIdNum),
+          columns: { companyId: true }
+        });
+        if (user && user.companyId) {
+          companyId = user.companyId;
+        }
+      } catch (err) {
+        console.warn("[Meta-Agent] Could not resolve companyId for user:", userId);
+      }
+    }
 
     // 1. Save user message to persistent memory
     try {
       if (db) {
         await db.insert(metaAgentMemory).values({
-          userId: parseInt(userId, 10) || 1, // Default to 1 if not parseable
+          companyId,
+          userId: userIdNum,
           role: "user",
           content: message,
           timestamp: new Date(),
@@ -396,12 +457,12 @@ class MetaAgent {
     };
     this.chatHistory.push(userMessage);
 
-    // Create chat response task
+    // Create chat response task with companyId context
     const taskId = await this.createTask({
       type: "chat_response",
       priority: "medium",
       description: "Generate chat response",
-      metadata: { message, userId },
+      metadata: { message, userId, companyId },
     });
 
     // Execute task and wait for result
@@ -414,7 +475,8 @@ class MetaAgent {
     try {
       if (db) {
         await db.insert(metaAgentMemory).values({
-          userId: parseInt(userId, 10) || 1,
+          companyId,
+          userId: userIdNum,
           role: "assistant",
           content: responseContent,
           metadata: { taskId },
@@ -436,8 +498,8 @@ class MetaAgent {
     this.chatHistory.push(assistantMessage);
 
     // Trim history if too long
-    if (this.chatHistory.length > 100) {
-      this.chatHistory = this.chatHistory.slice(-100);
+    if (this.chatHistory.length > 50) { // Reduced memory footprint
+      this.chatHistory = this.chatHistory.slice(-50);
     }
 
     return assistantMessage;

@@ -165,22 +165,24 @@ export async function analyzeAgentPerformance(
  */
 export async function generateTrainingRecommendations(
   performances: AgentPerformance[]
-): Promise<TrainingRecommendation[]> {
+): Promise<{ recommendations: TrainingRecommendation[], prompts: Record<string, string> }> {
   console.log("[Agent Trainer] Generating training recommendations...");
 
   const recommendations: TrainingRecommendation[] = [];
+  const prompts: Record<string, string> = {};
 
   for (const performance of performances) {
     try {
-      const agentRecommendations = await generateAgentRecommendations(performance);
-      recommendations.push(...agentRecommendations);
+      const { recommendations: agentRecs, prompt } = await generateAgentRecommendations(performance);
+      recommendations.push(...agentRecs);
+      prompts[performance.agentId] = prompt;
     } catch (error: any) {
       console.error(`[Agent Trainer] Failed to generate recommendations for ${performance.agentName}:`, error);
     }
   }
 
   console.log(`[Agent Trainer] Generated ${recommendations.length} recommendations`);
-  return recommendations;
+  return { recommendations, prompts };
 }
 
 /**
@@ -188,7 +190,7 @@ export async function generateTrainingRecommendations(
  */
 async function generateAgentRecommendations(
   performance: AgentPerformance
-): Promise<TrainingRecommendation[]> {
+): Promise<{ recommendations: TrainingRecommendation[], prompt: string }> {
   // Find successful patterns from database
   const successfulPatterns = await findSuccessfulPatterns(performance.agentId);
 
@@ -246,11 +248,11 @@ async function generateAgentRecommendations(
 
     if (!data.recommendations || !Array.isArray(data.recommendations)) {
       console.error("[Agent Trainer] Invalid recommendations format from LLM");
-      return [];
+      return { recommendations: [], prompt };
     }
 
     // Convert to TrainingRecommendation objects
-    return data.recommendations.map((rec: any) => ({
+    const recommendations = data.recommendations.map((rec: any) => ({
       agentId: performance.agentId,
       agentName: performance.agentName,
       category: rec.category,
@@ -267,9 +269,11 @@ async function generateAgentRecommendations(
         },
       },
     }));
+
+    return { recommendations, prompt };
   } catch (error: any) {
     console.error("[Agent Trainer] Error generating recommendations:", error);
-    return [];
+    return { recommendations: [], prompt };
   }
 }
 
@@ -334,7 +338,7 @@ export async function trainAgent(agentId: string): Promise<{
     }
 
     // Generate recommendations
-    const recommendations = await generateAgentRecommendations(performance);
+    const { recommendations, prompt } = await generateAgentRecommendations(performance);
 
     // Apply recommendations (update agent configuration)
     let applied = 0;
@@ -350,8 +354,11 @@ export async function trainAgent(agentId: string): Promise<{
 
     // Log training session to persistent memory
     await db.insert(trainingLogs).values({
+      companyId: agent.companyId || 1,
       agentType: agent.type,
       trainingModule: "Performance Optimization",
+      promptSnapshot: prompt,
+      promptVersion: 1, // Start with 1, ideally fetch max + 1
       insights: [JSON.stringify(performance.metrics)],
       recommendations: recommendations.map(r => r.recommendation),
       status: "completed",
