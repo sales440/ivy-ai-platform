@@ -1,4 +1,4 @@
-console.log("\n\n!!! VERIFICATION BUILD - FORCE UPDATE - VERSION 1.0.4 !!!\n\n");
+console.log("\n\n!!! FAST BOOT: STARTING SERVER - VERSION 1.0.6 (DIAGNOSTIC MODE) !!!\n\n");
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
