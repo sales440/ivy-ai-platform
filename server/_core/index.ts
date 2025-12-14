@@ -130,6 +130,13 @@ async function startServer() {
   // Initialize WebSocket server for real-time notifications
   const { initializeWebSocket } = await import("../websocket-notifications");
   initializeWebSocket(server);
+
+  // DEBUG: Log all requests to confirm traffic is reaching the container
+  app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+  });
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
