@@ -735,6 +735,7 @@ export type InsertFagorContact = typeof fagorContacts.$inferInsert;
 export const fagorCampaignEnrollments = mysqlTable("fagorCampaignEnrollments", {
   id: int("id").autoincrement().primaryKey(),
   contactId: int("contactId").notNull(),
+  agentId: int("agentId"), // Added to resolve runtime error in Agent Trainer
   campaignName: varchar("campaignName", { length: 255 }).notNull(), // "FAGOR_CNC_Training_2026"
   currentStep: int("currentStep").default(0).notNull(), // 0 = not started, 1 = email 1 sent, 2 = email 2 sent, 3 = email 3 sent
   status: mysqlEnum("status", ["active", "paused", "completed", "unsubscribed"]).default("active").notNull(),
