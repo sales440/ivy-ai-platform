@@ -30,13 +30,14 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-import { db } from "../db";
+import { getDb } from "../db";
 import { sql } from "drizzle-orm";
 
 // Ensure scheduledTasks table exists (Fix for production migration issue)
 async function ensureScheduledTasksTable() {
   try {
     console.log('[Startup] Checking scheduledTasks table...');
+    const db = await getDb();
     if (!db) return;
 
     // Raw query to check/create table since Drizzle might think it exists
