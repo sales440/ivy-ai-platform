@@ -177,48 +177,47 @@ async function runBackgroundInitialization() {
     // Run database migrations
     console.log('[Init] Running database migrations...');
     const { migrate } = await import("drizzle-orm/mysql2/migrator");
-    const { db } = await import("../db");
-
-    if (db) {
-      // Only run migrations inside dist/drizzle or ./drizzle depending on structure.
-      // For safety in this environment, try root "drizzle" folder.
-      await migrate(db, { migrationsFolder: "./drizzle" }).catch(err => {
-        console.warn('[Init] Migration warning (non-fatal):', err.message);
-      });
-      console.log('[Init] ✅ Database migrations completed (or skipped safely)');
-    }
+    // const { db } = await import("../db"); <- BROKEN
+    const db = await getDb();
+    // Only run migrations inside dist/drizzle or ./drizzle depending on structure.
+    // For safety in this environment, try root "drizzle" folder.
+    await migrate(db, { migrationsFolder: "./drizzle" }).catch(err => {
+      console.warn('[Init] Migration warning (non-fatal):', err.message);
+    });
+    console.log('[Init] ✅ Database migrations completed (or skipped safely)');
+  }
   } catch (error) {
-    console.error('[Init] ⚠️ Database migration failed:', error);
-  }
+  console.error('[Init] ⚠️ Database migration failed:', error);
+}
 
-  // Ensure scheduled tasks table
-  await ensureScheduledTasksTable();
+// Ensure scheduled tasks table
+await ensureScheduledTasksTable();
 
-  // Run Emergency Fix
-  console.log('[Init] 🚑 invoking Emergency Schema Fix...');
-  try {
-    await runEmergencySchemaFix();
-    console.log('[Init] ✅ Emergency Schema Fix returned.');
-  } catch (err) {
-    console.error('[Init] ❌ Emergency Schema Fix CRASHED:', err);
-  }
+// Run Emergency Fix
+console.log('[Init] 🚑 invoking Emergency Schema Fix...');
+try {
+  await runEmergencySchemaFix();
+  console.log('[Init] ✅ Emergency Schema Fix returned.');
+} catch (err) {
+  console.error('[Init] ❌ Emergency Schema Fix CRASHED:', err);
+}
 
-  // Start background workers
-  const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
-  startScheduledTasksProcessor();
+// Start background workers
+const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
+startScheduledTasksProcessor();
 
-  const { startFagorDripScheduler } = await import('../fagor-drip-scheduler');
-  startFagorDripScheduler();
+const { startFagorDripScheduler } = await import('../fagor-drip-scheduler');
+startFagorDripScheduler();
 
-  const { scheduledMilestoneCheck } = await import('../agent-milestone-notifications');
-  setInterval(() => {
-    scheduledMilestoneCheck().catch(console.error);
-  }, 60 * 60 * 1000);
+const { scheduledMilestoneCheck } = await import('../agent-milestone-notifications');
+setInterval(() => {
+  scheduledMilestoneCheck().catch(console.error);
+}, 60 * 60 * 1000);
 
-  const { startMetaAgent } = await import('../meta-agent-startup');
-  startMetaAgent().catch(console.error);
+const { startMetaAgent } = await import('../meta-agent-startup');
+startMetaAgent().catch(console.error);
 
-  console.log('[Init] 🎉 All background services started.');
+console.log('[Init] 🎉 All background services started.');
 }
 
 startServer().catch(console.error);
