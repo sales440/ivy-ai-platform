@@ -107,6 +107,14 @@ export async function runEmergencySchemaFix() {
       "Table.*companies.*doesn't exist"
     );
 
+    // 6. Fix 'fagorCampaignEnrollments.agentId'
+    await safeExecute(
+      'fagorCampaignEnrollments.agentId',
+      sql`SELECT agentId FROM fagorCampaignEnrollments LIMIT 1`,
+      sql`ALTER TABLE fagorCampaignEnrollments ADD COLUMN agentId int DEFAULT NULL`,
+      "Unknown column 'agentId'"
+    );
+
     // Ensure default company exists (Idempotent)
     try {
       await db.execute(sql`
