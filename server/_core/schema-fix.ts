@@ -115,6 +115,29 @@ export async function runEmergencySchemaFix() {
       "Unknown column 'agentId'"
     );
 
+    // 7. Fix 'emailCampaigns' table
+    await safeExecute(
+      'emailCampaigns table',
+      sql`SELECT 1 FROM emailCampaigns LIMIT 1`,
+      sql`CREATE TABLE IF NOT EXISTS emailCampaigns (
+        id int NOT NULL AUTO_INCREMENT,
+        companyId int NOT NULL,
+        name varchar(200) NOT NULL,
+        subject varchar(300) NOT NULL,
+        body text NOT NULL,
+        triggerType enum('manual', 'call-outcome', 'lead-created', 'scheduled') NOT NULL DEFAULT 'manual',
+        triggerCondition json,
+        sector varchar(50),
+        sequence int,
+        delayDays int,
+        active int NOT NULL DEFAULT 1,
+        createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY(id)
+      ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci`,
+      "Table.*emailCampaigns.*doesn't exist"
+    );
+
     // Ensure default company exists (Idempotent)
     try {
       await db.execute(sql`
