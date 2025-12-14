@@ -98,6 +98,24 @@ async function startServer() {
   }
 
   await ensureScheduledTasksTable();
+
+  import { runEmergencySchemaFix } from "./schema-fix";
+
+  // ... existing imports ...
+
+  // ... inside startServer ...
+
+  await ensureScheduledTasksTable();
+
+  // RUN EMERGENCY FIX BEFORE STARTING APP
+  console.log('[Startup] 🚑 invoking Emergency Schema Fix...');
+  try {
+    await runEmergencySchemaFix();
+    console.log('[Startup] ✅ Emergency Schema Fix returned.');
+  } catch (err) {
+    console.error('[Startup] ❌ Emergency Schema Fix CRASED:', err);
+  }
+
   const app = express();
 
   const server = createServer(app);
