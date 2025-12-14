@@ -16,5 +16,6 @@ echo "📦 FAST BOOT: Skipping external migrations to open port immediately..."
 
 # Start the application
 echo "✅ Starting application server (Direct Node Mode)..."
+export NODE_ENV=production
 # Bypass pnpm/npm and run node directly to ensure PID 1 and signal handling
-exec cross-env NODE_ENV=production node dist/index.js
+exec node dist/index.js

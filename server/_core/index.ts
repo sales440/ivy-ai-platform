@@ -131,11 +131,11 @@ async function startServer() {
   }
 
   // 2. LISTEN IMMEDIATELY (FAST BOOT) to satisfy Railway connection check
-  // Remove host binding to allow default (IPv6 :: + IPv4 0.0.0.0)
+  // Explicitly bind to 0.0.0.0 to ensure IPv4 accessibility in Docker
   console.log(`[FastBoot] PORT env var is: '${process.env.PORT}'`);
-  server.listen(port, async () => {
+  server.listen(port, "0.0.0.0", async () => {
     const address = server.address();
-    console.log(`[FastBoot] 🚀 Server LISTENING on port ${port}`);
+    console.log(`[FastBoot] 🚀 Server LISTENING on http://0.0.0.0:${port}/`);
     console.log(`[FastBoot] Address info:`, address);
 
     // 3. RUN INITIALIZATION IN BACKGROUND
