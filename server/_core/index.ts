@@ -131,13 +131,25 @@ async function startServer() {
   }
 
   // 2. LISTEN IMMEDIATELY (FAST BOOT) to satisfy Railway connection check
-  // Remove host binding to allow default (IPv6 :: + IPv4 0.0.0.0) - CRITICAL for Railway Routing
-  console.log(`[FastBoot] PORT env var is: '${process.env.PORT}'`);
+  // Health check endpoint (CRITICAL for Railway/Docker)
+  app.get("/api/health", (req, res) => {
+    res.status(200).send("OK");
+  });
 
-  // NOTE: If PORT is not set, this defaults to 3000. Railway MUST set PORT.
-  server.listen(port, async () => {
+  // Simple Ping for browser test
+  app.get("/ping", (req, res) => {
+    res.status(200).send("PONG - Server is reachable!");
+  });
+
+  // 2. LISTEN IMMEDIATELY (FAST BOOT) to satisfy Railway connection check
+  // Force IPv4 binding 0.0.0.0 - This is the standard for Railway
+  const bindPort = isNaN(port) ? 3000 : port;
+  console.log(`[FastBoot] Raw PORT env: ${JSON.stringify(process.env.PORT)}`);
+  console.log(`[FastBoot] Binding to port: ${bindPort}`);
+
+  server.listen(bindPort, "0.0.0.0", async () => {
     const address = server.address();
-    console.log(`[FastBoot] 🚀 Server LISTENING on port ${port} (Dual Stack)`);
+    console.log(`[FastBoot] 🚀 Server LISTENING on http://0.0.0.0:${bindPort}/`);
     console.log(`[FastBoot] Address info:`, address);
 
     // 3. RUN INITIALIZATION IN BACKGROUND
