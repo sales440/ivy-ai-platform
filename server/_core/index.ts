@@ -1,4 +1,4 @@
-console.log("\n\n!!! VERIFICATION BUILD - FORCE UPDATE !!!\n\n");
+console.log("\n\n!!! VERIFICATION BUILD - FORCE UPDATE - VERSION 1.0.4 !!!\n\n");
 import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
