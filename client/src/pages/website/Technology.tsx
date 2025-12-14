@@ -1,6 +1,6 @@
 import { WebsiteLayout } from "@/components/website/Layout";
 import { Button } from "@/components/ui/button";
-import { BrainCircuit, MessageBot, LineChart, Zap } from "lucide-react";
+import { BrainCircuit, Bot, LineChart, Zap } from "lucide-react";
 
 export default function Technology() {
     return (
@@ -39,7 +39,7 @@ export default function Technology() {
                                     <div className="pt-4 space-y-3">
                                         <div className="flex gap-3 items-center p-3 rounded bg-white/5 border border-white/5">
                                             <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                                                <MessageBot size={16} />
+                                                <Bot size={16} />
                                             </div>
                                             <div>
                                                 <p className="text-sm font-semibold">Lead Calificado: John Doe</p>
@@ -73,7 +73,7 @@ export default function Technology() {
 
                             <div className="flex gap-4">
                                 <div className="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
-                                    <MessageBot className="w-6 h-6 text-purple-400" />
+                                    <Bot className="w-6 h-6 text-purple-400" />
                                 </div>
                                 <div>
                                     <h3 className="text-xl font-bold mb-2">Automatización Inteligente</h3>
