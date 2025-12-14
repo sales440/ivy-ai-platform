@@ -107,7 +107,8 @@ async function startServer() {
 
   // ... inside startServer ...
 
-  await ensureScheduledTasksTable();
+  // Ensure scheduledTasks table exists (Handled by startup script now)
+  // await ensureScheduledTasksTable();
 
   // RUN EMERGENCY FIX BEFORE STARTING APP
   console.log('[Startup] 🚑 invoking Emergency Schema Fix...');
@@ -171,15 +172,25 @@ async function startServer() {
   // TEMPORARILY DISABLED - Sentry causing crashes
   // addSentryErrorHandler(app);
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  // Add Sentry error handler (must be after all routes)
+  // TEMPORARILY DISABLED - Sentry causing crashes
+  // addSentryErrorHandler(app);
 
-  if (port !== preferredPort) {
+  const preferredPort = parseInt(process.env.PORT || "3000");
+
+  // In production (Railway), we must listen on the exact PORT provided
+  // and bind to 0.0.0.0 to be accessible outside the container.
+  const port = process.env.NODE_ENV === 'production'
+    ? preferredPort
+    : await findAvailablePort(preferredPort);
+
+  if (process.env.NODE_ENV !== 'production' && port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, async () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  // Bind to 0.0.0.0 to allow external access (required for Docker/Railway)
+  server.listen(port, "0.0.0.0", async () => {
+    console.log(`Server running on http://0.0.0.0:${port}/`);
 
     // Start scheduled tasks processor
     const { startScheduledTasksProcessor } = await import('../scheduled-tasks-processor');
