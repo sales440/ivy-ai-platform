@@ -131,8 +131,12 @@ async function startServer() {
   }
 
   // 2. LISTEN IMMEDIATELY (FAST BOOT) to satisfy Railway connection check
-  server.listen(port, "0.0.0.0", async () => {
-    console.log(`[FastBoot] 🚀 Server LISTENING on http://0.0.0.0:${port}/`);
+  // Remove host binding to allow default (IPv6 :: + IPv4 0.0.0.0)
+  console.log(`[FastBoot] PORT env var is: '${process.env.PORT}'`);
+  server.listen(port, async () => {
+    const address = server.address();
+    console.log(`[FastBoot] 🚀 Server LISTENING on port ${port}`);
+    console.log(`[FastBoot] Address info:`, address);
 
     // 3. RUN INITIALIZATION IN BACKGROUND
     // We attach a catch handler to ensure no unhandled rejections crash the process
