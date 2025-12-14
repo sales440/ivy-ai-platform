@@ -154,10 +154,10 @@ async function startServer() {
   console.log(`[FastBoot] Raw PORT env: ${JSON.stringify(process.env.PORT)}`);
   console.log(`[FastBoot] Binding to port: ${bindPort}`);
 
-  // REMOVED '0.0.0.0' to allow Dual Stack binding (IPv4/IPv6) which is safer for Railway
-  server.listen(bindPort, async () => {
+  // Force binding to 0.0.0.0 (IPv4) for Railway
+  server.listen(bindPort, "0.0.0.0", async () => {
     const address = server.address();
-    console.log(`[FastBoot] 🚀 Server LISTENING on port ${bindPort} (Dual Stack support)`);
+    console.log(`[FastBoot] 🚀 Server LISTENING on port ${bindPort} (0.0.0.0)`);
     console.log(`[FastBoot] Address info:`, address);
 
     // 3. RUN INITIALIZATION IN BACKGROUND
