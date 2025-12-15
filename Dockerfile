@@ -9,12 +9,9 @@ RUN npm install -g pnpm@10.4.1
 WORKDIR /app
 
 # Copy package files and patches
-COPY package.json pnpm-lock.yaml ./
-COPY patches ./patches
-
-# Install dependencies
-FROM base AS deps
-RUN pnpm install --no-frozen-lockfile
+# FORCE FRESH INSTALL - Nuclear Option for Stability
+RUN rm -f pnpm-lock.yaml
+RUN pnpm install
 
 # Build stage
 FROM base AS builder
