@@ -14,7 +14,7 @@ COPY patches ./patches
 
 # Install dependencies
 FROM base AS deps
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 # Build stage
 FROM base AS builder
