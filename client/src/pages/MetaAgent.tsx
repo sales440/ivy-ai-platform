@@ -41,13 +41,26 @@ import { AudienceManager } from "@/components/meta-agent/AudienceManager";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2 } from "lucide-react";
+import { ErrorState } from "@/components/ui/error-state";
+import { Empty, EmptyContent, EmptyHeader, EmptyTitle, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
 
 // --- Components ---
 
 /**
  * Mission Control Dashboard
  */
-function MissionControl({ status, stats, health, isLoading }: any) {
+function MissionControl({ status, stats, health, isLoading, isError, error, onRetry }: any) {
+  if (isError) {
+    return (
+      <ErrorState
+        title="Mission Control Offline"
+        message={error?.message || "Failed to establish connection with Meta-Agent Core."}
+        onRetry={onRetry}
+        className="h-[400px]"
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500">
@@ -388,10 +401,10 @@ function CommandCenter({ embedded = false }: { embedded?: boolean }) {
 }
 
 /**
- * Campaigns View (Split Screen: List + Chat)
+ * CampaignsView (Split Screen: List + Chat)
  */
 function CampaignsView() {
-  const { data: campaigns, isLoading } = trpc.campaigns.getAll.useQuery();
+  const { data: campaigns, isLoading, isError, error, refetch } = trpc.campaigns.getAll.useQuery();
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 h-[calc(100vh-140px)]">
@@ -414,7 +427,13 @@ function CampaignsView() {
 
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4">
-            {isLoading ? (
+            {isError ? (
+              <ErrorState
+                title="Failed to load campaigns"
+                message={error?.message}
+                onRetry={refetch}
+              />
+            ) : isLoading ? (
               // Loading Skeletons
               [1, 2, 3].map((i) => (
                 <Card key={i} className="bg-slate-950 border-slate-800">
@@ -437,17 +456,23 @@ function CampaignsView() {
                 </Card>
               ))
             ) : !campaigns || campaigns.length === 0 ? (
-              // Empty State
-              <div className="flex flex-col items-center justify-center p-12 border border-dashed border-slate-800 rounded-lg bg-slate-950/50">
-                <Target className="h-12 w-12 text-slate-600 mb-4" />
-                <h3 className="text-lg font-medium text-slate-400">No Active Campaigns</h3>
-                <p className="text-sm text-slate-600 text-center max-w-xs mt-2 mb-6">
-                  Launch a new campaign using the Command Center or create one manually.
-                </p>
-                <Button variant="outline" className="border-blue-900/50 text-blue-400 hover:bg-blue-950">
-                  <Plus className="h-4 w-4 mr-2" /> Create Campaign
-                </Button>
-              </div>
+              // Empty State (Refactored)
+              <Empty className="bg-slate-950/50 border-slate-800/50">
+                <EmptyMedia>
+                  <Target className="h-12 w-12 text-slate-600" />
+                </EmptyMedia>
+                <EmptyHeader>
+                  <EmptyTitle className="text-slate-400">No Active Campaigns</EmptyTitle>
+                  <EmptyDescription className="text-slate-600">
+                    Launch a new campaign using the Command Center or create one manually.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                  <Button variant="outline" className="border-blue-900/50 text-blue-400 hover:bg-blue-950" onClick={() => window.location.href = '#command-center'}>
+                    <Plus className="h-4 w-4 mr-2" /> Create Campaign
+                  </Button>
+                </EmptyContent>
+              </Empty>
             ) : (
               // Real Data List
               campaigns.map((camp: any) => (
@@ -579,7 +604,13 @@ export default function MetaAgent() {
 
   // Real Data Hooks
   const { data: status, refetch: refetchStatus } = trpc.metaAgent.getStatus.useQuery(undefined, { refetchInterval: 5000 });
-  const { data: dashboardStats, refetch: refetchStats } = trpc.metaAgent.getDashboardStats.useQuery(undefined, { refetchInterval: 10000 });
+  const {
+    data: dashboardStats,
+    refetch: refetchStats,
+    isLoading: isLoadingStats,
+    isError: isErrorStats,
+    error: errorStats
+  } = trpc.metaAgent.getDashboardStats.useQuery(undefined, { refetchInterval: 10000 });
   const { data: health } = trpc.metaAgent.getPlatformHealth.useQuery(undefined, { refetchInterval: 10000 });
 
   // Navigation Items
@@ -681,7 +712,15 @@ export default function MetaAgent() {
         <ScrollArea className="flex-1 p-8">
           <div className="max-w-[1600px] mx-auto">
             {activeView === "mission-control" && (
-              <MissionControl status={status} stats={dashboardStats} health={health} isLoading={!status} />
+              <MissionControl
+                status={status}
+                stats={dashboardStats}
+                health={health}
+                isLoading={isLoadingStats}
+                isError={isErrorStats}
+                error={errorStats}
+                onRetry={() => { refetchStatus(); refetchStats(); }}
+              />
             )}
             {activeView === "campaigns" && (
               <CampaignsView />

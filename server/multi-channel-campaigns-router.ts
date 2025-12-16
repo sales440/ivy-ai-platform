@@ -2,7 +2,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { campaignExecutions, campaignSteps, multiChannelCampaigns } from "../drizzle/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import {
   startCampaignForLead,
   executeNextCampaignStep,
@@ -43,11 +43,16 @@ export const multiChannelCampaignsRouter = router({
       const [campaign] = await db
         .select()
         .from(multiChannelCampaigns)
-        .where(eq(multiChannelCampaigns.id, input.id))
+        .where(
+          and(
+            eq(multiChannelCampaigns.id, input.id),
+            eq(multiChannelCampaigns.companyId, ctx.user.companyId || 1)
+          )
+        )
         .limit(1);
 
       if (!campaign) {
-        throw new Error("Campaign not found");
+        throw new Error("Campaign not found or access denied");
       }
 
       const steps = await db
