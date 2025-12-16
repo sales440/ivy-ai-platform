@@ -1,11 +1,6 @@
-// import { getDb } from "../../db"; 
-// import { knowledgeVectors } from "../../../drizzle/schema";
-// import { desc, sql } from "drizzle-orm";
-// import { invokeLLM } from "../../_core/llm";
-
-// Mock In-Memory DB for V1/Testing (Bypassing faulty db.ts)
-const MOCK_VECTOR_DB: any[] = [];
-let MOCK_ID_COUNTER = 1;
+import { getDb } from "../../db";
+import { knowledgeVectors } from "../../../drizzle/schema";
+import { desc, sql, eq } from "drizzle-orm";
 
 export interface VectorSearchResult {
     id: number;
@@ -58,43 +53,48 @@ export async function computeEmbedding(text: string): Promise<number[]> {
 export async function storeKnowledge(
     content: string,
     metadata: any = {},
-    companyId: number
+    companyId: number,
+    source: string = 'interaction'
 ): Promise<number> {
-    // const db = await getDb();
-    // if (!db) throw new Error("Database unavailable");
+    const db = await getDb();
+    if (!db) {
+        console.warn("[Vector Store] DB unavailable, skipping storage.");
+        return 0;
+    }
 
     const embedding = await computeEmbedding(content);
 
-    // Mock Insert
-    const record = {
-        id: MOCK_ID_COUNTER++,
+    const [result] = await db.insert(knowledgeVectors).values({
         companyId,
         content,
         embedding,
         metadata,
-    };
-    MOCK_VECTOR_DB.push(record);
+        source
+    });
 
-    console.log(`[Vector Store] Stored knowledge (Mock Memory): ${record.id}`);
-    return record.id;
+    console.log(`[Vector Store] Stored knowledge used DB: ${result.insertId}`);
+    return result.insertId;
 }
 
 /**
- * Search for similar knowledge using in-memory cosine similarity.
- * (MySQL doesn't support vector math natively without plugins).
+ * Search for similar knowledge using in-memory cosine similarity (Hybrid Approach).
+ * Fetches company vectors -> Sorts in Node.js.
+ * Efficient enough for < 10,000 records per company.
  */
 export async function searchKnowledge(
     query: string,
     companyId: number,
     limit: number = 5
 ): Promise<VectorSearchResult[]> {
-    // const db = await getDb();
-    // if (!db) return [];
+    const db = await getDb();
+    if (!db) return [];
 
     const queryVector = await computeEmbedding(query);
 
-    // 1. Fetch from Mock DB
-    const allVectors = MOCK_VECTOR_DB.filter(v => v.companyId === companyId);
+    // 1. Fetch ALL vectors for this company (Optimization: Select only specific columns if valid)
+    const allVectors = await db.select().from(knowledgeVectors).where(eq(knowledgeVectors.companyId, companyId));
+
+    if (allVectors.length === 0) return [];
 
     // 2. Compute similarity in-memory
     const results = allVectors.map(v => {
@@ -122,5 +122,6 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
         normA += vecA[i] * vecA[i];
         normB += vecB[i] * vecB[i];
     }
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    const score = dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    return isNaN(score) ? 0 : score;
 }

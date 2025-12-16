@@ -797,7 +797,21 @@ export type CallTranscript = typeof callTranscripts.$inferSelect;
 export type InsertCallTranscript = typeof callTranscripts.$inferInsert;
 
 
+/**
+ * Knowledge Vectors - RAG Memory Store (JSON-based for MySQL compatibility)
+ */
+export const knowledgeVectors = mysqlTable("knowledgeVectors", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  content: text("content").notNull(),
+  embedding: json("embedding").$type<number[]>().notNull(), // 1536-dim vector
+  metadata: json("metadata").$type<Record<string, any>>(),
+  source: varchar("source", { length: 100 }), // 'training', 'interaction', 'web_scan'
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
 
+export type KnowledgeVector = typeof knowledgeVectors.$inferSelect;
+export type InsertKnowledgeVector = typeof knowledgeVectors.$inferInsert;
 /**
  * Knowledge Vectors - RAG Memory Store
  * Stores semantic embeddings for long-term agent memory
