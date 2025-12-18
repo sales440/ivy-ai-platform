@@ -1,6 +1,6 @@
 import { eq, and, desc, asc, sql, gte, lte, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import * as mysql from "mysql2/promise";
+import mysql from "mysql2/promise";
 import { 
   InsertUser, 
   users, 
@@ -58,9 +58,27 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _pool: mysql.Pool | null = null;
+let _pool: ReturnType<typeof mysql.createPool> | null = null;
 let _lastConnectionAttempt = 0;
 const RECONNECT_INTERVAL = 5000; // 5 seconds
+
+// Parse DATABASE_URL into connection config
+function parseDbUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return {
+      host: parsed.hostname,
+      port: parseInt(parsed.port) || 3306,
+      user: decodeURIComponent(parsed.username),
+      password: decodeURIComponent(parsed.password),
+      database: parsed.pathname.slice(1),
+      ssl: parsed.searchParams.get('ssl') === 'true' ? { rejectUnauthorized: false } : undefined,
+    };
+  } catch (e) {
+    console.error("[Database] Failed to parse DATABASE_URL:", e);
+    return null;
+  }
+}
 
 // Create connection pool with automatic reconnection
 export async function getDb() {
@@ -89,9 +107,21 @@ export async function getDb() {
   _lastConnectionAttempt = now;
 
   try {
-    // Create new connection pool
+    // Parse the DATABASE_URL into config object
+    const config = parseDbUrl(process.env.DATABASE_URL);
+    if (!config) {
+      throw new Error("Invalid DATABASE_URL");
+    }
+
+    // Create new connection pool with explicit config (not URI)
+    // This avoids the ES modules compatibility issue with mysql2
     _pool = mysql.createPool({
-      uri: process.env.DATABASE_URL,
+      host: config.host,
+      port: config.port,
+      user: config.user,
+      password: config.password,
+      database: config.database,
+      ssl: config.ssl,
       connectionLimit: 10,
       waitForConnections: true,
       queueLimit: 0,
@@ -99,12 +129,20 @@ export async function getDb() {
       keepAliveInitialDelay: 0,
     });
 
+    // Test the connection before creating drizzle instance
+    await _pool.query('SELECT 1');
+    console.log("[Database] Pool created and tested successfully");
+
+    // Now create drizzle instance with verified pool
     _db = drizzle(_pool);
-    console.log("[Database] Connected successfully");
+    console.log("[Database] Drizzle ORM initialized successfully");
     return _db;
   } catch (error) {
     console.error("[Database] Failed to connect:", error);
     _db = null;
+    if (_pool) {
+      try { await _pool.end(); } catch (e) { /* ignore */ }
+    }
     _pool = null;
     return null;
   }
