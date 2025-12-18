@@ -72,7 +72,7 @@ async function checkLLM(): Promise<ServiceHealth> {
     if (!hasForgeAPI) {
       return {
         status: 'degraded',
-        error: 'LLM API credentials not configured',
+        error: `LLM API credentials not configured (URL: ${!!process.env.BUILT_IN_FORGE_API_URL}, KEY: ${!!process.env.BUILT_IN_FORGE_API_KEY})`,
       };
     }
 
