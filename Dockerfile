@@ -1,5 +1,5 @@
 # Multi-stage build for Ivy.AI Platform
-# Cache bust: 2025-11-25 13:49:45 UTC - Force rebuild to include all scripts
+# Cache bust: 2025-12-18 13:58:00 UTC - Force restart with new environment variables
 FROM node:22-alpine AS base
 
 # Install pnpm
