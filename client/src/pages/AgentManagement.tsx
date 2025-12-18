@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AgentPerformanceDetail } from "@/components/AgentPerformanceDetail";
-import { Bot, Plus, Play, Pause, Copy, Trash2, Edit, AlertCircle } from "lucide-react";
+import { Bot, Plus, Play, Pause, Copy, Trash2, Edit, AlertCircle, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Agent {
