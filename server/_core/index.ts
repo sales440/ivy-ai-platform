@@ -89,6 +89,10 @@ async function startServer() {
   // SendGrid webhook endpoints
   const { sendgridWebhookRouter } = await import("../webhooks/sendgrid-webhook");
   app.use("/api/webhooks", sendgridWebhookRouter);
+
+  // Database migration endpoint
+  const migrateRouter = (await import("../routes/migrate")).default;
+  app.use("/api", migrateRouter);
   
   // SSE notifications endpoint
   const notificationsSSERouter = (await import("../routes/notifications-sse")).default;

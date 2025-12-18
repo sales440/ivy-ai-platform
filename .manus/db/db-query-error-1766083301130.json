@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE companies ADD COLUMN slug VARCHAR(255) NOT NULL DEFAULT '' AFTER name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute ALTER TABLE companies ADD COLUMN slug VARCHAR(255) NOT NULL DEFAULT '' AFTER name;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1060 (42S21) at line 1: Duplicate column name 'slug'"
+  ]
+}
