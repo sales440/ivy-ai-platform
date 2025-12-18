@@ -13,6 +13,7 @@ import { detectTypeScriptErrors, getErrorStatistics } from "./typescript-fixer";
 import { checkPlatformHealth } from "./platform-healer";
 import { analyzeAllAgentsPerformance } from "./agent-trainer";
 import { EXTENDED_TOOL_DEFINITIONS, executeExtendedToolCall } from "./meta-agent-tools-extended";
+import { retrieveMemories, queryMemories, logInteraction, storeMemory } from "./agent-memory-service";
 
 /**
  * Generate a chat response to user message
@@ -551,9 +552,41 @@ Usa \`fix\` para arreglar estos errores automáticamente.
  */
 async function generateConversationalResponse(
   userMessage: string,
-  conversationHistory: ChatMessage[]
+  conversationHistory: ChatMessage[],
+  context?: { companyId?: number; campaignId?: number; userId?: number }
 ): Promise<{ response: string }> {
   try {
+    // === MEMORY RETRIEVAL (RAG) ===
+    // Retrieve relevant memories before generating response
+    let contextualMemories = "";
+    if (context?.companyId) {
+      console.log("[Chat Handler] Retrieving contextual memories for company:", context.companyId);
+      try {
+        const memories = await retrieveMemories({
+          query: userMessage,
+          context: {
+            companyId: context.companyId,
+            campaignId: context.campaignId,
+            userId: context.userId,
+          },
+          limit: 5,
+          minRelevance: 0.6,
+        });
+        
+        if (memories.length > 0) {
+          contextualMemories = "\n\n=== RELEVANT CONTEXT FROM MEMORY ===\n" +
+            memories.map((m, i) => 
+              `${i + 1}. [${m.memoryType}] ${m.summary || m.content.substring(0, 200)}... (Relevance: ${m.relevanceScore}%)`
+            ).join("\n") +
+            "\n=== END MEMORY CONTEXT ===\n";
+          
+          console.log(`[Chat Handler] Retrieved ${memories.length} relevant memories`);
+        }
+      } catch (error) {
+        console.error("[Chat Handler] Error retrieving memories:", error);
+      }
+    }
+    
     // Get current system status (with fallbacks)
     const status = metaAgent.getStatus();
     
@@ -594,6 +627,8 @@ async function generateConversationalResponse(
           content: `You are the Meta-Agent, an autonomous AI assistant that maintains the Ivy.AI platform 24/7.
 
 You are friendly, conversational, and helpful. You speak naturally in Spanish or English depending on the user's language.
+
+${contextualMemories ? contextualMemories : ""}
 
 **IMPORTANT: You have EXACTLY 124 TOOLS available with EXECUTIVE POWERS.** You can execute actions directly.
 

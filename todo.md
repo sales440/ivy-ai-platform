@@ -1,53 +1,83 @@
 # Ivy.AI Platform - TODO
 
-## Meta-Agent - Market Intelligence & IvyCall Auto-Training ✅
+## PRIORIDAD CRÍTICA: Memoria Persistente Contextual + Deployment Railway
 
-### Completed ✅
-- [x] Implementar búsqueda web en tiempo real (DuckDuckGo)
-- [x] Implementar scraping de páginas web (Cheerio)
-- [x] Implementar monitoreo de competidores
-- [x] Implementar detección de tendencias de mercado
-- [x] Implementar sistema de auto-aprendizaje con LLM
-- [x] Implementar capacitación automática de los 7 agentes
-- [x] Integrar 15 nuevas herramientas en Meta-Agent (124 tools total)
-- [x] Crear sistema de capacitación especializado para IvyCall
-- [x] Implementar generación automática de scripts de llamadas
-- [x] Implementar actualización de técnicas de enganche
-- [x] Implementar generación de respuestas a objeciones modernas
-- [x] Implementar optimización de propuestas de valor
-- [x] Implementar análisis de mejores prácticas de cold calling
-- [x] Integrar capacitación de IvyCall con Market Intelligence
-- [x] Actualizar system prompt con nuevas capacidades
-- [x] Actualizar help command con 124 herramientas
+### Fase 1: Memoria Persistente Contextual (RAG + Vector Store)
+- [x] Diseñar schema de base de datos para AgentMemory
+- [x] Implementar tabla agent_memory con embeddings JSON
+- [x] Implementar tabla interaction_logs para audit completo
+- [x] Implementar tabla training_history para versionado
+- [x] Crear índices para búsqueda eficiente por companyId y campaignId
+- [x] Implementar servicio de embeddings con fallback
+- [x] Crear función de recuperación RAG (retrieveMemories)
+- [x] Implementar similitud coseno para ranking
+- [x] Modificar chat-handler para consultar historial antes de respuestas
+- [x] Inyectar contexto recuperado en system prompt
+- [x] Implementar persistencia de instrucciones de entrenamiento
+- [x] Crear sistema de versionado de prompts de entrenamiento
+- [x] Agregar timestamps y metadata a cada interacción
+- [x] Implementar queries contextuales (queryMemories)
+- [x] Implementar tracking de uso y relevancia
+- [x] Crear funciones de decay y cleanup de memorias
+- [ ] Aplicar migraciones de schema a base de datos
+- [ ] Crear script de verificación de memoria post-reinicio
+- [ ] Probar ciclo completo de memoria persistente
 
-### Pending ⏳
-- [ ] Probar ciclo completo: buscar → aprender → capacitar IvyCall
-- [ ] Verificar que todas las herramientas funcionen correctamente
-- [ ] Deployment a Railway
-- [ ] Verificación en producción
+### Fase 2: Auditoría y Corrección del Dashboard
+- [ ] Auditar hooks de React en client/src
+- [ ] Corregir dependencias circulares
+- [ ] Verificar estados controlados en formularios
+- [ ] Implementar manejo de errores robusto en todas las llamadas API
+- [ ] Agregar feedback visual para estados de carga
+- [ ] Manejar estados vacíos en gráficos y tablas
+- [ ] Verificar coincidencia de endpoints Frontend-Backend
+- [ ] Solucionar problemas de CORS en producción
+- [ ] Implementar filtrado estricto por companyId
+- [ ] Auditar seguridad: cliente nunca ve datos de otro
+- [ ] Corregir errores de TypeScript (241 errores actuales)
+- [ ] Optimizar rendimiento de componentes pesados
 
-## Summary
+### Fase 3: Tema Neural Nexus Cyber Minimalist
+- [x] Crear backup del tema anterior (Purple/Violet)
+- [x] Aplicar paleta de colores Neural Nexus a index.css
+- [x] Actualizar variables CSS con OKLCH
+- [x] Implementar Electric Indigo como color primario (oklch(0.623 0.214 259.815))
+- [x] Configurar neon accents para charts (Indigo, Green, Red, Purple, Yellow)
+- [x] Aplicar Deep Void Blue como background (oklch(0.15 0.02 260))
+- [x] Actualizar sidebar con tema oscuro (oklch(0.13 0.02 260))
+- [x] Cambiar App.tsx a defaultTheme="dark"
+- [ ] Verificar contraste y accesibilidad
+- [ ] Probar tema en todos los componentes
 
-**Meta-Agent ahora tiene:**
-- ✅ 124 herramientas totales (49 + 60 + 10 + 5)
-- ✅ Acceso a Internet en tiempo real
-- ✅ Capacidad de monitorear competidores
-- ✅ Detección automática de tendencias
-- ✅ Auto-aprendizaje continuo
-- ✅ Capacitación automática de todos los agentes
-- ✅ Sistema especializado para IvyCall con scripts frescos
+### Fase 4: Preparación para Railway Deployment
+- [ ] Crear/optimizar Dockerfile para producción
+- [ ] Generar railway.json con configuración óptima
+- [ ] Documentar todas las variables de entorno necesarias
+- [ ] Crear script de migración automática pre-start
+- [x] Implementar endpoint /health con verificación de DB
+- [x] Implementar endpoint /ping para checks básicos
+- [x] Crear servicio completo de health checks (DB, LLM, Memory)
+- [x] Configurar health checks en Railway (railway.json)
+- [ ] Optimizar package.json build scripts
+- [ ] Asegurar que migraciones corran automáticamente
+- [ ] Crear script de verificación post-deployment
+- [ ] Documentar proceso de deployment paso a paso
 
-**Archivos creados/modificados:**
-1. `server/meta-agent/capabilities/web-search.ts` - Web search & scraping
-2. `server/meta-agent/capabilities/market-intelligence.ts` - Market intelligence service
-3. `server/meta-agent/capabilities/ivycall-trainer.ts` - IvyCall training system
-4. `server/meta-agent/capabilities/meta-agent-tools-extended.ts` - 15 nuevas herramientas integradas
-5. `server/meta-agent/capabilities/chat-handler.ts` - System prompt actualizado
+### Fase 5: Deployment y Verificación
+- [ ] Conectar repositorio a Railway
+- [ ] Configurar variables de entorno en Railway
+- [ ] Ejecutar primer deployment
+- [ ] Verificar health endpoint
+- [ ] Probar conexión a base de datos
+- [ ] Verificar que Meta-Agent recuerda instrucciones
+- [ ] Probar ciclo completo de campaña multicanal
+- [ ] Verificar aislamiento de datos por companyId
+- [ ] Monitorear logs de producción
+- [ ] Crear checkpoint final de producción
 
-**Próximo paso:** Probar y deployment a Railway
+---
 
-
-## Meta-Agent Dashboard & Scheduler (NEW)
+## Meta-Agent Dashboard & Scheduler (COMPLETADO)
 - [x] Analizar imagen de referencia del usuario
 - [x] Crear 3 propuestas de diseño con diferentes paletas de colores
 - [x] Usuario seleccionó: Cyber Blue
@@ -59,10 +89,19 @@
 - [x] Crear componente PreviewPanel (derecho)
 - [x] Crear tRPC router para Meta-Agent Dashboard
 - [x] Integrar chat con Meta-Agent backend
-- [ ] Actualizar MetaAgentDashboard con tRPC integration
-- [ ] Implementar visualización de imágenes en preview
-- [ ] Implementar visualización de textos/contenido en preview
-- [ ] Implementar visualización de links de competidores en preview
-- [ ] Probar funcionalidad completa end-to-end
-- [ ] Crear checkpoint final
-- [ ] Deployment a Railway
+
+---
+
+## Market Intelligence & IvyCall Training (COMPLETADO)
+- [x] Implementar web search en tiempo real (DuckDuckGo)
+- [x] Implementar scraping de páginas web (Cheerio + Axios)
+- [x] Crear sistema de Market Intelligence
+- [x] Implementar monitoreo de competidores
+- [x] Implementar detección de tendencias
+- [x] Crear sistema de capacitación para IvyCall
+- [x] Generar scripts de llamadas automáticamente
+- [x] Implementar técnicas de enganche
+- [x] Generar respuestas a objeciones
+- [x] Optimizar propuestas de valor
+
+**Próximo paso:** Implementar Memoria Persistente Contextual y deployment a Railway

@@ -42,6 +42,25 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Health check endpoint (before OAuth for load balancers)
+  app.get("/health", async (req, res) => {
+    const { isHealthy, getHealthStatus } = await import("./health");
+    const healthy = await isHealthy();
+    
+    if (healthy) {
+      const status = await getHealthStatus();
+      res.status(200).json(status);
+    } else {
+      const status = await getHealthStatus();
+      res.status(503).json(status);
+    }
+  });
+
+  // Simple ping endpoint for basic checks
+  app.get("/ping", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   
