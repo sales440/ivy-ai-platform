@@ -1,6 +1,6 @@
 import { eq, and, desc, asc, sql, gte, lte, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import * as mysql from "mysql2/promise";
 import { 
   InsertUser, 
   users, 
