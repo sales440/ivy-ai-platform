@@ -61,6 +61,18 @@ async function startServer() {
     res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  // Debug endpoint to check environment variables (TEMPORARY)
+  app.get("/debug-env", (req, res) => {
+    res.status(200).json({
+      hasBuiltInForgeApiKey: !!process.env.BUILT_IN_FORGE_API_KEY,
+      hasBuiltInForgeApiUrl: !!process.env.BUILT_IN_FORGE_API_URL,
+      builtInForgeApiUrl: process.env.BUILT_IN_FORGE_API_URL,
+      hasViteFrontendForgeApiKey: !!process.env.VITE_FRONTEND_FORGE_API_KEY,
+      hasViteFrontendForgeApiUrl: !!process.env.VITE_FRONTEND_FORGE_API_URL,
+      nodeEnv: process.env.NODE_ENV,
+    });
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   
