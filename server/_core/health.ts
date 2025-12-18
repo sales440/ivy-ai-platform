@@ -104,24 +104,23 @@ async function checkMemory(): Promise<ServiceHealth> {
     }
 
     // Check if memory tables exist
-    await db.execute('SELECT 1 FROM agentMemory LIMIT 1');
-    
-    return {
-      status: 'up',
-      responseTime: Date.now() - start,
-    };
-  } catch (error: any) {
-    // If table doesn't exist yet, it's degraded but not down
-    if (error.message.includes('doesn\'t exist')) {
+    try {
+      await db.execute('SELECT 1 FROM agentMemory LIMIT 1');
+      return {
+        status: 'up',
+        responseTime: Date.now() - start,
+      };
+    } catch (tableError: any) {
+      // If table doesn't exist, it's degraded (optional feature)
       return {
         status: 'degraded',
         responseTime: Date.now() - start,
-        error: 'Memory tables not yet migrated',
+        error: 'Memory tables not yet migrated or not configured',
       };
     }
-    
+  } catch (error: any) {
     return {
-      status: 'down',
+      status: 'degraded',
       responseTime: Date.now() - start,
       error: error.message,
     };
@@ -139,17 +138,16 @@ export async function getHealthStatus(): Promise<HealthStatus> {
   ]);
 
   // Determine overall status
+  // Only database is critical - LLM and memory are optional services
   let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
   
   if (database.status === 'down') {
     overallStatus = 'unhealthy';
-  } else if (
-    database.status === 'degraded' ||
-    llm.status === 'degraded' ||
-    memory.status === 'degraded'
-  ) {
+  } else if (database.status === 'degraded') {
     overallStatus = 'degraded';
   }
+  // LLM and memory being down/degraded doesn't affect overall health
+  // They are optional features that can be configured later
 
   return {
     status: overallStatus,
