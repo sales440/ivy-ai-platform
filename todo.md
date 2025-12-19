@@ -135,3 +135,21 @@
 - [ ] Force push latest checkpoint to Railway
 - [ ] Monitor deployment progress
 - [ ] Test /meta-agent route after deployment completes
+
+### Fase 10: Alternative Deployment Solution
+- [ ] Investigate TypeScript crash causing exit code 134
+- [ ] Fix TypeScript memory issues or disable type checking temporarily
+- [ ] Get local dev server running without crashes
+- [ ] Expose local server via ngrok or similar
+- [ ] OR: Deploy to Vercel/Netlify as alternative to Railway
+- [ ] Verify Meta-Agent dashboard loads correctly
+
+### Fase 11: Render Deployment (Alternative to Railway)
+- [x] Create render.yaml configuration file
+- [ ] Update build and start commands for Render
+- [ ] Commit and push all changes to GitHub
+- [ ] Create Render account and connect GitHub repo
+- [ ] Configure environment variables in Render dashboard
+- [ ] Deploy to Render
+- [ ] Verify Meta-Agent dashboard works on Render URL
+- [ ] Test all tRPC endpoints and database connectivity
