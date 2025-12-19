@@ -124,5 +124,14 @@
 - [x] Remove duplicate /meta-agent-dashboard route
 - [x] Delete duplicate MetaAgentDashboard.tsx file
 - [x] Test dashboard locally before deploying to Railway
-- [ ] Create checkpoint with unified route fix
-- [ ] Deploy fix to Railway and verify in production
+- [x] Create checkpoint with unified route fix (version: fe89e568)
+- [ ] User needs to click Publish button in Management UI to deploy to Railway
+- [ ] After deployment, verify /meta-agent works in production
+
+### Fase 9: Railway Deployment Emergency Fix
+- [ ] Investigate why both /meta-agent and /meta-agent-dashboard return 404 in Railway
+- [ ] Check Railway build logs for errors
+- [ ] Verify git repository is connected to Railway
+- [ ] Force push latest checkpoint to Railway
+- [ ] Monitor deployment progress
+- [ ] Test /meta-agent route after deployment completes
