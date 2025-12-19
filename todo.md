@@ -146,8 +146,8 @@
 
 ### Fase 11: Render Deployment (Alternative to Railway)
 - [x] Create render.yaml configuration file
-- [ ] Update build and start commands for Render
-- [ ] Commit and push all changes to GitHub
+- [x] Update build and start commands for Render
+- [x] Commit and push all changes to GitHub (commit: f6540c5)
 - [ ] Create Render account and connect GitHub repo
 - [ ] Configure environment variables in Render dashboard
 - [ ] Deploy to Render
