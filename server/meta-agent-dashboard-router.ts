@@ -38,8 +38,8 @@ export const metaAgentDashboardRouter = router({
 
       return {
         success: true,
-        response: response.response,
-        action: response.action,
+        response: response.content,
+        action: response.metadata?.action || null,
       };
     }),
 
