@@ -743,7 +743,7 @@ When users ask about market intelligence or training agents, USE these new capab
         { role: "user", content: userMessage },
       ],
       temperature: 0.8,
-      tools: EXTENDED_TOOL_DEFINITIONS,
+      tools: EXTENDED_TOOL_DEFINITIONS.slice(0, 128), // OpenAI limit is 128 tools
       tool_choice: "auto",
     });
 
