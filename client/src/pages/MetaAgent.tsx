@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function MetaAgent() {
   const [chatMessage, setChatMessage] = useState("");
@@ -158,7 +159,8 @@ export default function MetaAgent() {
   };
 
   return (
-    <div className="container py-8 space-y-6">
+    <DashboardLayout>
+      <div className="container py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -579,6 +581,7 @@ export default function MetaAgent() {
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

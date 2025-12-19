@@ -56,7 +56,7 @@ import ABTestingDashboard from "@/pages/ABTestingDashboard";
 import ChurnRiskDashboard from "@/pages/ChurnRiskDashboard";
 import ExecutiveSummary from "@/pages/ExecutiveSummary";
 import CommunicationsDashboard from "@/pages/CommunicationsDashboard";
-import MetaAgentDashboard from "@/pages/MetaAgentDashboard";
+
 
 function Router() {
   return (
@@ -78,7 +78,7 @@ function Router() {
       <Route path="/executive-summary" component={ExecutiveSummary} />
       <Route path="/milestone-config" component={MilestoneConfig} />
       <Route path="/meta-agent" component={MetaAgent} />
-      <Route path="/meta-agent-dashboard" component={MetaAgentDashboard} />
+
       <Route path="/agents/manage" component={AgentManagement} />
       <Route path="/agents/training" component={AgentTraining} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />

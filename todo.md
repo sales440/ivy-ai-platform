@@ -116,3 +116,13 @@
 - [ ] Create /api/migrate endpoint for database schema sync
 - [ ] Deploy to Railway and execute migration
 - [ ] Test all Meta-Agent functionality after migration
+
+### Fase 8: Meta-Agent Dashboard Visibility Fix
+- [x] Investigate why /meta-agent route is not displaying dashboard
+- [x] Check if route is registered in App.tsx
+- [x] Verify MetaAgentDashboard component exists and imports correctly
+- [x] Remove duplicate /meta-agent-dashboard route
+- [x] Delete duplicate MetaAgentDashboard.tsx file
+- [x] Test dashboard locally before deploying to Railway
+- [ ] Create checkpoint with unified route fix
+- [ ] Deploy fix to Railway and verify in production
