@@ -25,11 +25,21 @@ export type FileContent = {
 
 export type MessageContent = string | TextContent | ImageContent | FileContent;
 
+export type ToolCall = {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+};
+
 export type Message = {
   role: Role;
   content: MessageContent | MessageContent[];
   name?: string;
   tool_call_id?: string;
+  tool_calls?: ToolCall[];
 };
 
 export type Tool = {
@@ -69,15 +79,6 @@ export type InvokeParams = {
   temperature?: number;
   topP?: number;
   top_p?: number;
-};
-
-export type ToolCall = {
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    arguments: string;
-  };
 };
 
 export type InvokeResult = {
@@ -143,7 +144,7 @@ const normalizeContentPart = (
 };
 
 const normalizeMessage = (message: Message) => {
-  const { role, name, tool_call_id } = message;
+  const { role, name, tool_call_id, tool_calls } = message;
 
   if (role === "tool" || role === "function") {
     const content = ensureArray(message.content)
@@ -162,18 +163,28 @@ const normalizeMessage = (message: Message) => {
 
   // If there's only text content, collapse to a single string for compatibility
   if (contentParts.length === 1 && contentParts[0].type === "text") {
-    return {
+    const result: any = {
       role,
       name,
       content: contentParts[0].text,
     };
+    // Include tool_calls for assistant messages
+    if (role === "assistant" && tool_calls && tool_calls.length > 0) {
+      result.tool_calls = tool_calls;
+    }
+    return result;
   }
 
-  return {
+  const result: any = {
     role,
     name,
     content: contentParts,
   };
+  // Include tool_calls for assistant messages
+  if (role === "assistant" && tool_calls && tool_calls.length > 0) {
+    result.tool_calls = tool_calls;
+  }
+  return result;
 };
 
 const normalizeToolChoice = (
