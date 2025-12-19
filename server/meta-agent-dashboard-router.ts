@@ -34,7 +34,7 @@ export const metaAgentDashboardRouter = router({
       }
 
       // Send to Meta-Agent
-      const response = await metaAgent.chat(fullMessage, ctx.user.id);
+      const response = await metaAgent.handleChatMessage(fullMessage, ctx.user.id);
 
       return {
         success: true,
@@ -63,7 +63,7 @@ export const metaAgentDashboardRouter = router({
     }))
     .mutation(async ({ input }) => {
       const message = `Busca en Internet: ${input.query}`;
-      const response = await metaAgent.chat(message, 'system');
+      const response = await metaAgent.handleChatMessage(message, 'system');
       
       return {
         success: true,
@@ -81,7 +81,7 @@ export const metaAgentDashboardRouter = router({
         ? `Muéstrame las tendencias de mercado para la industria: ${input.industry}`
         : 'Muéstrame las tendencias de mercado de nuestros clientes actuales';
       
-      const response = await metaAgent.chat(message, 'system');
+      const response = await metaAgent.handleChatMessage(message, 'system');
       
       return {
         success: true,
@@ -93,7 +93,7 @@ export const metaAgentDashboardRouter = router({
   getLibrary: protectedProcedure
     .query(async () => {
       const message = 'Muéstrame todos los proyectos y templates de empresas que han contratado servicios de Ivy.AI';
-      const response = await metaAgent.chat(message, 'system');
+      const response = await metaAgent.handleChatMessage(message, 'system');
       
       return {
         success: true,
@@ -112,7 +112,7 @@ export const metaAgentDashboardRouter = router({
     .mutation(async ({ input }) => {
       const message = `Crea un nuevo proyecto para la empresa "${input.companyName}" de la industria ${input.industry}. Servicios contratados: ${input.services.join(', ')}. ${input.additionalInfo || ''}. Sugiere campañas y propuestas basadas en análisis de mercado en tiempo real.`;
       
-      const response = await metaAgent.chat(message, 'system');
+      const response = await metaAgent.handleChatMessage(message, 'system');
       
       return {
         success: true,
@@ -128,7 +128,7 @@ export const metaAgentDashboardRouter = router({
     }))
     .query(async ({ input }) => {
       const message = `Muéstrame las tareas de las siguientes empresas: ${input.companyIds.join(', ')}`;
-      const response = await metaAgent.chat(message, 'system');
+      const response = await metaAgent.handleChatMessage(message, 'system');
       
       return {
         success: true,
