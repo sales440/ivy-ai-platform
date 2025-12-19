@@ -25,15 +25,7 @@ export type InsertUser = typeof users.$inferInsert;
 export const companies = mysqlTable("companies", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
-  industry: varchar("industry", { length: 100 }),
-  plan: mysqlEnum("plan", ["starter", "professional", "enterprise"]).default("starter").notNull(),
-  logo: text("logo"),
-  website: varchar("website", { length: 500 }),
-  contactEmail: varchar("contactEmail", { length: 320 }),
-  contactPhone: varchar("contactPhone", { length: 50 }),
-  address: text("address"),
-  isActive: boolean("isActive").default(true).notNull(),
+  domain: varchar("domain", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
