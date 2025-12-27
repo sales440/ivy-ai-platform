@@ -264,97 +264,98 @@ export class CampaignGenerator {
             console.log(`[Campaign Generator] ✅ Basic campaign created for ${client.name}`);
         }
     }
-}
+
 
     /**
      * Get competitors for an industry
      */
     private getCompetitors(industry: string): string[] {
-    const competitorMap: Record<string, string[]> = {
-        'saas': ['Intercom', 'Drift', 'HubSpot', 'Salesforce', 'Zendesk'],
-        'manufacturing': ['Siemens', 'ABB', 'Schneider Electric', 'Rockwell Automation'],
-        'pet-services': ['Rover', 'Wag', 'Chewy', 'PetSmart', 'Petco'],
-    };
+        const competitorMap: Record<string, string[]> = {
+            'saas': ['Intercom', 'Drift', 'HubSpot', 'Salesforce', 'Zendesk'],
+            'manufacturing': ['Siemens', 'ABB', 'Schneider Electric', 'Rockwell Automation'],
+            'pet-services': ['Rover', 'Wag', 'Chewy', 'PetSmart', 'Petco'],
+        };
 
-    return competitorMap[industry] || [];
-}
+        return competitorMap[industry] || [];
+    }
 
     /**
      * Calculate average lead score
      */
     private calculateAverageScore(leads: any[]): number {
-    if (leads.length === 0) return 0;
-    const total = leads.reduce((sum, lead) => sum + (lead.score || 0), 0);
-    return Math.round(total / leads.length);
-}
+        if (leads.length === 0) return 0;
+        const total = leads.reduce((sum, lead) => sum + (lead.score || 0), 0);
+        return Math.round(total / leads.length);
+    }
 
     /**
      * Optimizes existing campaigns based on performance
      */
-    async optimizeCampaigns(): Promise < void> {
-    console.log('[Campaign Generator] Optimizing campaigns...');
+    async optimizeCampaigns(): Promise<void> {
+        console.log('[Campaign Generator] Optimizing campaigns...');
 
-    const db = await getDb();
-    if(!db) {
-        console.error('[Campaign Generator] Database not available');
-        return;
-    }
+        const db = await getDb();
+        if (!db) {
+            console.error('[Campaign Generator] Database not available');
+            return;
+        }
 
         const allUsers = await db.query.users.findMany({
-        where: (u: any, { eq }: any) => eq(u.role, 'admin'),
-    });
+            where: (u: any, { eq }: any) => eq(u.role, 'admin'),
+        });
 
-    for(const user of allUsers) {
-        const status = await agentOrchestrator.getCampaignStatus(user.id);
+        for (const user of allUsers) {
+            const status = await agentOrchestrator.getCampaignStatus(user.id);
 
-        if (status.stats.failed > 3) {
-            console.log(`[Campaign Generator] ⚠️  Client ${user.id} has ${status.stats.failed} failed tasks`);
-            console.log(`[Campaign Generator] Triggering agent performance monitoring...`);
+            if (status.stats.failed > 3) {
+                console.log(`[Campaign Generator] ⚠️  Client ${user.id} has ${status.stats.failed} failed tasks`);
+                console.log(`[Campaign Generator] Triggering agent performance monitoring...`);
 
-            await agentOrchestrator.monitorAgentPerformance();
+                await agentOrchestrator.monitorAgentPerformance();
+            }
+
+            if (status.stats.completed > 10) {
+                console.log(`[Campaign Generator] ✅ Client ${user.id} campaign performing well (${status.stats.completed} completed tasks)`);
+            }
         }
-
-        if (status.stats.completed > 10) {
-            console.log(`[Campaign Generator] ✅ Client ${user.id} campaign performing well (${status.stats.completed} completed tasks)`);
-        }
-    }
 
         console.log('[Campaign Generator] Campaign optimization complete');
-}
+    }
 
     /**
      * Gets campaign summary for all clients
      */
-    async getCampaignSummary(): Promise < any > {
-    const db = await getDb();
-    if(!db) {
-        console.error('[Campaign Generator] Database not available');
-        return { totalClients: 0, clients: [] };
-    }
+    async getCampaignSummary(): Promise<any> {
+        const db = await getDb();
+        if (!db) {
+            console.error('[Campaign Generator] Database not available');
+            return { totalClients: 0, clients: [] };
+        }
 
         const allUsers = await db.query.users.findMany({
-        where: (u: any, { eq }: any) => eq(u.role, 'admin'),
-    });
-
-    const summary = [];
-
-    for(const user of allUsers) {
-        const industry = this.detectIndustry(user.name || '', user.email);
-        const status = await agentOrchestrator.getCampaignStatus(user.id);
-
-        summary.push({
-            clientId: user.id,
-            clientName: user.name,
-            industry,
-            campaignStatus: status,
+            where: (u: any, { eq }: any) => eq(u.role, 'admin'),
         });
-    }
+
+        const summary = [];
+
+        for (const user of allUsers) {
+            const industry = this.detectIndustry(user.name || '', user.email);
+            const status = await agentOrchestrator.getCampaignStatus(user.id);
+
+            summary.push({
+                clientId: user.id,
+                clientName: user.name,
+                industry,
+                campaignStatus: status,
+            });
+        }
 
         return {
-        totalClients: summary.length,
-        clients: summary,
-    };
+            totalClients: summary.length,
+            clients: summary,
+        };
+    }
 }
-}
+
 
 export const campaignGenerator = new CampaignGenerator();

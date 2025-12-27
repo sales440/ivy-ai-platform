@@ -91,10 +91,10 @@ export async function getDb() {
   }
 
   // Prevent mysql2 from trying to connect to a file (SQLite) URL
-  if (process.env.DATABASE_URL.startsWith('file:')) {
-    console.warn("[Database] SQLite connection string detected but MySQL driver is active. Database features will be disabled.");
-    return null;
-  }
+  // if (process.env.DATABASE_URL.startsWith('file:')) {
+  //   console.warn("[Database] SQLite connection string detected but MySQL driver is active. Database features will be disabled.");
+  //   return null;
+  // }
 
   // If we have a healthy connection, return it
   if (_db && _pool) {

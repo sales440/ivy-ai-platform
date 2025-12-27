@@ -18,17 +18,21 @@ export const crmIntegrationsRouter = router({
    */
   testConnection: adminProcedure
     .input(z.object({
-      crmType: z.enum(["salesforce", "hubspot", "pipedrive"]),
+      crmType: z.enum(["salesforce", "hubspot", "pipedrive", "dynamics"]),
       credentials: z.record(z.any()),
       companyId: z.number(),
     }))
     .mutation(async ({ input }) => {
       try {
         let connector;
-        
+
         switch (input.crmType) {
           case "hubspot":
             connector = new HubSpotConnector(input.credentials, {}, input.companyId);
+            break;
+          case "dynamics":
+            const { DynamicsConnector } = await import("./crm/dynamics-connector");
+            connector = new DynamicsConnector(input.credentials as any, input.companyId);
             break;
           // Add other connectors here
           default:
@@ -52,7 +56,7 @@ export const crmIntegrationsRouter = router({
     .input(z.object({
       id: z.number().optional(),
       companyId: z.number(),
-      crmType: z.enum(["salesforce", "hubspot", "pipedrive"]),
+      crmType: z.enum(["salesforce", "hubspot", "pipedrive", "dynamics"]),
       credentials: z.record(z.any()),
       config: z.record(z.any()).optional(),
       isActive: z.boolean().default(true),
@@ -94,6 +98,10 @@ export const crmIntegrationsRouter = router({
               integration.companyId
             );
             break;
+          case "dynamics":
+            const { DynamicsConnector } = await import("./crm/dynamics-connector");
+            connector = new DynamicsConnector(integration.credentials as any, integration.companyId);
+            break;
           default:
             throw new Error(`Unsupported CRM type: ${integration.crmType}`);
         }
@@ -115,7 +123,7 @@ export const crmIntegrationsRouter = router({
           // Get leads and tickets to sync
           const leads = await db.getAllLeads(integration.companyId);
           const tickets = await db.getAllTickets(integration.companyId);
-          
+
           results.leadsToCRM = await connector.syncLeadsToCRM(leads as any);
           results.ticketsToCRM = await connector.syncTicketsToCRM(tickets as any);
         }

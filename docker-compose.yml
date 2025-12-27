@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: ivy_core_brain
+    restart: always
+    env_file: .env
+    # volumes:
+    # - ./backend/key.json:/app/key.json # Enable if key present
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    networks:
+      - ivy-net
+
+  frontend:
+    build: ./client
+    container_name: ivy_ui_dashboard
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - ivy-net
+
+networks:
+  ivy-net:
+    driver: bridge

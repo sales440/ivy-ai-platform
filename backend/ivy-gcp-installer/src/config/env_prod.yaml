@@ -1,0 +1,43 @@
+version: "1.0"
+env: prod
+globals:
+  logging:
+    level: INFO
+  telemetry:
+    enabled: true
+  retries:
+    max_attempts: 3
+
+categories:
+  agentes:
+    description: "Core AI Agents"
+    tools:
+      - id: createAgent
+        version: "1.0.0"
+        config:
+          endpoint: "${AGENT_API_BASE}/agents"
+          timeout_ms: 3000
+      - id: trainAgent
+        version: "1.0.0"
+        config:
+          endpoint: "${AGENT_API_BASE}/agents/{id}/train"
+          timeout_ms: 6000
+  base_datos:
+    description: "Database Management Tools"
+    tools:
+      - id: runDatabaseMigration
+        version: "v2"
+        config:
+          endpoint: "${DB_API_BASE}/migrate"
+          timeout_ms: 10000
+
+secrets:
+  - name: ivy_api_key
+    ref: "projects/$PROJECT_ID/secrets/ivy_api_key/versions/latest"
+  - name: db_password
+    ref: "projects/$PROJECT_ID/secrets/db_password/versions/latest"
+
+mappings:
+  prod:
+    AGENT_API_BASE: "https://api.ivy.ai/prod"
+    DB_API_BASE: "https://db.ivy.ai/prod"

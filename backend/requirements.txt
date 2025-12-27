@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+google-cloud-aiplatform
+google-cloud-firestore
+google-cloud-bigquery
+google-api-python-client
+msal
+requests
+python-dotenv

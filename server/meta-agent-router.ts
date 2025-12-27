@@ -90,6 +90,16 @@ export const metaAgentRouter = router({
     }),
 
   /**
+   * Send chat message (Alias for prompt compatibility)
+   */
+  sendMessage: protectedProcedure
+    .input(z.object({ message: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const response = await metaAgent.handleChatMessage(input.message, ctx.user.id.toString());
+      return response;
+    }),
+
+  /**
    * Get TypeScript errors
    */
   getTypeScriptErrors: protectedProcedure.query(async () => {

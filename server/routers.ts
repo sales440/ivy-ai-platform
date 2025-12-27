@@ -44,6 +44,7 @@ import { metaAgentRouter } from "./meta-agent-router";
 import { metaAgentDashboardRouter } from "./meta-agent-dashboard-router";
 import { communicationRouter } from "./communication-router";
 import { communicationsRouter } from "./routers/communications";
+import { ivyCloudRouter } from "./ivy-cloud/router";
 import * as notificationHelper from "./notification-helper";
 import { publicProcedure, protectedProcedure, router, requirePermission } from "./_core/trpc";
 import { getAllPredefinedWorkflows, getWorkflowById, executePredefinedWorkflow } from "./workflows/predefined";
@@ -96,6 +97,7 @@ export const appRouter = router({
   metaAgent: metaAgentRouter,
   metaAgentDashboard: metaAgentDashboardRouter,
   aiChat: aiChatRouter,
+  ivyCloud: ivyCloudRouter,
   migration: migrationRouter,
   fagor: fagorAgentsMetricsRouter,
   agentMilestones: agentMilestonesRouter,

@@ -64,23 +64,8 @@ class MetaAgent {
     // Run initial audit
     await this.runAudit();
 
-    // Schedule periodic audits
-    if (META_AGENT_CONFIG.auditInterval > 0) {
-      this.auditIntervalId = setInterval(
-        () => this.runAudit(),
-        META_AGENT_CONFIG.auditInterval * 60 * 1000
-      );
-      console.log(`[Meta-Agent] Scheduled audits every ${META_AGENT_CONFIG.auditInterval} minutes`);
-    }
-
-    // Schedule periodic training
-    if (META_AGENT_CONFIG.autoTrain && META_AGENT_CONFIG.trainingInterval > 0) {
-      this.trainingIntervalId = setInterval(
-        () => this.autoTrainAgents(),
-        META_AGENT_CONFIG.trainingInterval * 60 * 60 * 1000
-      );
-      console.log(`[Meta-Agent] Scheduled auto-training every ${META_AGENT_CONFIG.trainingInterval} hours`);
-    }
+    // Start 24/7 maintenance cycles
+    this.startMaintenanceCycle();
 
     console.log("[Meta-Agent] ✅ System started successfully");
   }
@@ -104,6 +89,39 @@ class MetaAgent {
     }
 
     console.log("[Meta-Agent] Stopped");
+  }
+
+  private startMaintenanceCycle(): void {
+    // Every 2 minutes: Health check
+    this.auditIntervalId = setInterval(async () => {
+      const { checkPlatformHealth, healPlatform } = await import("./capabilities/platform-healer");
+      const health = await checkPlatformHealth();
+      if (health.status !== "healthy" && META_AGENT_CONFIG.autoHeal) {
+        await healPlatform();
+      }
+    }, 2 * 60 * 1000);
+
+    // Every 5 minutes: Data sync (Placeholder for syncData)
+    // setInterval(() => this.syncData(), 5 * 60 * 1000);
+
+    // Every 30 minutes: Full maintenance
+    this.trainingIntervalId = setInterval(async () => {
+      if (META_AGENT_CONFIG.autoFix) {
+        const { fixTypeScriptErrors } = await import("./capabilities/typescript-fixer");
+        await fixTypeScriptErrors();
+      }
+      if (META_AGENT_CONFIG.autoTrain) {
+        await this.autoTrainAgents();
+      }
+    }, 30 * 60 * 1000);
+  }
+
+  /**
+   * Chat interface (Alias for handleChatMessage to match prompt)
+   */
+  async chat(message: string): Promise<ChatMessage> {
+    // We use a default user ID for the prompt's simple chat interface
+    return this.handleChatMessage(message, "1");
   }
 
   /**

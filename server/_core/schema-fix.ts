@@ -1,4 +1,4 @@
-import { db as dbConnection } from "../db";
+import { getDb } from "../db";
 import { sql } from "drizzle-orm";
 
 console.log("[SchemaFix] 🧩 Module Loaded");
@@ -6,12 +6,11 @@ console.log("[SchemaFix] 🧩 Module Loaded");
 export async function runEmergencySchemaFix() {
   console.log('[SchemaFix] 🚨 Starting Emergency Schema Repair...');
 
-  if (!dbConnection) {
+  const db = await getDb();
+  if (!db) {
     console.error('[SchemaFix] ❌ Database connection is NULL. Cannot run schema fix.');
     return;
   }
-
-  const db = dbConnection;
 
   // Helper to safely execute DDL
   const safeExecute = async (label: string, checkQuery: any, fixQuery: any, errorPattern: string | RegExp) => {
