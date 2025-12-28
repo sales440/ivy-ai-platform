@@ -18,19 +18,41 @@ def load_config(path: str) -> dict:
         logger.error(f"Failed to load config from {path}: {e}")
         sys.exit(1)
 
-def install_tool(tool_id: str, tool_def: dict, dry_run: bool = False) -> dict:
+from src.tools.database import DatabaseInstaller
+from src.tools.agents import AgentInstaller
+
+def install_tool(tool_id: str, tool_def: dict, category: str, dry_run: bool = False) -> dict:
     """
-    Installs a single tool.
-    In a real implementation, this would dynamically import the tool class
-    from src.categories.X.tools and call its install() method.
+    Installs a single tool using the appropriate installer strategy.
     """
     status = "skipped" if dry_run else "active"
-    logger.info(f"[{status.upper()}] Processing tool: {tool_id} (v{tool_def.get('version', 'latest')})")
+    logger.info(f"[{status.upper()}] Processing tool: {tool_id} (Category: {category})")
     
-    # Placeholder for actual installation logic
-    # 1. Resolve secrets in config
-    # 2. Call cloud APIs (Vertex AI, Cloud Run, etc.)
+    if dry_run:
+        return {
+            "tool_id": tool_id,
+            "status": status,
+            "version": tool_def.get("version", "latest")
+        }
+
+    installer = None
+    if category == "base_datos":
+        installer = DatabaseInstaller(tool_def.get("config", {}))
+    elif category == "agentes":
+        installer = AgentInstaller(tool_def.get("config", {}))
     
+    if installer:
+        try:
+            installer.run(tool_id, tool_def.get("config", {}))
+            status = "installed"
+        except Exception as e:
+            status = "failed"
+            logger.error(f"Installation failed: {e}")
+            raise e
+    else:
+        logger.warning(f"No specific installer found for category '{category}'. specific logic skipped.")
+        status = "no_installer"
+
     return {
         "tool_id": tool_id,
         "status": status,
@@ -64,7 +86,7 @@ def main():
         logger.info(f"--- Category: {category_name} ---")
         for tool in data.get("tools", []):
             try:
-                res = install_tool(tool["id"], tool, dry_run=args.dry_run)
+                res = install_tool(tool["id"], tool, category=category_name, dry_run=args.dry_run)
                 results.append(res)
             except Exception as e:
                 logger.error(f"Failed to install {tool['id']}: {e}")
