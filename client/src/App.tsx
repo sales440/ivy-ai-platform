@@ -78,7 +78,6 @@ function Router() {
       <Route path="/executive-summary" component={ExecutiveSummary} />
       <Route path="/milestone-config" component={MilestoneConfig} />
       <Route path="/meta-agent" component={MetaAgent} />
-      <Route path="/meta-agent-dashboard" component={MetaAgent} />
 
       <Route path="/agents/manage" component={AgentManagement} />
       <Route path="/agents/training" component={AgentTraining} />
