@@ -117,4 +117,17 @@
 - [x] Add autonomous vs human-guided mode toggle
 - [x] Show ROPA's 129 tools and capabilities
 - [x] Test chat interaction with ROPA
-- [ ] Create checkpoint
+- [x] Create checkpoint
+
+## ROPA Landing Page Redesign - Conversational Interface
+- [x] Create new minimalist landing page design
+- [x] Implement floating chat window (always visible, draggable)
+- [x] Add microphone button for voice input (speech-to-text)
+- [x] Integrate Web Speech API for voice recognition
+- [x] Add text-to-speech for ROPA responses (optional toggle)
+- [x] Design clean hero section focused on conversation
+- [x] Remove kanban board and complex UI elements
+- [ ] Test voice input and output functionality
+- [ ] Test chat persistence and responsiveness
+- [x] Update Home page with new color palette (black + cyan/teal/orange)
+- [ ] Create checkpoint with new design

@@ -24,9 +24,12 @@ export default function Home() {
   const { user, isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+    <div className="min-h-screen bg-black text-white">
+      {/* Animated background gradient */}
+      <div className="fixed inset-0 bg-gradient-to-br from-cyan-500/10 via-black to-orange-500/10 animate-gradient-shift" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_50%)]" />
       {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-50">
+      <header className="relative z-10 border-b border-cyan-500/20 backdrop-blur-sm sticky top-0">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={APP_LOGO} alt={APP_TITLE} className="h-8 w-8 rounded-md" />
@@ -57,22 +60,24 @@ export default function Home() {
       <section className="py-20 md:py-32">
         <div className="container">
           <div className="mx-auto max-w-4xl text-center space-y-8">
-            <Badge variant="secondary" className="px-4 py-1.5">
-              <Sparkles className="h-3 w-3 mr-1.5" />
-              Powered by AI & Autonomous Agents
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 text-cyan-400" />
+              <span className="text-sm text-cyan-400 font-medium">Powered by AI & Autonomous Agents</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
               Transform Your Business with{" "}
-              <span className="text-primary">Intelligent AI Agents</span>
+              <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-orange-400 bg-clip-text text-transparent">
+                Intelligent AI Agents
+              </span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
               Ivy.AI empowers your team with autonomous AI agents that handle calls, analyze markets,
               and optimize campaigns 24/7. Built on ROPA, our meta-agent orchestrator.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {isAuthenticated ? (
                 <Link href="/dashboard">
-                  <Button size="lg" className="gap-2">
+                  <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 gap-2">
                     Go to Dashboard
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -80,7 +85,7 @@ export default function Home() {
               ) : (
                 <Button
                   size="lg"
-                  className="gap-2"
+                  className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 gap-2"
                   onClick={() => (window.location.href = getLoginUrl())}
                 >
                   Start Free Trial
@@ -88,7 +93,7 @@ export default function Home() {
                 </Button>
               )}
               <Link href="/ropa">
-                <Button size="lg" variant="outline" className="gap-2">
+                <Button size="lg" variant="outline" className="border-cyan-500/30 hover:bg-cyan-500/10 text-white gap-2">
                   <Bot className="h-4 w-4" />
                   Meet ROPA
                 </Button>
@@ -96,18 +101,24 @@ export default function Home() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 pt-12 border-t">
+            <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto pt-8">
               <div>
-                <div className="text-3xl font-bold text-primary">129</div>
-                <div className="text-sm text-muted-foreground">AI Tools</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
+                  129
+                </div>
+                <div className="text-sm text-gray-500 mt-1">AI Tools</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-primary">24/7</div>
-                <div className="text-sm text-muted-foreground">Autonomous</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-orange-400 bg-clip-text text-transparent">
+                  24/7
+                </div>
+                <div className="text-sm text-gray-500 mt-1">Autonomous</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-primary">99.9%</div>
-                <div className="text-sm text-muted-foreground">Uptime</div>
+                <div className="text-4xl font-bold bg-gradient-to-r from-orange-400 to-cyan-400 bg-clip-text text-transparent">
+                  99.9%
+                </div>
+                <div className="text-sm text-gray-500 mt-1">Uptime</div>
               </div>
             </div>
           </div>
@@ -115,20 +126,22 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-muted/30">
+      <section id="features" className="relative z-10 py-20 border-t border-cyan-500/20">
         <div className="container">
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4">
-              Features
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Scale</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold mb-4">
+              Everything You Need to{" "}
+              <span className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-transparent">
+                Scale Your Business
+              </span>
+            </h2>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Comprehensive AI-powered tools for modern businesses
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm hover:border-cyan-500/40 transition-all hover:scale-105">
               <CardHeader>
                 <Phone className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>IvyCall Training</CardTitle>
@@ -138,7 +151,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-gray-400">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     Call script generation
@@ -155,7 +168,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm hover:border-cyan-500/40 transition-all hover:scale-105">
               <CardHeader>
                 <TrendingUp className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Market Intelligence</CardTitle>
@@ -164,7 +177,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-gray-400">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     Competitor monitoring
@@ -181,7 +194,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm hover:border-cyan-500/40 transition-all hover:scale-105">
               <CardHeader>
                 <BarChart3 className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Analytics & BI</CardTitle>
@@ -190,7 +203,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-gray-400">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     Custom dashboards
@@ -207,7 +220,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm hover:border-cyan-500/40 transition-all hover:scale-105">
               <CardHeader>
                 <Shield className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Security & Compliance</CardTitle>
@@ -217,7 +230,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-gray-400">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     Automated security scans
@@ -234,7 +247,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm hover:border-cyan-500/40 transition-all hover:scale-105">
               <CardHeader>
                 <Zap className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Automation & Workflows</CardTitle>
@@ -243,7 +256,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-gray-400">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     Visual workflow builder
@@ -260,7 +273,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm hover:border-cyan-500/40 transition-all hover:scale-105">
               <CardHeader>
                 <Globe className="h-10 w-10 text-primary mb-2" />
                 <CardTitle>Integration Hub</CardTitle>
@@ -269,7 +282,7 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-muted-foreground">
+                <ul className="space-y-2 text-sm text-gray-400">
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-primary" />
                     CRM integration
@@ -290,18 +303,21 @@ export default function Home() {
       </section>
 
       {/* ROPA Section */}
-      <section id="ropa" className="py-20">
+      <section id="ropa" className="relative z-10 py-20 border-t border-cyan-500/20">
         <div className="container">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <Badge variant="outline" className="mb-4">
-                <Bot className="h-3 w-3 mr-1.5" />
-                Meet ROPA
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Your 24/7 Autonomous Meta-Agent
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/20 border border-cyan-500/30 mb-6">
+                <Bot className="w-4 h-4 text-cyan-400" />
+                <span className="text-sm text-cyan-400 font-medium">Meet ROPA</span>
+              </div>
+              <h2 className="text-4xl font-bold mb-6">
+                Your{" "}
+                <span className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-transparent">
+                  24/7 Autonomous Meta-Agent
+                </span>
               </h2>
-              <p className="text-lg text-muted-foreground mb-8">
+              <p className="text-lg text-gray-400 mb-8 leading-relaxed">
                 ROPA (Robotic Operations & Process Automation) is the brain behind Ivy.AI. It
                 orchestrates 129 specialized AI tools, monitors platform health, and autonomously
                 fixes issues before they impact your business.
@@ -309,36 +325,36 @@ export default function Home() {
 
               <div className="space-y-4 mb-8">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Brain className="h-5 w-5 text-primary" />
+                  <div className="w-2 h-2 rounded-full bg-cyan-400">
+
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Self-Learning System</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-1 text-white">Self-Learning System</h3>
+                    <p className="text-sm text-gray-400">
                       ROPA learns from every interaction and continuously improves performance
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Target className="h-5 w-5 text-primary" />
+                  <div className="w-2 h-2 rounded-full bg-cyan-400">
+
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Auto-Healing</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-1 text-white">Auto-Healing</h3>
+                    <p className="text-sm text-gray-400">
                       Detects and fixes platform issues automatically without human intervention
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-primary/10 p-2">
-                    <Clock className="h-5 w-5 text-primary" />
+                  <div className="w-2 h-2 rounded-full bg-cyan-400">
+
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">24/7 Operations</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-1 text-white">24/7 Operations</h3>
+                    <p className="text-sm text-gray-400">
                       Runs maintenance cycles, health checks, and market intelligence around the clock
                     </p>
                   </div>
@@ -346,7 +362,7 @@ export default function Home() {
               </div>
 
               <Link href="/ropa">
-                <Button size="lg" className="gap-2">
+                <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 gap-2">
                   Explore ROPA Dashboard
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -354,7 +370,7 @@ export default function Home() {
             </div>
 
             <div className="relative">
-              <Card className="border-2">
+              <Card className="bg-gradient-to-br from-gray-900/50 to-gray-800/30 border-cyan-500/20 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
@@ -394,18 +410,23 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary/5">
+      <section className="relative z-10 py-20 border-t border-cyan-500/20">
         <div className="container">
           <div className="mx-auto max-w-3xl text-center space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">Ready to Transform Your Business?</h2>
-            <p className="text-lg text-muted-foreground">
+            <h2 className="text-4xl md:text-5xl font-bold">
+              Ready to Transform Your{" "}
+              <span className="bg-gradient-to-r from-cyan-400 to-orange-400 bg-clip-text text-transparent">
+                Business?
+              </span>
+            </h2>
+            <p className="text-xl text-gray-400">
               Join hundreds of companies using Ivy.AI to automate operations, boost sales, and scale
               effortlessly
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               {isAuthenticated ? (
                 <Link href="/dashboard">
-                  <Button size="lg" className="gap-2">
+                  <Button size="lg" className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 gap-2">
                     Go to Dashboard
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -414,13 +435,13 @@ export default function Home() {
                 <>
                   <Button
                     size="lg"
-                    className="gap-2"
+                    className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 gap-2"
                     onClick={() => (window.location.href = getLoginUrl())}
                   >
                     Start Free Trial
                     <ArrowRight className="h-4 w-4" />
                   </Button>
-                  <Button size="lg" variant="outline">
+                  <Button size="lg" variant="outline" className="border-cyan-500/30 hover:bg-cyan-500/10 text-white">
                     Schedule Demo
                   </Button>
                 </>
@@ -431,7 +452,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12">
+      <footer className="relative z-10 border-t border-cyan-500/20 py-12">
         <div className="container">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
@@ -439,26 +460,26 @@ export default function Home() {
                 <img src={APP_LOGO} alt={APP_TITLE} className="h-6 w-6 rounded" />
                 <span className="font-bold">{APP_TITLE}</span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-400">
                 AI-powered autonomous agents for modern businesses
               </p>
             </div>
 
             <div>
               <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm text-gray-400">
                 <li>
-                  <a href="#features" className="hover:text-primary transition-colors">
+                  <a href="#features" className="hover:text-cyan-400 transition-colors">
                     Features
                   </a>
                 </li>
                 <li>
-                  <Link href="/ropa" className="hover:text-primary transition-colors">
+                  <Link href="/ropa" className="hover:text-cyan-400 transition-colors">
                     ROPA
                   </Link>
                 </li>
                 <li>
-                  <a href="#pricing" className="hover:text-primary transition-colors">
+                  <a href="#pricing" className="hover:text-cyan-400 transition-colors">
                     Pricing
                   </a>
                 </li>
@@ -467,19 +488,19 @@ export default function Home() {
 
             <div>
               <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
                     About
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
                     Blog
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
                     Contact
                   </a>
                 </li>
@@ -488,19 +509,19 @@ export default function Home() {
 
             <div>
               <h3 className="font-semibold mb-4">Legal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <ul className="space-y-2 text-sm text-gray-400">
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
                     Privacy
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
                     Terms
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="hover:text-primary transition-colors">
+                  <a href="#" className="hover:text-cyan-400 transition-colors">
                     Security
                   </a>
                 </li>
@@ -508,7 +529,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+          <div className="border-t border-cyan-500/20 mt-8 pt-8 text-center text-sm text-gray-500">
             <p>&copy; 2025 {APP_TITLE}. All rights reserved.</p>
           </div>
         </div>
