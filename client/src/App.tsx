@@ -12,6 +12,7 @@ function Router() {
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      <Route path={"/dashboard"} component={RopaDashboard} />
       <Route path={"/ropa"} component={RopaDashboard} />
       <Route path={"/ropa-dashboard"} component={RopaDashboard} />
       <Route path={"/404"} component={NotFound} />
