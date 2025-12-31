@@ -21,49 +21,15 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { CompanySelector } from "@/components/CompanySelector";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Building2, Ticket, UserCircle, BarChart3, Terminal, Workflow, Settings, FileText, Plug, Shield, TrendingUp, GitBranch, Phone, Clock, Activity, Mail, Target, Upload, DollarSign, Zap, Bot, LineChart, FlaskConical, AlertTriangle, Briefcase, BookOpen } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: Users, label: "Leads", path: "/leads" },
-  { icon: Ticket, label: "Tickets", path: "/tickets" },
-  { icon: BarChart3, label: "Analytics", path: "/analytics" },
-  { icon: TrendingUp, label: "Prospect Metrics", path: "/analytics/prospect-metrics" },
-  { icon: GitBranch, label: "Pipeline Dashboard", path: "/analytics/pipeline" },
-  { icon: Activity, label: "Task Analytics", path: "/analytics/tasks" },
-  { icon: Target, label: "ML Scoring Dashboard", path: "/analytics/ml-scoring" },
-  { icon: DollarSign, label: "ROI Dashboard", path: "/analytics/roi" },
-  { icon: Mail, label: "Campaign Metrics", path: "/analytics/campaigns" },
-  { icon: Mail, label: "Performance de Emails", path: "/analytics/email-performance" },
-  { icon: Zap, label: "Multi-Channel Campaigns", path: "/multi-channel-campaigns" },
-  { icon: Briefcase, label: "Executive Summary", path: "/executive-summary" },
-  { icon: Bot, label: "Agents Dashboard", path: "/agents-dashboard" },
-  { icon: Bot, label: "Agent Management", path: "/agents/manage" },
-  { icon: BookOpen, label: "Agent Training", path: "/agents/training" },
-  { icon: LineChart, label: "Agent Trends", path: "/agent-trends" },
-  { icon: FlaskConical, label: "A/B Testing", path: "/ab-testing" },
-  { icon: AlertTriangle, label: "Churn Risk", path: "/churn-risk" },
-  { icon: Mail, label: "Campaign Control", path: "/campaign-control" },
-  { icon: Phone, label: "Call History", path: "/calls" },
-  { icon: Clock, label: "Scheduled Tasks", path: "/scheduled-tasks" },
-  { icon: Mail, label: "Email Templates", path: "/email-templates" },
-  { icon: Terminal, label: "Console", path: "/console" },
-  { icon: Workflow, label: "Workflows", path: "/workflows" },
-  { icon: UserCircle, label: "Profile", path: "/profile" },
-  { icon: Building2, label: "Gestión de Empresas", path: "/admin/companies", adminOnly: true },
-  { icon: Users, label: "Asignaciones Usuario-Empresa", path: "/admin/user-companies", adminOnly: true },
-  { icon: Settings, label: "Configuración de Agentes", path: "/admin/agent-config", adminOnly: true },
-  { icon: BarChart3, label: "Reportes Comparativos", path: "/admin/company-reports", adminOnly: true },
-  { icon: FileText, label: "Auditoría de Cambios", path: "/admin/audit-log", adminOnly: true },
-  { icon: Plug, label: "Integraciones CRM", path: "/admin/integrations", adminOnly: true },
-  { icon: Shield, label: "Gestión de Permisos", path: "/admin/permissions", adminOnly: true },
-  { icon: Upload, label: "Importar Leads", path: "/admin/import-leads", adminOnly: true },
-  { icon: Settings, label: "Milestone Configuration", path: "/admin/milestone-config", adminOnly: true },
+  { icon: LayoutDashboard, label: "Page 1", path: "/" },
+  { icon: Users, label: "Page 2", path: "/some-path" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -202,14 +168,14 @@ function DashboardLayoutContent({
           className="border-r-0"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-auto py-4 justify-center">
-            <div className="flex flex-col items-center gap-2 px-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
+          <SidebarHeader className="h-16 justify-center">
+            <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
               {isCollapsed ? (
                 <div className="relative h-8 w-8 shrink-0 group">
                   <img
-                    src="/ivy-ai-logo.png"
-                    className="h-8 w-8 object-contain"
-                    alt="Ivy.AI Logo"
+                    src={APP_LOGO}
+                    className="h-8 w-8 rounded-md object-cover ring-1 ring-border"
+                    alt="Logo"
                   />
                   <button
                     onClick={toggleSidebar}
@@ -220,19 +186,19 @@ function DashboardLayoutContent({
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col items-center gap-3 w-full">
+                  <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src="/ivy-ai-logo.png"
-                      className="h-16 w-16 object-contain"
-                      alt="Ivy.AI Logo"
+                      src={APP_LOGO}
+                      className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
+                      alt="Logo"
                     />
-                    <span className="font-semibold tracking-tight text-center text-lg">
-                      Ivy.AI Platform
+                    <span className="font-semibold tracking-tight truncate">
+                      {APP_TITLE}
                     </span>
                   </div>
                   <button
                     onClick={toggleSidebar}
-                    className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                    className="ml-auto h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
                   >
                     <PanelLeft className="h-4 w-4 text-muted-foreground" />
                   </button>
@@ -243,7 +209,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0">
             <SidebarMenu className="px-2 py-1">
-              {menuItems.filter(item => !item.adminOnly || user?.role === 'admin').map(item => {
+              {menuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
@@ -306,18 +272,20 @@ function DashboardLayoutContent({
       </div>
 
       <SidebarInset>
-        {/* Header/Topbar - Always visible */}
-        <div className="flex border-b h-14 items-center justify-between bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
-          <div className="flex items-center gap-4">
-            {isMobile && <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />}
-            <div className="flex items-center gap-3">
-              <span className="tracking-tight text-foreground font-medium">
-                {activeMenuItem?.label ?? APP_TITLE}
-              </span>
+        {isMobile && (
+          <div className="flex border-b h-14 items-center justify-between bg-background/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="h-9 w-9 rounded-lg bg-background" />
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-1">
+                  <span className="tracking-tight text-foreground">
+                    {activeMenuItem?.label ?? APP_TITLE}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-          <CompanySelector />
-        </div>
+        )}
         <main className="flex-1 p-4">{children}</main>
       </SidebarInset>
     </>

@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS abTestVariants (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  testName VARCHAR(255) NOT NULL,\n  variantName VARCHAR(100) NOT NULL,\n  page VARCHAR(100) NOT NULL,\n  headline TEXT,\n  subheadline TEXT,\n  ctaText VARCHAR(200),\n  isControl BOOLEAN DEFAULT FALSE NOT NULL,\n  isActive BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);\n\nCREATE TABLE IF NOT EXISTS abTestResults (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  variantId INT NOT NULL,\n  eventType ENUM('view', 'click', 'conversion') NOT NULL,\n  sessionId VARCHAR(255),\n  metadata JSON,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS abTestVariants (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  testName VARCHAR(255) NOT NULL,\n  variantName VARCHAR(100) NOT NULL,\n  page VARCHAR(100) NOT NULL,\n  headline TEXT,\n  subheadline TEXT,\n  ctaText VARCHAR(200),\n  isControl BOOLEAN DEFAULT FALSE NOT NULL,\n  isActive BOOLEAN DEFAULT TRUE NOT NULL,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n);\n\nCREATE TABLE IF NOT EXISTS abTestResults (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  variantId INT NOT NULL,\n  eventType ENUM('view', 'click', 'conversion') NOT NULL,\n  sessionId VARCHAR(255),\n  metadata JSON,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 433
-}

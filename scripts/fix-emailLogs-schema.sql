@@ -1,7 +1,0 @@
--- Add missing columns to emailLogs table for email tracking
-
-ALTER TABLE emailLogs 
-ADD COLUMN IF NOT EXISTS respondedAt TIMESTAMP NULL;
-
-ALTER TABLE emailLogs 
-ADD COLUMN IF NOT EXISTS updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;

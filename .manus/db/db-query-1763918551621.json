@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS campaignSteps (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  campaignId INT NOT NULL,\n  stepNumber INT NOT NULL,\n  delayDays INT NOT NULL,\n  channelType ENUM('email', 'linkedin') NOT NULL,\n  actionType VARCHAR(100) NOT NULL,\n  actionConfig TEXT NOT NULL,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (campaignId) REFERENCES multiChannelCampaigns(id) ON DELETE CASCADE\n)",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS campaignSteps (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  campaignId INT NOT NULL,\n  stepNumber INT NOT NULL,\n  delayDays INT NOT NULL,\n  channelType ENUM('email', 'linkedin') NOT NULL,\n  actionType VARCHAR(100) NOT NULL,\n  actionConfig TEXT NOT NULL,\n  createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  FOREIGN KEY (campaignId) REFERENCES multiChannelCampaigns(id) ON DELETE CASCADE\n)",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 277
-}

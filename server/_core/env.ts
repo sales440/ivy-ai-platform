@@ -7,9 +7,4 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-  // Telnyx API Configuration
-  telnyxApiKey: process.env.TELNYX_API_KEY ?? "",
-  telnyxConnectionId: process.env.TELNYX_CONNECTION_ID ?? "",
-  telnyxPhoneNumber: process.env.TELNYX_PHONE_NUMBER ?? "",
-  telnyxMessagingProfileId: process.env.TELNYX_MESSAGING_PROFILE_ID ?? "",
 };

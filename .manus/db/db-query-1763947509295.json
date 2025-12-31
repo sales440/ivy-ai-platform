@@ -1,9 +1,0 @@
-{
-  "query": "INSERT INTO companies (name, slug, industry, plan, website, contactEmail, contactPhone, address, isActive, createdAt, updatedAt)\nVALUES (\n  'FAGOR Automation USA',\n  'fagor-automation-usa',\n  'Industrial Automation',\n  'enterprise',\n  'https://www.fagorautomation.us',\n  'service@fagorautomation.us',\n  '+1-847-593-5400',\n  '1755 Park Street, Elk Grove Village, IL 60007, USA',\n  1,\n  NOW(),\n  NOW()\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute INSERT INTO companies (name, slug, industry, plan, website, contactEmail, contactPhone, address, isActive, createdAt, updatedAt)\nVALUES (\n  'FAGOR Automation USA',\n  'fagor-automation-usa',\n  'Industrial Automation',\n  'enterprise',\n  'https://www.fagorautomation.us',\n  'service@fagorautomation.us',\n  '+1-847-593-5400',\n  '1755 Park Street, Elk Grove Village, IL 60007, USA',\n  1,\n  NOW(),\n  NOW()\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 143
-}

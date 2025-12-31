@@ -1,20 +1,5 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1763313808982,
-      "tag": "0000_complete_deathstrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1763314216603,
-      "tag": "0001_exotic_chimera",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }

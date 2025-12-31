@@ -1,8 +1,0 @@
-{
-  "query": "-- Insert the \"7-Day Challenge\" Multi-Channel Campaign\nINSERT INTO multiChannelCampaigns (\n  name,\n  description,\n  targetAudience,\n  status,\n  createdAt,\n  updatedAt\n) VALUES (\n  'El Desafío de los 7 Días',\n  'Automatiza tu primer proceso de ventas en 7 días o te devolvemos tu tiempo. Campaña de urgencia con gamificación y resultados garantizados.',\n  'awareness',\n  'draft',\n  NOW(),\n  NOW()\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute -- Insert the \"7-Day Challenge\" Multi-Channel Campaign\nINSERT INTO multiChannelCampaigns (\n  name,\n  description,\n  targetAudience,\n  status,\n  createdAt,\n  updatedAt\n) VALUES (\n  'El Desafío de los 7 Días',\n  'Automatiza tu primer proceso de ventas en 7 días o te devolvemos tu tiempo. Campaña de urgencia con gamificación y resultados garantizados.',\n  'awareness',\n  'draft',\n  NOW(),\n  NOW()\n);",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1364 (HY000) at line 2: Field 'createdBy' doesn't have a default value"
-  ]
-}
