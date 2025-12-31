@@ -88,6 +88,11 @@
 - [x] Test WebSocket notifications
 - [x] Test landing page on mobile/desktop
 - [x] Run full integration tests
-- [ ] Create final checkpoint
-- [ ] Update documentation
-- [ ] Deliver to user
+- [x] Create final checkpoint
+- [x] Update documentation
+- [x] Deliver to user
+
+## Bug Fix: ROPA Chat Input Text Color
+- [x] Change input text color to white in ROPA chat
+- [x] Test visibility on dark background
+- [ ] Create checkpoint with fix

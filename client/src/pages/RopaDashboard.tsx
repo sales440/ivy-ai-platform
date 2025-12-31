@@ -231,7 +231,7 @@ export default function RopaDashboard() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Ask ROPA anything..."
-                    className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder:text-slate-500"
                     disabled={isSubmitting}
                   />
                   <Button type="submit" disabled={isSubmitting || !message.trim()}>
