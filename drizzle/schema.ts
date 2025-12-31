@@ -25,4 +25,7 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+// ROPA (Meta-Agent) Tables
+export * from './ropa-schema';
+
 // TODO: Add your tables here
