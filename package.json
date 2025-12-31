@@ -6,7 +6,9 @@
   "scripts": {
     "cleanup": "pkill -f 'drizzle-kit' || true && pkill -f 'db:push' || true",
     "predev": "pnpm cleanup",
-    "dev": "NODE_ENV=development NODE_OPTIONS='--max-old-space-size=8192' tsx watch --tsconfig tsconfig.dev.json --ignore 'node_modules/**' server/_core/index.ts",
+    "dev": "concurrently \"vite\" \"NODE_ENV=development NODE_OPTIONS='--max-old-space-size=8192' tsx watch --tsconfig tsconfig.dev.json --ignore 'node_modules/**' server/_core/index.ts\" --names \"vite,backend\" --prefix-colors \"cyan,magenta\"",
+    "dev:backend": "NODE_ENV=development NODE_OPTIONS='--max-old-space-size=8192' tsx watch --tsconfig tsconfig.dev.json --ignore 'node_modules/**' server/_core/index.ts",
+    "dev:frontend": "vite",
     "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist --log-level=warning",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc --noEmit",
@@ -106,6 +108,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "add": "^2.0.6",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
     "date-fns": "^4.1.0",
     "drizzle-kit": "^0.31.4",
     "esbuild": "^0.25.0",
