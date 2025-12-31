@@ -107,4 +107,14 @@
 - [x] Implement file upload with drag & drop
 - [x] Add image gallery and visualization
 - [x] Test all new features in browser
-- [ ] Create checkpoint or rollback if needed
+- [x] Create checkpoint or rollback if needed
+
+## ROPA Landing Page (Content OS Style)
+- [x] Create dedicated ROPA landing page route
+- [x] Design hero section explaining ROPA capabilities
+- [x] Add interactive chat window for natural language interaction
+- [x] Implement kanban board for campaign management
+- [x] Add autonomous vs human-guided mode toggle
+- [x] Show ROPA's 129 tools and capabilities
+- [x] Test chat interaction with ROPA
+- [ ] Create checkpoint
