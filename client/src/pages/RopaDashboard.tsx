@@ -149,15 +149,15 @@ export default function RopaDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-black text-white">
       {/* Header */}
-      <div className="border-b border-indigo-900/50 bg-slate-950/50 backdrop-blur">
+      <div className="border-b border-cyan-500/20 bg-black/50 backdrop-blur">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <Bot className="w-8 h-8 text-indigo-400" />
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                <Bot className="w-8 h-8 text-cyan-400" />
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
                   ROPA Dashboard
                 </h1>
               </div>
@@ -198,24 +198,24 @@ export default function RopaDashboard() {
       {/* Main Content */}
       <div className="container mx-auto px-6 py-6">
         <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="bg-slate-900/50 border border-indigo-900/30">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-indigo-600">
+          <TabsList className="bg-gray-900/50 border border-cyan-500/20">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-cyan-600">
               <Activity className="w-4 h-4 mr-2" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="data-[state=active]:bg-indigo-600">
+            <TabsTrigger value="campaigns" className="data-[state=active]:bg-cyan-600">
               <Sparkles className="w-4 h-4 mr-2" />
               Campaign Proposals
             </TabsTrigger>
-            <TabsTrigger value="data-hub" className="data-[state=active]:bg-indigo-600">
+            <TabsTrigger value="data-hub" className="data-[state=active]:bg-cyan-600">
               <FileText className="w-4 h-4 mr-2" />
               Data Hub
             </TabsTrigger>
-            <TabsTrigger value="assets" className="data-[state=active]:bg-indigo-600">
+            <TabsTrigger value="assets" className="data-[state=active]:bg-cyan-600">
               <ImageIcon className="w-4 h-4 mr-2" />
               Visual Assets
             </TabsTrigger>
-            <TabsTrigger value="chat" className="data-[state=active]:bg-indigo-600">
+            <TabsTrigger value="chat" className="data-[state=active]:bg-cyan-600">
               <Bot className="w-4 h-4 mr-2" />
               Chat
             </TabsTrigger>
@@ -647,7 +647,7 @@ export default function RopaDashboard() {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-indigo-900/50 bg-slate-950/50 backdrop-blur mt-8">
+      <div className="border-t border-cyan-500/20 bg-black/50 backdrop-blur mt-8">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between text-sm text-slate-400">
             <p>ROPA v3.0 • 129 Tools • Auto-refresh: ON</p>
