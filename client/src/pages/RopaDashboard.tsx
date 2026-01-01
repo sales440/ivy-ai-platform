@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Bot, Activity, AlertCircle, CheckCircle2, Clock, Play, Square } from "lucide-react";
+import { Loader2, Bot, Activity, AlertCircle, CheckCircle2, Clock, Play, Square, Upload, Download, Target, Mail, Phone, Share2 } from "lucide-react";
 import { APP_TITLE } from "@/const";
+import { CampaignsTab } from "@/components/CampaignsTab";
 
 export default function RopaDashboard() {
   const [message, setMessage] = useState("");
@@ -68,16 +69,16 @@ export default function RopaDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6">
+    <div className="min-h-screen bg-black text-white p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Bot className="w-10 h-10 text-indigo-400" />
+              <Bot className="w-10 h-10 text-cyan-400" />
               <h1 className="text-4xl font-bold">ROPA Dashboard</h1>
             </div>
-            <p className="text-slate-400">Sistema autónomo de IA manteniendo {APP_TITLE} 24/7</p>
+            <p className="text-gray-400">Sistema autónomo de IA manteniendo {APP_TITLE} 24/7</p>
           </div>
           <div className="flex gap-3">
             <Button
@@ -178,6 +179,7 @@ export default function RopaDashboard() {
         <Tabs defaultValue="chat" className="w-full">
           <TabsList className="bg-slate-900 border-slate-800">
             <TabsTrigger value="chat">💬 Chat</TabsTrigger>
+            <TabsTrigger value="campaigns">🎯 Campaigns</TabsTrigger>
             <TabsTrigger value="tasks">
               ⏰ Tasks ({stats?.tasks.running || 0})
             </TabsTrigger>
@@ -240,6 +242,11 @@ export default function RopaDashboard() {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Campaigns Tab */}
+          <TabsContent value="campaigns" className="mt-6">
+            <CampaignsTab />
           </TabsContent>
 
           {/* Tasks Tab */}
