@@ -6,7 +6,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import RopaDashboard from "./pages/RopaDashboard";
-import RopaLanding from "./pages/RopaLanding";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -14,7 +13,6 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/ropa"} component={RopaDashboard} />
-      <Route path={"/dashboard"} component={RopaDashboard} />
       <Route path={"/ropa-dashboard"} component={RopaDashboard} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

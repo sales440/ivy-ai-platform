@@ -5,7 +5,6 @@
 
 import { ropaTools } from "./ropa-tools";
 import { createRopaTask, updateRopaTaskStatus, getRopaConfig, setRopaConfig, createRopaLog, createRopaAlert } from "./ropa-db";
-import { notifyROPAHealthCheck, notifyROPAMaintenance, notifyROPACriticalError } from "./websocket-notifications";
 
 let maintenanceInterval: NodeJS.Timeout | null = null;
 let healthCheckInterval: NodeJS.Timeout | null = null;
@@ -59,9 +58,6 @@ function startHealthCheckCycle() {
       const platformHealth = await ropaTools.checkPlatformHealth();
       const dbHealth = await ropaTools.monitorDatabaseHealth();
 
-      // Send health check notification
-      await notifyROPAHealthCheck(platformHealth.score, platformHealth.overall);
-
       // Check for critical issues
       if (platformHealth.score < 70) {
         await createRopaAlert({
@@ -71,11 +67,6 @@ function startHealthCheckCycle() {
           resolved: false,
           metadata: platformHealth,
         });
-
-        await notifyROPACriticalError(
-          "Platform health critical",
-          { score: platformHealth.score, details: platformHealth }
-        );
 
         // Auto-heal
         await autoHealPlatform();
@@ -140,13 +131,6 @@ function startMaintenanceCycle() {
       await createRopaLog({
         level: "info",
         message: `Maintenance cycle completed: ${successful} successful, ${failed} failed`,
-      });
-
-      // Send maintenance notification
-      await notifyROPAMaintenance("Routine maintenance", {
-        successful,
-        failed,
-        timestamp: new Date().toISOString(),
       });
     } catch (error: any) {
       console.error("[ROPA] Maintenance cycle failed:", error);
