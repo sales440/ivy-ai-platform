@@ -62,11 +62,29 @@
 - [ ] Create checkpoint
 
 ## Railway Deployment with Custom Domain
-- [ ] Review and create Railway configuration files (railway.json, Procfile)
-- [ ] Configure build scripts for production
-- [ ] Push latest code to GitHub
+- [x] Review and create Railway configuration files (railway.json, Procfile)
+- [x] Configure build scripts for production
+- [x] Push latest code to GitHub
 - [ ] Configure Railway environment variables
 - [ ] Set up custom domain app.ivybyai.com in Railway
 - [ ] Configure SSL certificate
 - [ ] Test deployment
 - [ ] Create deployment documentation
+
+## Phase 8: ROPA Dashboard v2.0 Redesign
+- [x] Create new professional dashboard layout with 3-column design
+- [x] Implement left sidebar navigation menu with all options
+- [x] Create central area with campaign analytics charts by company
+- [x] Implement floating chat window with ROPA (text + voice)
+- [x] Add voice input (speech-to-text) for ROPA interaction
+- [x] Add voice output (text-to-speech) for ROPA responses
+- [x] Maintain dark professional theme
+- [x] Ensure white text color in chat input field
+- [x] Add real-time campaign metrics per company
+- [x] Add company selector/filter for campaign views
+- [x] Test all features work correctly
+- [ ] Create checkpoint
+- [x] Create Kanban calendar page with drag & drop for campaign scheduling
+- [x] Add calendar navigation button in sidebar menu
+- [x] Add back button to return to ROPA dashboard from calendar
+- [x] Filter campaigns by company in calendar view

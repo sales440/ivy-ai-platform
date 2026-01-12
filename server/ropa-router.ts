@@ -30,10 +30,11 @@ export const ropaRouter = router({
     const stats = await getRopaStats();
     const runningTasks = await getRunningRopaTasks();
 
+    const configData = config as { enabled?: boolean; uptime?: number } | undefined;
     return {
-      isRunning: config?.enabled || false,
+      isRunning: configData?.enabled || false,
       status: runningTasks.length > 0 ? "running" : "idle",
-      uptime: config?.uptime || 0,
+      uptime: configData?.uptime || 0,
       stats,
     };
   }),
@@ -144,7 +145,8 @@ Respond conversationally in Spanish. Be helpful, concise, and proactive.`;
         ],
       });
 
-      const assistantMessage = response.choices[0]?.message?.content || "Lo siento, no pude procesar tu mensaje.";
+      const rawContent = response.choices[0]?.message?.content;
+      const assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
 
       // Save assistant response
       await addRopaChatMessage({

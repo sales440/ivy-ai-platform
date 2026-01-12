@@ -180,7 +180,7 @@ export function CampaignsTab() {
                       size="sm"
                       variant="outline"
                       onClick={() => parseMutation.mutate({ fileId: file.id })}
-                      disabled={parseMutation.isPending || file.processedLeads > 0}
+                      disabled={parseMutation.isPending || (file.processedLeads ?? 0) > 0}
                       className="border-cyan-500/30 hover:bg-cyan-500/10"
                     >
                       {parseMutation.isPending ? "Processing..." : "Extract Leads"}

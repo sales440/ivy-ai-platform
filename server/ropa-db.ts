@@ -228,7 +228,7 @@ export async function getRopaStats() {
   const db = await getDb();
   if (!db) return null;
   
-  const [totalTasks] = await db.select().from(ropaTasks);
+  const totalTasks = await db.select().from(ropaTasks);
   const runningTasks = await getRunningRopaTasks();
   const unresolvedAlerts = await getUnresolvedRopaAlerts();
   

@@ -6,14 +6,19 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import RopaDashboard from "./pages/RopaDashboard";
+import RopaDashboardV2 from "./pages/RopaDashboardV2";
+import RopaCalendar from "./pages/RopaCalendar";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
+      {/* Legacy ROPA Dashboard */}
       <Route path={"/ropa"} component={RopaDashboard} />
       <Route path={"/ropa-dashboard"} component={RopaDashboard} />
+      {/* New ROPA Dashboard v2 */}
+      <Route path={"/ropa-v2"} component={RopaDashboardV2} />
+      <Route path={"/ropa/calendar"} component={RopaCalendar} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
@@ -21,18 +26,10 @@ function Router() {
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
           <Toaster />
           <Router />

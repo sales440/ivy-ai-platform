@@ -110,7 +110,9 @@ export const campaignsRouter = router({
         },
       });
 
-      const data = JSON.parse(response.choices[0].message.content || "{}");
+      const rawContent = response.choices[0].message.content;
+      const contentStr = typeof rawContent === 'string' ? rawContent : "{}";
+      const data = JSON.parse(contentStr);
       const leads = data.leads || [];
 
       // Insert leads
@@ -200,7 +202,9 @@ export const campaignsRouter = router({
         },
       });
 
-      const campaign = JSON.parse(response.choices[0].message.content || "{}");
+      const campaignContent = response.choices[0].message.content;
+      const campaignStr = typeof campaignContent === 'string' ? campaignContent : "{}";
+      const campaign = JSON.parse(campaignStr);
 
       // Save campaign
       const [result] = await db.insert(salesCampaigns).values({

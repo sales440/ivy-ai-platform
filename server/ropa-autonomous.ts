@@ -198,7 +198,6 @@ async function autoHealPlatform() {
     const healingActions = [
       ropaTools.repairDatabaseTables(),
       ropaTools.optimizeDatabaseIndexes(),
-      ropaTools.restartFailedServices && ropaTools.restartFailedServices(),
     ].filter(Boolean);
 
     const results = await Promise.allSettled(healingActions);
@@ -259,10 +258,11 @@ export async function stopROPA() {
  */
 export async function getROPAStatus() {
   const config = await getRopaConfig("ropa_status");
+  const configData = config as { enabled?: boolean; startedAt?: string | Date } | undefined;
   return {
-    enabled: config?.enabled || false,
+    enabled: configData?.enabled || false,
     running: healthCheckInterval !== null,
-    uptime: config?.startedAt ? Date.now() - new Date(config.startedAt).getTime() : 0,
+    uptime: configData?.startedAt ? Date.now() - new Date(configData.startedAt).getTime() : 0,
   };
 }
 

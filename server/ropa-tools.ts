@@ -104,7 +104,7 @@ export const databaseTools = {
 
   async backupDatabase() {
     await logTool("backupDatabase", "info", "Creating database backup");
-    await recordRopaMetric({ metricType: "backup_created", value: 1, unit: "count" });
+    await recordRopaMetric({ metricType: "backup_created", value: "1", unit: "count" });
     return { success: true, backupId: `backup_${Date.now()}` };
   },
 
@@ -137,7 +137,7 @@ export const databaseTools = {
   },
 
   async monitorDatabaseHealth() {
-    await recordRopaMetric({ metricType: "db_health", value: 98, unit: "percent" });
+    await recordRopaMetric({ metricType: "db_health", value: "98", unit: "percent" });
     return { health: "excellent", score: 98 };
   },
 };
@@ -155,7 +155,7 @@ export const monitoringTools = {
       },
       score: 98.5,
     };
-    await recordRopaMetric({ metricType: "platform_health", value: 98.5, unit: "percent" });
+    await recordRopaMetric({ metricType: "platform_health", value: "98.5", unit: "percent" });
     return health;
   },
 
@@ -173,13 +173,13 @@ export const monitoringTools = {
   },
 
   async monitorAPIPerformance() {
-    await recordRopaMetric({ metricType: "api_response_time", value: 125, unit: "ms" });
+    await recordRopaMetric({ metricType: "api_response_time", value: "125", unit: "ms" });
     return { avgResponseTime: 125, errorRate: 0.1 };
   },
 
   async trackResourceUsage() {
-    await recordRopaMetric({ metricType: "cpu_usage", value: 45, unit: "percent" });
-    await recordRopaMetric({ metricType: "memory_usage", value: 62, unit: "percent" });
+    await recordRopaMetric({ metricType: "cpu_usage", value: "45", unit: "percent" });
+    await recordRopaMetric({ metricType: "memory_usage", value: "62", unit: "percent" });
     return { cpu: 45, memory: 62, disk: 38 };
   },
 

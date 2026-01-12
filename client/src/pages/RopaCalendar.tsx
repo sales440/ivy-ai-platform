@@ -1,0 +1,418 @@
+import { useState, useCallback } from "react";
+import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  Calendar,
+  Building2,
+  Mail,
+  Phone,
+  Share2,
+  Target,
+  GripVertical,
+  Plus,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { APP_TITLE } from "@/const";
+
+// Kanban column types
+type KanbanColumn = "scheduled" | "in_progress" | "review" | "completed" | "paused";
+
+interface KanbanCard {
+  id: number;
+  name: string;
+  type: "email" | "phone" | "social_media" | "multi_channel";
+  status: string;
+  company: string;
+  targetAudience: string;
+  scheduledDate?: string;
+  color: string;
+}
+
+// Column configuration
+const columns: { id: KanbanColumn; title: string; color: string }[] = [
+  { id: "scheduled", title: "Programadas", color: "bg-blue-500" },
+  { id: "in_progress", title: "En Progreso", color: "bg-yellow-500" },
+  { id: "review", title: "En Revisión", color: "bg-purple-500" },
+  { id: "completed", title: "Completadas", color: "bg-green-500" },
+  { id: "paused", title: "Pausadas", color: "bg-orange-500" },
+];
+
+// Mock companies
+const mockCompanies = [
+  { id: 1, name: "FAGOR Automation", color: "#06b6d4" },
+  { id: 2, name: "EPM Construcciones", color: "#14b8a6" },
+  { id: 3, name: "TechStart Inc", color: "#fb923c" },
+  { id: 4, name: "Global Services LLC", color: "#a855f7" },
+];
+
+// Mock campaign cards
+const initialCards: KanbanCard[] = [
+  {
+    id: 1,
+    name: "Campaña Email Q1 - FAGOR",
+    type: "email",
+    status: "scheduled",
+    company: "FAGOR Automation",
+    targetAudience: "Directores de Manufactura",
+    scheduledDate: "2026-01-15",
+    color: "#06b6d4",
+  },
+  {
+    id: 2,
+    name: "LinkedIn Outreach - EPM",
+    type: "social_media",
+    status: "in_progress",
+    company: "EPM Construcciones",
+    targetAudience: "Gerentes de Proyecto",
+    scheduledDate: "2026-01-12",
+    color: "#14b8a6",
+  },
+  {
+    id: 3,
+    name: "Cold Calling - TechStart",
+    type: "phone",
+    status: "in_progress",
+    company: "TechStart Inc",
+    targetAudience: "CTOs y Tech Leads",
+    scheduledDate: "2026-01-10",
+    color: "#fb923c",
+  },
+  {
+    id: 4,
+    name: "Multi-Channel Q1 - Global",
+    type: "multi_channel",
+    status: "review",
+    company: "Global Services LLC",
+    targetAudience: "Ejecutivos C-Level",
+    scheduledDate: "2026-01-08",
+    color: "#a855f7",
+  },
+  {
+    id: 5,
+    name: "Email Nurturing - FAGOR",
+    type: "email",
+    status: "completed",
+    company: "FAGOR Automation",
+    targetAudience: "Leads Calificados",
+    scheduledDate: "2026-01-05",
+    color: "#06b6d4",
+  },
+  {
+    id: 6,
+    name: "Instagram Ads - EPM",
+    type: "social_media",
+    status: "paused",
+    company: "EPM Construcciones",
+    targetAudience: "Profesionales de Construcción",
+    scheduledDate: "2026-01-20",
+    color: "#14b8a6",
+  },
+  {
+    id: 7,
+    name: "Webinar Follow-up - TechStart",
+    type: "email",
+    status: "scheduled",
+    company: "TechStart Inc",
+    targetAudience: "Asistentes al Webinar",
+    scheduledDate: "2026-01-18",
+    color: "#fb923c",
+  },
+  {
+    id: 8,
+    name: "Phone Reactivation - Global",
+    type: "phone",
+    status: "scheduled",
+    company: "Global Services LLC",
+    targetAudience: "Clientes Inactivos",
+    scheduledDate: "2026-01-22",
+    color: "#a855f7",
+  },
+];
+
+export default function RopaCalendar() {
+  const [, setLocation] = useLocation();
+  const [cards, setCards] = useState<KanbanCard[]>(initialCards);
+  const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  const [draggedCard, setDraggedCard] = useState<KanbanCard | null>(null);
+  const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 1)); // January 2026
+
+  // Get campaigns from API
+  const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();
+
+  // Filter cards by company
+  const filteredCards = selectedCompany === "all"
+    ? cards
+    : cards.filter((card) => card.company === selectedCompany);
+
+  // Get cards for a specific column
+  const getColumnCards = (columnId: KanbanColumn) => {
+    return filteredCards.filter((card) => card.status === columnId);
+  };
+
+  // Handle drag start
+  const handleDragStart = (e: React.DragEvent, card: KanbanCard) => {
+    setDraggedCard(card);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  // Handle drag over
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  // Handle drop
+  const handleDrop = (e: React.DragEvent, columnId: KanbanColumn) => {
+    e.preventDefault();
+    if (draggedCard) {
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === draggedCard.id ? { ...card, status: columnId } : card
+        )
+      );
+      setDraggedCard(null);
+    }
+  };
+
+  // Get campaign type icon
+  const getCampaignIcon = (type: string) => {
+    switch (type) {
+      case "email":
+        return <Mail className="w-4 h-4" />;
+      case "phone":
+        return <Phone className="w-4 h-4" />;
+      case "social_media":
+        return <Share2 className="w-4 h-4" />;
+      default:
+        return <Target className="w-4 h-4" />;
+    }
+  };
+
+  // Navigate months
+  const prevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  };
+
+  // Format month name
+  const monthName = currentMonth.toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 text-white">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-black/50 backdrop-blur-xl border-b border-slate-800/50 px-6 py-4">
+        <div className="flex items-center justify-between max-w-[1800px] mx-auto">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/ropa-v2")}
+              className="text-slate-400 hover:text-white"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Volver al Dashboard
+            </Button>
+            <div className="h-6 w-px bg-slate-700" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Calendario de Campañas</h1>
+                <p className="text-xs text-slate-400">Vista Kanban - Drag & Drop</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Month Navigation */}
+            <div className="flex items-center gap-2 bg-slate-900/50 rounded-lg px-3 py-2">
+              <button
+                onClick={prevMonth}
+                className="p-1 hover:bg-slate-800 rounded transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-medium min-w-[140px] text-center capitalize">
+                {monthName}
+              </span>
+              <button
+                onClick={nextMonth}
+                className="p-1 hover:bg-slate-800 rounded transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Company Filter */}
+            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+              <SelectTrigger className="w-56 bg-slate-900/50 border-slate-700">
+                <Filter className="w-4 h-4 mr-2 text-cyan-400" />
+                <SelectValue placeholder="Filtrar por empresa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las empresas</SelectItem>
+                {mockCompanies.map((company) => (
+                  <SelectItem key={company.id} value={company.name}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: company.color }}
+                      />
+                      {company.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600">
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Campaña
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      {/* Kanban Board */}
+      <main className="p-6 max-w-[1800px] mx-auto">
+        <div className="grid grid-cols-5 gap-4">
+          {columns.map((column) => (
+            <div
+              key={column.id}
+              className="flex flex-col"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, column.id)}
+            >
+              {/* Column Header */}
+              <div className="flex items-center justify-between mb-4 px-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${column.color}`} />
+                  <h3 className="font-semibold text-sm">{column.title}</h3>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {getColumnCards(column.id).length}
+                </Badge>
+              </div>
+
+              {/* Column Content */}
+              <div className="flex-1 bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 min-h-[600px]">
+                <ScrollArea className="h-[calc(100vh-280px)]">
+                  <div className="space-y-3">
+                    {getColumnCards(column.id).map((card) => (
+                      <div
+                        key={card.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, card)}
+                        className={`bg-slate-900/80 rounded-xl border border-slate-700/50 p-4 cursor-grab active:cursor-grabbing hover:border-slate-600 transition-all duration-200 ${
+                          draggedCard?.id === card.id ? "opacity-50 scale-95" : ""
+                        }`}
+                        style={{ borderLeftColor: card.color, borderLeftWidth: "4px" }}
+                      >
+                        {/* Card Header */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: `${card.color}20` }}
+                            >
+                              {getCampaignIcon(card.type)}
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-sm line-clamp-1">{card.name}</h4>
+                              <p className="text-xs text-slate-400">{card.company}</p>
+                            </div>
+                          </div>
+                          <GripVertical className="w-4 h-4 text-slate-600" />
+                        </div>
+
+                        {/* Card Content */}
+                        <p className="text-xs text-slate-400 mb-3 line-clamp-2">
+                          {card.targetAudience}
+                        </p>
+
+                        {/* Card Footer */}
+                        <div className="flex items-center justify-between">
+                          <Badge
+                            variant="outline"
+                            className="text-xs"
+                            style={{
+                              borderColor: `${card.color}50`,
+                              color: card.color,
+                            }}
+                          >
+                            {card.type === "email" && "Email"}
+                            {card.type === "phone" && "Teléfono"}
+                            {card.type === "social_media" && "Social"}
+                            {card.type === "multi_channel" && "Multi-Canal"}
+                          </Badge>
+                          {card.scheduledDate && (
+                            <span className="text-xs text-slate-500">
+                              {new Date(card.scheduledDate).toLocaleDateString("es-ES", {
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Empty State */}
+                    {getColumnCards(column.id).length === 0 && (
+                      <div className="text-center py-8 text-slate-500">
+                        <p className="text-sm">Sin campañas</p>
+                        <p className="text-xs mt-1">Arrastra aquí para mover</p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-6 flex items-center justify-center gap-6">
+          <span className="text-xs text-slate-500">Empresas:</span>
+          {mockCompanies.map((company) => (
+            <div key={company.id} className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: company.color }}
+              />
+              <span className="text-xs text-slate-400">{company.name}</span>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="fixed bottom-0 left-0 right-0 h-8 bg-black/50 backdrop-blur border-t border-slate-800/50 flex items-center justify-center text-xs text-slate-500">
+        <span>ROPA Calendar • Drag & Drop para reorganizar campañas</span>
+        <span className="mx-4">•</span>
+        <span>{filteredCards.length} campañas visibles</span>
+      </footer>
+    </div>
+  );
+}
