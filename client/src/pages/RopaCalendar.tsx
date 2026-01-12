@@ -13,6 +13,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import {
   ArrowLeft,
   Calendar,
   Building2,
@@ -149,6 +161,16 @@ export default function RopaCalendar() {
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [draggedCard, setDraggedCard] = useState<KanbanCard | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 1)); // January 2026
+  const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false);
+  const [newCampaign, setNewCampaign] = useState({
+    name: "",
+    type: "email" as "email" | "phone" | "social_media" | "multi_channel",
+    company: "",
+    targetAudience: "",
+    scheduledDate: "",
+    isNewCompany: false,
+    newCompanyName: "",
+  });
 
   // Get campaigns from API
   const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();
@@ -286,7 +308,10 @@ export default function RopaCalendar() {
               </SelectContent>
             </Select>
 
-            <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600">
+            <Button 
+              className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
+              onClick={() => setShowNewCampaignDialog(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Nueva Campaña
             </Button>
@@ -413,6 +438,161 @@ export default function RopaCalendar() {
         <span className="mx-4">•</span>
         <span>{filteredCards.length} campañas visibles</span>
       </footer>
+
+      {/* Nueva Campaña Dialog */}
+      <Dialog open={showNewCampaignDialog} onOpenChange={setShowNewCampaignDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <Plus className="w-5 h-5 text-cyan-400" />
+              Nueva Campaña
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Crea una nueva campaña para una empresa existente o agrega un nuevo cliente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Campaign Name */}
+            <div className="space-y-2">
+              <Label htmlFor="campaign-name" className="text-slate-300">Nombre de la Campaña</Label>
+              <Input
+                id="campaign-name"
+                placeholder="Ej: Email Marketing Q1 2026"
+                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+                value={newCampaign.name}
+                onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
+              />
+            </div>
+
+            {/* Campaign Type */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Tipo de Campaña</Label>
+              <Select
+                value={newCampaign.type}
+                onValueChange={(value: "email" | "phone" | "social_media" | "multi_channel") => 
+                  setNewCampaign({ ...newCampaign, type: value })
+                }
+              >
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-600">
+                  <SelectItem value="email"><Mail className="w-4 h-4 inline mr-2" />Email</SelectItem>
+                  <SelectItem value="phone"><Phone className="w-4 h-4 inline mr-2" />Teléfono</SelectItem>
+                  <SelectItem value="social_media"><Share2 className="w-4 h-4 inline mr-2" />Redes Sociales</SelectItem>
+                  <SelectItem value="multi_channel"><Target className="w-4 h-4 inline mr-2" />Multi-Canal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Company Selection */}
+            <div className="space-y-2">
+              <Label className="text-slate-300">Empresa</Label>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  id="new-company"
+                  checked={newCampaign.isNewCompany}
+                  onChange={(e) => setNewCampaign({ ...newCampaign, isNewCompany: e.target.checked, company: "" })}
+                  className="rounded border-slate-600"
+                />
+                <Label htmlFor="new-company" className="text-sm text-slate-400 cursor-pointer">
+                  Agregar nueva empresa (nuevo cliente)
+                </Label>
+              </div>
+              
+              {newCampaign.isNewCompany ? (
+                <Input
+                  placeholder="Nombre de la nueva empresa"
+                  className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+                  value={newCampaign.newCompanyName}
+                  onChange={(e) => setNewCampaign({ ...newCampaign, newCompanyName: e.target.value })}
+                />
+              ) : (
+                <Select
+                  value={newCampaign.company}
+                  onValueChange={(value) => setNewCampaign({ ...newCampaign, company: value })}
+                >
+                  <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                    <SelectValue placeholder="Selecciona una empresa" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    {mockCompanies.map((company) => (
+                      <SelectItem key={company.id} value={company.name}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: company.color }} />
+                          {company.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {/* Target Audience */}
+            <div className="space-y-2">
+              <Label htmlFor="target-audience" className="text-slate-300">Audiencia Objetivo</Label>
+              <Input
+                id="target-audience"
+                placeholder="Ej: Directores de TI, CTOs"
+                className="bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
+                value={newCampaign.targetAudience}
+                onChange={(e) => setNewCampaign({ ...newCampaign, targetAudience: e.target.value })}
+              />
+            </div>
+
+            {/* Scheduled Date */}
+            <div className="space-y-2">
+              <Label htmlFor="scheduled-date" className="text-slate-300">Fecha Programada</Label>
+              <Input
+                id="scheduled-date"
+                type="date"
+                className="bg-slate-800 border-slate-600 text-white"
+                value={newCampaign.scheduledDate}
+                onChange={(e) => setNewCampaign({ ...newCampaign, scheduledDate: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowNewCampaignDialog(false)}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
+              onClick={() => {
+                const companyName = newCampaign.isNewCompany ? newCampaign.newCompanyName : newCampaign.company;
+                if (!newCampaign.name || !companyName) {
+                  toast.error("Por favor completa el nombre y la empresa");
+                  return;
+                }
+                const newCard: KanbanCard = {
+                  id: Date.now(),
+                  name: newCampaign.name,
+                  type: newCampaign.type,
+                  status: "scheduled",
+                  company: companyName,
+                  targetAudience: newCampaign.targetAudience,
+                  scheduledDate: newCampaign.scheduledDate,
+                  color: newCampaign.isNewCompany ? "#22d3ee" : mockCompanies.find(c => c.name === companyName)?.color || "#22d3ee",
+                };
+                setCards([...cards, newCard]);
+                setNewCampaign({ name: "", type: "email", company: "", targetAudience: "", scheduledDate: "", isNewCompany: false, newCompanyName: "" });
+                setShowNewCampaignDialog(false);
+                toast.success(`Campaña "${newCampaign.name}" creada exitosamente`);
+              }}
+            >
+              Crear Campaña
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
