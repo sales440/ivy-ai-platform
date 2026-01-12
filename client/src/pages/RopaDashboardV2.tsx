@@ -153,6 +153,8 @@ const mockConversionData = [
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "campaigns", label: "Campañas", icon: Megaphone },
+  { id: "files", label: "Archivos", icon: Upload },
+  { id: "monitor", label: "Monitor", icon: Eye },
   { id: "tasks", label: "Tareas", icon: ListTodo },
   { id: "alerts", label: "Alertas", icon: Bell },
   { id: "health", label: "Salud", icon: HeartPulse },
@@ -576,6 +578,8 @@ export default function RopaDashboardV2() {
               <h2 className="text-2xl font-bold">
                 {activeSection === "dashboard" && "Panel de Control"}
                 {activeSection === "campaigns" && "Gestión de Campañas"}
+                {activeSection === "files" && "Archivos de Empresa"}
+                {activeSection === "monitor" && "Monitor de Validación"}
                 {activeSection === "tasks" && "Tareas de ROPA"}
                 {activeSection === "alerts" && "Alertas del Sistema"}
                 {activeSection === "health" && "Salud de la Plataforma"}
@@ -1219,6 +1223,216 @@ export default function RopaDashboardV2() {
                       </table>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Files Section */}
+          {activeSection === "files" && (
+            <div className="space-y-6">
+              {/* Upload Area */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Upload className="w-5 h-5 text-cyan-400" />
+                    Subir Archivos
+                  </CardTitle>
+                  <CardDescription>Sube logos, ejemplos de emails, listas de clientes (Excel, CSV, PDF, Word, imágenes)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-slate-900/30">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.svg"
+                      className="hidden"
+                      id="file-upload"
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (files && files.length > 0) {
+                          toast.success(`${files.length} archivo(s) seleccionado(s) para subir`);
+                          // TODO: Implement actual upload
+                        }
+                      }}
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Upload className="w-12 h-12 mx-auto text-slate-500 mb-4" />
+                      <p className="text-lg font-medium text-white mb-2">Arrastra archivos aquí o haz clic para seleccionar</p>
+                      <p className="text-sm text-slate-400">Formatos soportados: Excel, CSV, PDF, Word, Imágenes</p>
+                    </label>
+                  </div>
+
+                  {/* File Type Selector */}
+                  <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {[
+                      { type: "logo", label: "Logo", icon: Building2, color: "cyan" },
+                      { type: "email_example", label: "Email Ejemplo", icon: Mail, color: "teal" },
+                      { type: "branding", label: "Branding", icon: Sparkles, color: "purple" },
+                      { type: "document", label: "Documento", icon: FileText, color: "orange" },
+                      { type: "client_list", label: "Lista Clientes", icon: Users, color: "green" },
+                      { type: "other", label: "Otro", icon: Download, color: "slate" },
+                    ].map((item) => (
+                      <button
+                        key={item.type}
+                        className={`p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-${item.color}-500 hover:bg-${item.color}-500/10 transition-all text-center`}
+                      >
+                        <item.icon className={`w-6 h-6 mx-auto mb-2 text-${item.color}-400`} />
+                        <span className="text-xs text-slate-300">{item.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Company Files List */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-teal-400" />
+                    Archivos por Empresa
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {localCompanies.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Building2 className="w-12 h-12 mx-auto text-slate-600 mb-4" />
+                      <p className="text-slate-400">No hay empresas registradas</p>
+                      <p className="text-sm text-slate-500 mt-2">Crea una empresa en la sección de Campañas primero</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {localCompanies.map((company) => (
+                        <div key={company.id} className="p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                                <Building2 className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-white">{company.name}</h4>
+                                <p className="text-xs text-slate-400">{company.industry}</p>
+                              </div>
+                            </div>
+                            <Button size="sm" variant="outline" className="border-slate-700">
+                              <Upload className="w-4 h-4 mr-2" />
+                              Subir
+                            </Button>
+                          </div>
+                          <div className="text-sm text-slate-500">Sin archivos subidos</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Monitor Section */}
+          {activeSection === "monitor" && (
+            <div className="space-y-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-slate-900/50 border-slate-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Pendientes</p>
+                        <p className="text-2xl font-bold text-yellow-400">0</p>
+                      </div>
+                      <Clock className="h-8 w-8 text-yellow-400/50" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-slate-900/50 border-slate-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Aprobados</p>
+                        <p className="text-2xl font-bold text-green-400">0</p>
+                      </div>
+                      <CheckCircle2 className="h-8 w-8 text-green-400/50" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-slate-900/50 border-slate-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Rechazados</p>
+                        <p className="text-2xl font-bold text-red-400">0</p>
+                      </div>
+                      <AlertCircle className="h-8 w-8 text-red-400/50" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-slate-900/50 border-slate-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Enviados</p>
+                        <p className="text-2xl font-bold text-blue-400">0</p>
+                      </div>
+                      <Send className="h-8 w-8 text-blue-400/50" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Content Tabs */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-cyan-400" />
+                    Contenido Pendiente de Validación
+                  </CardTitle>
+                  <CardDescription>Revisa y aprueba emails, scripts de llamada y SMS antes de enviarlos</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {/* Tab Buttons */}
+                  <div className="flex gap-2 mb-6">
+                    <Button variant="outline" className="border-cyan-500 bg-cyan-500/20 text-cyan-400">
+                      <Mail className="w-4 h-4 mr-2" />
+                      Emails (0)
+                    </Button>
+                    <Button variant="outline" className="border-slate-700">
+                      <Phone className="w-4 h-4 mr-2" />
+                      Llamadas (0)
+                    </Button>
+                    <Button variant="outline" className="border-slate-700">
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      SMS (0)
+                    </Button>
+                  </div>
+
+                  {/* Empty State */}
+                  <div className="text-center py-12 border border-dashed border-slate-700 rounded-xl">
+                    <Eye className="w-12 h-12 mx-auto text-slate-600 mb-4" />
+                    <p className="text-lg font-medium text-white mb-2">No hay contenido pendiente</p>
+                    <p className="text-sm text-slate-400 mb-4">Pídele a ROPA que genere contenido para tus campañas</p>
+                    <Button
+                      onClick={() => {
+                        setChatOpen(true);
+                        setChatMinimized(false);
+                      }}
+                      className="bg-gradient-to-r from-cyan-500 to-teal-500"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Hablar con ROPA
+                    </Button>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
+                    <h4 className="text-sm font-medium text-cyan-400 mb-2">💡 Cómo usar el Monitor</h4>
+                    <ul className="text-sm text-slate-400 space-y-1">
+                      <li>• Pídele a ROPA: "Genera un email de campaña para [empresa]"</li>
+                      <li>• ROPA creará el contenido y lo mostrará aquí para tu aprobación</li>
+                      <li>• Revisa, edita si es necesario, y aprueba o rechaza</li>
+                      <li>• Solo el contenido aprobado será enviado a los clientes</li>
+                    </ul>
+                  </div>
                 </CardContent>
               </Card>
             </div>

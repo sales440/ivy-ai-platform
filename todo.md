@@ -168,3 +168,29 @@
 - [ ] Add sendDirectSMS tool (any number)
 - [ ] Add searchInformation tool for research requests
 - [ ] Deploy to Railway
+
+
+## Phase 19: Campaign Content Validation Monitor
+- [x] Create campaignContent table for storing email/call/SMS drafts pending validation
+- [x] Build tRPC router for campaign content CRUD and approval workflow
+- [x] Create Campaign Monitor page with tabs for Emails, Calls, SMS
+- [ ] Implement email preview with company letterhead/branding
+- [ ] Add call script preview with company info
+- [ ] Add SMS preview component
+- [ ] Add Approve/Reject/Edit buttons for each content item
+- [ ] Add sidebar navigation link "Campaign Monitor"
+- [ ] Integrate with ROPA chat commands to show content in monitor
+- [ ] Deploy to Railway production
+
+
+## Phase 20: Company Files Management System
+- [x] Create companyFiles table for storing company assets (logos, email examples, etc.)
+- [x] Create clientLists table for imported client databases
+- [x] Build file upload router with S3 integration
+- [x] Support multiple file formats (Excel, CSV, PDF, Word, images)
+- [x] Create Company Files page with drag & drop upload
+- [ ] Add file preview for images and PDFs
+- [ ] Add Excel/CSV parser for client lists
+- [ ] Create client list viewer with pagination
+- [ ] Add sidebar navigation link "Archivos de Empresa"
+- [ ] Integrate files with campaign content generation

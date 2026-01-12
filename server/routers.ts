@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { ropaRouter } from "./ropa-router";
 import { campaignsRouter } from "./campaigns-router";
+import { campaignContentRouter } from "./campaign-content-router";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -24,6 +25,9 @@ export const appRouter = router({
 
   // Sales Campaigns Router
   campaigns: campaignsRouter,
+
+  // Campaign Content Validation Router
+  campaignContent: campaignContentRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: router({

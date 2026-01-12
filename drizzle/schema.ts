@@ -83,4 +83,91 @@ export const uploadedFiles = mysqlTable("uploaded_files", {
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type InsertUploadedFile = typeof uploadedFiles.$inferInsert;
 
+// Campaign content for validation before sending
+export const campaignContent = mysqlTable("campaign_content", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaign_id"),
+  companyId: int("company_id"),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  companyLogo: varchar("company_logo", { length: 500 }),
+  companyAddress: text("company_address"),
+  companyPhone: varchar("company_phone", { length: 50 }),
+  companyEmail: varchar("company_email", { length: 320 }),
+  companyWebsite: varchar("company_website", { length: 255 }),
+  contentType: mysqlEnum("content_type", ["email", "call_script", "sms"]).notNull(),
+  subject: varchar("subject", { length: 500 }),
+  body: text("body").notNull(),
+  htmlContent: text("html_content"),
+  targetRecipients: text("target_recipients"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "sent"]).default("pending").notNull(),
+  rejectionReason: text("rejection_reason"),
+  approvedBy: varchar("approved_by", { length: 64 }),
+  approvedAt: timestamp("approved_at"),
+  sentAt: timestamp("sent_at"),
+  sentCount: int("sent_count").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CampaignContent = typeof campaignContent.$inferSelect;
+export type InsertCampaignContent = typeof campaignContent.$inferInsert;
+
+// Company files (logos, email examples, branding assets)
+export const companyFiles = mysqlTable("company_files", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("company_id"),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileType: mysqlEnum("file_type", ["logo", "email_example", "branding", "document", "client_list", "other"]).notNull(),
+  mimeType: varchar("mime_type", { length: 100 }).notNull(),
+  fileSize: int("file_size").notNull(),
+  s3Key: varchar("s3_key", { length: 500 }).notNull(),
+  s3Url: varchar("s3_url", { length: 500 }).notNull(),
+  description: text("description"),
+  uploadedBy: varchar("uploaded_by", { length: 64 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CompanyFile = typeof companyFiles.$inferSelect;
+export type InsertCompanyFile = typeof companyFiles.$inferInsert;
+
+// Imported client lists from Excel/CSV/PDF
+export const clientLists = mysqlTable("client_lists", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("company_id"),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  listName: varchar("list_name", { length: 255 }).notNull(),
+  sourceFileId: int("source_file_id"),
+  sourceFileName: varchar("source_file_name", { length: 255 }),
+  totalRecords: int("total_records").default(0),
+  processedRecords: int("processed_records").default(0),
+  status: mysqlEnum("status", ["pending", "processing", "completed", "error"]).default("pending").notNull(),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ClientList = typeof clientLists.$inferSelect;
+export type InsertClientList = typeof clientLists.$inferInsert;
+
+// Individual client records from imported lists
+export const clientRecords = mysqlTable("client_records", {
+  id: int("id").autoincrement().primaryKey(),
+  listId: int("list_id").notNull(),
+  companyId: int("company_id"),
+  name: varchar("name", { length: 255 }),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 50 }),
+  company: varchar("company", { length: 255 }),
+  position: varchar("position", { length: 255 }),
+  industry: varchar("industry", { length: 100 }),
+  location: varchar("location", { length: 255 }),
+  customFields: text("custom_fields"),
+  status: mysqlEnum("status", ["active", "contacted", "responded", "converted", "unsubscribed"]).default("active").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ClientRecord = typeof clientRecords.$inferSelect;
+export type InsertClientRecord = typeof clientRecords.$inferInsert;
+
 // TODO: Add your tables here
