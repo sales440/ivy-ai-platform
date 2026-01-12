@@ -257,6 +257,29 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
+    // Check for bypass auth mode
+    if (ENV.bypassAuth) {
+      // In bypass mode, create/return a default admin user
+      const bypassOpenId = ENV.ownerOpenId || "bypass-admin-user";
+      let user = await db.getUserByOpenId(bypassOpenId);
+      
+      if (!user) {
+        // Create bypass user if doesn't exist
+        await db.upsertUser({
+          openId: bypassOpenId,
+          name: ENV.ownerName || "Admin",
+          email: "admin@ivy.ai",
+          role: "admin",
+          lastSignedIn: new Date(),
+        });
+        user = await db.getUserByOpenId(bypassOpenId);
+      }
+      
+      if (user) {
+        return user;
+      }
+    }
+
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
