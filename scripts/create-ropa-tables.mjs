@@ -4,13 +4,7 @@
  * This script creates all tables required for the ROPA (Meta-Agent) system
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import mysql from 'mysql2/promise';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function createRopaTables() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -32,33 +26,112 @@ async function createRopaTables() {
       user: url.username,
       password: url.password,
       database: url.pathname.slice(1),
-      ssl: { rejectUnauthorized: false }
+      ssl: { rejectUnauthorized: false },
+      multipleStatements: false
     };
 
     connection = await mysql.createConnection(config);
 
-    // Read SQL file
-    const sqlPath = path.join(__dirname, 'create-ropa-tables.sql');
-    const sql = fs.readFileSync(sqlPath, 'utf8');
+    // Define all tables as separate statements
+    const tables = [
+      {
+        name: 'ropa_tasks',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_tasks (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          task_id varchar(64) NOT NULL UNIQUE,
+          type varchar(64) NOT NULL,
+          status enum('pending', 'running', 'completed', 'failed', 'cancelled') NOT NULL DEFAULT 'pending',
+          priority enum('low', 'medium', 'high', 'critical') NOT NULL DEFAULT 'medium',
+          tool_used varchar(128),
+          input json,
+          output json,
+          error text,
+          started_at timestamp NULL,
+          completed_at timestamp NULL,
+          duration int,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ropa_logs',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_logs (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          task_id varchar(64),
+          level enum('debug', 'info', 'warn', 'error') NOT NULL DEFAULT 'info',
+          message text NOT NULL,
+          metadata json,
+          timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ropa_metrics',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_metrics (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          metric_type varchar(64) NOT NULL,
+          value decimal(10, 2) NOT NULL,
+          unit varchar(32),
+          metadata json,
+          timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ropa_config',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_config (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          \`key\` varchar(128) NOT NULL UNIQUE,
+          value json NOT NULL,
+          description text,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ropa_chat_history',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_chat_history (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          role enum('user', 'assistant', 'system') NOT NULL,
+          message text NOT NULL,
+          metadata json,
+          timestamp timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ropa_learning',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_learning (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          category varchar(64) NOT NULL,
+          pattern text NOT NULL,
+          frequency int NOT NULL DEFAULT 1,
+          success_rate decimal(5, 2),
+          metadata json,
+          last_seen timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ropa_alerts',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_alerts (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          severity enum('info', 'warning', 'error', 'critical') NOT NULL,
+          title varchar(255) NOT NULL,
+          message text NOT NULL,
+          resolved boolean NOT NULL DEFAULT false,
+          resolved_at timestamp NULL,
+          metadata json,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      }
+    ];
 
-    // Split by semicolons and execute each statement
-    const statements = sql
-      .split(';')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && !s.startsWith('--'));
-
-    for (const statement of statements) {
+    for (const table of tables) {
       try {
-        await connection.execute(statement);
-        // Extract table name for logging
-        const match = statement.match(/CREATE TABLE IF NOT EXISTS `(\w+)`/i);
-        if (match) {
-          console.log(`[ROPA Tables] ✓ Created/verified table: ${match[1]}`);
-        }
+        await connection.execute(table.sql);
+        console.log(`[ROPA Tables] ✓ Created/verified table: ${table.name}`);
       } catch (err) {
-        // Ignore "table already exists" errors
-        if (err.code !== 'ER_TABLE_EXISTS_ERROR') {
-          console.warn(`[ROPA Tables] Warning: ${err.message}`);
+        if (err.code === 'ER_TABLE_EXISTS_ERROR') {
+          console.log(`[ROPA Tables] ✓ Table already exists: ${table.name}`);
+        } else {
+          console.error(`[ROPA Tables] ✗ Error creating ${table.name}: ${err.message}`);
         }
       }
     }
