@@ -141,4 +141,12 @@
 - [x] Integration status display
 - [x] Notification preferences
 - [x] LocalStorage persistence for config
+- [x] Deploy to Railway
+
+## Phase 16: Campaign Management Interface
+- [x] Add "Nueva Empresa" button and dialog
+- [x] Add "Nueva Campaña" button and dialog
+- [x] Create companies list with edit/delete
+- [x] Create campaigns table with status and metrics
+- [x] Add campaign actions (start, pause, delete)
 - [ ] Deploy to Railway

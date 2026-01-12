@@ -62,7 +62,28 @@ import {
   Brain,
   Plug,
   Save,
+  Plus,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Eye,
+  Pause,
+  PlayCircle,
+  StopCircle,
+  Building,
+  Briefcase,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { APP_TITLE } from "@/const";
 import {
@@ -144,6 +165,28 @@ export default function RopaDashboardV2() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
+  
+  // Company & Campaign Management state
+  const [showNewCompanyDialog, setShowNewCompanyDialog] = useState(false);
+  const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false);
+  const [showEditCompanyDialog, setShowEditCompanyDialog] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<any>(null);
+  const [newCompany, setNewCompany] = useState({ name: "", industry: "", contactEmail: "", contactPhone: "" });
+  const [newCampaign, setNewCampaign] = useState({ name: "", companyId: "", type: "email", description: "", targetLeads: 100 });
+  const [localCompanies, setLocalCompanies] = useState<any[]>([]);
+  const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
+  
+  // Load companies and campaigns from localStorage
+  useEffect(() => {
+    const savedCompanies = localStorage.getItem('ropaCompanies');
+    const savedCampaigns = localStorage.getItem('ropaCampaigns');
+    if (savedCompanies) {
+      try { setLocalCompanies(JSON.parse(savedCompanies)); } catch (e) {}
+    }
+    if (savedCampaigns) {
+      try { setLocalCampaigns(JSON.parse(savedCampaigns)); } catch (e) {}
+    }
+  }, []);
   
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -933,12 +976,251 @@ export default function RopaDashboardV2() {
             </>
           )}
 
-          {/* Other sections would go here */}
+          {/* Campaign Management Section */}
           {activeSection === "campaigns" && (
-            <div className="text-center py-20">
-              <Megaphone className="w-16 h-16 mx-auto text-cyan-400 mb-4" />
-              <h3 className="text-xl font-bold mb-2">Gestión de Campañas</h3>
-              <p className="text-slate-400">Usa el chat flotante para interactuar con ROPA sobre campañas</p>
+            <div className="space-y-6">
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => setShowNewCompanyDialog(true)}
+                  className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Empresa
+                </Button>
+                <Button
+                  onClick={() => setShowNewCampaignDialog(true)}
+                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  disabled={localCompanies.length === 0}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Campaña
+                </Button>
+              </div>
+
+              {/* Companies Grid */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5 text-cyan-400" />
+                    Empresas ({localCompanies.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {localCompanies.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Building2 className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+                      <p className="text-slate-400">No hay empresas registradas</p>
+                      <p className="text-sm text-slate-500">Haz clic en "Nueva Empresa" para comenzar</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {localCompanies.map((company) => (
+                        <div
+                          key={company.id}
+                          className="p-4 rounded-xl border border-slate-700 bg-slate-800/50 hover:border-cyan-500/50 transition-all"
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                                <Building2 className="w-5 h-5 text-white" />
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-white">{company.name}</h4>
+                                <p className="text-xs text-slate-400">{company.industry}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingCompany(company);
+                                  setNewCompany(company);
+                                  setShowEditCompanyDialog(true);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const updated = localCompanies.filter(c => c.id !== company.id);
+                                  setLocalCompanies(updated);
+                                  localStorage.setItem('ropaCompanies', JSON.stringify(updated));
+                                  // Also remove campaigns for this company
+                                  const updatedCampaigns = localCampaigns.filter(c => c.companyId !== company.id);
+                                  setLocalCampaigns(updatedCampaigns);
+                                  localStorage.setItem('ropaCampaigns', JSON.stringify(updatedCampaigns));
+                                  toast.success('Empresa eliminada');
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            {company.contactEmail && (
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <Mail className="w-3 h-3" />
+                                <span className="truncate">{company.contactEmail}</span>
+                              </div>
+                            )}
+                            {company.contactPhone && (
+                              <div className="flex items-center gap-2 text-slate-400">
+                                <Phone className="w-3 h-3" />
+                                <span>{company.contactPhone}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-slate-700">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-slate-500">Campañas activas</span>
+                              <Badge variant="outline" className="border-cyan-500/50 text-cyan-400">
+                                {localCampaigns.filter(c => c.companyId === company.id && c.status === 'active').length}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Campaigns Table */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="w-5 h-5 text-purple-400" />
+                    Campañas ({localCampaigns.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {localCampaigns.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Megaphone className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+                      <p className="text-slate-400">No hay campañas creadas</p>
+                      <p className="text-sm text-slate-500">Primero agrega una empresa, luego crea campañas</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-slate-700">
+                            <th className="text-left py-3 px-4 text-slate-400 font-medium">Campaña</th>
+                            <th className="text-left py-3 px-4 text-slate-400 font-medium">Empresa</th>
+                            <th className="text-left py-3 px-4 text-slate-400 font-medium">Tipo</th>
+                            <th className="text-left py-3 px-4 text-slate-400 font-medium">Estado</th>
+                            <th className="text-left py-3 px-4 text-slate-400 font-medium">Leads</th>
+                            <th className="text-left py-3 px-4 text-slate-400 font-medium">Progreso</th>
+                            <th className="text-right py-3 px-4 text-slate-400 font-medium">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {localCampaigns.map((campaign) => {
+                            const company = localCompanies.find(c => c.id === campaign.companyId);
+                            return (
+                              <tr key={campaign.id} className="border-b border-slate-800 hover:bg-slate-800/50">
+                                <td className="py-3 px-4">
+                                  <div className="font-medium text-white">{campaign.name}</div>
+                                  <div className="text-xs text-slate-500 truncate max-w-[200px]">{campaign.description}</div>
+                                </td>
+                                <td className="py-3 px-4 text-slate-300">{company?.name || 'N/A'}</td>
+                                <td className="py-3 px-4">
+                                  <Badge variant="outline" className={`${
+                                    campaign.type === 'email' ? 'border-cyan-500/50 text-cyan-400' :
+                                    campaign.type === 'phone' ? 'border-green-500/50 text-green-400' :
+                                    campaign.type === 'social' ? 'border-purple-500/50 text-purple-400' :
+                                    'border-orange-500/50 text-orange-400'
+                                  }`}>
+                                    {campaign.type === 'email' ? 'Email' :
+                                     campaign.type === 'phone' ? 'Teléfono' :
+                                     campaign.type === 'social' ? 'Social' : 'Multi-canal'}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <Badge className={`${
+                                    campaign.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                                    campaign.status === 'paused' ? 'bg-yellow-500/20 text-yellow-400' :
+                                    campaign.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
+                                    'bg-slate-500/20 text-slate-400'
+                                  }`}>
+                                    {campaign.status === 'active' ? 'Activa' :
+                                     campaign.status === 'paused' ? 'Pausada' :
+                                     campaign.status === 'completed' ? 'Completada' : 'Borrador'}
+                                  </Badge>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className="text-white">{campaign.currentLeads || 0}</span>
+                                  <span className="text-slate-500">/{campaign.targetLeads}</span>
+                                </td>
+                                <td className="py-3 px-4 w-32">
+                                  <div className="flex items-center gap-2">
+                                    <Progress 
+                                      value={((campaign.currentLeads || 0) / campaign.targetLeads) * 100} 
+                                      className="h-2 flex-1" 
+                                    />
+                                    <span className="text-xs text-slate-400">
+                                      {Math.round(((campaign.currentLeads || 0) / campaign.targetLeads) * 100)}%
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center justify-end gap-1">
+                                    {campaign.status === 'active' ? (
+                                      <button
+                                        onClick={() => {
+                                          const updated = localCampaigns.map(c => 
+                                            c.id === campaign.id ? { ...c, status: 'paused' } : c
+                                          );
+                                          setLocalCampaigns(updated);
+                                          localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                                          toast.success('Campaña pausada');
+                                        }}
+                                        className="p-1.5 rounded-lg hover:bg-yellow-500/20 text-slate-400 hover:text-yellow-400 transition-colors"
+                                        title="Pausar"
+                                      >
+                                        <Pause className="w-4 h-4" />
+                                      </button>
+                                    ) : campaign.status !== 'completed' ? (
+                                      <button
+                                        onClick={() => {
+                                          const updated = localCampaigns.map(c => 
+                                            c.id === campaign.id ? { ...c, status: 'active' } : c
+                                          );
+                                          setLocalCampaigns(updated);
+                                          localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                                          toast.success('Campaña activada');
+                                        }}
+                                        className="p-1.5 rounded-lg hover:bg-green-500/20 text-slate-400 hover:text-green-400 transition-colors"
+                                        title="Activar"
+                                      >
+                                        <PlayCircle className="w-4 h-4" />
+                                      </button>
+                                    ) : null}
+                                    <button
+                                      onClick={() => {
+                                        const updated = localCampaigns.filter(c => c.id !== campaign.id);
+                                        setLocalCampaigns(updated);
+                                        localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                                        toast.success('Campaña eliminada');
+                                      }}
+                                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                                      title="Eliminar"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           )}
 
@@ -1588,6 +1870,327 @@ export default function RopaDashboardV2() {
           })}
         </span>
       </div>
+
+      {/* New Company Dialog */}
+      <Dialog open={showNewCompanyDialog} onOpenChange={setShowNewCompanyDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-cyan-400" />
+              Nueva Empresa
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Agrega una nueva empresa para gestionar sus campañas
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Nombre de la Empresa *</Label>
+              <Input
+                id="companyName"
+                value={newCompany.name}
+                onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                placeholder="Ej: FAGOR Automation"
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="industry">Industria</Label>
+              <Select
+                value={newCompany.industry}
+                onValueChange={(value) => setNewCompany({ ...newCompany, industry: value })}
+              >
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue placeholder="Selecciona una industria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Manufacturing">Manufactura</SelectItem>
+                  <SelectItem value="Technology">Tecnología</SelectItem>
+                  <SelectItem value="Construction">Construcción</SelectItem>
+                  <SelectItem value="Services">Servicios</SelectItem>
+                  <SelectItem value="Healthcare">Salud</SelectItem>
+                  <SelectItem value="Finance">Finanzas</SelectItem>
+                  <SelectItem value="Retail">Retail</SelectItem>
+                  <SelectItem value="Other">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Email de Contacto</Label>
+              <Input
+                id="contactEmail"
+                type="email"
+                value={newCompany.contactEmail}
+                onChange={(e) => setNewCompany({ ...newCompany, contactEmail: e.target.value })}
+                placeholder="contacto@empresa.com"
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactPhone">Teléfono de Contacto</Label>
+              <Input
+                id="contactPhone"
+                value={newCompany.contactPhone}
+                onChange={(e) => setNewCompany({ ...newCompany, contactPhone: e.target.value })}
+                placeholder="+1 234 567 8900"
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewCompanyDialog(false);
+                setNewCompany({ name: "", industry: "", contactEmail: "", contactPhone: "" });
+              }}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!newCompany.name.trim()) {
+                  toast.error('El nombre de la empresa es requerido');
+                  return;
+                }
+                const company = {
+                  id: Date.now().toString(),
+                  ...newCompany,
+                  createdAt: new Date().toISOString(),
+                };
+                const updated = [...localCompanies, company];
+                setLocalCompanies(updated);
+                localStorage.setItem('ropaCompanies', JSON.stringify(updated));
+                setShowNewCompanyDialog(false);
+                setNewCompany({ name: "", industry: "", contactEmail: "", contactPhone: "" });
+                toast.success('Empresa creada exitosamente');
+              }}
+              className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
+            >
+              Crear Empresa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Company Dialog */}
+      <Dialog open={showEditCompanyDialog} onOpenChange={setShowEditCompanyDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5 text-cyan-400" />
+              Editar Empresa
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="editCompanyName">Nombre de la Empresa *</Label>
+              <Input
+                id="editCompanyName"
+                value={newCompany.name}
+                onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editIndustry">Industria</Label>
+              <Select
+                value={newCompany.industry}
+                onValueChange={(value) => setNewCompany({ ...newCompany, industry: value })}
+              >
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue placeholder="Selecciona una industria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Manufacturing">Manufactura</SelectItem>
+                  <SelectItem value="Technology">Tecnología</SelectItem>
+                  <SelectItem value="Construction">Construcción</SelectItem>
+                  <SelectItem value="Services">Servicios</SelectItem>
+                  <SelectItem value="Healthcare">Salud</SelectItem>
+                  <SelectItem value="Finance">Finanzas</SelectItem>
+                  <SelectItem value="Retail">Retail</SelectItem>
+                  <SelectItem value="Other">Otro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editContactEmail">Email de Contacto</Label>
+              <Input
+                id="editContactEmail"
+                type="email"
+                value={newCompany.contactEmail}
+                onChange={(e) => setNewCompany({ ...newCompany, contactEmail: e.target.value })}
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editContactPhone">Teléfono de Contacto</Label>
+              <Input
+                id="editContactPhone"
+                value={newCompany.contactPhone}
+                onChange={(e) => setNewCompany({ ...newCompany, contactPhone: e.target.value })}
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditCompanyDialog(false);
+                setEditingCompany(null);
+                setNewCompany({ name: "", industry: "", contactEmail: "", contactPhone: "" });
+              }}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!newCompany.name.trim()) {
+                  toast.error('El nombre de la empresa es requerido');
+                  return;
+                }
+                const updated = localCompanies.map(c => 
+                  c.id === editingCompany?.id ? { ...c, ...newCompany } : c
+                );
+                setLocalCompanies(updated);
+                localStorage.setItem('ropaCompanies', JSON.stringify(updated));
+                setShowEditCompanyDialog(false);
+                setEditingCompany(null);
+                setNewCompany({ name: "", industry: "", contactEmail: "", contactPhone: "" });
+                toast.success('Empresa actualizada');
+              }}
+              className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
+            >
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Campaign Dialog */}
+      <Dialog open={showNewCampaignDialog} onOpenChange={setShowNewCampaignDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="w-5 h-5 text-purple-400" />
+              Nueva Campaña
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Crea una nueva campaña de marketing para una empresa
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="campaignName">Nombre de la Campaña *</Label>
+              <Input
+                id="campaignName"
+                value={newCampaign.name}
+                onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
+                placeholder="Ej: Lanzamiento Q1 2026"
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="campaignCompany">Empresa *</Label>
+              <Select
+                value={newCampaign.companyId}
+                onValueChange={(value) => setNewCampaign({ ...newCampaign, companyId: value })}
+              >
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue placeholder="Selecciona una empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {localCompanies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="campaignType">Tipo de Campaña</Label>
+              <Select
+                value={newCampaign.type}
+                onValueChange={(value) => setNewCampaign({ ...newCampaign, type: value })}
+              >
+                <SelectTrigger className="bg-slate-800 border-slate-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Email Marketing</SelectItem>
+                  <SelectItem value="phone">Llamadas Telefónicas</SelectItem>
+                  <SelectItem value="social">Redes Sociales</SelectItem>
+                  <SelectItem value="multi">Multi-canal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="campaignDescription">Descripción</Label>
+              <Textarea
+                id="campaignDescription"
+                value={newCampaign.description}
+                onChange={(e) => setNewCampaign({ ...newCampaign, description: e.target.value })}
+                placeholder="Describe el objetivo de la campaña..."
+                className="bg-slate-800 border-slate-600 text-white min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="targetLeads">Leads Objetivo</Label>
+              <Input
+                id="targetLeads"
+                type="number"
+                value={newCampaign.targetLeads}
+                onChange={(e) => setNewCampaign({ ...newCampaign, targetLeads: parseInt(e.target.value) || 100 })}
+                className="bg-slate-800 border-slate-600 text-white"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewCampaignDialog(false);
+                setNewCampaign({ name: "", companyId: "", type: "email", description: "", targetLeads: 100 });
+              }}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (!newCampaign.name.trim()) {
+                  toast.error('El nombre de la campaña es requerido');
+                  return;
+                }
+                if (!newCampaign.companyId) {
+                  toast.error('Selecciona una empresa');
+                  return;
+                }
+                const campaign = {
+                  id: Date.now().toString(),
+                  ...newCampaign,
+                  status: 'draft',
+                  currentLeads: 0,
+                  createdAt: new Date().toISOString(),
+                };
+                const updated = [...localCampaigns, campaign];
+                setLocalCampaigns(updated);
+                localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                setShowNewCampaignDialog(false);
+                setNewCampaign({ name: "", companyId: "", type: "email", description: "", targetLeads: 100 });
+                toast.success('Campaña creada exitosamente');
+              }}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            >
+              Crear Campaña
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
