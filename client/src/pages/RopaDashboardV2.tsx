@@ -53,6 +53,10 @@ import {
   Bell,
   HeartPulse,
   CalendarDays,
+  Maximize2,
+  Minimize2,
+  GripHorizontal,
+  Move,
 } from "lucide-react";
 import { APP_TITLE } from "@/const";
 import {
@@ -138,6 +142,7 @@ export default function RopaDashboardV2() {
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
   const [chatMinimized, setChatMinimized] = useState(false);
+  const [chatMaximized, setChatMaximized] = useState(false);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -145,6 +150,12 @@ export default function RopaDashboardV2() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  
+  // Drag state for chat window
+  const [chatPosition, setChatPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const chatWindowRef = useRef<HTMLDivElement>(null);
 
   // Queries
   const { data: stats, isLoading: statsLoading } = trpc.ropa.getDashboardStats.useQuery(undefined, {
@@ -266,6 +277,80 @@ export default function RopaDashboardV2() {
     if (health === "degraded") return "text-yellow-500";
     return "text-red-500";
   };
+
+  // Drag handlers for chat window
+  const handleDragStart = (e: React.MouseEvent) => {
+    if (chatMaximized) return;
+    e.preventDefault();
+    setIsDragging(true);
+    const rect = chatWindowRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    }
+  };
+
+  const handleDragMove = (e: React.MouseEvent) => {
+    if (!isDragging || chatMaximized) return;
+    e.preventDefault();
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+    
+    // Keep window within viewport bounds
+    const maxX = window.innerWidth - (chatWindowRef.current?.offsetWidth || 400);
+    const maxY = window.innerHeight - (chatWindowRef.current?.offsetHeight || 500);
+    
+    setChatPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY)),
+    });
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Reset position when maximizing/minimizing
+  const toggleMaximize = () => {
+    if (!chatMaximized) {
+      setChatPosition({ x: 0, y: 0 });
+    }
+    setChatMaximized(!chatMaximized);
+    setChatMinimized(false);
+  };
+
+  // Add global mouse event listeners for dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || chatMaximized) return;
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      const maxX = window.innerWidth - (chatWindowRef.current?.offsetWidth || 400);
+      const maxY = window.innerHeight - (chatWindowRef.current?.offsetHeight || 500);
+      
+      setChatPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset, chatMaximized]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-slate-950 to-gray-900 text-white flex">
@@ -900,65 +985,116 @@ export default function RopaDashboardV2() {
         </button>
       )}
 
-      {/* Floating Chat Window */}
+      {/* Floating Chat Window - Draggable & Maximizable */}
       {chatOpen && (
         <div
-          className={`fixed right-6 z-50 transition-all duration-300 ${
-            chatMinimized ? "bottom-6" : "bottom-6"
+          ref={chatWindowRef}
+          className={`fixed z-[9999] transition-all ${isDragging ? 'cursor-grabbing' : ''} ${
+            chatMaximized 
+              ? 'inset-0 m-0' 
+              : chatMinimized 
+                ? '' 
+                : ''
           }`}
+          style={chatMaximized ? {} : {
+            left: chatPosition.x || 'auto',
+            top: chatPosition.y || 'auto',
+            right: chatPosition.x === 0 && chatPosition.y === 0 ? '24px' : 'auto',
+            bottom: chatPosition.x === 0 && chatPosition.y === 0 ? '56px' : 'auto',
+          }}
         >
           <div
-            className={`bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden transition-all duration-300 ${
-              chatMinimized ? "w-72 h-14" : "w-96 h-[500px]"
+            className={`bg-slate-900/98 backdrop-blur-xl border border-cyan-500/30 shadow-2xl shadow-cyan-500/20 overflow-hidden transition-all duration-300 ${
+              chatMaximized 
+                ? 'w-full h-full rounded-none' 
+                : chatMinimized 
+                  ? 'w-80 h-16 rounded-2xl' 
+                  : 'w-[450px] h-[600px] rounded-2xl'
             }`}
           >
-            {/* Chat Header */}
+            {/* Chat Header - Draggable Area */}
             <div
-              className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-cyan-500/20 to-teal-500/20 border-b border-slate-700/50 cursor-pointer"
-              onClick={() => chatMinimized && setChatMinimized(false)}
+              className={`flex items-center justify-between px-4 py-3 bg-gradient-to-r from-cyan-500/30 to-teal-500/30 border-b border-cyan-500/30 ${
+                chatMaximized ? '' : 'cursor-grab'
+              } ${isDragging ? 'cursor-grabbing' : ''} select-none`}
+              onMouseDown={handleDragStart}
             >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
+                {/* Drag Handle Icon */}
+                {!chatMaximized && !chatMinimized && (
+                  <div className="text-slate-500 hover:text-cyan-400 transition-colors">
+                    <Move className="w-4 h-4" />
+                  </div>
+                )}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                  <Bot className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm">ROPA</h3>
+                  <h3 className="font-bold text-base text-white">ROPA</h3>
                   {!chatMinimized && (
-                    <p className="text-xs text-slate-400">Meta-Agent Autónomo</p>
+                    <p className="text-xs text-cyan-400">Meta-Agent Autónomo • Interacción por Voz</p>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {/* Voice Toggle */}
                 {!chatMinimized && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setVoiceEnabled(!voiceEnabled);
                     }}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      voiceEnabled ? "bg-cyan-500/20 text-cyan-400" : "text-slate-400"
+                    className={`p-2 rounded-lg transition-all ${
+                      voiceEnabled 
+                        ? "bg-cyan-500/30 text-cyan-400 shadow-lg shadow-cyan-500/20" 
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                     }`}
+                    title={voiceEnabled ? "Desactivar voz" : "Activar voz"}
                   >
-                    {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    {voiceEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
                   </button>
                 )}
+                {/* Minimize Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setChatMinimized(!chatMinimized);
+                    if (chatMaximized) setChatMaximized(false);
                   }}
-                  className="p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
+                  className="p-2 rounded-lg hover:bg-slate-700/50 text-slate-400 hover:text-white transition-all"
+                  title={chatMinimized ? "Restaurar" : "Minimizar"}
                 >
-                  {chatMinimized ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4 rotate-90" />}
+                  {chatMinimized ? <ChevronRight className="w-5 h-5" /> : <Minimize2 className="w-5 h-5" />}
                 </button>
+                {/* Maximize Button */}
+                {!chatMinimized && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMaximize();
+                    }}
+                    className={`p-2 rounded-lg transition-all ${
+                      chatMaximized 
+                        ? "bg-cyan-500/30 text-cyan-400" 
+                        : "hover:bg-slate-700/50 text-slate-400 hover:text-white"
+                    }`}
+                    title={chatMaximized ? "Restaurar tamaño" : "Maximizar"}
+                  >
+                    <Maximize2 className="w-5 h-5" />
+                  </button>
+                )}
+                {/* Close Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setChatOpen(false);
+                    setChatMaximized(false);
+                    setChatMinimized(false);
                   }}
-                  className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                  className="p-2 rounded-lg hover:bg-red-500/30 text-slate-400 hover:text-red-400 transition-all"
+                  title="Cerrar"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -966,7 +1102,7 @@ export default function RopaDashboardV2() {
             {/* Chat Content */}
             {!chatMinimized && (
               <>
-                <ScrollArea className="h-[380px] p-4">
+                <ScrollArea className={`p-4 ${chatMaximized ? 'h-[calc(100vh-140px)]' : 'h-[440px]'}`}>
                   {chatHistory && chatHistory.length > 0 ? (
                     <div className="space-y-4">
                       {chatHistory.map((msg, idx) => (
@@ -975,26 +1111,34 @@ export default function RopaDashboardV2() {
                           className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[85%] p-3 rounded-2xl ${
+                            className={`max-w-[80%] p-4 rounded-2xl ${
                               msg.role === "user"
-                                ? "bg-gradient-to-br from-cyan-500 to-teal-500 text-white"
-                                : "bg-slate-800 text-slate-100"
+                                ? "bg-gradient-to-br from-cyan-500 to-teal-500 text-white shadow-lg shadow-cyan-500/20"
+                                : "bg-slate-800/80 text-slate-100 border border-slate-700/50"
                             }`}
                           >
-                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
                           </div>
                         </div>
                       ))}
                       <div ref={chatEndRef} />
                     </div>
                   ) : (
-                    <div className="text-center py-10">
-                      <Bot className="w-12 h-12 mx-auto text-cyan-400 mb-3" />
-                      <p className="text-slate-400 text-sm">
-                        ¡Hola! Soy ROPA, tu meta-agente autónomo.
+                    <div className="text-center py-16">
+                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyan-500/20 to-teal-500/20 flex items-center justify-center">
+                        <Bot className="w-10 h-10 text-cyan-400" />
+                      </div>
+                      <h4 className="text-lg font-semibold text-white mb-2">¡Hola! Soy ROPA</h4>
+                      <p className="text-slate-400 text-sm mb-4">
+                        Tu meta-agente autónomo de Ivy.AI
                       </p>
-                      <p className="text-slate-500 text-xs mt-1">
-                        Pregúntame sobre campañas, tareas o el estado del sistema.
+                      <div className="flex flex-wrap justify-center gap-2 text-xs">
+                        <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full">Campañas</span>
+                        <span className="px-3 py-1 bg-teal-500/20 text-teal-400 rounded-full">Tareas</span>
+                        <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full">Métricas</span>
+                      </div>
+                      <p className="text-slate-500 text-xs mt-4">
+                        Escribe o usa el micrófono para hablar conmigo
                       </p>
                     </div>
                   )}
@@ -1003,41 +1147,59 @@ export default function RopaDashboardV2() {
                 {/* Chat Input */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="p-3 border-t border-slate-700/50 bg-slate-950/50"
+                  className="p-4 border-t border-slate-700/50 bg-slate-950/80"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    {/* Voice Input Button */}
                     <button
                       type="button"
                       onClick={toggleListening}
                       disabled={!recognitionRef.current}
-                      className={`p-2 rounded-xl transition-colors ${
+                      className={`p-3 rounded-xl transition-all ${
                         isListening
-                          ? "bg-red-500 text-white animate-pulse"
-                          : "bg-slate-800 text-slate-400 hover:text-white"
+                          ? "bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30"
+                          : "bg-slate-800 text-slate-400 hover:text-cyan-400 hover:bg-slate-700 border border-slate-700"
                       }`}
+                      title={isListening ? "Detener grabación" : "Hablar con ROPA"}
                     >
-                      {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                      {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                     </button>
+                    {/* Text Input */}
                     <input
                       type="text"
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Escribe o habla con ROPA..."
-                      className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder:text-slate-500 text-sm"
+                      placeholder="Escribe tu mensaje aquí..."
+                      className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-white placeholder:text-slate-500 text-base"
                       disabled={isSubmitting}
                     />
+                    {/* Send Button */}
                     <button
                       type="submit"
                       disabled={isSubmitting || !message.trim()}
-                      className="p-2 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl text-white disabled:opacity-50 hover:opacity-90 transition-opacity"
+                      className="p-3 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl text-white disabled:opacity-50 hover:opacity-90 transition-all shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50"
+                      title="Enviar mensaje"
                     >
                       {isSubmitting ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="w-6 h-6 animate-spin" />
                       ) : (
-                        <Send className="w-5 h-5" />
+                        <Send className="w-6 h-6" />
                       )}
                     </button>
                   </div>
+                  {/* Voice Status Indicator */}
+                  {isListening && (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-red-400 text-sm">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                      <span>Escuchando... Habla ahora</span>
+                    </div>
+                  )}
+                  {isSpeaking && (
+                    <div className="mt-3 flex items-center justify-center gap-2 text-cyan-400 text-sm">
+                      <div className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse" />
+                      <span>ROPA está hablando...</span>
+                    </div>
+                  )}
                 </form>
               </>
             )}

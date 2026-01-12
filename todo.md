@@ -88,3 +88,9 @@
 - [x] Add calendar navigation button in sidebar menu
 - [x] Add back button to return to ROPA dashboard from calendar
 - [x] Filter campaigns by company in calendar view
+
+## Phase 9: ROPA Chat Window Improvements
+- [x] Make ROPA chat window draggable (drag & drop)
+- [x] Add maximize/restore button to expand chat to full screen
+- [x] Maintain voice interaction functionality
+- [ ] Save checkpoint
