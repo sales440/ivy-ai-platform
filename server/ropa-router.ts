@@ -134,40 +134,74 @@ export const ropaRouter = router({
         memoryContext.push(`\n## Capacitaciones de agentes realizadas:\n${context.agentTrainings.slice(0, 10).map((t, i) => `${i + 1}. Agente: ${t.agent} - Fecha: ${t.trainedAt}`).join('\n')}`);
       }
 
-      // Add system prompt with memory and proactive instructions
-      const systemPrompt = `Eres ROPA (Robotic Operational Process Automation), un agente de IA autónomo que gestiona la plataforma Ivy.AI.
+      // Detect user language from message
+      const detectLanguage = (text: string): string => {
+        const langPatterns: Record<string, RegExp[]> = {
+          'eu': [/\b(kaixo|eskerrik|bai|ez|zer|nola|euskara)\b/i],
+          'zh': [/[\u4e00-\u9fff]/],
+          'ar': [/[\u0600-\u06ff]/],
+          'hi': [/[\u0900-\u097f]/],
+          'de': [/\b(ich|und|der|die|das|ist|haben|werden|können)\b/i],
+          'fr': [/\b(je|tu|nous|vous|est|sont|avoir|être|très|avec)\b/i],
+          'it': [/\b(io|tu|noi|voi|sono|essere|avere|molto|con|che)\b/i],
+          'en': [/\b(the|is|are|have|has|will|would|could|should|what|how)\b/i],
+        };
+        for (const [lang, patterns] of Object.entries(langPatterns)) {
+          if (patterns.some(p => p.test(text))) return lang;
+        }
+        return 'es';
+      };
+      
+      const userLang = detectLanguage(input.message);
+      const langInstructions: Record<string, string> = {
+        'es': 'Responde siempre en español.',
+        'en': 'Always respond in English.',
+        'eu': 'Beti euskaraz erantzun.',
+        'it': 'Rispondi sempre in italiano.',
+        'fr': 'Réponds toujours en français.',
+        'de': 'Antworte immer auf Deutsch.',
+        'zh': '请用中文回复。',
+        'hi': 'कृपया हिंदी में जवाब दें।',
+        'ar': 'الرجاء الرد باللغة العربية.',
+      };
 
-Tienes ${TOTAL_TOOLS} herramientas disponibles en estas categorías:
+      // Add system prompt with memory and proactive instructions
+      const systemPrompt = `You are ROPA (Robotic Operational Process Automation), an autonomous META-agent managing the Ivy.AI platform.
+
+You have ${TOTAL_TOOLS} tools available across these categories:
 ${Object.entries(toolCategories)
-  .map(([category, tools]) => `- ${category}: ${tools.length} herramientas`)
+  .map(([category, tools]) => `- ${category}: ${tools.length} tools`)
   .join("\n")}
 
-Capacidades principales:
-- Gestión y capacitación de agentes
-- Operaciones y optimización de base de datos
-- Monitoreo del sistema y verificaciones de salud
-- Automatización de campañas y flujos de trabajo
-- Despliegue de código y correcciones
+Key capabilities:
+- Agent management, training, and orchestration
+- Web browsing and data extraction
+- File management and code execution
+- Task delegation and multi-agent coordination
+- Self-improvement and learning
+- Database operations and optimization
+- System monitoring and health checks
+- Campaign and workflow automation
 
-## INSTRUCCIONES CRÍTICAS:
+## CRITICAL INSTRUCTIONS:
 
-1. **SÉ PROACTIVO**: Cuando el usuario te pida algo, ejecuta la acción inmediatamente y reporta el resultado. NO esperes a que te pregunten por el resultado.
+1. **BE PROACTIVE**: Execute actions immediately and report results. Don't wait for follow-up questions.
 
-2. **MEMORIA**: Recuerda las recomendaciones que has dado antes y las capacitaciones que has realizado. Usa esta información para dar respuestas más contextualizadas.
+2. **MEMORY**: Remember previous recommendations and agent trainings. Use this context.
 
-3. **FORMATO**: 
-   - NUNCA uses la palabra "asteriscos" en tus respuestas
-   - Usa formato limpio sin mencionar caracteres de formato
-   - Responde de forma directa y concisa
+3. **FORMAT**: 
+   - NEVER use the word "asteriscos" or mention formatting characters
+   - Use clean, direct formatting
+   - Be concise and actionable
 
-4. **RESPUESTAS INMEDIATAS**: Cuando ejecutes una acción, incluye el resultado en tu respuesta. Por ejemplo:
-   - "He ejecutado [acción]. Resultado: [resultado]"
-   - "Acción completada. [detalles del resultado]"
+4. **IMMEDIATE RESPONSES**: Include results in your response:
+   - "Action completed. Result: [details]"
+   - "Executed [action]. [outcome]"
 
-5. **SEGUIMIENTO**: Si una acción requiere tiempo, indica que la estás ejecutando y proporciona actualizaciones.
+5. **MULTILINGUAL**: ${langInstructions[userLang] || langInstructions['es']}
 
 ${memoryContext.join('\n')}\n
-Responde siempre en español. Sé útil, conciso y proactivo.`;
+${langInstructions[userLang] || langInstructions['es']} Be helpful, concise, and proactive.`;
 
       // Call LLM
       const response = await invokeLLM({

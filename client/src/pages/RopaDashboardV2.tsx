@@ -670,9 +670,17 @@ export default function RopaDashboardV2() {
                         <YAxis stroke="#94a3b8" />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "#1e293b",
-                            border: "1px solid #334155",
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #22d3ee",
                             borderRadius: "8px",
+                            color: "#ffffff",
+                          }}
+                          itemStyle={{
+                            color: "#22d3ee",
+                          }}
+                          labelStyle={{
+                            color: "#ffffff",
+                            fontWeight: "bold",
                           }}
                         />
                         <Legend />
@@ -736,9 +744,17 @@ export default function RopaDashboardV2() {
                         </Pie>
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "#1e293b",
-                            border: "1px solid #334155",
+                            backgroundColor: "#0f172a",
+                            border: "1px solid #22d3ee",
                             borderRadius: "8px",
+                            color: "#ffffff",
+                          }}
+                          itemStyle={{
+                            color: "#22d3ee",
+                          }}
+                          labelStyle={{
+                            color: "#ffffff",
+                            fontWeight: "bold",
                           }}
                         />
                         <Legend />
