@@ -201,3 +201,9 @@
 - [x] Display campaigns in calendar according to their status/progress
 - [x] Sync campaign dates with calendar view
 - [ ] Deploy to Railway
+
+
+## Phase 22: Monitor Section & Calendar Fixes
+- [ ] Add Monitor section to ROPA sidebar navigation
+- [ ] Verify calendar shows all FAGOR campaigns (user reports 3 campaigns created but only 2 visible)
+- [ ] Deploy updated code to Railway
