@@ -131,3 +131,14 @@
 - [x] Fix chart tooltip visibility in campaign distribution
 - [x] Fix Nueva Campaña button in calendar
 - [ ] Deploy to Railway
+
+## Phase 15: ROPA Configuration Page
+- [x] Create ROPA Configuration page with all settings sections
+- [x] Operation mode selector (Autonomous/Guided/Hybrid)
+- [x] Language preference selector (9 languages)
+- [x] Agent personality settings
+- [x] Campaign limits and schedules
+- [x] Integration status display
+- [x] Notification preferences
+- [x] LocalStorage persistence for config
+- [ ] Deploy to Railway

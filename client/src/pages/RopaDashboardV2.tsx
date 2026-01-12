@@ -57,7 +57,13 @@ import {
   Minimize2,
   GripHorizontal,
   Move,
+  Globe,
+  Sparkles,
+  Brain,
+  Plug,
+  Save,
 } from "lucide-react";
+import { toast } from "sonner";
 import { APP_TITLE } from "@/const";
 import {
   LineChart,
@@ -149,6 +155,35 @@ export default function RopaDashboardV2() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  
+  // ROPA Configuration state
+  const [ropaConfig, setRopaConfig] = useState({
+    operationMode: "autonomous" as "autonomous" | "guided" | "hybrid",
+    language: "es",
+    personality: "professional" as "professional" | "friendly" | "technical",
+    maxEmailsPerDay: 100,
+    maxCallsPerDay: 50,
+    sendingHoursStart: "09:00",
+    sendingHoursEnd: "18:00",
+    notifications: {
+      criticalAlerts: true,
+      dailyReports: true,
+      campaignMilestones: true,
+      newLeads: false,
+    },
+  });
+  
+  // Load config from localStorage on mount
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('ropaConfig');
+    if (savedConfig) {
+      try {
+        setRopaConfig(JSON.parse(savedConfig));
+      } catch (e) {
+        console.error('Failed to parse saved config');
+      }
+    }
+  }, []);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -1044,14 +1079,265 @@ export default function RopaDashboardV2() {
           )}
 
           {activeSection === "settings" && (
-            <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle>Configuración de ROPA</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-400">Configuración próximamente...</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              {/* Operation Mode */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="w-5 h-5 text-cyan-400" />
+                    Modo de Operación
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { id: "autonomous", name: "Autónomo", desc: "ROPA actúa de forma independiente", icon: Zap },
+                      { id: "guided", name: "Guiado", desc: "Requiere aprobación humana", icon: Users },
+                      { id: "hybrid", name: "Híbrido", desc: "Autónomo para tareas simples", icon: Settings }
+                    ].map((mode) => (
+                      <button
+                        key={mode.id}
+                        onClick={() => setRopaConfig({ ...ropaConfig, operationMode: mode.id as any })}
+                        className={`p-4 rounded-xl border transition-all text-left ${
+                          ropaConfig.operationMode === mode.id
+                            ? "border-cyan-500 bg-cyan-500/20 shadow-lg shadow-cyan-500/20"
+                            : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                        }`}
+                      >
+                        <mode.icon className={`w-6 h-6 mb-2 ${ropaConfig.operationMode === mode.id ? "text-cyan-400" : "text-slate-400"}`} />
+                        <div className="font-medium text-white">{mode.name}</div>
+                        <div className="text-xs text-slate-400 mt-1">{mode.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Language & Personality */}
+              <div className="grid grid-cols-2 gap-6">
+                <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-teal-400" />
+                      Idioma Preferido
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { code: "es", name: "Español", flag: "🇪🇸" },
+                        { code: "en", name: "English", flag: "🇺🇸" },
+                        { code: "eu", name: "Euskera", flag: "🏴" },
+                        { code: "it", name: "Italiano", flag: "🇮🇹" },
+                        { code: "fr", name: "Français", flag: "🇫🇷" },
+                        { code: "de", name: "Deutsch", flag: "🇩🇪" },
+                        { code: "zh", name: "中文", flag: "🇨🇳" },
+                        { code: "hi", name: "हिंदी", flag: "🇮🇳" },
+                        { code: "ar", name: "العربية", flag: "🇸🇦" }
+                      ].map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => setRopaConfig({ ...ropaConfig, language: lang.code })}
+                          className={`p-2 rounded-lg border text-sm transition-all ${
+                            ropaConfig.language === lang.code
+                              ? "border-teal-500 bg-teal-500/20"
+                              : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                          }`}
+                        >
+                          <span className="mr-1">{lang.flag}</span>
+                          <span className="text-white">{lang.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-purple-400" />
+                      Personalidad del Agente
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {[
+                      { id: "professional", name: "Profesional", desc: "Formal y orientado a negocios" },
+                      { id: "friendly", name: "Amigable", desc: "Cercano y conversacional" },
+                      { id: "technical", name: "Técnico", desc: "Detallado y preciso" }
+                    ].map((personality) => (
+                      <button
+                        key={personality.id}
+                        onClick={() => setRopaConfig({ ...ropaConfig, personality: personality.id as any })}
+                        className={`w-full p-3 rounded-lg border text-left transition-all ${
+                          ropaConfig.personality === personality.id
+                            ? "border-purple-500 bg-purple-500/20"
+                            : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                        }`}
+                      >
+                        <div className="font-medium text-white">{personality.name}</div>
+                        <div className="text-xs text-slate-400">{personality.desc}</div>
+                      </button>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Campaign Limits */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-orange-400" />
+                    Límites de Campañas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm text-slate-400">Emails máximos por día</label>
+                      <input
+                        type="number"
+                        value={ropaConfig.maxEmailsPerDay}
+                        onChange={(e) => setRopaConfig({ ...ropaConfig, maxEmailsPerDay: parseInt(e.target.value) || 100 })}
+                        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-slate-400">Llamadas máximas por día</label>
+                      <input
+                        type="number"
+                        value={ropaConfig.maxCallsPerDay}
+                        onChange={(e) => setRopaConfig({ ...ropaConfig, maxCallsPerDay: parseInt(e.target.value) || 50 })}
+                        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-slate-400">Hora de inicio (envíos)</label>
+                      <input
+                        type="time"
+                        value={ropaConfig.sendingHoursStart}
+                        onChange={(e) => setRopaConfig({ ...ropaConfig, sendingHoursStart: e.target.value })}
+                        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm text-slate-400">Hora de fin (envíos)</label>
+                      <input
+                        type="time"
+                        value={ropaConfig.sendingHoursEnd}
+                        onChange={(e) => setRopaConfig({ ...ropaConfig, sendingHoursEnd: e.target.value })}
+                        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-2 text-white"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Integrations Status */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Plug className="w-5 h-5 text-green-400" />
+                    Estado de Integraciones
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { name: "SendGrid", desc: "Email Marketing", status: "connected", icon: Mail },
+                      { name: "OpenAI", desc: "LLM Principal", status: "connected", icon: Brain },
+                      { name: "Zapier", desc: "LinkedIn Automation", status: "pending", icon: Share2 },
+                      { name: "Telnyx", desc: "Llamadas VoIP", status: "disconnected", icon: Phone },
+                      { name: "HubSpot", desc: "CRM Sync", status: "disconnected", icon: Users },
+                      { name: "Manus Forge", desc: "LLM Backup", status: "connected", icon: Sparkles }
+                    ].map((integration) => (
+                      <div
+                        key={integration.name}
+                        className="p-4 rounded-xl border border-slate-700 bg-slate-800/50"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <integration.icon className="w-5 h-5 text-slate-400" />
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            integration.status === "connected" ? "bg-green-500/20 text-green-400" :
+                            integration.status === "pending" ? "bg-yellow-500/20 text-yellow-400" :
+                            "bg-red-500/20 text-red-400"
+                          }`}>
+                            {integration.status === "connected" ? "Conectado" :
+                             integration.status === "pending" ? "Pendiente" : "Desconectado"}
+                          </span>
+                        </div>
+                        <div className="font-medium text-white">{integration.name}</div>
+                        <div className="text-xs text-slate-400">{integration.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notifications */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-yellow-400" />
+                    Preferencias de Notificaciones
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { id: "criticalAlerts", name: "Alertas Críticas", desc: "Errores y problemas urgentes" },
+                      { id: "dailyReports", name: "Reportes Diarios", desc: "Resumen de actividad cada 24h" },
+                      { id: "campaignMilestones", name: "Milestones de Campañas", desc: "Logros y objetivos alcanzados" },
+                      { id: "newLeads", name: "Nuevos Leads", desc: "Notificar cuando se detecten leads" }
+                    ].map((notification) => (
+                      <div
+                        key={notification.id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-slate-700 bg-slate-800/50"
+                      >
+                        <div>
+                          <div className="font-medium text-white">{notification.name}</div>
+                          <div className="text-xs text-slate-400">{notification.desc}</div>
+                        </div>
+                        <button
+                          onClick={() => setRopaConfig({
+                            ...ropaConfig,
+                            notifications: {
+                              ...ropaConfig.notifications,
+                              [notification.id]: !ropaConfig.notifications[notification.id as keyof typeof ropaConfig.notifications]
+                            }
+                          })}
+                          className={`w-12 h-6 rounded-full transition-all ${
+                            ropaConfig.notifications[notification.id as keyof typeof ropaConfig.notifications]
+                              ? "bg-cyan-500"
+                              : "bg-slate-600"
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            ropaConfig.notifications[notification.id as keyof typeof ropaConfig.notifications]
+                              ? "translate-x-6"
+                              : "translate-x-0.5"
+                          }`} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Save Button */}
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => {
+                    // Save config to localStorage for now
+                    localStorage.setItem('ropaConfig', JSON.stringify(ropaConfig));
+                    toast.success("Configuración guardada exitosamente");
+                  }}
+                  className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 px-8"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar Configuración
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </main>
