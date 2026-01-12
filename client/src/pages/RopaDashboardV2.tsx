@@ -360,16 +360,23 @@ export default function RopaDashboardV2() {
           sidebarCollapsed ? "w-20" : "w-64"
         } bg-black/50 backdrop-blur-xl border-r border-slate-800/50 flex flex-col transition-all duration-300 relative`}
       >
-        {/* Logo */}
+        {/* Logo - Double-click to open chat */}
         <div className="p-4 border-b border-slate-800/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+          <div 
+            className="flex items-center gap-3 cursor-pointer group"
+            onDoubleClick={() => {
+              setChatOpen(true);
+              setChatMinimized(false);
+            }}
+            title="Doble clic para abrir chat con ROPA"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center transition-all duration-300 group-hover:shadow-lg group-hover:shadow-cyan-500/50 group-hover:scale-110">
               <Bot className="w-6 h-6 text-white" />
             </div>
             {!sidebarCollapsed && (
               <div>
-                <h1 className="font-bold text-lg">ROPA</h1>
-                <p className="text-xs text-slate-400">Meta-Agent</p>
+                <h1 className="font-bold text-lg group-hover:text-cyan-400 transition-colors">ROPA</h1>
+                <p className="text-xs text-slate-400 group-hover:text-cyan-300 transition-colors">Doble clic para chat</p>
               </div>
             )}
           </div>

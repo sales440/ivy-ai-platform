@@ -94,3 +94,4 @@
 - [x] Add maximize/restore button to expand chat to full screen
 - [x] Maintain voice interaction functionality
 - [ ] Save checkpoint
+- [x] Make ROPA logo in sidebar open chat on double-click
