@@ -60,3 +60,13 @@
 - [ ] Test file upload/download
 - [ ] Test campaign generation
 - [ ] Create checkpoint
+
+## Railway Deployment with Custom Domain
+- [ ] Review and create Railway configuration files (railway.json, Procfile)
+- [ ] Configure build scripts for production
+- [ ] Push latest code to GitHub
+- [ ] Configure Railway environment variables
+- [ ] Set up custom domain app.ivybyai.com in Railway
+- [ ] Configure SSL certificate
+- [ ] Test deployment
+- [ ] Create deployment documentation
