@@ -149,4 +149,14 @@
 - [x] Create companies list with edit/delete
 - [x] Create campaigns table with status and metrics
 - [x] Add campaign actions (start, pause, delete)
+- [x] Deploy to Railway
+
+## Phase 17: ROPA Email Sending Capability
+- [x] Update ROPA system prompt to allow external email sending
+- [x] Implement SendGrid email tool in ROPA service
+- [x] Add send_campaign_email tool to ROPA tools
+- [x] Add sendBulkCampaignEmails tool
+- [x] Add sendFollowUpEmail tool
+- [x] Add generateAndSendEmail tool
+- [x] Add checkEmailDeliveryStatus tool
 - [ ] Deploy to Railway

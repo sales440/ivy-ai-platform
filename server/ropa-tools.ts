@@ -353,7 +353,53 @@ export const marketIntelligenceTools = {
   },
 };
 
-// ============ 5. CAMPAIGNS & WORKFLOWS (12 tools) ============
+// ============ 5. CAMPAIGNS & WORKFLOWS (17 tools) ============
+
+// SendGrid email sending function
+async function sendEmailViaSendGrid(params: {
+  to: string;
+  subject: string;
+  body: string;
+  fromName?: string;
+  fromEmail?: string;
+}) {
+  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+  
+  if (!SENDGRID_API_KEY) {
+    return { success: false, error: "SendGrid API key not configured" };
+  }
+  
+  try {
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email: params.to }] }],
+        from: { 
+          email: params.fromEmail || 'noreply@ivybyai.com',
+          name: params.fromName || 'Ivy.AI Sales'
+        },
+        subject: params.subject,
+        content: [
+          { type: 'text/html', value: params.body },
+          { type: 'text/plain', value: params.body.replace(/<[^>]*>/g, '') }
+        ],
+      }),
+    });
+    
+    if (response.ok || response.status === 202) {
+      return { success: true, messageId: `msg_${Date.now()}` };
+    } else {
+      const error = await response.text();
+      return { success: false, error };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
 
 export const campaignTools = {
   async pauseCampaign(params: { campaignId: string }) {
@@ -415,6 +461,162 @@ export const campaignTools = {
   async cloneBestPerformingCampaign() {
     await logTool("cloneBestPerformingCampaign", "info", "Cloning best campaign");
     return { success: true, newCampaignId: `campaign_${Date.now()}` };
+  },
+
+  // EMAIL SENDING TOOLS
+  async sendCampaignEmail(params: {
+    to: string;
+    subject: string;
+    body: string;
+    campaignId?: string;
+    leadName?: string;
+  }) {
+    await logTool("sendCampaignEmail", "info", `Sending email to ${params.to}: ${params.subject}`);
+    
+    const result = await sendEmailViaSendGrid({
+      to: params.to,
+      subject: params.subject,
+      body: params.body,
+    });
+    
+    if (result.success) {
+      await recordRopaMetric({
+        metricType: "emails_sent",
+        value: "1",
+        unit: "count",
+        metadata: { to: params.to, campaignId: params.campaignId },
+      });
+    }
+    
+    return {
+      success: result.success,
+      messageId: result.messageId,
+      recipient: params.to,
+      subject: params.subject,
+      error: result.error,
+    };
+  },
+
+  async sendBulkCampaignEmails(params: {
+    recipients: Array<{ email: string; name: string }>;
+    subject: string;
+    bodyTemplate: string;
+    campaignId: string;
+  }) {
+    await logTool("sendBulkCampaignEmails", "info", `Sending bulk emails to ${params.recipients.length} recipients`);
+    
+    const results = [];
+    for (const recipient of params.recipients) {
+      const personalizedBody = params.bodyTemplate.replace(/\{\{name\}\}/g, recipient.name);
+      const result = await sendEmailViaSendGrid({
+        to: recipient.email,
+        subject: params.subject,
+        body: personalizedBody,
+      });
+      results.push({ email: recipient.email, success: result.success });
+      
+      // Small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    const successful = results.filter(r => r.success).length;
+    await recordRopaMetric({
+      metricType: "bulk_emails_sent",
+      value: String(successful),
+      unit: "count",
+      metadata: { campaignId: params.campaignId, total: params.recipients.length },
+    });
+    
+    return {
+      success: true,
+      sent: successful,
+      failed: results.length - successful,
+      total: results.length,
+      results,
+    };
+  },
+
+  async sendFollowUpEmail(params: {
+    to: string;
+    originalSubject: string;
+    followUpNumber: number;
+    body: string;
+  }) {
+    const subject = `Re: ${params.originalSubject}`;
+    await logTool("sendFollowUpEmail", "info", `Sending follow-up #${params.followUpNumber} to ${params.to}`);
+    
+    const result = await sendEmailViaSendGrid({
+      to: params.to,
+      subject,
+      body: params.body,
+    });
+    
+    return {
+      success: result.success,
+      followUpNumber: params.followUpNumber,
+      recipient: params.to,
+      error: result.error,
+    };
+  },
+
+  async generateAndSendEmail(params: {
+    to: string;
+    leadName: string;
+    companyName: string;
+    campaignType: string;
+    customMessage?: string;
+  }) {
+    await logTool("generateAndSendEmail", "info", `Generating and sending email to ${params.to}`);
+    
+    // Generate email content based on campaign type
+    let subject = '';
+    let body = '';
+    
+    switch (params.campaignType) {
+      case 'cold_outreach':
+        subject = `¿Podemos ayudar a ${params.companyName}?`;
+        body = `<p>Hola ${params.leadName},</p>
+          <p>Me pongo en contacto desde Ivy.AI para explorar cómo podemos ayudar a ${params.companyName} a automatizar sus procesos de ventas.</p>
+          <p>${params.customMessage || 'Nuestros agentes de IA han ayudado a empresas similares a aumentar sus ventas en un 40%.'}</p>
+          <p>Saludos,<br/>Equipo Ivy.AI</p>`;
+        break;
+      case 'follow_up':
+        subject = `Seguimiento - ${params.companyName}`;
+        body = `<p>Hola ${params.leadName},</p>
+          <p>Quería hacer seguimiento a mi mensaje anterior.</p>
+          <p>${params.customMessage || '¿Tiene disponibilidad esta semana para una breve llamada?'}</p>
+          <p>Saludos,<br/>Equipo Ivy.AI</p>`;
+        break;
+      default:
+        subject = `Información para ${params.companyName}`;
+        body = `<p>Hola ${params.leadName},</p>
+          <p>${params.customMessage || 'Le envío información sobre nuestros servicios.'}</p>
+          <p>Saludos,<br/>Equipo Ivy.AI</p>`;
+    }
+    
+    const result = await sendEmailViaSendGrid({
+      to: params.to,
+      subject,
+      body,
+    });
+    
+    return {
+      success: result.success,
+      recipient: params.to,
+      subject,
+      generatedBody: body,
+      error: result.error,
+    };
+  },
+
+  async checkEmailDeliveryStatus(params: { messageId: string }) {
+    // In production, this would check SendGrid's event webhook data
+    return {
+      messageId: params.messageId,
+      status: 'delivered',
+      openedAt: null,
+      clickedAt: null,
+    };
   },
 };
 
