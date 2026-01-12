@@ -222,6 +222,105 @@ export async function resolveRopaAlert(alertId: number) {
   await db.update(ropaAlerts).set({ resolved: true, resolvedAt: new Date() }).where(eq(ropaAlerts.id, alertId));
 }
 
+// ============ MEMORY - RECOMMENDATIONS ============
+
+export async function saveRopaRecommendation(recommendation: string, category: string = 'general') {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(ropaLearning).values({
+    category: `recommendation_${category}`,
+    pattern: recommendation,
+    frequency: 1,
+    metadata: { type: 'recommendation', savedAt: new Date().toISOString() },
+  });
+}
+
+export async function getRopaRecommendations(category: string = 'general', limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(ropaLearning)
+    .where(eq(ropaLearning.category, `recommendation_${category}`))
+    .orderBy(desc(ropaLearning.lastSeen))
+    .limit(limit);
+}
+
+export async function getAllRopaRecommendations(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select()
+    .from(ropaLearning)
+    .orderBy(desc(ropaLearning.lastSeen))
+    .limit(limit);
+  
+  return results.filter(r => r.category.startsWith('recommendation_'));
+}
+
+// ============ MEMORY - AGENT TRAINING ============
+
+export async function saveAgentTraining(agentName: string, trainingData: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(ropaLearning).values({
+    category: `agent_training_${agentName}`,
+    pattern: JSON.stringify(trainingData),
+    frequency: 1,
+    metadata: { type: 'agent_training', agent: agentName, trainedAt: new Date().toISOString() },
+  });
+}
+
+export async function getAgentTrainingHistory(agentName: string, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db
+    .select()
+    .from(ropaLearning)
+    .where(eq(ropaLearning.category, `agent_training_${agentName}`))
+    .orderBy(desc(ropaLearning.lastSeen))
+    .limit(limit);
+}
+
+export async function getAllAgentTrainingHistory(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const results = await db
+    .select()
+    .from(ropaLearning)
+    .orderBy(desc(ropaLearning.lastSeen))
+    .limit(limit);
+  
+  return results.filter(r => r.category.startsWith('agent_training_'));
+}
+
+// ============ CONVERSATION CONTEXT ============
+
+export async function getConversationContext(limit = 20) {
+  const db = await getDb();
+  if (!db) return { messages: [], recommendations: [], agentTrainings: [] };
+  
+  const messages = await getRopaChatHistory(limit);
+  const recommendations = await getAllRopaRecommendations(20);
+  const agentTrainings = await getAllAgentTrainingHistory(20);
+  
+  return {
+    messages: messages.reverse(),
+    recommendations: recommendations.map(r => r.pattern),
+    agentTrainings: agentTrainings.map(t => ({
+      agent: (t.metadata as any)?.agent || 'unknown',
+      data: t.pattern,
+      trainedAt: (t.metadata as any)?.trainedAt,
+    })),
+  };
+}
+
 // ============ STATS ============
 
 export async function getRopaStats() {

@@ -13,6 +13,9 @@ import {
   getUnresolvedRopaAlerts,
   setRopaConfig,
   getRopaConfig,
+  getConversationContext,
+  saveRopaRecommendation,
+  saveAgentTraining,
 } from "./ropa-db";
 import { ropaTools, listAllTools, toolCategories, TOTAL_TOOLS } from "./ropa-tools";
 import { invokeLLM } from "./_core/llm";
@@ -113,29 +116,58 @@ export const ropaRouter = router({
         message: input.message,
       });
 
-      // Get chat history for context
-      const history = await getRopaChatHistory(10);
-      const messages = history.reverse().map((h) => ({
+      // Get full conversation context with memory
+      const context = await getConversationContext(20);
+      const messages = context.messages.map((h) => ({
         role: h.role,
         content: h.message,
       }));
 
-      // Add system prompt
-      const systemPrompt = `You are ROPA (Robotic Operational Process Automation), an autonomous AI agent managing the Ivy.AI platform.
+      // Build memory context
+      const memoryContext = [];
+      
+      if (context.recommendations.length > 0) {
+        memoryContext.push(`\n## Recomendaciones previas que he dado:\n${context.recommendations.slice(0, 10).map((r, i) => `${i + 1}. ${r}`).join('\n')}`);
+      }
+      
+      if (context.agentTrainings.length > 0) {
+        memoryContext.push(`\n## Capacitaciones de agentes realizadas:\n${context.agentTrainings.slice(0, 10).map((t, i) => `${i + 1}. Agente: ${t.agent} - Fecha: ${t.trainedAt}`).join('\n')}`);
+      }
 
-You have ${TOTAL_TOOLS} tools available across these categories:
+      // Add system prompt with memory and proactive instructions
+      const systemPrompt = `Eres ROPA (Robotic Operational Process Automation), un agente de IA autónomo que gestiona la plataforma Ivy.AI.
+
+Tienes ${TOTAL_TOOLS} herramientas disponibles en estas categorías:
 ${Object.entries(toolCategories)
-  .map(([category, tools]) => `- ${category}: ${tools.length} tools`)
+  .map(([category, tools]) => `- ${category}: ${tools.length} herramientas`)
   .join("\n")}
 
-Key capabilities:
-- Agent management and training
-- Database operations and optimization
-- System monitoring and health checks
-- Campaign and workflow automation
-- Code deployment and fixes
+Capacidades principales:
+- Gestión y capacitación de agentes
+- Operaciones y optimización de base de datos
+- Monitoreo del sistema y verificaciones de salud
+- Automatización de campañas y flujos de trabajo
+- Despliegue de código y correcciones
 
-Respond conversationally in Spanish. Be helpful, concise, and proactive.`;
+## INSTRUCCIONES CRÍTICAS:
+
+1. **SÉ PROACTIVO**: Cuando el usuario te pida algo, ejecuta la acción inmediatamente y reporta el resultado. NO esperes a que te pregunten por el resultado.
+
+2. **MEMORIA**: Recuerda las recomendaciones que has dado antes y las capacitaciones que has realizado. Usa esta información para dar respuestas más contextualizadas.
+
+3. **FORMATO**: 
+   - NUNCA uses la palabra "asteriscos" en tus respuestas
+   - Usa formato limpio sin mencionar caracteres de formato
+   - Responde de forma directa y concisa
+
+4. **RESPUESTAS INMEDIATAS**: Cuando ejecutes una acción, incluye el resultado en tu respuesta. Por ejemplo:
+   - "He ejecutado [acción]. Resultado: [resultado]"
+   - "Acción completada. [detalles del resultado]"
+
+5. **SEGUIMIENTO**: Si una acción requiere tiempo, indica que la estás ejecutando y proporciona actualizaciones.
+
+${memoryContext.join('\n')}\n
+Responde siempre en español. Sé útil, conciso y proactivo.`;
 
       // Call LLM
       const response = await invokeLLM({
@@ -146,7 +178,46 @@ Respond conversationally in Spanish. Be helpful, concise, and proactive.`;
       });
 
       const rawContent = response.choices[0]?.message?.content;
-      const assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
+      let assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
+      
+      // Remove "asteriscos" word and clean up formatting mentions
+      assistantMessage = assistantMessage
+        .replace(/asteriscos?/gi, '')
+        .replace(/\*\*asteriscos?\*\*/gi, '')
+        .replace(/con asteriscos?/gi, '')
+        .replace(/entre asteriscos?/gi, '')
+        .replace(/usando asteriscos?/gi, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+      
+      // Extract and save any recommendations from the response
+      const recommendationPatterns = [
+        /(?:te recomiendo|mi recomendación es|sugiero|deberías|es importante que)\s*:?\s*([^.]+)/gi,
+        /(?:recomendación|consejo|sugerencia)\s*:?\s*([^.]+)/gi,
+      ];
+      
+      for (const pattern of recommendationPatterns) {
+        const matches = Array.from(assistantMessage.matchAll(pattern));
+        for (const match of matches) {
+          if (match[1] && match[1].length > 10) {
+            await saveRopaRecommendation(match[1].trim(), 'general');
+          }
+        }
+      }
+      
+      // Check if this is about agent training and save it
+      if (input.message.toLowerCase().includes('capacit') || 
+          input.message.toLowerCase().includes('entrenar') ||
+          input.message.toLowerCase().includes('agente')) {
+        const agentMatch = input.message.match(/agente\s+(\w+)/i);
+        if (agentMatch) {
+          await saveAgentTraining(agentMatch[1], {
+            userRequest: input.message,
+            ropaResponse: assistantMessage.substring(0, 500),
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
 
       // Save assistant response
       await addRopaChatMessage({
