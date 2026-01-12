@@ -194,3 +194,10 @@
 - [ ] Create client list viewer with pagination
 - [ ] Add sidebar navigation link "Archivos de Empresa"
 - [ ] Integrate files with campaign content generation
+
+
+## Phase 21: Calendar-Campaigns Integration Fix
+- [x] Fix calendar to read campaigns from localStorage (same source as Campaigns menu)
+- [x] Display campaigns in calendar according to their status/progress
+- [x] Sync campaign dates with calendar view
+- [ ] Deploy to Railway

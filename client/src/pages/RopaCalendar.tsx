@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -71,93 +71,34 @@ const mockCompanies = [
   { id: 4, name: "Global Services LLC", color: "#a855f7" },
 ];
 
-// Mock campaign cards
-const initialCards: KanbanCard[] = [
-  {
-    id: 1,
-    name: "Campaña Email Q1 - FAGOR",
-    type: "email",
-    status: "scheduled",
-    company: "FAGOR Automation",
-    targetAudience: "Directores de Manufactura",
-    scheduledDate: "2026-01-15",
-    color: "#06b6d4",
-  },
-  {
-    id: 2,
-    name: "LinkedIn Outreach - EPM",
-    type: "social_media",
-    status: "in_progress",
-    company: "EPM Construcciones",
-    targetAudience: "Gerentes de Proyecto",
-    scheduledDate: "2026-01-12",
-    color: "#14b8a6",
-  },
-  {
-    id: 3,
-    name: "Cold Calling - TechStart",
-    type: "phone",
-    status: "in_progress",
-    company: "TechStart Inc",
-    targetAudience: "CTOs y Tech Leads",
-    scheduledDate: "2026-01-10",
-    color: "#fb923c",
-  },
-  {
-    id: 4,
-    name: "Multi-Channel Q1 - Global",
-    type: "multi_channel",
-    status: "review",
-    company: "Global Services LLC",
-    targetAudience: "Ejecutivos C-Level",
-    scheduledDate: "2026-01-08",
-    color: "#a855f7",
-  },
-  {
-    id: 5,
-    name: "Email Nurturing - FAGOR",
-    type: "email",
-    status: "completed",
-    company: "FAGOR Automation",
-    targetAudience: "Leads Calificados",
-    scheduledDate: "2026-01-05",
-    color: "#06b6d4",
-  },
-  {
-    id: 6,
-    name: "Instagram Ads - EPM",
-    type: "social_media",
-    status: "paused",
-    company: "EPM Construcciones",
-    targetAudience: "Profesionales de Construcción",
-    scheduledDate: "2026-01-20",
-    color: "#14b8a6",
-  },
-  {
-    id: 7,
-    name: "Webinar Follow-up - TechStart",
-    type: "email",
-    status: "scheduled",
-    company: "TechStart Inc",
-    targetAudience: "Asistentes al Webinar",
-    scheduledDate: "2026-01-18",
-    color: "#fb923c",
-  },
-  {
-    id: 8,
-    name: "Phone Reactivation - Global",
-    type: "phone",
-    status: "scheduled",
-    company: "Global Services LLC",
-    targetAudience: "Clientes Inactivos",
-    scheduledDate: "2026-01-22",
-    color: "#a855f7",
-  },
-];
+// Color palette for companies
+const COMPANY_COLORS = ["#06b6d4", "#14b8a6", "#fb923c", "#a855f7", "#ec4899", "#22c55e", "#eab308", "#ef4444"];
+
+// Map campaign status to kanban column
+const statusToColumn = (status: string): KanbanColumn => {
+  switch (status) {
+    case "draft": return "scheduled";
+    case "active": return "in_progress";
+    case "paused": return "paused";
+    case "completed": return "completed";
+    default: return "scheduled";
+  }
+};
+
+// Get color for company
+const getCompanyColor = (companyName: string, companies: any[]): string => {
+  const company = companies.find(c => c.name === companyName);
+  if (company) {
+    const index = companies.indexOf(company);
+    return COMPANY_COLORS[index % COMPANY_COLORS.length];
+  }
+  return COMPANY_COLORS[0];
+};
 
 export default function RopaCalendar() {
   const [, setLocation] = useLocation();
-  const [cards, setCards] = useState<KanbanCard[]>(initialCards);
+  const [cards, setCards] = useState<KanbanCard[]>([]);
+  const [localCompanies, setLocalCompanies] = useState<any[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
   const [draggedCard, setDraggedCard] = useState<KanbanCard | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 0, 1)); // January 2026
@@ -174,6 +115,66 @@ export default function RopaCalendar() {
 
   // Get campaigns from API
   const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();
+
+  // Load campaigns and companies from localStorage (synced with Dashboard)
+  useEffect(() => {
+    const loadFromLocalStorage = () => {
+      // Load companies
+      const savedCompanies = localStorage.getItem('ropaCompanies');
+      let companies: any[] = [];
+      if (savedCompanies) {
+        try {
+          companies = JSON.parse(savedCompanies);
+          setLocalCompanies(companies);
+        } catch (e) {
+          console.error('Error parsing companies:', e);
+        }
+      }
+
+      // Load campaigns and convert to KanbanCards
+      const savedCampaigns = localStorage.getItem('ropaCampaigns');
+      if (savedCampaigns) {
+        try {
+          const campaignsData = JSON.parse(savedCampaigns);
+          const kanbanCards: KanbanCard[] = campaignsData.map((campaign: any) => {
+            const companyName = companies.find((c: any) => c.id === campaign.companyId)?.name || 'Sin Empresa';
+            return {
+              id: campaign.id,
+              name: campaign.name,
+              type: campaign.type as "email" | "phone" | "social_media" | "multi_channel",
+              status: statusToColumn(campaign.status),
+              company: companyName,
+              targetAudience: campaign.description || 'Sin descripción',
+              scheduledDate: campaign.createdAt ? new Date(campaign.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+              color: getCompanyColor(companyName, companies),
+            };
+          });
+          setCards(kanbanCards);
+        } catch (e) {
+          console.error('Error parsing campaigns:', e);
+        }
+      }
+    };
+
+    loadFromLocalStorage();
+
+    // Listen for storage changes from other tabs/components
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ropaCampaigns' || e.key === 'ropaCompanies') {
+        loadFromLocalStorage();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also poll for changes every 2 seconds (for same-tab updates)
+    const interval = setInterval(loadFromLocalStorage, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Filter cards by company
   const filteredCards = selectedCompany === "all"
@@ -294,7 +295,7 @@ export default function RopaCalendar() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas las empresas</SelectItem>
-                {mockCompanies.map((company) => (
+                {(localCompanies.length > 0 ? localCompanies : mockCompanies).map((company) => (
                   <SelectItem key={company.id} value={company.name}>
                     <div className="flex items-center gap-2">
                       <div
@@ -420,11 +421,11 @@ export default function RopaCalendar() {
         {/* Legend */}
         <div className="mt-6 flex items-center justify-center gap-6">
           <span className="text-xs text-slate-500">Empresas:</span>
-          {mockCompanies.map((company) => (
+          {(localCompanies.length > 0 ? localCompanies : mockCompanies).map((company, index) => (
             <div key={company.id} className="flex items-center gap-2">
               <div
                 className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: company.color }}
+                style={{ backgroundColor: company.color || COMPANY_COLORS[index % COMPANY_COLORS.length] }}
               />
               <span className="text-xs text-slate-400">{company.name}</span>
             </div>
@@ -518,7 +519,7 @@ export default function RopaCalendar() {
                     <SelectValue placeholder="Selecciona una empresa" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-800 border-slate-600">
-                    {mockCompanies.map((company) => (
+                    {(localCompanies.length > 0 ? localCompanies : mockCompanies).map((company) => (
                       <SelectItem key={company.id} value={company.name}>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: company.color }} />
