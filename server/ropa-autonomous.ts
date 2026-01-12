@@ -144,6 +144,7 @@ function startMaintenanceCycle() {
 
 /**
  * Market Intelligence Cycle - Every 6 hours
+ * Analyzes market trends for all active campaigns
  */
 function startMarketIntelligenceCycle() {
   if (marketIntelligenceInterval) clearInterval(marketIntelligenceInterval);
@@ -156,21 +157,45 @@ function startMarketIntelligenceCycle() {
         taskId,
         type: "market_intelligence",
         status: "running",
-        priority: "low",
+        priority: "medium",
       });
 
       await createRopaLog({
         level: "info",
-        message: "Starting market intelligence cycle",
+        message: "Starting market intelligence cycle - analyzing trends for all campaigns",
       });
 
-      // Market intelligence tasks would go here
-      // For now, just log completion
+      // Run market intelligence for key industries
+      const industries = ["Manufacturing", "Construction", "Technology", "Services"];
+      const insights: any[] = [];
+
+      for (const industry of industries) {
+        try {
+          const trends = await ropaTools.fetchMarketTrends({ industry });
+          if (trends.success) {
+            insights.push({ industry, trends: trends.trends });
+          }
+        } catch (e) {
+          console.log(`[ROPA] Skipped ${industry} trends`);
+        }
+      }
+
       await updateRopaTaskStatus(taskId, "completed", {
-        insights: ["Market intelligence cycle completed"],
+        industriesAnalyzed: industries.length,
+        insights,
+        timestamp: new Date(),
+      });
+
+      await createRopaLog({
+        level: "info",
+        message: `Market intelligence completed: analyzed ${industries.length} industries`,
       });
     } catch (error: any) {
       console.error("[ROPA] Market intelligence failed:", error);
+      await createRopaLog({
+        level: "error",
+        message: `Market intelligence failed: ${error.message}`,
+      });
     }
   }, 6 * 60 * 60 * 1000); // Every 6 hours
 }

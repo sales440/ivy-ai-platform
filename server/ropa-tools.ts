@@ -217,7 +217,143 @@ export const monitoringTools = {
   },
 };
 
-// ============ 4. CAMPAIGNS & WORKFLOWS (12 tools) ============
+// ============ 4. MARKET INTELLIGENCE (8 tools) ============
+
+export const marketIntelligenceTools = {
+  async fetchMarketTrends(params: { industry: string; region?: string }) {
+    await logTool("fetchMarketTrends", "info", `Fetching market trends for ${params.industry}`);
+    try {
+      // Use built-in LLM to analyze market trends
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a market intelligence analyst. Provide current market trends and insights." },
+          { role: "user", content: `Analyze current market trends for the ${params.industry} industry${params.region ? ` in ${params.region}` : ""}. Include: 1) Key trends 2) Competitive landscape 3) Growth opportunities 4) Potential risks` }
+        ]
+      });
+      const analysis = response.choices[0]?.message?.content || "Analysis unavailable";
+      await recordRopaLearning({ category: "market_trends", pattern: `${params.industry} trends analyzed`, frequency: 1 });
+      return { success: true, industry: params.industry, trends: analysis, timestamp: new Date() };
+    } catch (error: any) {
+      await logTool("fetchMarketTrends", "error", `Failed: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  async analyzeCompetitors(params: { companyName: string; industry: string }) {
+    await logTool("analyzeCompetitors", "info", `Analyzing competitors for ${params.companyName}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a competitive intelligence analyst." },
+          { role: "user", content: `Analyze the competitive landscape for ${params.companyName} in the ${params.industry} industry. Identify main competitors, their strengths/weaknesses, and market positioning.` }
+        ]
+      });
+      return { success: true, analysis: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async getIndustryNews(params: { industry: string; keywords?: string[] }) {
+    await logTool("getIndustryNews", "info", `Fetching news for ${params.industry}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a business news analyst with access to current market information." },
+          { role: "user", content: `Provide recent news and developments in the ${params.industry} industry${params.keywords ? ` related to: ${params.keywords.join(", ")}` : ""}. Focus on trends that could impact sales and marketing strategies.` }
+        ]
+      });
+      return { success: true, news: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async generateCampaignRecommendations(params: { companyName: string; industry: string; targetAudience?: string }) {
+    await logTool("generateCampaignRecommendations", "info", `Generating recommendations for ${params.companyName}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a marketing strategist specializing in B2B campaigns." },
+          { role: "user", content: `Based on current market trends, generate campaign recommendations for ${params.companyName} in ${params.industry}. Target audience: ${params.targetAudience || "decision makers"}. Include: 1) Recommended channels 2) Messaging themes 3) Timing suggestions 4) Budget allocation` }
+        ]
+      });
+      return { success: true, recommendations: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async analyzeSentiment(params: { topic: string; industry: string }) {
+    await logTool("analyzeSentiment", "info", `Analyzing sentiment for ${params.topic}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a market sentiment analyst." },
+          { role: "user", content: `Analyze current market sentiment around ${params.topic} in the ${params.industry} industry. Rate sentiment (positive/neutral/negative) and explain key drivers.` }
+        ]
+      });
+      return { success: true, sentiment: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async forecastMarketOpportunities(params: { industry: string; timeframe: string }) {
+    await logTool("forecastMarketOpportunities", "info", `Forecasting opportunities for ${params.industry}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a market forecasting expert." },
+          { role: "user", content: `Forecast market opportunities in ${params.industry} for the next ${params.timeframe}. Include: 1) Emerging opportunities 2) Declining segments 3) Technology disruptions 4) Recommended actions` }
+        ]
+      });
+      return { success: true, forecast: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async benchmarkPerformance(params: { companyMetrics: any; industry: string }) {
+    await logTool("benchmarkPerformance", "info", `Benchmarking performance in ${params.industry}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a business performance analyst." },
+          { role: "user", content: `Benchmark these metrics against ${params.industry} industry standards: ${JSON.stringify(params.companyMetrics)}. Provide comparison and improvement recommendations.` }
+        ]
+      });
+      return { success: true, benchmark: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async identifyLeadOpportunities(params: { industry: string; criteria?: string }) {
+    await logTool("identifyLeadOpportunities", "info", `Identifying leads in ${params.industry}`);
+    try {
+      const { invokeLLM } = await import("./_core/llm");
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: "You are a B2B lead generation specialist." },
+          { role: "user", content: `Identify potential lead opportunities in ${params.industry}${params.criteria ? ` with criteria: ${params.criteria}` : ""}. Suggest: 1) Target company profiles 2) Decision maker roles 3) Outreach strategies 4) Value propositions` }
+        ]
+      });
+      return { success: true, opportunities: response.choices[0]?.message?.content, timestamp: new Date() };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};
+
+// ============ 5. CAMPAIGNS & WORKFLOWS (12 tools) ============
 
 export const campaignTools = {
   async pauseCampaign(params: { campaignId: string }) {
@@ -337,6 +473,7 @@ export const ropaTools = {
   ...agentManagementTools,
   ...databaseTools,
   ...monitoringTools,
+  ...marketIntelligenceTools,
   ...campaignTools,
   ...codeTools,
 };
@@ -359,6 +496,7 @@ export const toolCategories = {
   "Agent Management": Object.keys(agentManagementTools),
   "Database": Object.keys(databaseTools),
   "Monitoring & Health": Object.keys(monitoringTools),
+  "Market Intelligence": Object.keys(marketIntelligenceTools),
   "Campaigns & Workflows": Object.keys(campaignTools),
   "Code & Deployment": Object.keys(codeTools),
 };

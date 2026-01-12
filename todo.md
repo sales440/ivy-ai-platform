@@ -101,3 +101,9 @@
 - [x] Add notification sound when ROPA responds
 - [x] Add badge indicator on logo for pending messages
 - [x] Implement Ctrl+R keyboard shortcut to toggle chat
+
+
+## Phase 11: Railway Deployment via GitHub
+- [ ] Verify ROPA market intelligence capabilities
+- [ ] Push code to GitHub
+- [ ] Configure Railway deployment
