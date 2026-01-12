@@ -95,3 +95,9 @@
 - [x] Maintain voice interaction functionality
 - [ ] Save checkpoint
 - [x] Make ROPA logo in sidebar open chat on double-click
+
+
+## Phase 10: ROPA UX Enhancements
+- [x] Add notification sound when ROPA responds
+- [x] Add badge indicator on logo for pending messages
+- [x] Implement Ctrl+R keyboard shortcut to toggle chat

@@ -148,8 +148,10 @@ export default function RopaDashboardV2() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
   
   // Drag state for chat window
   const [chatPosition, setChatPosition] = useState({ x: 0, y: 0 });
@@ -184,6 +186,12 @@ export default function RopaDashboardV2() {
       refetchChat();
       setMessage("");
       setIsSubmitting(false);
+      // Play notification sound when ROPA responds
+      playNotificationSound();
+      // Increment unread badge if chat is minimized or closed
+      if (!chatOpen || chatMinimized) {
+        setUnreadMessages(prev => prev + 1);
+      }
       // Text-to-speech for ROPA response
       if (voiceEnabled && data.response) {
         speakText(data.response);
@@ -249,6 +257,48 @@ export default function RopaDashboardV2() {
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  // Play notification sound when ROPA responds
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (e) {
+      console.log('Audio not supported');
+    }
+  };
+
+  // Keyboard shortcut: Ctrl+R to toggle chat
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'r') {
+        e.preventDefault();
+        setChatOpen(prev => !prev);
+        if (!chatOpen) {
+          setChatMinimized(false);
+          setUnreadMessages(0);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [chatOpen]);
+
+  // Clear unread messages when chat opens
+  useEffect(() => {
+    if (chatOpen && !chatMinimized) {
+      setUnreadMessages(0);
+    }
+  }, [chatOpen, chatMinimized]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -363,20 +413,29 @@ export default function RopaDashboardV2() {
         {/* Logo - Double-click to open chat */}
         <div className="p-4 border-b border-slate-800/50">
           <div 
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-3 cursor-pointer group relative"
             onDoubleClick={() => {
               setChatOpen(true);
               setChatMinimized(false);
+              setUnreadMessages(0);
             }}
-            title="Doble clic para abrir chat con ROPA"
+            title="Doble clic para abrir chat con ROPA (Ctrl+R)"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center transition-all duration-300 group-hover:shadow-lg group-hover:shadow-cyan-500/50 group-hover:scale-110">
-              <Bot className="w-6 h-6 text-white" />
+            <div className="relative">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center transition-all duration-300 group-hover:shadow-lg group-hover:shadow-cyan-500/50 group-hover:scale-110">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              {/* Unread messages badge */}
+              {unreadMessages > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white animate-bounce shadow-lg shadow-red-500/50">
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </div>
+              )}
             </div>
             {!sidebarCollapsed && (
               <div>
                 <h1 className="font-bold text-lg group-hover:text-cyan-400 transition-colors">ROPA</h1>
-                <p className="text-xs text-slate-400 group-hover:text-cyan-300 transition-colors">Doble clic para chat</p>
+                <p className="text-xs text-slate-400 group-hover:text-cyan-300 transition-colors">Ctrl+R o doble clic</p>
               </div>
             )}
           </div>
