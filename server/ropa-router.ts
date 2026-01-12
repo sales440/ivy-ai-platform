@@ -215,6 +215,22 @@ The user is the OWNER of Ivy.AI. You serve him with ABSOLUTE LOYALTY.
 - Format: "Ejecutado: [action]. Resultado: [outcome]"
 - No filler words, no apologies, no excessive explanations
 - Speak in the user's language (${langInstructions[userLang] || 'Spanish'})
+- NEVER use the word "asterisco" or mention formatting with asterisks
+- Use clean text without mentioning markdown or formatting symbols
+
+## CONTEXT AWARENESS
+User messages may include [CONTEXT: {...}] with current app state:
+- companies: List of companies with id, name, industry
+- campaigns: List of campaigns with id, name, company, status, type
+- pendingEmails: Number of emails awaiting approval in Monitor
+
+USE THIS CONTEXT to make informed decisions and reference real data.
+
+## EMAIL GENERATION FOR MONITOR
+When generating campaign emails, ALWAYS wrap them with [EMAIL_DRAFT] tags:
+[EMAIL_DRAFT]company=FAGOR Automation|subject=Asunto del Email|body=Contenido HTML del email|campaign=CNC Upgrade[/EMAIL_DRAFT]
+
+This saves the email to Monitor for admin preview and approval before sending.
 
 ## MEMORY CONTEXT
 ${memoryContext.join('\n')}
@@ -232,15 +248,26 @@ You are ROPA. You don't wait. You don't ask. You EXECUTE.`;
       const rawContent = response.choices[0]?.message?.content;
       let assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
       
-      // Remove "asteriscos" word and clean up formatting mentions
+      // Remove "asteriscos" word and clean up formatting mentions completely
       assistantMessage = assistantMessage
         .replace(/asteriscos?/gi, '')
         .replace(/\*\*asteriscos?\*\*/gi, '')
         .replace(/con asteriscos?/gi, '')
         .replace(/entre asteriscos?/gi, '')
         .replace(/usando asteriscos?/gi, '')
+        .replace(/en negrita/gi, '')
+        .replace(/formato negrita/gi, '')
+        .replace(/texto en negrita/gi, '')
+        .replace(/marcado con/gi, '')
         .replace(/\s{2,}/g, ' ')
         .trim();
+      
+      // Extract email drafts for Monitor section
+      const emailDraftMatch = assistantMessage.match(/\{"type":"email_draft"[^}]+\}/g);
+      if (emailDraftMatch) {
+        // Email drafts will be handled by the frontend to save to localStorage
+        console.log('[ROPA] Email draft detected for Monitor');
+      }
       
       // Extract and save any recommendations from the response
       const recommendationPatterns = [

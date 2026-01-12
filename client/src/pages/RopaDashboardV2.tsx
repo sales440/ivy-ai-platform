@@ -178,17 +178,70 @@ export default function RopaDashboardV2() {
   const [localCompanies, setLocalCompanies] = useState<any[]>([]);
   const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
   
-  // Load companies and campaigns from localStorage
+  // Email drafts for Monitor section
+  const [emailDrafts, setEmailDrafts] = useState<Array<{
+    id: string;
+    company: string;
+    subject: string;
+    body: string;
+    campaign: string;
+    status: 'pending' | 'approved' | 'rejected';
+    createdAt: string;
+  }>>([]);
+  const [monitorTab, setMonitorTab] = useState<'emails' | 'calls' | 'sms'>('emails');
+  const [selectedEmailDraft, setSelectedEmailDraft] = useState<string | null>(null);
+  
+  // Load companies, campaigns and email drafts from localStorage
   useEffect(() => {
     const savedCompanies = localStorage.getItem('ropaCompanies');
     const savedCampaigns = localStorage.getItem('ropaCampaigns');
+    const savedEmailDrafts = localStorage.getItem('ropaEmailDrafts');
     if (savedCompanies) {
       try { setLocalCompanies(JSON.parse(savedCompanies)); } catch (e) {}
     }
     if (savedCampaigns) {
       try { setLocalCampaigns(JSON.parse(savedCampaigns)); } catch (e) {}
     }
+    if (savedEmailDrafts) {
+      try { setEmailDrafts(JSON.parse(savedEmailDrafts)); } catch (e) {}
+    }
   }, []);
+  
+  // Save email drafts to localStorage when they change
+  useEffect(() => {
+    if (emailDrafts.length > 0) {
+      localStorage.setItem('ropaEmailDrafts', JSON.stringify(emailDrafts));
+    }
+  }, [emailDrafts]);
+  
+  // Function to add email draft from ROPA chat
+  const addEmailDraft = (company: string, subject: string, body: string, campaign: string) => {
+    const newDraft = {
+      id: `draft-${Date.now()}`,
+      company,
+      subject,
+      body,
+      campaign,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+    };
+    setEmailDrafts(prev => {
+      const updated = [newDraft, ...prev];
+      localStorage.setItem('ropaEmailDrafts', JSON.stringify(updated));
+      return updated;
+    });
+    toast.success(`Email draft guardado para ${company}`);
+  };
+  
+  // Function to approve/reject email draft
+  const updateEmailDraftStatus = (id: string, status: 'approved' | 'rejected') => {
+    setEmailDrafts(prev => {
+      const updated = prev.map(d => d.id === id ? { ...d, status } : d);
+      localStorage.setItem('ropaEmailDrafts', JSON.stringify(updated));
+      return updated;
+    });
+    toast.success(status === 'approved' ? 'Email aprobado' : 'Email rechazado');
+  };
   
   // Chat state
   const [chatOpen, setChatOpen] = useState(false);
@@ -275,6 +328,24 @@ export default function RopaDashboardV2() {
       // Text-to-speech for ROPA response
       if (voiceEnabled && data.response) {
         speakText(data.response);
+      }
+      // Parse email drafts from ROPA response and save to Monitor
+      if (data.response) {
+        const emailMatch = data.response.match(/\[EMAIL_DRAFT\]([^\[]+)\[\/EMAIL_DRAFT\]/g);
+        if (emailMatch) {
+          emailMatch.forEach((match: string) => {
+            const content = match.replace('[EMAIL_DRAFT]', '').replace('[/EMAIL_DRAFT]', '');
+            const parts = content.split('|');
+            const emailData: Record<string, string> = {};
+            parts.forEach(part => {
+              const [key, ...valueParts] = part.split('=');
+              if (key && valueParts.length) emailData[key.trim()] = valueParts.join('=').trim();
+            });
+            if (emailData.company && emailData.subject && emailData.body) {
+              addEmailDraft(emailData.company, emailData.subject, emailData.body, emailData.campaign || 'General');
+            }
+          });
+        }
       }
     },
     onError: () => {
@@ -385,7 +456,14 @@ export default function RopaDashboardV2() {
     if (!message.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
-    sendChatMutation.mutate({ message });
+    // Include context about companies and campaigns in the message
+    const contextData = {
+      companies: localCompanies.map(c => ({ id: c.id, name: c.name, industry: c.industry })),
+      campaigns: localCampaigns.map(c => ({ id: c.id, name: c.name, company: localCompanies.find(co => co.id === c.companyId)?.name, status: c.status, type: c.type })),
+      pendingEmails: emailDrafts.filter(d => d.status === 'pending').length,
+    };
+    const enrichedMessage = `[CONTEXT: ${JSON.stringify(contextData)}] ${message}`;
+    sendChatMutation.mutate({ message: enrichedMessage });
   };
 
   const handleMenuClick = (item: typeof menuItems[0]) => {
@@ -1339,7 +1417,7 @@ export default function RopaDashboardV2() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-400 text-sm">Pendientes</p>
-                        <p className="text-2xl font-bold text-yellow-400">0</p>
+                        <p className="text-2xl font-bold text-yellow-400">{emailDrafts.filter(d => d.status === 'pending').length}</p>
                       </div>
                       <Clock className="h-8 w-8 text-yellow-400/50" />
                     </div>
@@ -1350,7 +1428,7 @@ export default function RopaDashboardV2() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-400 text-sm">Aprobados</p>
-                        <p className="text-2xl font-bold text-green-400">0</p>
+                        <p className="text-2xl font-bold text-green-400">{emailDrafts.filter(d => d.status === 'approved').length}</p>
                       </div>
                       <CheckCircle2 className="h-8 w-8 text-green-400/50" />
                     </div>
@@ -1361,7 +1439,7 @@ export default function RopaDashboardV2() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-400 text-sm">Rechazados</p>
-                        <p className="text-2xl font-bold text-red-400">0</p>
+                        <p className="text-2xl font-bold text-red-400">{emailDrafts.filter(d => d.status === 'rejected').length}</p>
                       </div>
                       <AlertCircle className="h-8 w-8 text-red-400/50" />
                     </div>
@@ -1371,8 +1449,8 @@ export default function RopaDashboardV2() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-slate-400 text-sm">Enviados</p>
-                        <p className="text-2xl font-bold text-blue-400">0</p>
+                        <p className="text-slate-400 text-sm">Total</p>
+                        <p className="text-2xl font-bold text-blue-400">{emailDrafts.length}</p>
                       </div>
                       <Send className="h-8 w-8 text-blue-400/50" />
                     </div>
@@ -1392,42 +1470,137 @@ export default function RopaDashboardV2() {
                 <CardContent>
                   {/* Tab Buttons */}
                   <div className="flex gap-2 mb-6">
-                    <Button variant="outline" className="border-cyan-500 bg-cyan-500/20 text-cyan-400">
+                    <Button 
+                      variant="outline" 
+                      className={monitorTab === 'emails' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
+                      onClick={() => setMonitorTab('emails')}
+                    >
                       <Mail className="w-4 h-4 mr-2" />
-                      Emails (0)
+                      Emails ({emailDrafts.length})
                     </Button>
-                    <Button variant="outline" className="border-slate-700">
+                    <Button 
+                      variant="outline" 
+                      className={monitorTab === 'calls' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
+                      onClick={() => setMonitorTab('calls')}
+                    >
                       <Phone className="w-4 h-4 mr-2" />
                       Llamadas (0)
                     </Button>
-                    <Button variant="outline" className="border-slate-700">
+                    <Button 
+                      variant="outline" 
+                      className={monitorTab === 'sms' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
+                      onClick={() => setMonitorTab('sms')}
+                    >
                       <MessageCircle className="w-4 h-4 mr-2" />
                       SMS (0)
                     </Button>
                   </div>
 
-                  {/* Empty State */}
-                  <div className="text-center py-12 border border-dashed border-slate-700 rounded-xl">
-                    <Eye className="w-12 h-12 mx-auto text-slate-600 mb-4" />
-                    <p className="text-lg font-medium text-white mb-2">No hay contenido pendiente</p>
-                    <p className="text-sm text-slate-400 mb-4">Pídele a ROPA que genere contenido para tus campañas</p>
-                    <Button
-                      onClick={() => {
-                        setChatOpen(true);
-                        setChatMinimized(false);
-                      }}
-                      className="bg-gradient-to-r from-cyan-500 to-teal-500"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Hablar con ROPA
-                    </Button>
-                  </div>
+                  {/* Email List */}
+                  {monitorTab === 'emails' && emailDrafts.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {/* Email List */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-slate-400 mb-2">Borradores de Email</h4>
+                        <ScrollArea className="h-[400px]">
+                          {emailDrafts.map((draft) => (
+                            <div
+                              key={draft.id}
+                              onClick={() => setSelectedEmailDraft(draft.id)}
+                              className={`p-4 rounded-lg border cursor-pointer mb-2 transition-all ${
+                                selectedEmailDraft === draft.id
+                                  ? 'border-cyan-500 bg-cyan-500/10'
+                                  : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <Badge className={draft.status === 'pending' ? 'bg-yellow-500' : draft.status === 'approved' ? 'bg-green-500' : 'bg-red-500'}>
+                                  {draft.status === 'pending' ? 'Pendiente' : draft.status === 'approved' ? 'Aprobado' : 'Rechazado'}
+                                </Badge>
+                                <span className="text-xs text-slate-500">{new Date(draft.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <p className="font-medium text-white truncate">{draft.subject}</p>
+                              <p className="text-sm text-cyan-400">{draft.company}</p>
+                              <p className="text-xs text-slate-500 mt-1">{draft.campaign}</p>
+                            </div>
+                          ))}
+                        </ScrollArea>
+                      </div>
+
+                      {/* Email Preview */}
+                      <div className="border border-slate-700 rounded-lg overflow-hidden">
+                        {selectedEmailDraft ? (
+                          <>
+                            {(() => {
+                              const draft = emailDrafts.find(d => d.id === selectedEmailDraft);
+                              if (!draft) return null;
+                              return (
+                                <div className="h-full flex flex-col">
+                                  {/* Company Header/Letterhead */}
+                                  <div className="bg-gradient-to-r from-cyan-600 to-teal-600 p-4">
+                                    <h3 className="text-xl font-bold text-white">{draft.company}</h3>
+                                    <p className="text-cyan-100 text-sm">Campaña: {draft.campaign}</p>
+                                  </div>
+                                  {/* Email Content */}
+                                  <div className="p-4 bg-white text-gray-800 flex-1">
+                                    <p className="font-semibold text-lg mb-4 text-gray-900">Asunto: {draft.subject}</p>
+                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: draft.body.replace(/\n/g, '<br/>') }} />
+                                  </div>
+                                  {/* Action Buttons */}
+                                  <div className="p-4 bg-slate-900 border-t border-slate-700 flex gap-2">
+                                    <Button
+                                      onClick={() => updateEmailDraftStatus(draft.id, 'approved')}
+                                      className="bg-green-600 hover:bg-green-700 flex-1"
+                                      disabled={draft.status !== 'pending'}
+                                    >
+                                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                                      Aprobar
+                                    </Button>
+                                    <Button
+                                      onClick={() => updateEmailDraftStatus(draft.id, 'rejected')}
+                                      variant="destructive"
+                                      className="flex-1"
+                                      disabled={draft.status !== 'pending'}
+                                    >
+                                      <AlertCircle className="w-4 h-4 mr-2" />
+                                      Rechazar
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </>
+                        ) : (
+                          <div className="h-[400px] flex items-center justify-center text-slate-500">
+                            <p>Selecciona un email para ver la vista previa</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Empty State */
+                    <div className="text-center py-12 border border-dashed border-slate-700 rounded-xl">
+                      <Eye className="w-12 h-12 mx-auto text-slate-600 mb-4" />
+                      <p className="text-lg font-medium text-white mb-2">No hay contenido pendiente</p>
+                      <p className="text-sm text-slate-400 mb-4">Pídele a ROPA que genere contenido para tus campañas</p>
+                      <Button
+                        onClick={() => {
+                          setChatOpen(true);
+                          setChatMinimized(false);
+                        }}
+                        className="bg-gradient-to-r from-cyan-500 to-teal-500"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Hablar con ROPA
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Instructions */}
                   <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
                     <h4 className="text-sm font-medium text-cyan-400 mb-2">💡 Cómo usar el Monitor</h4>
                     <ul className="text-sm text-slate-400 space-y-1">
-                      <li>• Pídele a ROPA: "Genera un email de campaña para [empresa]"</li>
+                      <li>• Pídele a ROPA: "Genera un email de campaña para FAGOR Automation"</li>
                       <li>• ROPA creará el contenido y lo mostrará aquí para tu aprobación</li>
                       <li>• Revisa, edita si es necesario, y aprueba o rechaza</li>
                       <li>• Solo el contenido aprobado será enviado a los clientes</li>

@@ -207,3 +207,11 @@
 - [ ] Add Monitor section to ROPA sidebar navigation
 - [ ] Verify calendar shows all FAGOR campaigns (user reports 3 campaigns created but only 2 visible)
 - [ ] Deploy updated code to Railway
+
+
+## Phase 23: Email Preview in Monitor + ROPA Fixes
+- [ ] Update ROPA system prompt to remove "asterisco" word
+- [ ] Add tool for ROPA to save email drafts to Monitor section
+- [ ] Create email preview component with company letterhead/branding
+- [ ] Display pending emails in Monitor with Approve/Reject buttons
+- [ ] Deploy to Railway
