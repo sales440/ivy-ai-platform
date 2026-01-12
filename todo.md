@@ -159,4 +159,12 @@
 - [x] Add sendFollowUpEmail tool
 - [x] Add generateAndSendEmail tool
 - [x] Add checkEmailDeliveryStatus tool
+- [x] Deploy to Railway
+
+## Phase 18: ROPA Direct Admin Commands
+- [ ] Update ROPA prompt to obey admin commands without campaigns
+- [ ] Add sendDirectEmail tool (any recipient)
+- [ ] Add makeDirectCall tool (any number)
+- [ ] Add sendDirectSMS tool (any number)
+- [ ] Add searchInformation tool for research requests
 - [ ] Deploy to Railway

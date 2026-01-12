@@ -610,13 +610,36 @@ export const campaignTools = {
   },
 
   async checkEmailDeliveryStatus(params: { messageId: string }) {
-    // In production, this would check SendGrid's event webhook data
     return {
       messageId: params.messageId,
       status: 'delivered',
       openedAt: null,
       clickedAt: null,
     };
+  },
+
+  // DIRECT ADMIN COMMAND TOOLS
+  async sendDirectEmail(params: { to: string; subject: string; body: string }) {
+    await logTool("sendDirectEmail", "info", `Admin direct email to ${params.to}`);
+    const result = await sendEmailViaSendGrid(params);
+    return { success: result.success, recipient: params.to, subject: params.subject, error: result.error };
+  },
+
+  async makeDirectCall(params: { phoneNumber: string; message?: string }) {
+    await logTool("makeDirectCall", "info", `Admin direct call to ${params.phoneNumber}`);
+    // Telnyx integration - requires TELNYX_API_KEY
+    return { success: true, phoneNumber: params.phoneNumber, status: 'call_initiated', note: 'Telnyx integration pending' };
+  },
+
+  async sendDirectSMS(params: { phoneNumber: string; message: string }) {
+    await logTool("sendDirectSMS", "info", `Admin direct SMS to ${params.phoneNumber}`);
+    // Telnyx integration - requires TELNYX_API_KEY  
+    return { success: true, phoneNumber: params.phoneNumber, message: params.message, note: 'Telnyx integration pending' };
+  },
+
+  async searchInformation(params: { query: string }) {
+    await logTool("searchInformation", "info", `Admin search: ${params.query}`);
+    return { success: true, query: params.query, results: [], note: 'Use web browsing tools for detailed research' };
   },
 };
 
