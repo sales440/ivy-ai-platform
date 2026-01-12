@@ -893,7 +893,8 @@ export default function RopaDashboardV2() {
       {!chatOpen && (
         <button
           onClick={() => setChatOpen(true)}
-          className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-full shadow-lg shadow-cyan-500/25 flex items-center justify-center hover:scale-110 transition-transform z-50"
+          className="fixed bottom-14 right-6 w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-full shadow-lg shadow-cyan-500/50 flex items-center justify-center hover:scale-110 transition-transform z-[9999] animate-pulse"
+          style={{ boxShadow: '0 0 30px rgba(6, 182, 212, 0.6)' }}
         >
           <MessageCircle className="w-7 h-7 text-white" />
         </button>
