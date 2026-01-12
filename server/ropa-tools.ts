@@ -379,13 +379,13 @@ async function sendEmailViaSendGrid(params: {
       body: JSON.stringify({
         personalizations: [{ to: [{ email: params.to }] }],
         from: { 
-          email: params.fromEmail || 'noreply@ivybyai.com',
+          email: params.fromEmail || 'sales@ivybai.com',
           name: params.fromName || 'Ivy.AI Sales'
         },
         subject: params.subject,
         content: [
-          { type: 'text/html', value: params.body },
-          { type: 'text/plain', value: params.body.replace(/<[^>]*>/g, '') }
+          { type: 'text/plain', value: params.body.replace(/<[^>]*>/g, '') },
+          { type: 'text/html', value: params.body }
         ],
       }),
     });
