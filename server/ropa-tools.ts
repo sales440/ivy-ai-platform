@@ -105,6 +105,24 @@ export const databaseTools = {
   async backupDatabase() {
     await logTool("backupDatabase", "info", "Creating database backup");
     await recordRopaMetric({ metricType: "backup_created", value: "1", unit: "count" });
+    
+    // Auto-sync to Google Drive if connected
+    const isConnected = await isGoogleDriveConnected();
+    if (isConnected) {
+      try {
+        // Create a simple backup metadata (in production, this would be actual SQL dump)
+        const backupContent = `-- Database Backup\n-- Timestamp: ${new Date().toISOString()}\n-- Tables: campaigns, leads, ab_tests, ropa_logs, etc.\n-- Status: Success`;
+        const driveLink = await uploadDatabaseBackup(backupContent, "full");
+        
+        if (driveLink) {
+          await logTool("backupDatabase", "info", `Backup synced to Google Drive: ${driveLink}`);
+          return { success: true, backupId: `backup_${Date.now()}`, driveLink };
+        }
+      } catch (error: any) {
+        await logTool("backupDatabase", "warn", `Failed to sync backup to Google Drive: ${error.message}`);
+      }
+    }
+    
     return { success: true, backupId: `backup_${Date.now()}` };
   },
 
@@ -859,11 +877,49 @@ import {
   monitorMarketTrends,
 } from "./advanced-features";
 
+import {
+  uploadDailyReport,
+  uploadWeeklyReport,
+  uploadMonthlyReport,
+  uploadCampaignReport,
+  uploadDatabaseBackup,
+  isGoogleDriveConnected,
+} from "./google-drive-sync";
+
 export const advancedFeaturesTools = {
   async generate_nl_report(params: { type: "daily" | "weekly" | "monthly" | "campaign"; metrics: Record<string, any>; context?: string }) {
     await logTool("generate_nl_report", "info", `Generating ${params.type} report`);
     try {
       const result = await generateNaturalLanguageReport(params);
+      
+      // Auto-sync to Google Drive if connected
+      const isConnected = await isGoogleDriveConnected();
+      if (isConnected && result.report) {
+        let driveLink: string | null = null;
+        const now = new Date();
+        
+        switch (params.type) {
+          case "daily":
+            driveLink = await uploadDailyReport(result.report, now);
+            break;
+          case "weekly":
+            driveLink = await uploadWeeklyReport(result.report, now);
+            break;
+          case "monthly":
+            driveLink = await uploadMonthlyReport(result.report, now);
+            break;
+          case "campaign":
+            const campaignName = params.context || "Campaign";
+            driveLink = await uploadCampaignReport(campaignName, result.report);
+            break;
+        }
+        
+        if (driveLink) {
+          await logTool("generate_nl_report", "info", `Report synced to Google Drive: ${driveLink}`);
+          return { success: true, ...result, driveLink };
+        }
+      }
+      
       return { success: true, ...result };
     } catch (error: any) {
       return { success: false, error: error.message };

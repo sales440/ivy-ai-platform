@@ -227,3 +227,18 @@ export type ABTestResult = typeof abTestResults.$inferSelect;
 export type InsertABTestResult = typeof abTestResults.$inferInsert;
 
 // TODO: Add your tables here
+// Google Drive OAuth tokens
+export const googleDriveTokens = mysqlTable("google_drive_tokens", {
+  id: int("id").autoincrement().primaryKey(),
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiryDate: timestamp("expiry_date"),
+  scope: text("scope"),
+  tokenType: varchar("token_type", { length: 50 }),
+  folderIds: text("folder_ids"), // JSON string of folder IDs
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type GoogleDriveToken = typeof googleDriveTokens.$inferSelect;
+export type InsertGoogleDriveToken = typeof googleDriveTokens.$inferInsert;

@@ -10,6 +10,8 @@ import { agentOrchestrationRouter } from "./agent-orchestration";
 import { browserAutomationRouter } from "./browser-automation-router";
 import { abTestingRouter } from "./ab-testing-router";
 import { predictiveAnalyticsRouter } from "./predictive-analytics-router";
+import { fileUploadRouter } from "./file-upload-router";
+import { googleDriveRouter } from "./google-drive-router";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -48,6 +50,12 @@ export const appRouter = router({
 
   // Predictive Analytics Router (ML predictions)
   predictiveAnalytics: predictiveAnalyticsRouter,
+
+  // File Upload Router (Company files management)
+  fileUpload: fileUploadRouter,
+
+  // Google Drive Router (Centralized storage)
+  googleDrive: googleDriveRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: router({

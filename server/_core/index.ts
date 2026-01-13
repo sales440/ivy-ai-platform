@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { initializeROPA } from "../ropa-autonomous";
+import { handleGoogleCallback } from "../google-callback-handler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -41,6 +42,9 @@ async function startServer() {
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Google Drive OAuth callback
+  app.get("/api/google/callback", handleGoogleCallback);
   // tRPC API
   app.use(
     "/api/trpc",

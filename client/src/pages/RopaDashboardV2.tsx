@@ -163,7 +163,8 @@ const menuItems = [
 ];
 
 export default function RopaDashboardV2() {
-  const [, setLocation] = useLocation();
+  const [, navigate] = useLocation();
+  const uploadFileMutation = trpc.fileUpload.upload.useMutation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
   const [selectedCompany, setSelectedCompany] = useState<string>("all");
@@ -468,7 +469,7 @@ export default function RopaDashboardV2() {
 
   const handleMenuClick = (item: typeof menuItems[0]) => {
     if (item.isPage && item.id === "calendar") {
-      setLocation("/ropa/calendar");
+      navigate("/ropa/calendar");
     } else {
       setActiveSection(item.id);
     }
@@ -1326,11 +1327,42 @@ export default function RopaDashboardV2() {
                       accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.svg"
                       className="hidden"
                       id="file-upload"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const files = e.target.files;
-                        if (files && files.length > 0) {
-                          toast.success(`${files.length} archivo(s) seleccionado(s) para subir`);
-                          // TODO: Implement actual upload
+                        if (!files || files.length === 0) return;
+                        
+                        for (let i = 0; i < files.length; i++) {
+                          const file = files[i];
+                          const reader = new FileReader();
+                          
+                          reader.onload = async () => {
+                            try {
+                              const base64 = (reader.result as string).split(',')[1];
+                              
+                              // Determine file type category
+                              let fileType: "logo" | "email_example" | "branding" | "document" | "client_list" | "other" = "other";
+                              if (file.name.toLowerCase().includes('logo')) fileType = "logo";
+                              else if (file.name.toLowerCase().includes('email')) fileType = "email_example";
+                              else if (file.name.toLowerCase().includes('brand')) fileType = "branding";
+                              else if (file.type.includes('pdf') || file.type.includes('word')) fileType = "document";
+                              else if (file.type.includes('excel') || file.type.includes('csv')) fileType = "client_list";
+                              
+                              await uploadFileMutation.mutateAsync({
+                                fileName: file.name,
+                                fileData: base64,
+                                mimeType: file.type,
+                                companyId: 1, // FAGOR Automation
+                                companyName: "FAGOR Automation",
+                                fileType,
+                              });
+                              
+                              toast.success(`${file.name} subido exitosamente`);
+                            } catch (error: any) {
+                              toast.error(`Error subiendo ${file.name}: ${error.message}`);
+                            }
+                          };
+                          
+                          reader.readAsDataURL(file);
                         }
                       }}
                     />
