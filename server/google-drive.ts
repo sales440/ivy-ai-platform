@@ -3,9 +3,9 @@ import { Readable } from 'stream';
 
 type OAuth2Client = Auth.OAuth2Client;
 
-// OAuth credentials from Google Cloud Console
-const GOOGLE_CLIENT_ID = '845210461598-10r61sdcq4v54rbtr6tho8qb58hqdso4.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = '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';
+// OAuth credentials from environment variables
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const REDIRECT_URI = process.env.NODE_ENV === 'production' 
   ? 'https://upbeat-creativity-production-27ac.up.railway.app/api/google/callback'
   : 'http://localhost:3000/api/google/callback';
