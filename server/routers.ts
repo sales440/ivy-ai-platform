@@ -7,6 +7,9 @@ import { campaignsRouter } from "./campaigns-router";
 import { campaignContentRouter } from "./campaign-content-router";
 import { campaignManagementRouter } from "./campaign-management-router";
 import { agentOrchestrationRouter } from "./agent-orchestration";
+import { browserAutomationRouter } from "./browser-automation-router";
+import { abTestingRouter } from "./ab-testing-router";
+import { predictiveAnalyticsRouter } from "./predictive-analytics-router";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -36,6 +39,15 @@ export const appRouter = router({
 
   // Agent Orchestration Router (ROPA agent management)
   agentOrchestration: agentOrchestrationRouter,
+
+  // Browser Automation Router (ROPA browser control)
+  browserAutomation: browserAutomationRouter,
+
+  // A/B Testing Router (Campaign optimization)
+  abTesting: abTestingRouter,
+
+  // Predictive Analytics Router (ML predictions)
+  predictiveAnalytics: predictiveAnalyticsRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: router({

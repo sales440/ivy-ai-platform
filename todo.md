@@ -229,3 +229,37 @@
 - [x] Document autonomous agent architecture
 - [ ] Test complete autonomous workflow
 - [ ] Deploy to Railway
+
+
+## Phase 25: Browser Automation for ROPA
+- [x] Install Puppeteer dependency
+- [x] Create browser automation service module
+- [x] Add ROPA browser control API endpoints
+- [x] Implement UI navigation commands (click, type, scroll, navigate)
+- [x] Add screenshot capture for ROPA vision
+- [x] Add element inspection and interaction
+- [x] Integrate browser control with ROPA chat
+- [ ] Test browser automation with dashboard UI
+- [ ] Deploy to Railway
+
+## Phase 26: A/B Testing System
+- [x] Create A/B test database schema (test_variants, test_results)
+- [x] Implement campaign variant creation logic
+- [x] Add statistical significance calculator
+- [ ] Create A/B test dashboard UI component
+- [x] Add automatic winner selection algorithm
+- [ ] Integrate with autonomous decision engine
+- [ ] Add ROPA tools for A/B test management
+- [ ] Test complete A/B testing workflow
+- [ ] Deploy to Railway
+
+## Phase 27: Predictive Analytics with ML
+- [x] Create campaign performance dataset collection
+- [x] Implement ML model for campaign success prediction
+- [x] Add training pipeline for model updates
+- [x] Create prediction API endpoints
+- [x] Add confidence scoring to predictions
+- [ ] Integrate predictions into campaign creation flow
+- [ ] Add ROPA tools for prediction insights
+- [ ] Test prediction accuracy
+- [ ] Deploy to Railway

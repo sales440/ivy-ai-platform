@@ -43,6 +43,13 @@
       "when": 1768242995199,
       "tag": "0005_flashy_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1768306624821,
+      "tag": "0006_outstanding_nebula",
+      "breakpoints": true
     }
   ]
 }

@@ -722,7 +722,73 @@ export const metaAgenticTools = {
   },
 };
 
-// ============ 6. CODE & DEPLOYMENT (8 tools) ============
+// ============ 6. BROWSER AUTOMATION (10 tools) ============
+
+import { executeBrowserAction, initBrowser, closeBrowser, getPageContent } from "./browserAutomation";
+
+export const browserAutomationTools = {
+  async initBrowser() {
+    await logTool("initBrowser", "info", "Initializing browser for automation");
+    await initBrowser();
+    return { success: true, message: "Browser initialized" };
+  },
+
+  async navigateToUrl(params: { url: string }) {
+    await logTool("navigateToUrl", "info", `Navigating to: ${params.url}`);
+    const result = await executeBrowserAction({ type: 'navigate', url: params.url });
+    return result;
+  },
+
+  async clickElement(params: { selector: string }) {
+    await logTool("clickElement", "info", `Clicking element: ${params.selector}`);
+    const result = await executeBrowserAction({ type: 'click', selector: params.selector });
+    return result;
+  },
+
+  async typeText(params: { selector: string; text: string }) {
+    await logTool("typeText", "info", `Typing into: ${params.selector}`);
+    const result = await executeBrowserAction({ type: 'type', selector: params.selector, text: params.text });
+    return result;
+  },
+
+  async takeScreenshot() {
+    await logTool("takeScreenshot", "info", "Capturing screenshot");
+    const result = await executeBrowserAction({ type: 'screenshot' });
+    return result;
+  },
+
+  async scrollToElement(params: { selector: string }) {
+    await logTool("scrollToElement", "info", `Scrolling to: ${params.selector}`);
+    const result = await executeBrowserAction({ type: 'scroll', selector: params.selector });
+    return result;
+  },
+
+  async evaluateJavaScript(params: { code: string }) {
+    await logTool("evaluateJavaScript", "info", "Executing JavaScript on page");
+    const result = await executeBrowserAction({ type: 'evaluate', code: params.code });
+    return result;
+  },
+
+  async getPageContent() {
+    await logTool("getPageContent", "info", "Fetching page content");
+    const content = await getPageContent();
+    return { success: true, ...content };
+  },
+
+  async waitForElement(params: { selector: string; timeout?: number }) {
+    await logTool("waitForElement", "info", `Waiting for: ${params.selector}`);
+    const result = await executeBrowserAction({ type: 'waitForSelector', selector: params.selector, timeout: params.timeout });
+    return result;
+  },
+
+  async closeBrowser() {
+    await logTool("closeBrowser", "info", "Closing browser");
+    await closeBrowser();
+    return { success: true, message: "Browser closed" };
+  },
+};
+
+// ============ 7. CODE & DEPLOYMENT (8 tools) ============
 
 export const codeTools = {
   async fixTypeScriptErrors() {
@@ -780,6 +846,7 @@ export const ropaTools = {
   ...marketIntelligenceTools,
   ...campaignTools,
   ...metaAgenticTools,
+  ...browserAutomationTools,
   ...codeTools,
 };
 
@@ -804,6 +871,7 @@ export const toolCategories = {
   "Market Intelligence": Object.keys(marketIntelligenceTools),
   "Campaigns & Workflows": Object.keys(campaignTools),
   "META-Agentic Orchestration": Object.keys(metaAgenticTools),
+  "Browser Automation": Object.keys(browserAutomationTools),
   "Code & Deployment": Object.keys(codeTools),
 };
 

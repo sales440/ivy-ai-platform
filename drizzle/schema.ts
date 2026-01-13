@@ -170,4 +170,60 @@ export const clientRecords = mysqlTable("client_records", {
 export type ClientRecord = typeof clientRecords.$inferSelect;
 export type InsertClientRecord = typeof clientRecords.$inferInsert;
 
+// A/B Testing System for Campaign Optimization
+export const abTests = mysqlTable("ab_tests", {
+  id: int("id").autoincrement().primaryKey(),
+  campaignId: int("campaign_id"),
+  testName: varchar("test_name", { length: 255 }).notNull(),
+  testType: mysqlEnum("test_type", ["email_subject", "email_content", "call_script", "sms_content", "landing_page"]).notNull(),
+  hypothesis: text("hypothesis"),
+  status: mysqlEnum("status", ["draft", "running", "completed", "paused"]).default("draft").notNull(),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  winnerVariantId: int("winner_variant_id"),
+  confidenceLevel: int("confidence_level").default(95),
+  significanceReached: int("significance_reached").default(0),
+  createdBy: varchar("created_by", { length: 64 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ABTest = typeof abTests.$inferSelect;
+export type InsertABTest = typeof abTests.$inferInsert;
+
+// A/B Test Variants (Control + Variations)
+export const abTestVariants = mysqlTable("ab_test_variants", {
+  id: int("id").autoincrement().primaryKey(),
+  testId: int("test_id").notNull(),
+  variantName: varchar("variant_name", { length: 100 }).notNull(), // "Control", "Variant A", "Variant B"
+  isControl: int("is_control").default(0),
+  content: text("content").notNull(), // JSON with variant-specific content
+  trafficPercentage: int("traffic_percentage").default(50), // % of traffic allocated
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ABTestVariant = typeof abTestVariants.$inferSelect;
+export type InsertABTestVariant = typeof abTestVariants.$inferInsert;
+
+// A/B Test Results (metrics per variant)
+export const abTestResults = mysqlTable("ab_test_results", {
+  id: int("id").autoincrement().primaryKey(),
+  testId: int("test_id").notNull(),
+  variantId: int("variant_id").notNull(),
+  impressions: int("impressions").default(0), // Total sent/shown
+  opens: int("opens").default(0), // Email opens
+  clicks: int("clicks").default(0), // Link clicks
+  conversions: int("conversions").default(0), // Desired action completed
+  bounces: int("bounces").default(0), // Email bounces
+  unsubscribes: int("unsubscribes").default(0),
+  revenue: int("revenue").default(0), // Revenue generated (in cents)
+  conversionRate: int("conversion_rate").default(0), // Stored as percentage * 100
+  openRate: int("open_rate").default(0),
+  clickRate: int("click_rate").default(0),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ABTestResult = typeof abTestResults.$inferSelect;
+export type InsertABTestResult = typeof abTestResults.$inferInsert;
+
 // TODO: Add your tables here
