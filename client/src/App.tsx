@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import RopaDashboard from "./pages/RopaDashboard";
 import RopaDashboardV2 from "./pages/RopaDashboardV2";
 import RopaCalendar from "./pages/RopaCalendar";
+import ABTestingDashboard from "./pages/ABTestingDashboard";
+import PredictiveInsights from "./pages/PredictiveInsights";
 
 function Router() {
   return (
@@ -19,6 +21,8 @@ function Router() {
       {/* New ROPA Dashboard v2 */}
       <Route path={"/ropa-v2"} component={RopaDashboardV2} />
       <Route path={"/ropa/calendar"} component={RopaCalendar} />
+      <Route path={"/ab-testing"} component={ABTestingDashboard} />
+      <Route path={"/predictive-insights"} component={PredictiveInsights} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

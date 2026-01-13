@@ -263,3 +263,9 @@
 - [ ] Add ROPA tools for prediction insights
 - [ ] Test prediction accuracy
 - [ ] Deploy to Railway
+
+## Etapa 1: Foundation UI (A/B Testing + Predictive Insights)
+- [x] Create A/B Testing Dashboard UI component
+- [x] Create Predictive Insights Panel UI component
+- [x] Add routes and navigation links
+- [x] Verify TypeScript compilation
