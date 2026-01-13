@@ -309,3 +309,13 @@
 - [ ] Sync templates to Drive
 - [ ] Test bidirectional sync
 - [ ] Deploy to production
+
+## CRITICAL BUG FIXES - Phase 28 (URGENT)
+- [x] **PRIORITY 1**: Fix calendar drag-and-drop persistence (campaigns snap back to original position)
+- [x] **PRIORITY 1**: Fix calendar date updates when moving campaigns between columns
+- [ ] Fix file upload functionality in Archivos page (not working from local PC)
+- [ ] Fix ROPA JSON context visibility (remove [CONTEXT] display in responses)
+- [ ] Fix asterisk formatting (ROPA still writes "asterisco" at start of sentences)
+- [ ] Implement automatic email draft window opening when ROPA generates emails
+- [ ] Test all fixes locally
+- [ ] Deploy to Railway production

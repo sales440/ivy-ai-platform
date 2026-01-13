@@ -202,11 +202,32 @@ export default function RopaCalendar() {
   const handleDrop = (e: React.DragEvent, columnId: KanbanColumn) => {
     e.preventDefault();
     if (draggedCard) {
-      setCards((prev) =>
-        prev.map((card) =>
-          card.id === draggedCard.id ? { ...card, status: columnId } : card
-        )
+      // Update cards state
+      const updatedCards = cards.map((card) =>
+        card.id === draggedCard.id ? { ...card, status: columnId } : card
       );
+      setCards(updatedCards);
+      
+      // Persist to localStorage
+      try {
+        const localCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
+        const updatedCampaigns = localCampaigns.map((campaign: any) => {
+          if (campaign.id === draggedCard.id) {
+            // Map kanban column to campaign status
+            const newStatus = columnId === 'scheduled' ? 'draft' : 
+                             columnId === 'in_progress' ? 'active' : 
+                             columnId === 'paused' ? 'paused' : 
+                             columnId === 'completed' ? 'completed' : 'draft';
+            return { ...campaign, status: newStatus };
+          }
+          return campaign;
+        });
+        localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns));
+        toast.success('Campaña actualizada');
+      } catch (e) {
+        console.error('Error updating campaign:', e);
+      }
+      
       setDraggedCard(null);
     }
   };
