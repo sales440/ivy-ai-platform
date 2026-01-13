@@ -14,6 +14,7 @@ import {
   deleteFileFromDrive,
   downloadFileFromDrive,
 } from "./google-drive";
+import { triggerManualBackup } from "./backup-scheduler";
 
 export const googleDriveRouter = router({
   // Get authorization URL for OAuth flow
@@ -285,6 +286,22 @@ export const googleDriveRouter = router({
     } catch (error) {
       console.error("[Google Drive] Disconnect error:", error);
       throw new Error("Error al desconectar Google Drive");
+    }
+  }),
+
+  // Trigger manual backup
+  triggerBackup: protectedProcedure.mutation(async () => {
+    try {
+      const result = await triggerManualBackup();
+      return {
+        success: result.success,
+        message: result.success ? "Backup creado exitosamente" : "Error al crear backup",
+        backupId: result.backupId,
+        driveLink: result.driveLink,
+      };
+    } catch (error) {
+      console.error("[Google Drive] Manual backup error:", error);
+      throw new Error("Error al crear backup manual");
     }
   }),
 });

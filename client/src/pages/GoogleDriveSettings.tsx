@@ -13,6 +13,7 @@ import {
   FileText,
   Trash2,
   RefreshCw,
+  Database,
 } from "lucide-react";
 import {
   Dialog,
@@ -79,6 +80,23 @@ export default function GoogleDriveSettings() {
     },
     onError: (error) => {
       toast.error(`Error al eliminar archivo: ${error.message}`);
+    },
+  });
+
+  const triggerBackupMutation = trpc.googleDrive.triggerBackup.useMutation({
+    onSuccess: (data) => {
+      if (data.driveLink) {
+        toast.success(`Backup creado y sincronizado a Google Drive`);
+      } else {
+        toast.success(`Backup creado exitosamente`);
+      }
+      // Refresh backups folder if currently viewing it
+      if (selectedFolder === "backups") {
+        refetchFiles();
+      }
+    },
+    onError: (error) => {
+      toast.error(`Error al crear backup: ${error.message}`);
     },
   });
 
@@ -170,16 +188,31 @@ export default function GoogleDriveSettings() {
                 <FileText className="w-4 h-4" />
                 <span>Carpeta raíz: Ivy.AI - FAGOR</span>
               </div>
-              <Button
-                variant="destructive"
-                onClick={handleDisconnect}
-                disabled={disconnectMutation.isPending}
-              >
-                {disconnectMutation.isPending && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                Desconectar Google Drive
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => triggerBackupMutation.mutate()}
+                  disabled={triggerBackupMutation.isPending}
+                  className="bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/50"
+                >
+                  {triggerBackupMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Database className="w-4 h-4 mr-2" />
+                  )}
+                  Crear Backup Manual
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDisconnect}
+                  disabled={disconnectMutation.isPending}
+                >
+                  {disconnectMutation.isPending && (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  )}
+                  Desconectar Google Drive
+                </Button>
+              </div>
             </div>
           ) : (
             <Button onClick={handleConnect} className="bg-cyan-500 hover:bg-cyan-600">
