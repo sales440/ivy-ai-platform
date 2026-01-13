@@ -269,3 +269,25 @@
 - [x] Create Predictive Insights Panel UI component
 - [x] Add routes and navigation links
 - [x] Verify TypeScript compilation
+
+## Etapa 2: Visual Autonomy (ROPA Vision + Browser Control)
+- [x] Create ROPA vision service with screenshot analysis
+- [x] Add vision tools to ROPA toolkit
+- [x] Implement autonomous dashboard navigation
+- [x] Test vision-based decision making
+
+## Etapa 3: Multi-Agent System + Reinforcement Learning
+- [x] Create specialized agent types (Email, Call, Analytics, Coordinator)
+- [x] Implement agent collaboration system
+- [x] Add reinforcement learning reward system
+- [x] Create learning from campaign outcomes
+
+## Etapas 4-7: Remaining Advanced Features (Batch Implementation)
+- [ ] Natural Language Reporting system
+- [ ] Self-Healing & Error Recovery
+- [ ] Budget Optimization engine
+- [ ] External API Integrations (Stripe, Zapier, Notion via MCP)
+- [ ] Voice Interface (speech-to-text)
+- [ ] Sentiment Analysis
+- [ ] Competitive Intelligence
+- [ ] Market Analysis automation

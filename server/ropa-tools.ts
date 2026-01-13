@@ -837,6 +837,141 @@ export const codeTools = {
   },
 };
 
+// ============ 10. VISION & VISUAL ANALYSIS (4 tools) ============
+
+import { analyzeDashboard, analyzeScreenshot, compareScreenshots, monitorForCondition } from "./ropa-vision";
+
+// ============ 11. MULTI-AGENT SYSTEM (6 tools) ============
+
+import {
+  createAgent,
+  getAllAgents,
+  getAgent,
+  coordinateTask,
+  executeCollaborativeTask,
+  learnFromCampaign,
+  getAgentRecommendations,
+  AgentType,
+} from "./multi-agent-system";
+
+export const multiAgentTools = {
+  async create_specialized_agent(params: { type: AgentType; name: string; specialization: string }) {
+    await logTool("create_specialized_agent", "info", `Creating ${params.type} agent: ${params.name}`);
+    try {
+      const agent = createAgent(params.type, params.name, params.specialization);
+      return { success: true, agent };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async list_all_agents() {
+    const agents = getAllAgents();
+    return { success: true, agents, total: agents.length };
+  },
+
+  async get_agent_performance(params: { agentId: string }) {
+    const agent = getAgent(params.agentId);
+    if (!agent) {
+      return { success: false, error: "Agent not found" };
+    }
+    const recommendations = getAgentRecommendations(params.agentId);
+    return { success: true, agent, recommendations };
+  },
+
+  async coordinate_complex_task(params: { goal: string }) {
+    await logTool("coordinate_complex_task", "info", `Coordinating: ${params.goal}`);
+    try {
+      const task = await coordinateTask(params.goal);
+      return { success: true, task };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async execute_collaborative_task(params: { taskId: string; task: any }) {
+    await logTool("execute_collaborative_task", "info", `Executing task: ${params.taskId}`);
+    try {
+      await executeCollaborativeTask(params.task);
+      return { success: true, task: params.task };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async learn_from_campaign_outcome(params: {
+    campaignId: string;
+    channel: string;
+    outcome: { success: boolean; conversions: number; totalLeads: number; revenue: number };
+    agentsInvolved: string[];
+  }) {
+    await logTool("learn_from_campaign_outcome", "info", `Learning from campaign: ${params.campaignId}`);
+    try {
+      await learnFromCampaign({
+        id: params.campaignId,
+        channel: params.channel,
+        outcome: params.outcome,
+        agentsInvolved: params.agentsInvolved,
+      });
+      await recordRopaLearning({
+        category: "campaign_outcome",
+        pattern: `Campaign ${params.campaignId}: ${params.outcome.success ? "success" : "failure"}`,
+        frequency: 1,
+      });
+      return { success: true, learned: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};
+
+export const visionTools = {
+  async analyze_dashboard(params: { url: string; context?: string }) {
+    await logTool("analyze_dashboard", "info", `Analyzing dashboard: ${params.url}`);
+    try {
+      const result = await analyzeDashboard(params.url, params.context);
+      await recordRopaLearning({ category: "vision_analysis", pattern: `Analyzed ${params.url}`, frequency: 1 });
+      return { success: true, ...result };
+    } catch (error: any) {
+      await logTool("analyze_dashboard", "error", `Failed: ${error.message}`);
+      return { success: false, error: error.message };
+    }
+  },
+
+  async analyze_screenshot(params: { screenshotPath: string; context?: string }) {
+    await logTool("analyze_screenshot", "info", `Analyzing screenshot: ${params.screenshotPath}`);
+    try {
+      const result = await analyzeScreenshot(params.screenshotPath, params.context);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async compare_screenshots(params: { beforePath: string; afterPath: string }) {
+    await logTool("compare_screenshots", "info", "Comparing screenshots");
+    try {
+      const result = await compareScreenshots(params.beforePath, params.afterPath);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async monitor_dashboard_condition(params: { url: string; condition: string; maxChecks?: number }) {
+    await logTool("monitor_dashboard_condition", "info", `Monitoring: ${params.condition}`);
+    try {
+      const result = await monitorForCondition(params.url, params.condition, 5000, params.maxChecks || 12);
+      if (result.met) {
+        await createRopaAlert({ severity: "info", title: "Condition Met", message: params.condition, resolved: true });
+      }
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};
+
 // ============ EXPORT ALL TOOLS ============
 
 export const ropaTools = {
@@ -847,6 +982,8 @@ export const ropaTools = {
   ...campaignTools,
   ...metaAgenticTools,
   ...browserAutomationTools,
+  ...visionTools,
+  ...multiAgentTools,
   ...codeTools,
 };
 
@@ -872,6 +1009,8 @@ export const toolCategories = {
   "Campaigns & Workflows": Object.keys(campaignTools),
   "META-Agentic Orchestration": Object.keys(metaAgenticTools),
   "Browser Automation": Object.keys(browserAutomationTools),
+  "Vision & Visual Analysis": Object.keys(visionTools),
+  "Multi-Agent System": Object.keys(multiAgentTools),
   "Code & Deployment": Object.keys(codeTools),
 };
 
