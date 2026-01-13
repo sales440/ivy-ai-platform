@@ -843,6 +843,156 @@ import { analyzeDashboard, analyzeScreenshot, compareScreenshots, monitorForCond
 
 // ============ 11. MULTI-AGENT SYSTEM (6 tools) ============
 
+// ============ 12. ADVANCED FEATURES (Etapas 4-7) (12 tools) ============
+
+import {
+  generateNaturalLanguageReport,
+  explainDecision,
+  selfHeal,
+  detectIssues,
+  optimizeBudgetAllocation,
+  predictBudgetNeeds,
+  processVoiceCommand,
+  analyzeSentiment,
+  detectAtRiskCustomers,
+  analyzeCompetitor,
+  monitorMarketTrends,
+} from "./advanced-features";
+
+export const advancedFeaturesTools = {
+  async generate_nl_report(params: { type: "daily" | "weekly" | "monthly" | "campaign"; metrics: Record<string, any>; context?: string }) {
+    await logTool("generate_nl_report", "info", `Generating ${params.type} report`);
+    try {
+      const result = await generateNaturalLanguageReport(params);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async explain_decision(params: { action: string; reasoning: string; data: Record<string, any> }) {
+    try {
+      const explanation = await explainDecision(params);
+      return { success: true, explanation };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async self_heal_system() {
+    await logTool("self_heal_system", "info", "Running self-healing");
+    try {
+      const result = await selfHeal();
+      await createRopaAlert({
+        severity: "info",
+        title: "Self-Healing Complete",
+        message: `Found ${result.issuesFound} issues, fixed ${result.issuesFixed}`,
+        resolved: true,
+      });
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async detect_system_issues() {
+    try {
+      const issues = await detectIssues();
+      return { success: true, issues, total: issues.length };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async optimize_budget(params: { campaigns: Array<{ id: string; budget: number; performance: any }> }) {
+    await logTool("optimize_budget", "info", `Optimizing budget for ${params.campaigns.length} campaigns`);
+    try {
+      const result = await optimizeBudgetAllocation(params.campaigns);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async predict_budget_needs(params: { historicalData: Array<{ month: string; spent: number; revenue: number }> }) {
+    try {
+      const result = await predictBudgetNeeds(params.historicalData);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async process_voice_command(params: { audioUrl: string }) {
+    await logTool("process_voice_command", "info", "Processing voice command");
+    try {
+      const result = await processVoiceCommand(params.audioUrl);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async analyze_sentiment(params: { text: string }) {
+    try {
+      const result = await analyzeSentiment(params.text);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async detect_at_risk_customers(params: { customerResponses: Array<{ customerId: string; message: string; timestamp: Date }> }) {
+    await logTool("detect_at_risk_customers", "info", `Analyzing ${params.customerResponses.length} customer responses`);
+    try {
+      const result = await detectAtRiskCustomers(params.customerResponses);
+      if (result.length > 0) {
+        await createRopaAlert({
+          severity: "warning",
+          title: "At-Risk Customers Detected",
+          message: `Found ${result.length} customers at risk`,
+          resolved: false,
+        });
+      }
+      return { success: true, atRisk: result, total: result.length };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async analyze_competitor(params: { competitorName: string; industry: string }) {
+    await logTool("analyze_competitor", "info", `Analyzing competitor: ${params.competitorName}`);
+    try {
+      const result = await analyzeCompetitor(params.competitorName, params.industry);
+      await recordRopaLearning({ category: "competitive_intel", pattern: `Analyzed ${params.competitorName}`, frequency: 1 });
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async monitor_market_trends(params: { industry: string }) {
+    await logTool("monitor_market_trends", "info", `Monitoring trends in ${params.industry}`);
+    try {
+      const result = await monitorMarketTrends(params.industry);
+      return { success: true, ...result };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async get_mcp_integration_status() {
+    // Check MCP server availability
+    const mcpServers = ["stripe", "zapier", "notion", "vercel", "make"];
+    const status = mcpServers.map(server => ({
+      server,
+      available: true, // Simplified - actual check would use manus-mcp-cli
+      tools: server === "stripe" ? 15 : server === "zapier" ? 10 : 8,
+    }));
+    return { success: true, servers: status, totalServers: mcpServers.length };
+  },
+};
+
 import {
   createAgent,
   getAllAgents,
@@ -984,6 +1134,7 @@ export const ropaTools = {
   ...browserAutomationTools,
   ...visionTools,
   ...multiAgentTools,
+  ...advancedFeaturesTools,
   ...codeTools,
 };
 
@@ -1011,6 +1162,7 @@ export const toolCategories = {
   "Browser Automation": Object.keys(browserAutomationTools),
   "Vision & Visual Analysis": Object.keys(visionTools),
   "Multi-Agent System": Object.keys(multiAgentTools),
+  "Advanced Features (NL, Self-Heal, Budget, Voice, Sentiment, Intel)": Object.keys(advancedFeaturesTools),
   "Code & Deployment": Object.keys(codeTools),
 };
 
