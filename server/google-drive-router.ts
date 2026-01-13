@@ -15,6 +15,7 @@ import {
   downloadFileFromDrive,
 } from "./google-drive";
 import { triggerManualBackup } from "./backup-scheduler";
+import { triggerManualCleanup } from "./backup-retention";
 
 export const googleDriveRouter = router({
   // Get authorization URL for OAuth flow
@@ -302,6 +303,23 @@ export const googleDriveRouter = router({
     } catch (error) {
       console.error("[Google Drive] Manual backup error:", error);
       throw new Error("Error al crear backup manual");
+    }
+  }),
+
+  // Trigger manual cleanup
+  triggerCleanup: protectedProcedure.mutation(async () => {
+    try {
+      const result = await triggerManualCleanup();
+      return {
+        success: result.success,
+        message: "Limpieza de archivos antiguos completada",
+        deleted: result.deleted,
+        kept: result.kept,
+        errors: result.errors,
+      };
+    } catch (error) {
+      console.error("[Google Drive] Manual cleanup error:", error);
+      throw new Error("Error al ejecutar limpieza manual");
     }
   }),
 });

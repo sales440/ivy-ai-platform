@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { initializeROPA } from "../ropa-autonomous";
 import { handleGoogleCallback } from "../google-callback-handler";
 import { initializeBackupScheduler } from "../backup-scheduler";
+import { initializeCleanupScheduler } from "../backup-retention";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -83,6 +84,13 @@ async function startServer() {
       initializeBackupScheduler();
     } catch (error) {
       console.error("[Backup Scheduler] Failed to initialize:", error);
+    }
+    
+    // Initialize automatic cleanup scheduler
+    try {
+      initializeCleanupScheduler();
+    } catch (error) {
+      console.error("[Backup Retention] Failed to initialize:", error);
     }
   });
 }
