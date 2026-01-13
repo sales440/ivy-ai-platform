@@ -402,6 +402,44 @@ You are ROPA. You don't wait. You don't ask. You EXECUTE.`;
     .query(async ({ input }) => {
       return await getRecentRopaLogs(input.limit || 100);
     }),
+
+  // ============ AUTONOMOUS ENGINE ============
+
+  analyzeAndDecide: protectedProcedure
+    .input(z.object({
+      context: z.object({
+        companies: z.array(z.any()),
+        campaigns: z.array(z.any()),
+        agents: z.array(z.any()),
+        metrics: z.any(),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      const { autonomousEngine } = await import("./autonomous-engine");
+      const decisions = await autonomousEngine.analyze({
+        ...input.context,
+        timestamp: new Date().toISOString(),
+      });
+      return { success: true, decisions };
+    }),
+
+  executeAutonomousDecisions: protectedProcedure
+    .input(z.object({
+      decisions: z.array(z.any()),
+    }))
+    .mutation(async ({ input }) => {
+      const { autonomousEngine } = await import("./autonomous-engine");
+      await autonomousEngine.executeDecisions(input.decisions, null);
+      return { success: true };
+    }),
+
+  getDecisionHistory: protectedProcedure
+    .input(z.object({ limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      const { autonomousEngine } = await import("./autonomous-engine");
+      const history = autonomousEngine.getDecisionHistory(input.limit || 50);
+      return { success: true, history };
+    }),
 });
 
 export type RopaRouter = typeof ropaRouter;
