@@ -230,6 +230,7 @@ export type InsertABTestResult = typeof abTestResults.$inferInsert;
 // Google Drive OAuth tokens
 export const googleDriveTokens = mysqlTable("google_drive_tokens", {
   id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(),
   accessToken: text("access_token").notNull(),
   refreshToken: text("refresh_token"),
   expiryDate: timestamp("expiry_date"),

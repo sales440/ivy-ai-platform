@@ -48,9 +48,13 @@ export const googleDriveRouter = router({
           folderIds: JSON.stringify(folderIds),
         };
 
-        // Delete existing tokens and insert new ones
-        await db.delete(googleDriveTokens);
-        await db.insert(googleDriveTokens).values(tokenData);
+        // Note: userId will be added when we have user context in this mutation
+        // For now, we'll use a placeholder approach
+        await db.delete(googleDriveTokens); // Delete all tokens (single-user system)
+        await db.insert(googleDriveTokens).values({
+          ...tokenData,
+          userId: 1, // TODO: Get from ctx.user.id when available
+        });
 
         console.log("[Google Drive] Authorization successful, tokens saved");
 

@@ -1,0 +1,1 @@
+ALTER TABLE `google_drive_tokens` ADD `user_id` int NOT NULL;

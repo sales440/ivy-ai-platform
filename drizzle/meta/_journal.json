@@ -57,6 +57,13 @@
       "when": 1768336391709,
       "tag": "0007_demonic_human_cannonball",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1768366775926,
+      "tag": "0008_lonely_sheva_callister",
+      "breakpoints": true
     }
   ]
 }
