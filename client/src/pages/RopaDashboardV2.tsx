@@ -192,6 +192,27 @@ export default function RopaDashboardV2() {
   const [monitorTab, setMonitorTab] = useState<'emails' | 'calls' | 'sms'>('emails');
   const [selectedEmailDraft, setSelectedEmailDraft] = useState<string | null>(null);
   
+  // Google Drive connection state
+  const [googleDriveConnected, setGoogleDriveConnected] = useState(false);
+  const [connectingGoogleDrive, setConnectingGoogleDrive] = useState(false);
+  
+  // Check Google Drive connection status on mount and after OAuth redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('google_drive_connected') === 'true') {
+      setGoogleDriveConnected(true);
+      localStorage.setItem('googleDriveConnected', 'true');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else {
+      const saved = localStorage.getItem('googleDriveConnected');
+      if (saved === 'true') {
+        setGoogleDriveConnected(true);
+      }
+    }
+    setConnectingGoogleDrive(false);
+  }, []);
+  
   // Load companies, campaigns and email drafts from localStorage
   useEffect(() => {
     const savedCompanies = localStorage.getItem('ropaCompanies');
@@ -1315,27 +1336,60 @@ export default function RopaDashboardV2() {
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${googleDriveConnected ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-blue-500 to-blue-600'}`}>
                         <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M12.01 1.485c-2.082 0-3.754.02-3.743.047.01.02 1.708 3.001 3.774 6.62l3.76 6.574h3.76c2.081 0 3.753-.02 3.742-.047-.01-.02-1.708-3.001-3.775-6.62l-3.76-6.574h-3.758zm-5.516 9.65L3.252 17.71c-.715 1.239-.718 1.24.724 1.24h6.744l2.257-3.254-2.509-4.415c-.2-.35-.381-.694-.542-1.026-.098.196-.201.4-.312.613l-2.63 4.576-.209.365h-.002l-.728 1.266h-2.257l3.479-6.058-.481-.837-.239-.415z"/>
                         </svg>
                       </div>
                       <div>
-                        <h4 className="font-medium text-white">Google Drive</h4>
-                        <p className="text-xs text-slate-400">Almacenamiento centralizado para archivos de clientes</p>
+                        <h4 className="font-medium text-white flex items-center gap-2">
+                          Google Drive
+                          {googleDriveConnected && <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Conectado</Badge>}
+                        </h4>
+                        <p className="text-xs text-slate-400">
+                          {googleDriveConnected 
+                            ? 'Sincronización activa - Archivos guardándose automáticamente' 
+                            : 'Almacenamiento centralizado para archivos de clientes'}
+                        </p>
                       </div>
                     </div>
-                    <Button
-                      onClick={() => {
-                        // Redirect to Google OAuth
-                        window.location.href = '/api/google-drive/auth';
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Plug className="w-4 h-4 mr-2" />
-                      Conectar Google Drive
-                    </Button>
+                    {connectingGoogleDrive ? (
+                      <Button disabled className="bg-blue-600/50 text-white">
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Conectando...
+                      </Button>
+                    ) : googleDriveConnected ? (
+                      <Button
+                        onClick={() => {
+                          window.location.href = '/api/google-drive/auth';
+                        }}
+                        variant="outline"
+                        className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                      >
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        Reconectar
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          setConnectingGoogleDrive(true);
+                          window.location.href = '/api/google-drive/auth';
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        <Plug className="w-4 h-4 mr-2" />
+                        Conectar Google Drive
+                      </Button>
+                    )}
                   </div>
+                  {googleDriveConnected && (
+                    <div className="mt-3 pt-3 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2 text-xs text-green-400">
+                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                        Sincronización activa
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 

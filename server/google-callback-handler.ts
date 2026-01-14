@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { getTokensFromCode, getOAuth2Client, setCredentials, initializeFolderStructure } from "./google-drive";
 import { getDb } from "./db";
-import { googleDriveTokens } from "../drizzle/schema";
+import { sql } from "drizzle-orm";
 
 /**
  * Handle Google OAuth callback
@@ -38,24 +38,26 @@ export async function handleGoogleCallback(req: Request, res: Response) {
     setCredentials(oauth2Client, tokens);
     const folderIds = await initializeFolderStructure(oauth2Client);
 
-    // Save tokens to database
+    // Save tokens to database using raw SQL to avoid ORM mapping issues
     console.log("[Google OAuth] Preparing token data for database...");
-    const tokenData = {
-      userId: 1, // Default to admin user for Google Drive integration
-      accessToken: tokens.access_token!,
-      refreshToken: tokens.refresh_token || null,
-      expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
-      scope: tokens.scope || null,
-      tokenType: tokens.token_type || null,
-      folderIds: JSON.stringify(folderIds),
-    };
-    console.log("[Google OAuth] Token data prepared, userId:", tokenData.userId);
+    const accessToken = tokens.access_token!;
+    const refreshToken = tokens.refresh_token || null;
+    const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date).toISOString().slice(0, 19).replace('T', ' ') : null;
+    const scope = tokens.scope || null;
+    const tokenType = tokens.token_type || null;
+    const folderIdsJson = JSON.stringify(folderIds);
+    
+    console.log("[Google OAuth] Token data prepared, using raw SQL...");
 
-    // Delete existing tokens and insert new ones
+    // Delete existing tokens and insert new ones using raw SQL
     console.log("[Google OAuth] Deleting existing tokens...");
-    await db.delete(googleDriveTokens);
+    await db.execute(sql`DELETE FROM google_drive_tokens`);
+    
     console.log("[Google OAuth] Inserting new tokens...");
-    await db.insert(googleDriveTokens).values(tokenData);
+    await db.execute(sql`
+      INSERT INTO google_drive_tokens (user_id, access_token, refresh_token, expiry_date, scope, token_type, folder_ids, created_at, updated_at)
+      VALUES (1, ${accessToken}, ${refreshToken}, ${expiryDate}, ${scope}, ${tokenType}, ${folderIdsJson}, NOW(), NOW())
+    `);
     console.log("[Google OAuth] Tokens inserted successfully");
 
     console.log("[Google OAuth] Authorization successful, tokens saved");
