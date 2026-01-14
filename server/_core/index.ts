@@ -48,6 +48,13 @@ async function startServer() {
   
   // Google Drive OAuth callback
   app.get("/api/google/callback", handleGoogleCallback);
+  
+  // Google Drive OAuth initiation - redirect to Google
+  app.get("/api/google-drive/auth", (req, res) => {
+    const { getAuthUrl } = require("../google-drive");
+    const authUrl = getAuthUrl();
+    res.redirect(authUrl);
+  });
   // tRPC API
   app.use(
     "/api/trpc",

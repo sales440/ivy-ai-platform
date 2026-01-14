@@ -1310,6 +1310,35 @@ export default function RopaDashboardV2() {
           {/* Files Section */}
           {activeSection === "files" && (
             <div className="space-y-6">
+              {/* Google Drive Connection Status */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12.01 1.485c-2.082 0-3.754.02-3.743.047.01.02 1.708 3.001 3.774 6.62l3.76 6.574h3.76c2.081 0 3.753-.02 3.742-.047-.01-.02-1.708-3.001-3.775-6.62l-3.76-6.574h-3.758zm-5.516 9.65L3.252 17.71c-.715 1.239-.718 1.24.724 1.24h6.744l2.257-3.254-2.509-4.415c-.2-.35-.381-.694-.542-1.026-.098.196-.201.4-.312.613l-2.63 4.576-.209.365h-.002l-.728 1.266h-2.257l3.479-6.058-.481-.837-.239-.415z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-white">Google Drive</h4>
+                        <p className="text-xs text-slate-400">Almacenamiento centralizado para archivos de clientes</p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        // Redirect to Google OAuth
+                        window.location.href = '/api/google-drive/auth';
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Plug className="w-4 h-4 mr-2" />
+                      Conectar Google Drive
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Upload Area */}
               <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
                 <CardHeader>
