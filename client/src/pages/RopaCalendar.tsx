@@ -198,34 +198,48 @@ export default function RopaCalendar() {
     e.dataTransfer.dropEffect = "move";
   };
 
-  // Handle drop
+  // Handle drop - persist to BOTH localStorage keys to prevent revert
   const handleDrop = (e: React.DragEvent, columnId: KanbanColumn) => {
     e.preventDefault();
     if (draggedCard) {
-      // Update cards state
+      // Map kanban column to campaign status
+      const newStatus = columnId === 'scheduled' ? 'draft' : 
+                       columnId === 'in_progress' ? 'active' : 
+                       columnId === 'paused' ? 'paused' : 
+                       columnId === 'completed' ? 'completed' : 'draft';
+      
+      // Update cards state immediately
       const updatedCards = cards.map((card) =>
         card.id === draggedCard.id ? { ...card, status: columnId } : card
       );
       setCards(updatedCards);
       
-      // Persist to localStorage
+      // Persist to BOTH localStorage keys (ropaCampaigns is the main one)
       try {
+        // Update ropaCampaigns (main storage used by loadFromLocalStorage)
+        const ropaCampaigns = JSON.parse(localStorage.getItem('ropaCampaigns') || '[]');
+        const updatedRopaCampaigns = ropaCampaigns.map((campaign: any) => {
+          if (campaign.id === draggedCard.id) {
+            return { ...campaign, status: newStatus };
+          }
+          return campaign;
+        });
+        localStorage.setItem('ropaCampaigns', JSON.stringify(updatedRopaCampaigns));
+        
+        // Also update 'campaigns' for backwards compatibility
         const localCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
         const updatedCampaigns = localCampaigns.map((campaign: any) => {
           if (campaign.id === draggedCard.id) {
-            // Map kanban column to campaign status
-            const newStatus = columnId === 'scheduled' ? 'draft' : 
-                             columnId === 'in_progress' ? 'active' : 
-                             columnId === 'paused' ? 'paused' : 
-                             columnId === 'completed' ? 'completed' : 'draft';
             return { ...campaign, status: newStatus };
           }
           return campaign;
         });
         localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns));
-        toast.success('Campaña actualizada');
+        
+        toast.success(`Campaña movida a ${columns.find(c => c.id === columnId)?.title}`);
       } catch (e) {
         console.error('Error updating campaign:', e);
+        toast.error('Error al actualizar campaña');
       }
       
       setDraggedCard(null);
