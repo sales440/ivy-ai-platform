@@ -290,6 +290,32 @@ export const googleDriveRouter = router({
     }
   }),
 
+  // Initialize folder structure manually
+  initializeFolders: protectedProcedure.mutation(async () => {
+    try {
+      const { createFolderStructure } = await import('./google-drive-sync');
+      const result = await createFolderStructure();
+      
+      if (result.success) {
+        return { 
+          success: true, 
+          message: 'Estructura de carpetas creada exitosamente',
+          folders: result.folders 
+        };
+      } else {
+        return { 
+          success: false, 
+          error: result.error || 'Error desconocido' 
+        };
+      }
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
+  }),
+
   // Trigger manual backup
   triggerBackup: protectedProcedure.mutation(async () => {
     try {

@@ -14,6 +14,7 @@ import {
   Trash2,
   RefreshCw,
   Database,
+  FolderPlus,
 } from "lucide-react";
 import {
   Dialog,
@@ -80,6 +81,19 @@ export default function GoogleDriveSettings() {
     },
     onError: (error) => {
       toast.error(`Error al eliminar archivo: ${error.message}`);
+    },
+  });
+
+  const initFoldersMutation = trpc.googleDrive.initializeFolders.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(data.message);
+      } else {
+        toast.error(data.error || 'Error al crear carpetas');
+      }
+    },
+    onError: (error) => {
+      toast.error('Error al inicializar carpetas: ' + error.message);
     },
   });
 
@@ -189,6 +203,19 @@ export default function GoogleDriveSettings() {
                 <span>Carpeta raíz: Ivy.AI - FAGOR</span>
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => initFoldersMutation.mutate()}
+                  disabled={initFoldersMutation.isPending}
+                  className="bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/50"
+                >
+                  {initFoldersMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <FolderPlus className="w-4 h-4 mr-2" />
+                  )}
+                  Inicializar Carpetas
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => triggerBackupMutation.mutate()}

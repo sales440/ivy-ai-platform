@@ -112,7 +112,9 @@ export const databaseTools = {
       try {
         // Create a simple backup metadata (in production, this would be actual SQL dump)
         const backupContent = `-- Database Backup\n-- Timestamp: ${new Date().toISOString()}\n-- Tables: campaigns, leads, ab_tests, ropa_logs, etc.\n-- Status: Success`;
-        const driveLink = await uploadDatabaseBackup(backupContent, "full");
+        const backupBuffer = Buffer.from(backupContent, 'utf-8');
+        const filename = `backup_${new Date().toISOString().split('T')[0]}.sql`;
+        const driveLink = await uploadDatabaseBackup(backupBuffer, filename);
         
         if (driveLink) {
           await logTool("backupDatabase", "info", `Backup synced to Google Drive: ${driveLink}`);
