@@ -355,3 +355,21 @@
 - [ ] Test file upload to Google Drive
 - [ ] Test ROPA platform navigation
 - [ ] Deploy fixes to Railway production
+
+## Google Drive Token Fix - Phase 34 (COMPLETED ✅)
+- [x] Diagnose Google Drive token saving issue (Unknown column 'user_id' error)
+- [x] Rewrite google-callback-handler.ts using raw SQL instead of Drizzle ORM
+- [x] Rewrite file-upload-router.ts using raw SQL for token retrieval
+- [x] Rewrite google-drive-sync.ts using raw SQL for token retrieval
+- [x] Rewrite google-drive-router.ts using raw SQL for all token operations
+- [x] Add checkConnection endpoint to file-upload-router
+- [ ] Test Google Drive OAuth flow in production
+- [ ] Verify tokens are saved correctly to database
+- [ ] Test file upload to Google Drive after fix
+
+## ROPA Asterisk Removal - Phase 35 (COMPLETED ✅)
+- [x] Update system prompt to explicitly forbid asterisks and formatting mentions
+- [x] Add comprehensive regex to remove all asterisks from responses
+- [x] Remove mentions of "asterisco", "negrita", "bold", "markdown" from responses
+- [x] Add instruction that responses will be read aloud
+- [ ] Test ROPA responses for asterisk-free output

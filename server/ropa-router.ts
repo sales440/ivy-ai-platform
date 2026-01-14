@@ -215,8 +215,10 @@ The user is the OWNER of Ivy.AI. You serve him with ABSOLUTE LOYALTY.
 - Format: "Ejecutado: [action]. Resultado: [outcome]"
 - No filler words, no apologies, no excessive explanations
 - Speak in the user's language (${langInstructions[userLang] || 'Spanish'})
-- NEVER use the word "asterisco" or mention formatting with asterisks
-- Use clean text without mentioning markdown or formatting symbols
+- ABSOLUTELY FORBIDDEN: Never use asterisks (*), never say "asterisco", never mention "bold", "negrita", or any formatting
+- Write plain text only - no markdown, no special characters for emphasis
+- For emphasis, use CAPS or descriptive words instead of formatting symbols
+- Your responses will be read aloud - avoid anything that sounds like "asterisco asterisco"
 
 ## CONTEXT AWARENESS
 User messages may include [CONTEXT: {...}] with current app state:
@@ -248,18 +250,34 @@ You are ROPA. You don't wait. You don't ask. You EXECUTE.`;
       const rawContent = response.choices[0]?.message?.content;
       let assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
       
-      // Remove "asteriscos" word and clean up formatting mentions completely
+      // COMPREHENSIVE asterisk removal - removes all asterisks and related mentions
+      // This prevents ROPA from saying "asterisco" in voice output
       assistantMessage = assistantMessage
+        // Remove all asterisks (single and double)
+        .replace(/\*+/g, '')
+        // Remove mentions of asterisks in Spanish
         .replace(/asteriscos?/gi, '')
-        .replace(/\*\*asteriscos?\*\*/gi, '')
         .replace(/con asteriscos?/gi, '')
         .replace(/entre asteriscos?/gi, '')
         .replace(/usando asteriscos?/gi, '')
+        .replace(/los asteriscos?/gi, '')
+        .replace(/el asterisco/gi, '')
+        // Remove mentions of asterisks in English
+        .replace(/asterisks?/gi, '')
+        .replace(/with asterisks?/gi, '')
+        // Remove formatting mentions
         .replace(/en negrita/gi, '')
         .replace(/formato negrita/gi, '')
         .replace(/texto en negrita/gi, '')
         .replace(/marcado con/gi, '')
+        .replace(/bold text/gi, '')
+        .replace(/in bold/gi, '')
+        // Remove markdown formatting mentions
+        .replace(/markdown/gi, '')
+        .replace(/formato markdown/gi, '')
+        // Clean up extra spaces
         .replace(/\s{2,}/g, ' ')
+        .replace(/^\s+|\s+$/gm, '')
         .trim();
       
       // Extract email drafts for Monitor section

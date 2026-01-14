@@ -1,10 +1,12 @@
 import { getDb } from "./db";
-import { googleDriveTokens } from "../drizzle/schema";
+import { sql } from "drizzle-orm";
 import { getOAuth2Client, setCredentials, uploadFileToDrive, initializeFolderStructure } from "./google-drive";
 
 /**
  * Automatic sync service for uploading files to Google Drive
  * Used by ROPA for automatic report and backup uploads
+ * 
+ * FIXED: Using raw SQL to avoid Drizzle ORM column mapping issues
  */
 
 // Folder structure definition
@@ -38,30 +40,45 @@ const FOLDER_STRUCTURE = {
   ]
 };
 
-// Get OAuth client with stored credentials
+// Get OAuth client with stored credentials using RAW SQL
 async function getAuthenticatedClient() {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
 
-  const result = await db.select().from(googleDriveTokens).limit(1);
-  if (result.length === 0) {
+  // Use raw SQL to avoid column mapping issues
+  const result = await db.execute(sql`
+    SELECT 
+      id,
+      user_id,
+      access_token,
+      refresh_token,
+      expiry_date,
+      scope,
+      token_type,
+      folder_ids
+    FROM google_drive_tokens 
+    LIMIT 1
+  `);
+
+  const rows = result as any[];
+  if (!rows || rows.length === 0) {
     throw new Error("Google Drive not connected");
   }
 
-  const tokenRecord = result[0];
+  const tokenRecord = rows[0];
   const oauth2Client = getOAuth2Client();
   
   setCredentials(oauth2Client, {
-    access_token: tokenRecord.accessToken,
-    refresh_token: tokenRecord.refreshToken,
-    expiry_date: tokenRecord.expiryDate?.getTime(),
+    access_token: tokenRecord.access_token,
+    refresh_token: tokenRecord.refresh_token,
+    expiry_date: tokenRecord.expiry_date ? new Date(tokenRecord.expiry_date).getTime() : undefined,
     scope: tokenRecord.scope,
-    token_type: tokenRecord.tokenType,
+    token_type: tokenRecord.token_type || 'Bearer',
   });
 
-  const folderIds = JSON.parse(tokenRecord.folderIds || "{}");
+  const folderIds = JSON.parse(tokenRecord.folder_ids || "{}");
 
   return { oauth2Client, folderIds };
 }
@@ -76,11 +93,14 @@ export async function createFolderStructure(): Promise<{ success: boolean; folde
     // Use existing initializeFolderStructure function
     const folderIds = await initializeFolderStructure(oauth2Client);
     
-    // Save folder IDs to database
+    // Save folder IDs to database using raw SQL
     const db = await getDb();
     if (db) {
-      await db.update(googleDriveTokens)
-        .set({ folderIds: JSON.stringify(folderIds) });
+      const folderIdsJson = JSON.stringify(folderIds);
+      await db.execute(sql`
+        UPDATE google_drive_tokens 
+        SET folder_ids = ${folderIdsJson}, updated_at = NOW()
+      `);
     }
 
     const createdFolders = [
@@ -107,13 +127,18 @@ export async function createFolderStructure(): Promise<{ success: boolean; folde
   }
 }
 
-// Check if Google Drive is connected
+// Check if Google Drive is connected using RAW SQL
 export async function isGoogleDriveConnected(): Promise<boolean> {
   try {
     const db = await getDb();
     if (!db) return false;
-    const result = await db.select().from(googleDriveTokens).limit(1);
-    return result.length > 0;
+    
+    const result = await db.execute(sql`
+      SELECT id FROM google_drive_tokens LIMIT 1
+    `);
+    
+    const rows = result as any[];
+    return rows && rows.length > 0;
   } catch (error) {
     return false;
   }
@@ -132,7 +157,7 @@ export async function uploadDailyReport(reportContent: string, date: Date): Prom
       fileName,
       fileBuffer,
       "text/plain",
-      folderIds["Reportes/Daily"]
+      folderIds["Reportes/Daily"] || folderIds["daily"]
     );
     
     return result.webViewLink || null;
@@ -155,7 +180,7 @@ export async function uploadWeeklyReport(reportContent: string, date: Date): Pro
       fileName,
       fileBuffer,
       "text/plain",
-      folderIds["weekly"]
+      folderIds["Reportes/Weekly"] || folderIds["weekly"]
     );
     
     return result.webViewLink || null;
@@ -178,7 +203,7 @@ export async function uploadMonthlyReport(reportContent: string, date: Date): Pr
       fileName,
       fileBuffer,
       "text/plain",
-      folderIds["monthly"]
+      folderIds["Reportes/Monthly"] || folderIds["monthly"]
     );
     
     return result.webViewLink || null;
@@ -201,7 +226,7 @@ export async function uploadCampaignReport(campaignName: string, reportContent: 
       fileName,
       fileBuffer,
       "text/plain",
-      folderIds["campaigns"]
+      folderIds["Campañas"] || folderIds["campaigns"]
     );
     
     return result.webViewLink || null;
@@ -221,7 +246,7 @@ export async function uploadDatabaseBackup(backupBuffer: Buffer, filename: strin
       filename,
       backupBuffer,
       "application/sql",
-      folderIds["Databases/Backups"]
+      folderIds["Databases/Backups"] || folderIds["backups"]
     );
     
     return result.webViewLink || null;
@@ -236,7 +261,7 @@ export async function uploadTemplate(templateContent: string, filename: string, 
   try {
     const { oauth2Client, folderIds } = await getAuthenticatedClient();
     
-    const folderMap = {
+    const folderMap: Record<string, string> = {
       email: "Templates/Email Templates",
       call: "Templates/Call Scripts",
       sms: "Templates/SMS Templates"
@@ -244,12 +269,14 @@ export async function uploadTemplate(templateContent: string, filename: string, 
     
     const fileBuffer = Buffer.from(templateContent, "utf-8");
     
+    const targetFolder = folderIds[folderMap[type]] || folderIds["emailTemplates"];
+    
     const result = await uploadFileToDrive(
       oauth2Client,
       filename,
       fileBuffer,
       "text/plain",
-      folderIds[folderMap[type]]
+      targetFolder
     );
     
     return result.webViewLink || null;
@@ -269,7 +296,7 @@ export async function uploadBrandingAsset(fileBuffer: Buffer, filename: string, 
       filename,
       fileBuffer,
       mimeType,
-      folderIds["Logos & Branding"]
+      folderIds["Logos & Branding"] || folderIds["branding"]
     );
     
     return result.webViewLink || null;
@@ -289,7 +316,7 @@ export async function uploadClientList(fileBuffer: Buffer, filename: string, mim
       filename,
       fileBuffer,
       mimeType,
-      folderIds["Client Lists"]
+      folderIds["Client Lists"] || folderIds["clientLists"]
     );
     
     return result.webViewLink || null;

@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { googleDriveTokens } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import {
   getAuthUrl,
   getTokensFromCode,
@@ -17,6 +16,10 @@ import {
 import { triggerManualBackup } from "./backup-scheduler";
 import { triggerManualCleanup } from "./backup-retention";
 
+/**
+ * Google Drive Router
+ * FIXED: Using raw SQL to avoid Drizzle ORM column mapping issues
+ */
 export const googleDriveRouter = router({
   // Get authorization URL for OAuth flow
   getAuthUrl: protectedProcedure.query(() => {
@@ -38,23 +41,24 @@ export const googleDriveRouter = router({
         setCredentials(oauth2Client, tokens);
         const folderIds = await initializeFolderStructure(oauth2Client);
 
-        // Save tokens to database
-        const tokenData = {
-          accessToken: tokens.access_token!,
-          refreshToken: tokens.refresh_token || null,
-          expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
-          scope: tokens.scope || null,
-          tokenType: tokens.token_type || null,
-          folderIds: JSON.stringify(folderIds),
-        };
+        // Save tokens to database using RAW SQL
+        const accessToken = tokens.access_token || '';
+        const refreshToken = tokens.refresh_token || null;
+        const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
+        const scope = tokens.scope || null;
+        const tokenType = tokens.token_type || 'Bearer';
+        const folderIdsJson = JSON.stringify(folderIds);
 
-        // Note: userId will be added when we have user context in this mutation
-        // For now, we'll use a placeholder approach
-        await db.delete(googleDriveTokens); // Delete all tokens (single-user system)
-        await db.insert(googleDriveTokens).values({
-          ...tokenData,
-          userId: 1, // TODO: Get from ctx.user.id when available
-        });
+        // Delete existing tokens
+        await db.execute(sql`DELETE FROM google_drive_tokens`);
+
+        // Insert new tokens with raw SQL
+        await db.execute(sql`
+          INSERT INTO google_drive_tokens 
+            (user_id, access_token, refresh_token, expiry_date, scope, token_type, folder_ids, created_at, updated_at)
+          VALUES 
+            (1, ${accessToken}, ${refreshToken}, ${expiryDate}, ${scope}, ${tokenType}, ${folderIdsJson}, NOW(), NOW())
+        `);
 
         console.log("[Google Drive] Authorization successful, tokens saved");
 
@@ -75,8 +79,11 @@ export const googleDriveRouter = router({
     if (!db) return { connected: false };
 
     try {
-      const result = await db.select().from(googleDriveTokens).limit(1);
-      return { connected: result.length > 0 };
+      const result = await db.execute(sql`
+        SELECT id FROM google_drive_tokens LIMIT 1
+      `);
+      const rows = result as any[];
+      return { connected: rows && rows.length > 0 };
     } catch (error) {
       console.error("[Google Drive] Error checking connection:", error);
       return { connected: false };
@@ -89,13 +96,17 @@ export const googleDriveRouter = router({
     if (!db) throw new Error("Database not available");
 
     try {
-      const result = await db.select().from(googleDriveTokens).limit(1);
-      if (result.length === 0) {
+      const result = await db.execute(sql`
+        SELECT folder_ids FROM google_drive_tokens LIMIT 1
+      `);
+      const rows = result as any[];
+      
+      if (!rows || rows.length === 0) {
         throw new Error("Google Drive no conectado");
       }
 
-      const folderIds = result[0].folderIds 
-        ? JSON.parse(result[0].folderIds) 
+      const folderIds = rows[0].folder_ids 
+        ? JSON.parse(rows[0].folder_ids) 
         : {};
 
       return { folderIds };
@@ -132,14 +143,26 @@ export const googleDriveRouter = router({
       if (!db) throw new Error("Database not available");
 
       try {
-        // Get tokens from database
-        const result = await db.select().from(googleDriveTokens).limit(1);
-        if (result.length === 0) {
+        // Get tokens from database using RAW SQL
+        const result = await db.execute(sql`
+          SELECT 
+            access_token,
+            refresh_token,
+            expiry_date,
+            scope,
+            token_type,
+            folder_ids
+          FROM google_drive_tokens 
+          LIMIT 1
+        `);
+        const rows = result as any[];
+        
+        if (!rows || rows.length === 0) {
           throw new Error("Google Drive no conectado");
         }
 
-        const tokenRecord = result[0];
-        const folderIds = JSON.parse(tokenRecord.folderIds || "{}");
+        const tokenRecord = rows[0];
+        const folderIds = JSON.parse(tokenRecord.folder_ids || "{}");
         const folderId = folderIds[input.folderType];
 
         if (!folderId) {
@@ -149,11 +172,11 @@ export const googleDriveRouter = router({
         // Setup OAuth client
         const oauth2Client = getOAuth2Client();
         setCredentials(oauth2Client, {
-          access_token: tokenRecord.accessToken,
-          refresh_token: tokenRecord.refreshToken,
-          expiry_date: tokenRecord.expiryDate?.getTime(),
+          access_token: tokenRecord.access_token,
+          refresh_token: tokenRecord.refresh_token,
+          expiry_date: tokenRecord.expiry_date ? new Date(tokenRecord.expiry_date).getTime() : undefined,
           scope: tokenRecord.scope,
-          token_type: tokenRecord.tokenType,
+          token_type: tokenRecord.token_type || 'Bearer',
         });
 
         // Decode base64 buffer
@@ -204,14 +227,26 @@ export const googleDriveRouter = router({
       if (!db) throw new Error("Database not available");
 
       try {
-        // Get tokens from database
-        const result = await db.select().from(googleDriveTokens).limit(1);
-        if (result.length === 0) {
+        // Get tokens from database using RAW SQL
+        const result = await db.execute(sql`
+          SELECT 
+            access_token,
+            refresh_token,
+            expiry_date,
+            scope,
+            token_type,
+            folder_ids
+          FROM google_drive_tokens 
+          LIMIT 1
+        `);
+        const rows = result as any[];
+        
+        if (!rows || rows.length === 0) {
           throw new Error("Google Drive no conectado");
         }
 
-        const tokenRecord = result[0];
-        const folderIds = JSON.parse(tokenRecord.folderIds || "{}");
+        const tokenRecord = rows[0];
+        const folderIds = JSON.parse(tokenRecord.folder_ids || "{}");
         const folderId = folderIds[input.folderType];
 
         if (!folderId) {
@@ -221,11 +256,11 @@ export const googleDriveRouter = router({
         // Setup OAuth client
         const oauth2Client = getOAuth2Client();
         setCredentials(oauth2Client, {
-          access_token: tokenRecord.accessToken,
-          refresh_token: tokenRecord.refreshToken,
-          expiry_date: tokenRecord.expiryDate?.getTime(),
+          access_token: tokenRecord.access_token,
+          refresh_token: tokenRecord.refresh_token,
+          expiry_date: tokenRecord.expiry_date ? new Date(tokenRecord.expiry_date).getTime() : undefined,
           scope: tokenRecord.scope,
-          token_type: tokenRecord.tokenType,
+          token_type: tokenRecord.token_type || 'Bearer',
         });
 
         // List files
@@ -246,22 +281,33 @@ export const googleDriveRouter = router({
       if (!db) throw new Error("Database not available");
 
       try {
-        // Get tokens from database
-        const result = await db.select().from(googleDriveTokens).limit(1);
-        if (result.length === 0) {
+        // Get tokens from database using RAW SQL
+        const result = await db.execute(sql`
+          SELECT 
+            access_token,
+            refresh_token,
+            expiry_date,
+            scope,
+            token_type
+          FROM google_drive_tokens 
+          LIMIT 1
+        `);
+        const rows = result as any[];
+        
+        if (!rows || rows.length === 0) {
           throw new Error("Google Drive no conectado");
         }
 
-        const tokenRecord = result[0];
+        const tokenRecord = rows[0];
 
         // Setup OAuth client
         const oauth2Client = getOAuth2Client();
         setCredentials(oauth2Client, {
-          access_token: tokenRecord.accessToken,
-          refresh_token: tokenRecord.refreshToken,
-          expiry_date: tokenRecord.expiryDate?.getTime(),
+          access_token: tokenRecord.access_token,
+          refresh_token: tokenRecord.refresh_token,
+          expiry_date: tokenRecord.expiry_date ? new Date(tokenRecord.expiry_date).getTime() : undefined,
           scope: tokenRecord.scope,
-          token_type: tokenRecord.tokenType,
+          token_type: tokenRecord.token_type || 'Bearer',
         });
 
         // Delete file
@@ -283,7 +329,7 @@ export const googleDriveRouter = router({
     if (!db) throw new Error("Database not available");
 
     try {
-      await db.delete(googleDriveTokens);
+      await db.execute(sql`DELETE FROM google_drive_tokens`);
       return {
         success: true,
         message: "Google Drive desconectado exitosamente",
