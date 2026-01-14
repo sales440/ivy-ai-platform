@@ -41,7 +41,13 @@ export const fileUploadRouter = router({
         }
 
         const oauth2Client = getOAuth2Client();
-        oauth2Client.setCredentials(JSON.parse(tokenRecord.tokens));
+        oauth2Client.setCredentials({
+          access_token: tokenRecord.accessToken,
+          refresh_token: tokenRecord.refreshToken || undefined,
+          expiry_date: tokenRecord.expiryDate?.getTime(),
+          token_type: tokenRecord.tokenType || undefined,
+          scope: tokenRecord.scope || undefined,
+        });
 
         // Ensure folder structure exists in Google Drive
         const folderIds = await initializeFolderStructure(oauth2Client);
@@ -69,8 +75,8 @@ export const fileUploadRouter = router({
         // Upload to Google Drive
         const driveFile = await uploadFileToDrive(
           oauth2Client,
-          buffer.toString('base64'),
           input.fileName,
+          buffer,
           input.mimeType,
           targetFolderId
         );
