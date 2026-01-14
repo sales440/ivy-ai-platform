@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE google_drive_tokens ADD COLUMN IF NOT EXISTS user_id INT NOT NULL DEFAULT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute ALTER TABLE google_drive_tokens ADD COLUMN IF NOT EXISTS user_id INT NOT NULL DEFAULT 1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 58
+}

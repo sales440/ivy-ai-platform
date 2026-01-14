@@ -39,6 +39,7 @@ export async function handleGoogleCallback(req: Request, res: Response) {
     const folderIds = await initializeFolderStructure(oauth2Client);
 
     // Save tokens to database
+    console.log("[Google OAuth] Preparing token data for database...");
     const tokenData = {
       userId: 1, // Default to admin user for Google Drive integration
       accessToken: tokens.access_token!,
@@ -48,10 +49,14 @@ export async function handleGoogleCallback(req: Request, res: Response) {
       tokenType: tokens.token_type || null,
       folderIds: JSON.stringify(folderIds),
     };
+    console.log("[Google OAuth] Token data prepared, userId:", tokenData.userId);
 
     // Delete existing tokens and insert new ones
+    console.log("[Google OAuth] Deleting existing tokens...");
     await db.delete(googleDriveTokens);
+    console.log("[Google OAuth] Inserting new tokens...");
     await db.insert(googleDriveTokens).values(tokenData);
+    console.log("[Google OAuth] Tokens inserted successfully");
 
     console.log("[Google OAuth] Authorization successful, tokens saved");
 
