@@ -243,3 +243,50 @@ export const googleDriveTokens = mysqlTable("google_drive_tokens", {
 
 export type GoogleDriveToken = typeof googleDriveTokens.$inferSelect;
 export type InsertGoogleDriveToken = typeof googleDriveTokens.$inferInsert;
+
+
+// Empresas/Clientes de Ivy.AI con ID único para Google Drive
+export const ivyClients = mysqlTable("ivy_clients", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: varchar("client_id", { length: 32 }).notNull().unique(), // ID único auto-generado (ej: IVY-2026-0001)
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  industry: varchar("industry", { length: 100 }),
+  contactName: varchar("contact_name", { length: 255 }),
+  contactEmail: varchar("contact_email", { length: 320 }),
+  contactPhone: varchar("contact_phone", { length: 50 }),
+  address: text("address"),
+  website: varchar("website", { length: 255 }),
+  logo: varchar("logo_url", { length: 500 }),
+  // Google Drive Integration
+  googleDriveFolderId: varchar("google_drive_folder_id", { length: 100 }), // ID de carpeta raíz en Google Drive
+  googleDriveStructure: text("google_drive_structure"), // JSON con IDs de subcarpetas
+  // Status
+  status: mysqlEnum("status", ["active", "inactive", "prospect", "churned"]).default("prospect").notNull(),
+  plan: mysqlEnum("plan", ["free", "starter", "professional", "enterprise"]).default("free").notNull(),
+  // Metadata
+  notes: text("notes"),
+  createdBy: varchar("created_by", { length: 64 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type IvyClient = typeof ivyClients.$inferSelect;
+export type InsertIvyClient = typeof ivyClients.$inferInsert;
+
+// Relación de archivos por cliente
+export const clientFiles = mysqlTable("client_files", {
+  id: int("id").autoincrement().primaryKey(),
+  clientId: varchar("client_id", { length: 32 }).notNull(), // Referencia a ivy_clients.client_id
+  fileType: mysqlEnum("file_type", ["logo", "template", "report", "backup", "document", "campaign_asset", "client_list", "other"]).notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  googleDriveFileId: varchar("google_drive_file_id", { length: 100 }),
+  googleDriveUrl: varchar("google_drive_url", { length: 500 }),
+  mimeType: varchar("mime_type", { length: 100 }),
+  fileSize: int("file_size"),
+  description: text("description"),
+  uploadedBy: varchar("uploaded_by", { length: 64 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ClientFile = typeof clientFiles.$inferSelect;
+export type InsertClientFile = typeof clientFiles.$inferInsert;
