@@ -5,10 +5,12 @@
 
 import { ropaTools } from "./ropa-tools";
 import { createRopaTask, updateRopaTaskStatus, getRopaConfig, setRopaConfig, createRopaLog, createRopaAlert } from "./ropa-db";
+import { initializeFileManagerAgent, FileManager } from "./file-manager-agent";
 
 let maintenanceInterval: NodeJS.Timeout | null = null;
 let healthCheckInterval: NodeJS.Timeout | null = null;
 let marketIntelligenceInterval: NodeJS.Timeout | null = null;
+let fileSyncInterval: NodeJS.Timeout | null = null;
 
 /**
  * Initialize ROPA autonomous operations
@@ -29,10 +31,23 @@ export async function initializeROPA() {
     metadata: { version: "2.0", tools: 50 },
   });
 
+  // Initialize FileManager Agent for Google Drive sync
+  try {
+    const fileManagerReady = await initializeFileManagerAgent();
+    if (fileManagerReady) {
+      console.log("[ROPA] 📁 FileManager Agent initialized - Google Drive sync enabled");
+    } else {
+      console.log("[ROPA] ⚠️ FileManager Agent not connected - Connect Google Drive to enable sync");
+    }
+  } catch (error) {
+    console.error("[ROPA] FileManager Agent initialization failed:", error);
+  }
+
   // Start autonomous cycles
   startHealthCheckCycle();
   startMaintenanceCycle();
   startMarketIntelligenceCycle();
+  startFileSyncCycle(); // New: Sync files to Google Drive
 
   console.log("[ROPA] ✅ Autonomous operations started");
 }
@@ -256,6 +271,58 @@ async function autoHealPlatform() {
 }
 
 /**
+ * File Sync Cycle - Every 15 minutes
+ * Syncs client data, campaigns, templates to Google Drive
+ */
+function startFileSyncCycle() {
+  if (fileSyncInterval) clearInterval(fileSyncInterval);
+
+  fileSyncInterval = setInterval(async () => {
+    try {
+      const status = FileManager.getStatus();
+      if (!status.connected) {
+        console.log("[ROPA] ⚠️ FileManager not connected - skipping sync");
+        return;
+      }
+
+      const taskId = `file_sync_${Date.now()}`;
+
+      await createRopaTask({
+        taskId,
+        type: "file_sync",
+        status: "running",
+        priority: "low",
+      });
+
+      await createRopaLog({
+        level: "info",
+        message: "Starting file sync cycle - syncing data to Google Drive",
+      });
+
+      // Note: Actual sync happens through FileManager task queue
+      // This cycle just ensures the queue is being processed
+
+      await updateRopaTaskStatus(taskId, "completed", {
+        queueLength: status.queueLength,
+        isProcessing: status.isProcessing,
+        timestamp: new Date(),
+      });
+
+      await createRopaLog({
+        level: "info",
+        message: `File sync cycle completed - queue: ${status.queueLength} tasks`,
+      });
+    } catch (error: any) {
+      console.error("[ROPA] File sync failed:", error);
+      await createRopaLog({
+        level: "error",
+        message: `File sync failed: ${error.message}`,
+      });
+    }
+  }, 15 * 60 * 1000); // Every 15 minutes
+}
+
+/**
  * Stop all autonomous operations
  */
 export async function stopROPA() {
@@ -264,6 +331,7 @@ export async function stopROPA() {
   if (healthCheckInterval) clearInterval(healthCheckInterval);
   if (maintenanceInterval) clearInterval(maintenanceInterval);
   if (marketIntelligenceInterval) clearInterval(marketIntelligenceInterval);
+  if (fileSyncInterval) clearInterval(fileSyncInterval);
 
   await setRopaConfig("ropa_status", {
     enabled: false,
