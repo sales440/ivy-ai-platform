@@ -40,6 +40,7 @@ export async function handleGoogleCallback(req: Request, res: Response) {
 
     // Save tokens to database
     const tokenData = {
+      userId: 1, // Default to admin user for Google Drive integration
       accessToken: tokens.access_token!,
       refreshToken: tokens.refresh_token || null,
       expiryDate: tokens.expiry_date ? new Date(tokens.expiry_date) : null,
