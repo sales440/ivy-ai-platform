@@ -33,7 +33,6 @@ export const fileUploadRouter = router({
         const [tokenRecord] = await db
           .select()
           .from(googleDriveTokens)
-          .where(eq(googleDriveTokens.userId, ctx.user.id))
           .limit(1);
 
         if (!tokenRecord) {

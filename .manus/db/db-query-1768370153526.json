@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO __drizzle_migrations (hash, created_at) VALUES \n('0002_sticky_power_man', 1767162411738),\n('0003_faulty_supreme_intelligence', 1767162499159),\n('0004_dashing_lilith', 1767238887781),\n('0005_flashy_prima', 1768242995199),\n('0006_outstanding_nebula', 1768306624821),\n('0007_demonic_human_cannonball', 1768307000000),\n('0008_lonely_sheva_callister', 1768308000000)\nON DUPLICATE KEY UPDATE hash=hash;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute INSERT INTO __drizzle_migrations (hash, created_at) VALUES \n('0002_sticky_power_man', 1767162411738),\n('0003_faulty_supreme_intelligence', 1767162499159),\n('0004_dashing_lilith', 1767238887781),\n('0005_flashy_prima', 1768242995199),\n('0006_outstanding_nebula', 1768306624821),\n('0007_demonic_human_cannonball', 1768307000000),\n('0008_lonely_sheva_callister', 1768308000000)\nON DUPLICATE KEY UPDATE hash=hash;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 82
+}

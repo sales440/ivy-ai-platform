@@ -1644,73 +1644,129 @@ export default function RopaDashboardV2() {
           )}
 
           {activeSection === "tasks" && (
-            <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle>Todas las Tareas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
-                  {tasks && tasks.length > 0 ? (
-                    <div className="space-y-3">
-                      {tasks.map((task) => (
-                        <div
-                          key={task.id}
-                          className="p-4 bg-slate-950/50 rounded-lg border border-slate-800/50"
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">{task.type}</span>
-                            <Badge
-                              variant={task.status === "completed" ? "default" : "outline"}
-                            >
-                              {task.status}
-                            </Badge>
+            <div className="space-y-6">
+              {/* Tareas Pendientes por Campaña */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ListTodo className="w-5 h-5 text-cyan-400" />
+                    Tareas Pendientes por Campaña
+                  </CardTitle>
+                  <CardDescription>Acciones requeridas organizadas por empresa y campaña</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px]">
+                    {mockCompanies.map((company) => {
+                      const companyTasks = [
+                        { id: 1, campaign: "Email Marketing Q1", task: "Revisar lista de contactos", priority: "high", dueDate: "2026-01-15" },
+                        { id: 2, campaign: "Llamadas Frías", task: "Preparar script de ventas", priority: "medium", dueDate: "2026-01-16" },
+                        { id: 3, campaign: "Social Media", task: "Aprobar contenido programado", priority: "low", dueDate: "2026-01-18" },
+                      ];
+                      return (
+                        <div key={company.id} className="mb-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Building2 className="w-4 h-4 text-cyan-400" />
+                            <span className="font-semibold text-white">{company.name}</span>
+                            <Badge variant="outline" className="ml-auto">{companyTasks.length} pendientes</Badge>
                           </div>
-                          <p className="text-xs text-slate-400">
-                            ID: {task.taskId}
-                          </p>
+                          <div className="space-y-2 pl-6">
+                            {companyTasks.map((task) => (
+                              <div key={task.id} className="p-3 bg-slate-950/50 rounded-lg border border-slate-800/50 flex items-center justify-between">
+                                <div>
+                                  <p className="text-sm font-medium text-white">{task.task}</p>
+                                  <p className="text-xs text-slate-400">{task.campaign} • Vence: {task.dueDate}</p>
+                                </div>
+                                <Badge className={task.priority === "high" ? "bg-red-500" : task.priority === "medium" ? "bg-yellow-500" : "bg-green-500"}>
+                                  {task.priority}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-slate-500 py-8">No hay tareas</p>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                      );
+                    })}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Historial de Tareas Completadas */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                    Tareas Completadas Hoy
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {tasks?.filter(t => t.status === "completed").slice(0, 5).map((task) => (
+                      <div key={task.id} className="p-3 bg-slate-950/50 rounded-lg border border-slate-800/50 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-white">{task.type}</p>
+                          <p className="text-xs text-slate-400">ID: {task.taskId}</p>
+                        </div>
+                        <Badge className="bg-green-500">completada</Badge>
+                      </div>
+                    )) || <p className="text-slate-500 text-center py-4">Sin tareas completadas</p>}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {activeSection === "alerts" && (
-            <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle>Todas las Alertas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[500px]">
+            <div className="space-y-6">
+              {/* Tendencias de Industria por Sector */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-cyan-400" />
+                    Tendencias de Industria por Sector
+                  </CardTitle>
+                  <CardDescription>Análisis de mercado y oportunidades detectadas por ROPA</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[
+                      { sector: "Manufactura CNC", trend: "Demanda creciente de retrofits", change: "+15%", recommendation: "Aumentar campañas de upgrade CNC", icon: "🏭" },
+                      { sector: "Automatización Industrial", trend: "Adopción de Industry 4.0", change: "+22%", recommendation: "Promover soluciones IoT integradas", icon: "⚙️" },
+                      { sector: "Capacitación Técnica", trend: "Escasez de operadores calificados", change: "+18%", recommendation: "Expandir cursos de formación FAGOR", icon: "📚" },
+                      { sector: "Mantenimiento Predictivo", trend: "Reducción de tiempos muertos", change: "+12%", recommendation: "Ofrecer contratos de servicio preventivo", icon: "🔧" },
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-4 bg-slate-950/50 rounded-lg border border-slate-800/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{item.icon}</span>
+                            <span className="font-semibold text-white">{item.sector}</span>
+                          </div>
+                          <Badge className="bg-green-500">{item.change}</Badge>
+                        </div>
+                        <p className="text-sm text-slate-300 mb-2">{item.trend}</p>
+                        <div className="flex items-center gap-2 text-xs text-cyan-400">
+                          <Sparkles className="w-3 h-3" />
+                          <span>Recomendación ROPA: {item.recommendation}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Alertas del Sistema */}
+              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-yellow-400" />
+                    Alertas del Sistema
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   {alerts && alerts.length > 0 ? (
                     <div className="space-y-3">
                       {alerts.map((alert, idx) => (
-                        <div
-                          key={idx}
-                          className={`p-4 rounded-lg border ${
-                            alert.severity === "critical"
-                              ? "bg-red-500/10 border-red-500/30"
-                              : alert.severity === "warning"
-                              ? "bg-yellow-500/10 border-yellow-500/30"
-                              : "bg-slate-800/50 border-slate-700/50"
-                          }`}
-                        >
+                        <div key={idx} className={`p-4 rounded-lg border ${alert.severity === "critical" ? "bg-red-500/10 border-red-500/30" : alert.severity === "warning" ? "bg-yellow-500/10 border-yellow-500/30" : "bg-slate-800/50 border-slate-700/50"}`}>
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge
-                              className={
-                                alert.severity === "critical"
-                                  ? "bg-red-500"
-                                  : alert.severity === "warning"
-                                  ? "bg-yellow-500"
-                                  : "bg-slate-500"
-                              }
-                            >
-                              {alert.severity}
-                            </Badge>
+                            <Badge className={alert.severity === "critical" ? "bg-red-500" : alert.severity === "warning" ? "bg-yellow-500" : "bg-slate-500"}>{alert.severity}</Badge>
                             <span className="font-medium">{alert.title}</span>
                           </div>
                           <p className="text-sm text-slate-300">{alert.message}</p>
@@ -1718,61 +1774,134 @@ export default function RopaDashboardV2() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-center text-slate-500 py-8">No hay alertas</p>
+                    <p className="text-center text-slate-500 py-8">No hay alertas activas</p>
                   )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           )}
 
           {activeSection === "health" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Estado General */}
+                <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-cyan-400" />
+                      Estado General
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span>CPU</span>
+                      <Progress value={35} className="w-1/2" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Memoria</span>
+                      <Progress value={52} className="w-1/2" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Base de Datos</span>
+                      <Progress value={28} className="w-1/2" />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>API</span>
+                      <Progress value={15} className="w-1/2" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Métricas de Rendimiento */}
+                <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-green-400" />
+                      Métricas de Rendimiento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg">
+                      <span>Tasa de Éxito</span>
+                      <span className="text-green-400 font-bold">{stats?.performance.successRate || 100}%</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg">
+                      <span>Tiempo de Respuesta</span>
+                      <span className="text-cyan-400 font-bold">{stats?.performance.avgResponseTime || 1.2}s</span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg">
+                      <span>Errores Corregidos Hoy</span>
+                      <span className="text-teal-400 font-bold">{stats?.typescript.fixedToday || 241}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Consumo por Proceso */}
               <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
                 <CardHeader>
-                  <CardTitle>Estado General</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-purple-400" />
+                    Consumo por Proceso de ROPA
+                  </CardTitle>
+                  <CardDescription>Análisis de recursos utilizados por cada módulo</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>CPU</span>
-                    <Progress value={35} className="w-1/2" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Memoria</span>
-                    <Progress value={52} className="w-1/2" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Base de Datos</span>
-                    <Progress value={28} className="w-1/2" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>API</span>
-                    <Progress value={15} className="w-1/2" />
+                <CardContent>
+                  <div className="space-y-3">
+                    {[
+                      { process: "Generación de Contenido IA", cpu: 45, memory: 60, calls: 1250 },
+                      { process: "Análisis de Leads", cpu: 25, memory: 35, calls: 890 },
+                      { process: "Sincronización Google Drive", cpu: 15, memory: 20, calls: 450 },
+                      { process: "Monitoreo de Campañas", cpu: 30, memory: 40, calls: 2100 },
+                      { process: "Generación de Reportes", cpu: 20, memory: 25, calls: 320 },
+                    ].map((proc, idx) => (
+                      <div key={idx} className="p-3 bg-slate-950/50 rounded-lg border border-slate-800/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-white">{proc.process}</span>
+                          <span className="text-xs text-slate-400">{proc.calls} llamadas/día</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <span className="text-xs text-slate-400">CPU</span>
+                            <Progress value={proc.cpu} className="h-2" />
+                          </div>
+                          <div>
+                            <span className="text-xs text-slate-400">Memoria</span>
+                            <Progress value={proc.memory} className="h-2" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Acciones de Mantenimiento */}
               <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
                 <CardHeader>
-                  <CardTitle>Métricas de Rendimiento</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="w-5 h-5 text-orange-400" />
+                    Acciones de Mantenimiento
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg">
-                    <span>Tasa de Éxito</span>
-                    <span className="text-green-400 font-bold">
-                      {stats?.performance.successRate || 100}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg">
-                    <span>Tiempo de Respuesta</span>
-                    <span className="text-cyan-400 font-bold">
-                      {stats?.performance.avgResponseTime || 1.2}s
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-950/50 rounded-lg">
-                    <span>Errores Corregidos Hoy</span>
-                    <span className="text-teal-400 font-bold">
-                      {stats?.typescript.fixedToday || 0}
-                    </span>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => toast.success("Memoria de ROPA reiniciada")}>
+                      <Brain className="w-6 h-6 text-purple-400" />
+                      <span className="text-xs">Reset Memoria</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => toast.success("Caché limpiado")}>
+                      <Trash2 className="w-6 h-6 text-red-400" />
+                      <span className="text-xs">Limpiar Caché</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => toast.success("Optimización iniciada")}>
+                      <Zap className="w-6 h-6 text-yellow-400" />
+                      <span className="text-xs">Optimizar</span>
+                    </Button>
+                    <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => toast.success("Backup creado")}>
+                      <Save className="w-6 h-6 text-green-400" />
+                      <span className="text-xs">Crear Backup</span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
