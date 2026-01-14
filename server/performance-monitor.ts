@@ -305,16 +305,20 @@ async function sendAlertNotifications(alerts: AnomalyAlert[]) {
 
   if (critical.length > 0) {
     const message = `🚨 ALERTAS CRÍTICAS:\n\n${critical.map(a => `• ${a.message}`).join("\n")}`;
-    await notifyOwner({
-      title: "⚠️ Anomalías Críticas Detectadas",
-      content: message,
-    });
+    // Email notifications disabled to avoid inbox spam
+    // await notifyOwner({
+    //   title: "⚠️ Anomalías Críticas Detectadas",
+    //   content: message,
+    // });
+    console.log("[Performance Monitor] Critical anomalies detected (email disabled):", message);
   } else if (warnings.length > 0) {
     const message = `⚠️ ADVERTENCIAS:\n\n${warnings.map(a => `• ${a.message}`).join("\n")}`;
-    await notifyOwner({
-      title: "⚠️ Advertencias de Rendimiento",
-      content: message,
-    });
+    // Email notifications disabled to avoid inbox spam
+    // await notifyOwner({
+    //   title: "⚠️ Advertencias de Rendimiento",
+    //   content: message,
+    // });
+    console.log("[Performance Monitor] Warning anomalies detected (email disabled):", message);
   }
 }
 
@@ -337,7 +341,7 @@ export function getLatestMetrics(): PerformanceMetrics | null {
  */
 let monitoringInterval: NodeJS.Timeout | null = null;
 
-export function startPerformanceMonitoring(intervalMs: number = 60000) {
+export function startPerformanceMonitoring(intervalMs: number = 300000) {
   if (monitoringInterval) {
     console.log("[Performance Monitor] Already running");
     return;

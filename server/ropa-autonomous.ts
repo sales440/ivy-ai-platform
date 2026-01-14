@@ -38,7 +38,7 @@ export async function initializeROPA() {
 }
 
 /**
- * Health Check Cycle - Every 2 minutes
+ * Health Check Cycle - Every 10 minutes (optimized for memory)
  */
 function startHealthCheckCycle() {
   if (healthCheckInterval) clearInterval(healthCheckInterval);
@@ -83,7 +83,7 @@ function startHealthCheckCycle() {
         message: `Health check failed: ${error.message}`,
       });
     }
-  }, 2 * 60 * 1000); // Every 2 minutes
+  }, 10 * 60 * 1000); // Every 10 minutes (reduced frequency to save memory)
 }
 
 /**
