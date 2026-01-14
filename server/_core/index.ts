@@ -11,6 +11,7 @@ import { initializeROPA } from "../ropa-autonomous";
 import { handleGoogleCallback } from "../google-callback-handler";
 import { initializeBackupScheduler } from "../backup-scheduler";
 import { initializeCleanupScheduler } from "../backup-retention";
+import { startPerformanceMonitoring } from "../performance-monitor";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -91,6 +92,13 @@ async function startServer() {
       initializeCleanupScheduler();
     } catch (error) {
       console.error("[Backup Retention] Failed to initialize:", error);
+    }
+    
+    // Start performance monitoring (every 1 minute)
+    try {
+      startPerformanceMonitoring(60000);
+    } catch (error) {
+      console.error("[Performance Monitor] Failed to initialize:", error);
     }
   });
 }

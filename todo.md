@@ -319,3 +319,20 @@
 - [x] Implement automatic email draft window opening when ROPA generates emails
 - [x] Test all fixes locally
 - [x] Deploy to Railway production
+
+## PRODUCTION ERRORS - Phase 30 (URGENT)
+- [ ] Fix tRPC API returning HTML instead of JSON (Error: "<!doctype "... is not valid JSON)
+- [ ] Fix Vite HMR reload failure for GoogleDriveSettings.tsx
+- [ ] Fix Vite HMR reload failure for index.css
+- [ ] Test all fixes locally
+- [ ] Deploy to Railway production
+
+## Performance Monitoring & Anomaly Detection - Phase 31 (COMPLETED ✅)
+- [x] Create performance metrics collection service (CPU, memory, response times, DB queries)
+- [x] Implement anomaly detection algorithms (baseline + threshold-based)
+- [x] Create alert system for performance degradation
+- [x] Add monitoring dashboard UI with real-time metrics
+- [x] Integrate with ROPA for proactive issue resolution
+- [x] Add notification system (email/webhook) for critical alerts
+- [x] Test monitoring system locally
+- [ ] Deploy to Railway production

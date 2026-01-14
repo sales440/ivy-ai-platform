@@ -11,6 +11,7 @@ import RopaCalendar from "./pages/RopaCalendar";
 import ABTestingDashboard from "./pages/ABTestingDashboard";
 import PredictiveInsights from "./pages/PredictiveInsights";
 import GoogleDriveSettings from "./pages/GoogleDriveSettings";
+import PerformanceMonitor from "./pages/PerformanceMonitor";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <Route path={"/ab-testing"} component={ABTestingDashboard} />
       <Route path={"/predictive-insights"} component={PredictiveInsights} />
       <Route path={"/google-drive"} component={GoogleDriveSettings} />
+      <Route path={"/performance"} component={PerformanceMonitor} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
