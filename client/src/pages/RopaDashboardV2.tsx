@@ -200,12 +200,22 @@ export default function RopaDashboardV2() {
   // Check Google Drive connection status via API
   const checkGoogleDriveConnection = async () => {
     try {
+      console.log('[Google Drive] Checking connection...');
       const response = await fetch('/api/trpc/googleDrive.isConnected');
       const data = await response.json();
-      const connected = data?.result?.data?.connected === true;
+      console.log('[Google Drive] API Response:', JSON.stringify(data));
+      
+      // tRPC returns { result: { data: { connected: boolean } } }
+      let connected = false;
+      if (data?.result?.data?.connected === true) {
+        connected = true;
+      } else if (data?.connected === true) {
+        connected = true;
+      }
+      
+      console.log('[Google Drive] Connection status:', connected);
       setGoogleDriveConnected(connected);
       localStorage.setItem('googleDriveConnected', connected ? 'true' : 'false');
-      console.log('[Google Drive] Connection status:', connected);
       return connected;
     } catch (error) {
       console.error('[Google Drive] Error checking connection:', error);
@@ -221,12 +231,17 @@ export default function RopaDashboardV2() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     
-    // Handle OAuth callback
+    // Handle OAuth callback - trust the parameter from backend
     if (urlParams.get('google_drive_connected') === 'true') {
+      console.log('[Google Drive] OAuth success detected in URL');
       toast.success('Google Drive conectado exitosamente');
+      // Set connected immediately - backend already confirmed it
+      setGoogleDriveConnected(true);
+      setCheckingConnection(false);
+      setConnectingGoogleDrive(false);
+      localStorage.setItem('googleDriveConnected', 'true');
       setActiveSection('files'); // Navigate to files section
       window.history.replaceState({}, '', window.location.pathname);
-      checkGoogleDriveConnection();
     } else if (urlParams.get('error') === 'google_auth_failed') {
       const message = urlParams.get('message') || 'Error desconocido';
       toast.error(`Error conectando Google Drive: ${message}`);
