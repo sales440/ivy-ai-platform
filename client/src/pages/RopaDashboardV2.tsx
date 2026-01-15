@@ -179,6 +179,39 @@ export default function RopaDashboardV2() {
   const [localCompanies, setLocalCompanies] = useState<any[]>([]);
   const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
   
+  // Google Drive connection status
+  const [googleDriveConnected, setGoogleDriveConnected] = useState<boolean | null>(null);
+  const [googleDriveLoading, setGoogleDriveLoading] = useState(false);
+  const googleDriveCheckQuery = trpc.googleDrive.isConnected.useQuery(undefined, {
+    refetchOnWindowFocus: true,
+    retry: 1,
+  });
+  
+  // Update Google Drive connection status when query changes
+  useEffect(() => {
+    if (googleDriveCheckQuery.data !== undefined) {
+      setGoogleDriveConnected(googleDriveCheckQuery.data.connected);
+    }
+  }, [googleDriveCheckQuery.data]);
+  
+  // Check for google_drive_connected param in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('google_drive_connected') === 'true') {
+      setGoogleDriveConnected(true);
+      toast.success('Google Drive conectado exitosamente');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      // Refetch to confirm
+      googleDriveCheckQuery.refetch();
+    }
+    if (urlParams.get('error') === 'google_auth_failed') {
+      const message = urlParams.get('message') || 'Error desconocido';
+      toast.error(`Error conectando Google Drive: ${message}`);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+  
   // Email drafts for Monitor section
   const [emailDrafts, setEmailDrafts] = useState<Array<{
     id: string;
@@ -1311,29 +1344,43 @@ export default function RopaDashboardV2() {
           {activeSection === "files" && (
             <div className="space-y-6">
               {/* Google Drive Connection Status */}
-              <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+              <Card className={`bg-gradient-to-br border backdrop-blur ${googleDriveConnected ? 'from-green-900/30 to-green-800/20 border-green-500/50' : 'from-slate-900/80 to-slate-800/50 border-slate-700/50'}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12.01 1.485c-2.082 0-3.754.02-3.743.047.01.02 1.708 3.001 3.774 6.62l3.76 6.574h3.76c2.081 0 3.753-.02 3.742-.047-.01-.02-1.708-3.001-3.775-6.62l-3.76-6.574h-3.758zm-5.516 9.65L3.252 17.71c-.715 1.239-.718 1.24.724 1.24h6.744l2.257-3.254-2.509-4.415c-.2-.35-.381-.694-.542-1.026-.098.196-.201.4-.312.613l-2.63 4.576-.209.365h-.002l-.728 1.266h-2.257l3.479-6.058-.481-.837-.239-.415z"/>
-                        </svg>
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${googleDriveConnected ? 'bg-gradient-to-br from-green-500 to-green-600' : 'bg-gradient-to-br from-blue-500 to-blue-600'}`}>
+                        {googleDriveCheckQuery.isLoading || googleDriveLoading ? (
+                          <Loader2 className="w-5 h-5 text-white animate-spin" />
+                        ) : googleDriveConnected ? (
+                          <CheckCircle2 className="w-5 h-5 text-white" />
+                        ) : (
+                          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.01 1.485c-2.082 0-3.754.02-3.743.047.01.02 1.708 3.001 3.774 6.62l3.76 6.574h3.76c2.081 0 3.753-.02 3.742-.047-.01-.02-1.708-3.001-3.775-6.62l-3.76-6.574h-3.758zm-5.516 9.65L3.252 17.71c-.715 1.239-.718 1.24.724 1.24h6.744l2.257-3.254-2.509-4.415c-.2-.35-.381-.694-.542-1.026-.098.196-.201.4-.312.613l-2.63 4.576-.209.365h-.002l-.728 1.266h-2.257l3.479-6.058-.481-.837-.239-.415z"/>
+                          </svg>
+                        )}
                       </div>
                       <div>
                         <h4 className="font-medium text-white">Google Drive</h4>
-                        <p className="text-xs text-slate-400">Almacenamiento centralizado para archivos de clientes</p>
+                        <p className={`text-xs ${googleDriveConnected ? 'text-green-400' : 'text-slate-400'}`}>
+                          {googleDriveCheckQuery.isLoading ? 'Verificando conexión...' : googleDriveConnected ? '✓ Conectado a sales@ivybai.com' : 'No conectado - Haz clic para autorizar'}
+                        </p>
                       </div>
                     </div>
                     <Button
                       onClick={() => {
-                        // Redirect to Google OAuth
+                        setGoogleDriveLoading(true);
                         window.location.href = '/api/google-drive/auth';
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={googleDriveCheckQuery.isLoading || googleDriveLoading}
+                      className={googleDriveConnected ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}
                     >
-                      <Plug className="w-4 h-4 mr-2" />
-                      Conectar Google Drive
+                      {googleDriveCheckQuery.isLoading || googleDriveLoading ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verificando...</>
+                      ) : googleDriveConnected ? (
+                        <><CheckCircle2 className="w-4 h-4 mr-2" /> Conectado</>
+                      ) : (
+                        <><Plug className="w-4 h-4 mr-2" /> Conectar Google Drive</>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -1402,23 +1449,55 @@ export default function RopaDashboardV2() {
                     </label>
                   </div>
 
-                  {/* File Type Selector */}
+                  {/* File Type Selector - Click to upload specific type */}
                   <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     {[
-                      { type: "logo", label: "Logo", icon: Building2, color: "cyan" },
-                      { type: "email_example", label: "Email Ejemplo", icon: Mail, color: "teal" },
-                      { type: "branding", label: "Branding", icon: Sparkles, color: "purple" },
-                      { type: "document", label: "Documento", icon: FileText, color: "orange" },
-                      { type: "client_list", label: "Lista Clientes", icon: Users, color: "green" },
-                      { type: "other", label: "Otro", icon: Download, color: "slate" },
+                      { type: "logo", label: "Logo", icon: Building2, accept: ".png,.jpg,.jpeg,.svg,.gif" },
+                      { type: "email_example", label: "Email Ejemplo", icon: Mail, accept: ".html,.eml,.msg,.pdf" },
+                      { type: "branding", label: "Branding", icon: Sparkles, accept: ".png,.jpg,.jpeg,.svg,.gif,.pdf" },
+                      { type: "document", label: "Documento", icon: FileText, accept: ".pdf,.doc,.docx,.txt" },
+                      { type: "client_list", label: "Lista Clientes", icon: Users, accept: ".xlsx,.xls,.csv" },
+                      { type: "other", label: "Otro", icon: Download, accept: "*" },
                     ].map((item) => (
-                      <button
+                      <label
                         key={item.type}
-                        className={`p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-${item.color}-500 hover:bg-${item.color}-500/10 transition-all text-center`}
+                        className="p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all text-center cursor-pointer"
                       >
-                        <item.icon className={`w-6 h-6 mx-auto mb-2 text-${item.color}-400`} />
+                        <input
+                          type="file"
+                          accept={item.accept}
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (!googleDriveConnected) {
+                              toast.error('Primero conecta Google Drive');
+                              return;
+                            }
+                            const reader = new FileReader();
+                            reader.onload = async () => {
+                              try {
+                                const base64 = (reader.result as string).split(',')[1];
+                                await uploadFileMutation.mutateAsync({
+                                  fileName: file.name,
+                                  fileData: base64,
+                                  mimeType: file.type || 'application/octet-stream',
+                                  companyId: localCompanies[0]?.id || 1,
+                                  companyName: localCompanies[0]?.name || 'FAGOR Automation',
+                                  fileType: item.type as any,
+                                });
+                                toast.success(`${file.name} subido exitosamente`);
+                              } catch (error: any) {
+                                toast.error(`Error: ${error.message}`);
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                            e.target.value = '';
+                          }}
+                        />
+                        <item.icon className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
                         <span className="text-xs text-slate-300">{item.label}</span>
-                      </button>
+                      </label>
                     ))}
                   </div>
                 </CardContent>

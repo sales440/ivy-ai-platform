@@ -373,3 +373,12 @@
 - [x] Remove mentions of "asterisco", "negrita", "bold", "markdown" from responses
 - [x] Add instruction that responses will be read aloud
 - [ ] Test ROPA responses for asterisk-free output
+
+## Google Drive Visual Feedback & File Upload Fix - Phase 36 (IN PROGRESS)
+- [ ] Add visual indicator for Google Drive connection status (green=connected, red=disconnected)
+- [ ] Fix file upload buttons (Logo, Email, Branding, etc.) not responding
+- [ ] Add connection status check on page load
+- [ ] Add loading spinner during OAuth flow
+- [ ] Add success/error toast notifications
+- [ ] Verify OAuth callback saves tokens correctly
+- [ ] Test complete file upload flow to Google Drive
