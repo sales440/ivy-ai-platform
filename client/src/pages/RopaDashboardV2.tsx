@@ -194,23 +194,50 @@ export default function RopaDashboardV2() {
   
   // Google Drive connection state
   const [googleDriveConnected, setGoogleDriveConnected] = useState(false);
-  const [connectingGoogleDrive, setConnectingGoogleDrive] = useState(false);
+  const [connectingGoogleDrive, setConnectingGoogleDrive] = useState(true); // Start as loading
+  const [checkingConnection, setCheckingConnection] = useState(true);
+  
+  // Check Google Drive connection status via API
+  const checkGoogleDriveConnection = async () => {
+    try {
+      const response = await fetch('/api/trpc/googleDrive.isConnected');
+      const data = await response.json();
+      const connected = data?.result?.data?.connected === true;
+      setGoogleDriveConnected(connected);
+      localStorage.setItem('googleDriveConnected', connected ? 'true' : 'false');
+      console.log('[Google Drive] Connection status:', connected);
+      return connected;
+    } catch (error) {
+      console.error('[Google Drive] Error checking connection:', error);
+      setGoogleDriveConnected(false);
+      return false;
+    } finally {
+      setCheckingConnection(false);
+      setConnectingGoogleDrive(false);
+    }
+  };
   
   // Check Google Drive connection status on mount and after OAuth redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // Handle OAuth callback
     if (urlParams.get('google_drive_connected') === 'true') {
-      setGoogleDriveConnected(true);
-      localStorage.setItem('googleDriveConnected', 'true');
-      // Clean URL
+      toast.success('Google Drive conectado exitosamente');
+      setActiveSection('files'); // Navigate to files section
       window.history.replaceState({}, '', window.location.pathname);
+      checkGoogleDriveConnection();
+    } else if (urlParams.get('error') === 'google_auth_failed') {
+      const message = urlParams.get('message') || 'Error desconocido';
+      toast.error(`Error conectando Google Drive: ${message}`);
+      setActiveSection('files');
+      window.history.replaceState({}, '', window.location.pathname);
+      setCheckingConnection(false);
+      setConnectingGoogleDrive(false);
     } else {
-      const saved = localStorage.getItem('googleDriveConnected');
-      if (saved === 'true') {
-        setGoogleDriveConnected(true);
-      }
+      // Normal page load - check API
+      checkGoogleDriveConnection();
     }
-    setConnectingGoogleDrive(false);
   }, []);
   
   // Load companies, campaigns and email drafts from localStorage
@@ -1353,34 +1380,47 @@ export default function RopaDashboardV2() {
                         </p>
                       </div>
                     </div>
-                    {connectingGoogleDrive ? (
-                      <Button disabled className="bg-blue-600/50 text-white">
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Conectando...
-                      </Button>
-                    ) : googleDriveConnected ? (
-                      <Button
-                        onClick={() => {
-                          window.location.href = '/api/google-drive/auth';
-                        }}
-                        variant="outline"
-                        className="border-green-500/50 text-green-400 hover:bg-green-500/10"
-                      >
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        Reconectar
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => {
-                          setConnectingGoogleDrive(true);
-                          window.location.href = '/api/google-drive/auth';
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        <Plug className="w-4 h-4 mr-2" />
-                        Conectar Google Drive
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {checkingConnection ? (
+                        <Button disabled className="bg-slate-600/50 text-white">
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Verificando...
+                        </Button>
+                      ) : googleDriveConnected ? (
+                        <>
+                          <Button
+                            onClick={() => checkGoogleDriveConnection()}
+                            variant="outline"
+                            className="border-green-500/50 text-green-400 hover:bg-green-500/10"
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Conectado
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setConnectingGoogleDrive(true);
+                              window.location.href = '/api/google-drive/auth';
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-white"
+                          >
+                            Reconectar
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          onClick={() => {
+                            setConnectingGoogleDrive(true);
+                            window.location.href = '/api/google-drive/auth';
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Plug className="w-4 h-4 mr-2" />
+                          Conectar Google Drive
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   {googleDriveConnected && (
                     <div className="mt-3 pt-3 border-t border-slate-700/50">
@@ -1400,81 +1440,149 @@ export default function RopaDashboardV2() {
                     <Upload className="w-5 h-5 text-cyan-400" />
                     Subir Archivos
                   </CardTitle>
-                  <CardDescription>Sube logos, ejemplos de emails, listas de clientes (Excel, CSV, PDF, Word, imágenes)</CardDescription>
+                  <CardDescription>
+                    {googleDriveConnected 
+                      ? 'Sube archivos directamente a Google Drive' 
+                      : 'Conecta Google Drive primero para subir archivos'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-cyan-500 transition-colors cursor-pointer bg-slate-900/30">
-                    <input
-                      type="file"
-                      multiple
-                      accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.svg"
-                      className="hidden"
-                      id="file-upload"
-                      onChange={async (e) => {
-                        const files = e.target.files;
-                        if (!files || files.length === 0) return;
-                        
-                        for (let i = 0; i < files.length; i++) {
-                          const file = files[i];
-                          const reader = new FileReader();
-                          
-                          reader.onload = async () => {
-                            try {
-                              const base64 = (reader.result as string).split(',')[1];
-                              
-                              // Determine file type category
-                              let fileType: "logo" | "email_example" | "branding" | "document" | "client_list" | "other" = "other";
-                              if (file.name.toLowerCase().includes('logo')) fileType = "logo";
-                              else if (file.name.toLowerCase().includes('email')) fileType = "email_example";
-                              else if (file.name.toLowerCase().includes('brand')) fileType = "branding";
-                              else if (file.type.includes('pdf') || file.type.includes('word')) fileType = "document";
-                              else if (file.type.includes('excel') || file.type.includes('csv')) fileType = "client_list";
-                              
-                              await uploadFileMutation.mutateAsync({
-                                fileName: file.name,
-                                fileData: base64,
-                                mimeType: file.type,
-                                companyId: 1, // FAGOR Automation
-                                companyName: "FAGOR Automation",
-                                fileType,
-                              });
-                              
-                              toast.success(`${file.name} subido exitosamente`);
-                            } catch (error: any) {
-                              toast.error(`Error subiendo ${file.name}: ${error.message}`);
-                            }
-                          };
-                          
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <Upload className="w-12 h-12 mx-auto text-slate-500 mb-4" />
-                      <p className="text-lg font-medium text-white mb-2">Arrastra archivos aquí o haz clic para seleccionar</p>
-                      <p className="text-sm text-slate-400">Formatos soportados: Excel, CSV, PDF, Word, Imágenes</p>
-                    </label>
-                  </div>
-
-                  {/* File Type Selector */}
-                  <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                    {[
-                      { type: "logo", label: "Logo", icon: Building2, color: "cyan" },
-                      { type: "email_example", label: "Email Ejemplo", icon: Mail, color: "teal" },
-                      { type: "branding", label: "Branding", icon: Sparkles, color: "purple" },
-                      { type: "document", label: "Documento", icon: FileText, color: "orange" },
-                      { type: "client_list", label: "Lista Clientes", icon: Users, color: "green" },
-                      { type: "other", label: "Otro", icon: Download, color: "slate" },
-                    ].map((item) => (
-                      <button
-                        key={item.type}
-                        className={`p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-${item.color}-500 hover:bg-${item.color}-500/10 transition-all text-center`}
+                  {!googleDriveConnected ? (
+                    <div className="border-2 border-dashed border-red-600/50 rounded-xl p-8 text-center bg-red-900/10">
+                      <AlertCircle className="w-12 h-12 mx-auto text-red-400 mb-4" />
+                      <p className="text-lg font-medium text-red-400 mb-2">Google Drive no conectado</p>
+                      <p className="text-sm text-slate-400 mb-4">Debes conectar Google Drive antes de subir archivos</p>
+                      <Button
+                        onClick={() => window.location.href = '/api/google-drive/auth'}
+                        className="bg-blue-600 hover:bg-blue-700"
                       >
-                        <item.icon className={`w-6 h-6 mx-auto mb-2 text-${item.color}-400`} />
-                        <span className="text-xs text-slate-300">{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
+                        <Plug className="w-4 h-4 mr-2" />
+                        Conectar Google Drive
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="border-2 border-dashed border-green-600/50 rounded-xl p-8 text-center hover:border-green-500 transition-colors cursor-pointer bg-green-900/10">
+                        <input
+                          type="file"
+                          multiple
+                          accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.svg"
+                          className="hidden"
+                          id="file-upload"
+                          onChange={async (e) => {
+                            const files = e.target.files;
+                            if (!files || files.length === 0) return;
+                            
+                            for (let i = 0; i < files.length; i++) {
+                              const file = files[i];
+                              const reader = new FileReader();
+                              
+                              reader.onload = async () => {
+                                try {
+                                  const base64 = (reader.result as string).split(',')[1];
+                                  toast.loading(`Subiendo ${file.name}...`, { id: `upload-${file.name}` });
+                                  
+                                  // Upload to Google Drive via tRPC
+                                  const response = await fetch('/api/trpc/googleDrive.uploadFile', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      fileName: file.name,
+                                      fileBuffer: base64,
+                                      mimeType: file.type,
+                                      folderType: 'branding'
+                                    })
+                                  });
+                                  
+                                  const result = await response.json();
+                                  
+                                  if (result?.result?.data?.success) {
+                                    toast.success(`${file.name} subido a Google Drive`, { id: `upload-${file.name}` });
+                                    if (result.result.data.webViewLink) {
+                                      window.open(result.result.data.webViewLink, '_blank');
+                                    }
+                                  } else {
+                                    throw new Error(result?.error?.message || 'Error desconocido');
+                                  }
+                                } catch (error: any) {
+                                  toast.error(`Error: ${error.message}`, { id: `upload-${file.name}` });
+                                }
+                              };
+                              
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <label htmlFor="file-upload" className="cursor-pointer">
+                          <Upload className="w-12 h-12 mx-auto text-green-400 mb-4" />
+                          <p className="text-lg font-medium text-white mb-2">Arrastra archivos aquí o haz clic para seleccionar</p>
+                          <p className="text-sm text-green-400">Los archivos se guardarán en Google Drive</p>
+                        </label>
+                      </div>
+
+                      {/* File Type Selector */}
+                      <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                        {[
+                          { type: "branding", label: "Logo/Branding", icon: Building2, accept: ".png,.jpg,.jpeg,.svg", folder: "branding" },
+                          { type: "emailTemplates", label: "Email", icon: Mail, accept: ".html,.txt,.pdf", folder: "emailTemplates" },
+                          { type: "campaigns", label: "Campañas", icon: Sparkles, accept: ".pdf,.doc,.docx", folder: "campaigns" },
+                          { type: "exports", label: "Documento", icon: FileText, accept: ".pdf,.doc,.docx", folder: "exports" },
+                          { type: "clientLists", label: "Clientes", icon: Users, accept: ".xlsx,.xls,.csv", folder: "clientLists" },
+                          { type: "backups", label: "Backup", icon: Download, accept: "*", folder: "backups" },
+                        ].map((item) => (
+                          <label
+                            key={item.type}
+                            className="p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-cyan-500 hover:bg-cyan-500/10 transition-all text-center cursor-pointer"
+                          >
+                            <input
+                              type="file"
+                              accept={item.accept}
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                
+                                const reader = new FileReader();
+                                reader.onload = async () => {
+                                  try {
+                                    const base64 = (reader.result as string).split(',')[1];
+                                    toast.loading(`Subiendo ${file.name}...`, { id: `upload-${file.name}` });
+                                    
+                                    const response = await fetch('/api/trpc/googleDrive.uploadFile', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        fileName: file.name,
+                                        fileBuffer: base64,
+                                        mimeType: file.type,
+                                        folderType: item.folder
+                                      })
+                                    });
+                                    
+                                    const result = await response.json();
+                                    
+                                    if (result?.result?.data?.success) {
+                                      toast.success(`${file.name} subido a ${item.label}`, { id: `upload-${file.name}` });
+                                      if (result.result.data.webViewLink) {
+                                        window.open(result.result.data.webViewLink, '_blank');
+                                      }
+                                    } else {
+                                      throw new Error(result?.error?.message || 'Error desconocido');
+                                    }
+                                  } catch (error: any) {
+                                    toast.error(`Error: ${error.message}`, { id: `upload-${file.name}` });
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                            />
+                            <item.icon className="w-6 h-6 mx-auto mb-2 text-cyan-400" />
+                            <span className="text-xs text-slate-300">{item.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
