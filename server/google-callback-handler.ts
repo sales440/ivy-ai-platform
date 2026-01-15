@@ -61,13 +61,13 @@ export async function handleGoogleCallback(req: Request, res: Response) {
   // Handle authorization errors
   if (error) {
     console.error("[Google OAuth] Authorization error:", error);
-    return res.redirect(`/?error=google_auth_failed&message=${encodeURIComponent(String(error))}`);
+    return res.redirect(`/ropa-v2?error=google_auth_failed&message=${encodeURIComponent(String(error))}`);
   }
 
   // Validate authorization code
   if (!code || typeof code !== "string") {
     console.error("[Google OAuth] No authorization code received");
-    return res.redirect("/?error=google_auth_failed&message=No+authorization+code");
+    return res.redirect("/ropa-v2?error=google_auth_failed&message=No+authorization+code");
   }
   
   console.log("[Google OAuth] Code received, length:", code.length);
@@ -137,13 +137,13 @@ export async function handleGoogleCallback(req: Request, res: Response) {
     console.log("[Google OAuth] ✓ Tokens saved successfully");
 
     // Redirect to ROPA dashboard files section with success
-    console.log("[Google OAuth] ✓ SUCCESS - Redirecting to / with google_drive_connected=true");
-    res.redirect("/?google_drive_connected=true");
+    console.log("[Google OAuth] ✓ SUCCESS - Redirecting to /ropa-v2 with google_drive_connected=true");
+    res.redirect("/ropa-v2?google_drive_connected=true");
     
   } catch (error) {
     console.error("[Google OAuth] Error during callback:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    res.redirect(`/?error=google_auth_failed&message=${encodeURIComponent(errorMessage)}`);
+    res.redirect(`/ropa-v2?error=google_auth_failed&message=${encodeURIComponent(errorMessage)}`);
   } finally {
     if (connection) {
       await connection.end();
