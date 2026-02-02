@@ -389,16 +389,30 @@ ${memoryContext.join('\n')}
 
 You are ROPA. You don't wait. You don't ask. You EXECUTE.`;
 
-      // Call LLM
-      const response = await invokeLLM({
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-      });
+      // Call LLM with robust error handling
+      let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
+      try {
+        console.log('[ROPA Chat] Calling LLM with', messages.length, 'messages');
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...messages,
+          ],
+        });
+        console.log('[ROPA Chat] LLM response received');
 
-      const rawContent = response.choices[0]?.message?.content;
-      let assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
+        const rawContent = response.choices[0]?.message?.content;
+        assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
+      } catch (llmError) {
+        console.error('[ROPA Chat] LLM Error:', llmError);
+        assistantMessage = "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.";
+        // Still save the error response so user sees something
+        await addRopaChatMessage({
+          role: "assistant",
+          message: assistantMessage,
+        });
+        return { response: assistantMessage };
+      }
       
       // Remove ALL asterisks and formatting mentions for clean speech output
       assistantMessage = assistantMessage

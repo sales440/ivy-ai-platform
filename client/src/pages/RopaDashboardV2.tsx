@@ -601,8 +601,18 @@ export default function RopaDashboardV2() {
         }
       }
     },
-    onError: () => {
+    onError: (error) => {
       setIsSubmitting(false);
+      console.error('[ROPA Chat] Error sending message:', error);
+      // Show error toast to user
+      const errorMessage = error.message || 'Error al enviar mensaje';
+      if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+        toast.error('Error de conexión. Verifica tu internet y vuelve a intentar.');
+      } else if (errorMessage.includes('timeout')) {
+        toast.error('La respuesta tardó demasiado. Intenta con un mensaje más corto.');
+      } else {
+        toast.error(`Error: ${errorMessage}`);
+      }
     },
   });
 
