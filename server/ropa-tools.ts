@@ -5,6 +5,7 @@
 
 import { createRopaLog, recordRopaMetric, createRopaAlert, recordRopaLearning } from "./ropa-db";
 import ropaDriveService from "./ropa-drive-service";
+import { ropaUITools, uiInspectionTools, diagnosticTools, selfCorrectionTools } from "./ropa-ui-tools";
 
 // ============ UTILITY FUNCTIONS ============
 
@@ -1327,6 +1328,7 @@ export const ropaTools = {
   ...advancedFeaturesTools,
   ...codeTools,
   ...driveTools,
+  ...ropaUITools,
 };
 
 // Tool registry for easy lookup
@@ -1356,6 +1358,7 @@ export const toolCategories = {
   "Advanced Features (NL, Self-Heal, Budget, Voice, Sentiment, Intel)": Object.keys(advancedFeaturesTools),
   "Code & Deployment": Object.keys(codeTools),
   "Google Drive & Files": Object.keys(driveTools),
+  "UI Inspection & Self-Correction": Object.keys(ropaUITools),
 };
 
 export const TOTAL_TOOLS = Object.keys(toolRegistry).length;

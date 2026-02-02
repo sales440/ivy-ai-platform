@@ -373,3 +373,9 @@
 - [x] Add ROPA capability to move files between folders
 - [x] Add ROPA capability to copy files between folders
 - [x] Fix Google Drive connection persistence - should stay connected across page navigation
+- [x] Fix email drafts not appearing in Monitor section
+- [x] Analyze why ROPA cannot self-correct platform issues
+- [x] Add debugging/diagnostic tools for ROPA to troubleshoot platform problems
+- [x] Create UI state inspection tools for ROPA (see Monitor, localStorage, active section)
+- [x] Create self-correction tools for ROPA (clear corrupted data, reset states)
+- [x] Add real-time interface visibility for ROPA

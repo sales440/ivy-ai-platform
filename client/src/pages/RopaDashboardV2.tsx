@@ -329,6 +329,101 @@ export default function RopaDashboardV2() {
     }
   }, [emailDrafts]);
   
+  // ============ ROPA UI STATE SYNC ============
+  // Sync UI state to backend so ROPA can see what's happening in real-time
+  const updateUIStateMutation = trpc.ropa.updateUIState.useMutation();
+  const { data: pendingCommands, refetch: refetchCommands } = trpc.ropa.getPendingCommands.useQuery(
+    undefined,
+    { refetchInterval: 3000 } // Check for commands every 3 seconds
+  );
+  const markCommandExecutedMutation = trpc.ropa.markCommandExecuted.useMutation();
+  
+  // Sync UI state to backend every 5 seconds
+  useEffect(() => {
+    const syncUIState = () => {
+      const localStorageKeys = Object.keys(localStorage);
+      updateUIStateMutation.mutate({
+        activeSection,
+        emailDrafts,
+        googleDriveConnected,
+        localStorageKeys,
+        errors: [], // Could capture console.error here
+        chatHistory: chatHistory || [],
+        companies: localCompanies,
+        campaigns: localCampaigns,
+      });
+    };
+    
+    // Initial sync
+    syncUIState();
+    
+    // Periodic sync
+    const interval = setInterval(syncUIState, 5000);
+    return () => clearInterval(interval);
+  }, [activeSection, emailDrafts, googleDriveConnected, localCompanies, localCampaigns]);
+  
+  // Process pending commands from ROPA
+  useEffect(() => {
+    if (!pendingCommands?.commands || pendingCommands.commands.length === 0) return;
+    
+    pendingCommands.commands.forEach(async (cmd: any) => {
+      console.log('[ROPA Command] Executing:', cmd.command, cmd.params);
+      
+      try {
+        switch (cmd.command) {
+          case 'clearLocalStorage':
+            if (cmd.params?.key) {
+              localStorage.removeItem(cmd.params.key);
+              toast.info(`ROPA limpió localStorage['${cmd.params.key}']`);
+            }
+            break;
+            
+          case 'resetEmailDrafts':
+            setEmailDrafts([]);
+            localStorage.removeItem('ropaEmailDrafts');
+            toast.info('ROPA reinició los borradores de email');
+            break;
+            
+          case 'refreshGoogleDrive':
+            await checkGoogleDriveConnection();
+            toast.info('ROPA refrescó la conexión de Google Drive');
+            break;
+            
+          case 'navigateToSection':
+            if (cmd.params?.section) {
+              setActiveSection(cmd.params.section);
+              toast.info(`ROPA navegó a la sección: ${cmd.params.section}`);
+            }
+            break;
+            
+          case 'addEmailDraft':
+            if (cmd.params?.company && cmd.params?.subject && cmd.params?.body) {
+              addEmailDraft(
+                cmd.params.company,
+                cmd.params.subject,
+                cmd.params.body,
+                cmd.params.campaign || 'ROPA Test'
+              );
+              toast.info('ROPA añadió un borrador de email de prueba');
+            }
+            break;
+            
+          default:
+            console.warn('[ROPA Command] Unknown command:', cmd.command);
+        }
+        
+        // Mark command as executed
+        await markCommandExecutedMutation.mutateAsync({ commandId: cmd.id });
+        refetchCommands();
+        
+      } catch (error) {
+        console.error('[ROPA Command] Error executing:', error);
+      }
+    });
+  }, [pendingCommands]);
+  
+  // ============ END ROPA UI STATE SYNC ============
+  
   // Function to add email draft from ROPA chat
   const addEmailDraft = (company: string, subject: string, body: string, campaign: string) => {
     const newDraft = {

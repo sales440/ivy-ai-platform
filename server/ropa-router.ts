@@ -18,6 +18,7 @@ import {
   saveAgentTraining,
 } from "./ropa-db";
 import { ropaTools, listAllTools, toolCategories, TOTAL_TOOLS } from "./ropa-tools";
+import { updateUIState, getUIState, ropaUITools } from "./ropa-ui-tools";
 import { invokeLLM } from "./_core/llm";
 
 /**
@@ -277,6 +278,30 @@ When asked to generate a report:
 
 This saves the report to Monitor for admin preview. After approval, it will be available for download.
 
+## UI INSPECTION & SELF-CORRECTION (REAL-TIME VISIBILITY)
+You have REAL-TIME visibility into the Ivy.AI interface and can diagnose/fix issues:
+
+### Inspection Tools (Read-Only):
+- Use getUIStatus() to see current UI state (active section, counts, connection status)
+- Use getMonitorEmailDrafts() to see all email drafts in Monitor with their status
+- Use diagnoseEmailDraftsIssue() to analyze why emails might not appear
+- Use runFullDiagnosis() to run comprehensive platform diagnosis
+
+### Self-Correction Tools (Safe Actions):
+- Use resetEmailDrafts() to clear corrupted email drafts
+- Use forceRefreshGoogleDrive() to reconnect Google Drive
+- Use navigateToSection({section}) to navigate user to a specific section
+- Use addTestEmailDraft({company, subject, body, campaign}) to add a test email for debugging
+- Use clearLocalStorageKey({key}) to clear corrupted localStorage data
+
+### When to Use These Tools:
+1. User reports "no veo mis emails en Monitor" → diagnoseEmailDraftsIssue() then fix
+2. User reports "Google Drive se desconecta" → forceRefreshGoogleDrive()
+3. User is confused about navigation → navigateToSection() to guide them
+4. Something seems broken → runFullDiagnosis() to identify the issue
+
+IMPORTANT: Always diagnose BEFORE correcting. Report what you found and what you fixed.
+
 ## MEMORY CONTEXT
 ${memoryContext.join('\n')}
 
@@ -508,6 +533,85 @@ You are ROPA. You don't wait. You don't ask. You EXECUTE.`;
       const { autonomousEngine } = await import("./autonomous-engine");
       const history = autonomousEngine.getDecisionHistory(input.limit || 50);
       return { success: true, history };
+    }),
+
+  // ============ UI INSPECTION & SELF-CORRECTION ============
+
+  // Update UI state from frontend (called periodically)
+  updateUIState: publicProcedure
+    .input(z.object({
+      activeSection: z.string().optional(),
+      emailDrafts: z.array(z.any()).optional(),
+      googleDriveConnected: z.boolean().optional(),
+      localStorageKeys: z.array(z.string()).optional(),
+      errors: z.array(z.string()).optional(),
+      chatHistory: z.array(z.any()).optional(),
+      companies: z.array(z.any()).optional(),
+      campaigns: z.array(z.any()).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      updateUIState(input);
+      return { success: true, message: "UI state updated" };
+    }),
+
+  // Get current UI state
+  getUIState: publicProcedure.query(async () => {
+    return getUIState();
+  }),
+
+  // Get UI status summary
+  getUIStatus: publicProcedure.query(async () => {
+    return await ropaUITools.getUIStatus();
+  }),
+
+  // Get email drafts from Monitor
+  getMonitorEmailDrafts: publicProcedure.query(async () => {
+    return await ropaUITools.getMonitorEmailDrafts();
+  }),
+
+  // Run full platform diagnosis
+  runDiagnosis: publicProcedure.query(async () => {
+    return await ropaUITools.runFullDiagnosis();
+  }),
+
+  // Diagnose email drafts issue
+  diagnoseEmailDrafts: publicProcedure.query(async () => {
+    return await ropaUITools.diagnoseEmailDraftsIssue();
+  }),
+
+  // Get pending commands for frontend to execute
+  getPendingCommands: publicProcedure.query(async () => {
+    return await ropaUITools.getPendingCommands();
+  }),
+
+  // Mark a command as executed
+  markCommandExecuted: publicProcedure
+    .input(z.object({ commandId: z.string() }))
+    .mutation(async ({ input }) => {
+      return await ropaUITools.markCommandExecuted(input);
+    }),
+
+  // Queue a self-correction command
+  queueCommand: publicProcedure
+    .input(z.object({
+      command: z.enum(['clearLocalStorage', 'resetEmailDrafts', 'refreshGoogleDrive', 'navigateToSection', 'addEmailDraft']),
+      params: z.any().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      switch (input.command) {
+        case 'clearLocalStorage':
+          return await ropaUITools.clearLocalStorageKey(input.params);
+        case 'resetEmailDrafts':
+          return await ropaUITools.resetEmailDrafts();
+        case 'refreshGoogleDrive':
+          return await ropaUITools.forceRefreshGoogleDrive();
+        case 'navigateToSection':
+          return await ropaUITools.navigateToSection(input.params);
+        case 'addEmailDraft':
+          return await ropaUITools.addTestEmailDraft(input.params);
+        default:
+          return { success: false, message: 'Unknown command' };
+      }
     }),
 });
 
