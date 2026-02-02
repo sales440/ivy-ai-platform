@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import {
   CheckCircle2,
   AlertCircle,
@@ -21,6 +24,9 @@ import {
   Clock,
   User,
   FileText,
+  Pencil,
+  Save,
+  RotateCcw,
 } from "lucide-react";
 
 export type DraftType = 'email' | 'call' | 'sms';
@@ -43,8 +49,9 @@ interface MonitorDraftPopupProps {
   draft: Draft | null;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (draftId: string) => void;
+  onApprove: (draftId: string, editedSubject?: string, editedBody?: string) => void;
   onReject: (draftId: string) => void;
+  onSaveEdit?: (draftId: string, subject: string, body: string) => Promise<void>;
 }
 
 export function MonitorDraftPopup({
@@ -53,7 +60,22 @@ export function MonitorDraftPopup({
   onClose,
   onApprove,
   onReject,
+  onSaveEdit,
 }: MonitorDraftPopupProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedSubject, setEditedSubject] = useState('');
+  const [editedBody, setEditedBody] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Reset edit state when draft changes
+  useEffect(() => {
+    if (draft) {
+      setEditedSubject(draft.subject);
+      setEditedBody(draft.body);
+      setIsEditing(false);
+    }
+  }, [draft]);
+
   if (!draft) return null;
 
   const getTypeIcon = () => {
@@ -91,6 +113,38 @@ export function MonitorDraftPopup({
     }
   };
 
+  const handleSaveChanges = async () => {
+    if (!onSaveEdit) return;
+    
+    setIsSaving(true);
+    try {
+      await onSaveEdit(draft.id, editedSubject, editedBody);
+      setIsEditing(false);
+      toast.success('Cambios guardados correctamente');
+    } catch (error) {
+      toast.error('Error al guardar los cambios');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditedSubject(draft.subject);
+    setEditedBody(draft.body);
+    setIsEditing(false);
+  };
+
+  const handleApprove = () => {
+    // If edited, pass the edited content
+    if (editedSubject !== draft.subject || editedBody !== draft.body) {
+      onApprove(draft.id, editedSubject, editedBody);
+    } else {
+      onApprove(draft.id);
+    }
+  };
+
+  const hasChanges = editedSubject !== draft.subject || editedBody !== draft.body;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] p-0 bg-slate-900 border-slate-700 flex flex-col">
@@ -111,6 +165,11 @@ export function MonitorDraftPopup({
             </div>
             <div className="flex items-center gap-3">
               {getStatusBadge()}
+              {isEditing && (
+                <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">
+                  Editando
+                </Badge>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -159,13 +218,35 @@ export function MonitorDraftPopup({
 
           {/* Subject/Title */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-cyan-400" />
-              {draft.type === 'email' ? 'Asunto' : draft.type === 'call' ? 'Título del Script' : 'Mensaje'}
-            </h3>
-            <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
-              <p className="text-white font-medium">{draft.subject}</p>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-cyan-400" />
+                {draft.type === 'email' ? 'Asunto' : draft.type === 'call' ? 'Título del Script' : 'Mensaje'}
+              </h3>
+              {draft.status === 'pending' && !isEditing && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10"
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              )}
             </div>
+            {isEditing ? (
+              <Input
+                value={editedSubject}
+                onChange={(e) => setEditedSubject(e.target.value)}
+                className="bg-slate-800 border-cyan-500/50 text-white focus:border-cyan-400"
+                placeholder="Escribe el asunto..."
+              />
+            ) : (
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                <p className="text-white font-medium">{editedSubject}</p>
+              </div>
+            )}
           </div>
 
           {/* Body Content */}
@@ -174,36 +255,67 @@ export function MonitorDraftPopup({
               <Mail className="w-5 h-5 text-cyan-400" />
               Contenido
             </h3>
-            <div className="bg-white rounded-lg p-6 border border-slate-300">
-              {/* Letterhead */}
-              <div className="border-b border-gray-200 pb-4 mb-4">
-                <h4 className="text-xl font-bold text-gray-900">{draft.company}</h4>
-                <p className="text-sm text-gray-500">Campaña: {draft.campaign}</p>
-              </div>
-              {/* Email Body */}
-              <div 
-                className="prose prose-sm max-w-none text-gray-800"
-                dangerouslySetInnerHTML={{ __html: draft.body.replace(/\n/g, '<br/>') }}
+            {isEditing ? (
+              <Textarea
+                value={editedBody}
+                onChange={(e) => setEditedBody(e.target.value)}
+                className="min-h-[300px] bg-slate-800 border-cyan-500/50 text-white focus:border-cyan-400"
+                placeholder="Escribe el contenido..."
               />
-            </div>
+            ) : (
+              <div className="bg-white rounded-lg p-6 border border-slate-300">
+                {/* Letterhead */}
+                <div className="border-b border-gray-200 pb-4 mb-4">
+                  <h4 className="text-xl font-bold text-gray-900">{draft.company}</h4>
+                  <p className="text-sm text-gray-500">Campaña: {draft.campaign}</p>
+                </div>
+                {/* Email Body */}
+                <div 
+                  className="prose prose-sm max-w-none text-gray-800"
+                  dangerouslySetInnerHTML={{ __html: editedBody.replace(/\n/g, '<br/>') }}
+                />
+              </div>
+            )}
           </div>
+
+          {/* Edit Actions */}
+          {isEditing && (
+            <div className="flex gap-3 mb-6">
+              <Button
+                onClick={handleSaveChanges}
+                disabled={isSaving || !hasChanges}
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+              </Button>
+              <Button
+                onClick={handleCancelEdit}
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Cancelar
+              </Button>
+            </div>
+          )}
         </ScrollArea>
 
         {/* Footer Actions */}
         <div className="p-4 bg-slate-950 border-t border-slate-700 flex gap-3">
           <Button
-            onClick={() => onApprove(draft.id)}
+            onClick={handleApprove}
             className="flex-1 bg-green-600 hover:bg-green-700"
-            disabled={draft.status !== 'pending'}
+            disabled={draft.status !== 'pending' || isEditing}
           >
             <CheckCircle2 className="w-4 h-4 mr-2" />
-            Aprobar y Guardar en Carpeta del Cliente
+            {hasChanges ? 'Aprobar con Cambios' : 'Aprobar y Guardar en Carpeta del Cliente'}
           </Button>
           <Button
             onClick={() => onReject(draft.id)}
             variant="destructive"
             className="flex-1"
-            disabled={draft.status !== 'pending'}
+            disabled={draft.status !== 'pending' || isEditing}
           >
             <AlertCircle className="w-4 h-4 mr-2" />
             Rechazar

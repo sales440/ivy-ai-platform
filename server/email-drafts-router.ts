@@ -5,6 +5,7 @@ import {
   getEmailDrafts,
   getEmailDraftById,
   updateEmailDraftStatus,
+  updateEmailDraftContent,
   deleteEmailDraft,
 } from "./db";
 
@@ -71,6 +72,22 @@ export const emailDraftsRouter = router({
         input.status,
         ctx.user?.openId,
         input.rejectionReason
+      );
+      return { success };
+    }),
+
+  // Update email draft content (subject and body)
+  updateContent: protectedProcedure
+    .input(z.object({
+      draftId: z.string(),
+      subject: z.string(),
+      body: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      const success = await updateEmailDraftContent(
+        input.draftId,
+        input.subject,
+        input.body
       );
       return { success };
     }),

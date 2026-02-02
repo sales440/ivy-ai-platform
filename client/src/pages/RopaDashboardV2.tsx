@@ -1971,7 +1971,24 @@ export default function RopaDashboardV2() {
                   setIsPopupOpen(false);
                   setSelectedDraft(null);
                 }}
-                onApprove={(draftId) => {
+                onApprove={async (draftId, editedSubject, editedBody) => {
+                  // If content was edited, save it first via fetch API
+                  if (editedSubject || editedBody) {
+                    try {
+                      const response = await fetch('/api/trpc/emailDrafts.updateContent', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          draftId,
+                          subject: editedSubject || selectedDraft?.subject || '',
+                          body: editedBody || selectedDraft?.body || '',
+                        }),
+                      });
+                      if (!response.ok) throw new Error('Failed to update');
+                    } catch (error) {
+                      console.error('Error saving edited content:', error);
+                    }
+                  }
                   updateEmailDraftStatus(draftId, 'approved');
                   setIsPopupOpen(false);
                   setSelectedDraft(null);
@@ -1980,6 +1997,21 @@ export default function RopaDashboardV2() {
                   updateEmailDraftStatus(draftId, 'rejected');
                   setIsPopupOpen(false);
                   setSelectedDraft(null);
+                }}
+                onSaveEdit={async (draftId, subject, body) => {
+                  const response = await fetch('/api/trpc/emailDrafts.updateContent', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ draftId, subject, body }),
+                  });
+                  if (!response.ok) throw new Error('Failed to update');
+                  // Update local state
+                  setAllDrafts(prev => prev.map(d => 
+                    d.draftId === draftId ? { ...d, subject, body } : d
+                  ));
+                  if (selectedDraft?.draftId === draftId) {
+                    setSelectedDraft({ ...selectedDraft, subject, body });
+                  }
                 }}
               />
             </div>

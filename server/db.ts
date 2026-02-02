@@ -177,6 +177,29 @@ export async function updateEmailDraftStatus(
   }
 }
 
+export async function updateEmailDraftContent(
+  draftId: string,
+  subject: string,
+  body: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update email draft content: database not available");
+    return false;
+  }
+
+  try {
+    await db.update(emailDrafts).set({
+      subject,
+      body,
+    }).where(eq(emailDrafts.draftId, draftId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update email draft content:", error);
+    return false;
+  }
+}
+
 export async function deleteEmailDraft(draftId: string): Promise<boolean> {
   const db = await getDb();
   if (!db) {

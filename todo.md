@@ -404,8 +404,8 @@
 - [ ] Verify table exists after deployment
 
 ## Draft Editing in Monitor - Phase 38
-- [ ] Add edit mode toggle to MonitorDraftPopup component
-- [ ] Add editable fields for subject and body in popup
-- [ ] Create backend endpoint to update draft content
-- [ ] Add save changes button before approve/reject
+- [x] Add edit mode toggle to MonitorDraftPopup component
+- [x] Add editable fields for subject and body in popup
+- [x] Create backend endpoint to update draft content
+- [x] Add save changes button before approve/reject
 - [ ] Deploy to Railway
