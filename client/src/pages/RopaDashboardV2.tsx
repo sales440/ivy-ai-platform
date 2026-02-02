@@ -193,18 +193,35 @@ export default function RopaDashboardV2() {
   const [monitorTab, setMonitorTab] = useState<'emails' | 'calls' | 'sms'>('emails');
   const [selectedEmailDraft, setSelectedEmailDraft] = useState<string | null>(null);
   
-  // Google Drive connection state
-  const [googleDriveConnected, setGoogleDriveConnected] = useState(false);
-  const [connectingGoogleDrive, setConnectingGoogleDrive] = useState(true); // Start as loading
-  const [checkingConnection, setCheckingConnection] = useState(true);
+  // Google Drive connection state - Initialize from localStorage for persistence
+  const [googleDriveConnected, setGoogleDriveConnected] = useState(() => {
+    // Check localStorage first for immediate state restoration
+    const saved = localStorage.getItem('googleDriveConnected');
+    return saved === 'true';
+  });
+  const [connectingGoogleDrive, setConnectingGoogleDrive] = useState(() => {
+    // If localStorage says connected, don't show loading
+    const saved = localStorage.getItem('googleDriveConnected');
+    return saved !== 'true';
+  });
+  const [checkingConnection, setCheckingConnection] = useState(() => {
+    // If localStorage says connected, don't show checking
+    const saved = localStorage.getItem('googleDriveConnected');
+    return saved !== 'true';
+  });
   
-  // Check Google Drive connection status via API
-  const checkGoogleDriveConnection = async () => {
+  // Check Google Drive connection status via API (background verification)
+  const checkGoogleDriveConnection = async (silent: boolean = false) => {
     try {
-      console.log('[Google Drive] Checking connection...');
+      if (!silent) {
+        console.log('[Google Drive] Checking connection...');
+      }
       const response = await fetch('/api/trpc/googleDrive.isConnected');
       const data = await response.json();
-      console.log('[Google Drive] API Response:', JSON.stringify(data));
+      
+      if (!silent) {
+        console.log('[Google Drive] API Response:', JSON.stringify(data));
+      }
       
       // tRPC returns { result: { data: { connected: boolean } } }
       let connected = false;
@@ -214,14 +231,26 @@ export default function RopaDashboardV2() {
         connected = true;
       }
       
-      console.log('[Google Drive] Connection status:', connected);
+      if (!silent) {
+        console.log('[Google Drive] Connection status:', connected);
+      }
+      
+      // Update state and localStorage
       setGoogleDriveConnected(connected);
       localStorage.setItem('googleDriveConnected', connected ? 'true' : 'false');
+      
+      // Also store the last verification timestamp
+      if (connected) {
+        localStorage.setItem('googleDriveLastVerified', Date.now().toString());
+      }
+      
       return connected;
     } catch (error) {
       console.error('[Google Drive] Error checking connection:', error);
-      setGoogleDriveConnected(false);
-      return false;
+      // On error, keep the current state from localStorage instead of disconnecting
+      const savedState = localStorage.getItem('googleDriveConnected') === 'true';
+      setGoogleDriveConnected(savedState);
+      return savedState;
     } finally {
       setCheckingConnection(false);
       setConnectingGoogleDrive(false);
@@ -241,18 +270,39 @@ export default function RopaDashboardV2() {
       setCheckingConnection(false);
       setConnectingGoogleDrive(false);
       localStorage.setItem('googleDriveConnected', 'true');
+      localStorage.setItem('googleDriveLastVerified', Date.now().toString());
       setActiveSection('files'); // Navigate to files section
       window.history.replaceState({}, '', window.location.pathname);
     } else if (urlParams.get('error') === 'google_auth_failed') {
       const message = urlParams.get('message') || 'Error desconocido';
       toast.error(`Error conectando Google Drive: ${message}`);
+      localStorage.setItem('googleDriveConnected', 'false');
       setActiveSection('files');
       window.history.replaceState({}, '', window.location.pathname);
       setCheckingConnection(false);
       setConnectingGoogleDrive(false);
     } else {
-      // Normal page load - check API
-      checkGoogleDriveConnection();
+      // Normal page load - check if we have a cached connection
+      const cachedConnection = localStorage.getItem('googleDriveConnected') === 'true';
+      const lastVerified = parseInt(localStorage.getItem('googleDriveLastVerified') || '0');
+      const fiveMinutes = 5 * 60 * 1000;
+      
+      if (cachedConnection) {
+        // Already connected from localStorage - keep state, verify silently in background
+        console.log('[Google Drive] Using cached connection state: CONNECTED');
+        setGoogleDriveConnected(true);
+        setCheckingConnection(false);
+        setConnectingGoogleDrive(false);
+        
+        // Only verify with API if last check was more than 5 minutes ago
+        if (Date.now() - lastVerified > fiveMinutes) {
+          console.log('[Google Drive] Background verification (last check > 5 min ago)');
+          checkGoogleDriveConnection(true); // Silent check
+        }
+      } else {
+        // Not connected - check API
+        checkGoogleDriveConnection();
+      }
     }
   }, []);
   

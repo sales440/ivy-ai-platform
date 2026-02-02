@@ -372,3 +372,4 @@
 - [x] Add ROPA capability to delete folders
 - [x] Add ROPA capability to move files between folders
 - [x] Add ROPA capability to copy files between folders
+- [x] Fix Google Drive connection persistence - should stay connected across page navigation

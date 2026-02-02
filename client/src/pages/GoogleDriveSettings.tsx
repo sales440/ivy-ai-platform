@@ -122,6 +122,9 @@ export default function GoogleDriveSettings() {
 
   const handleDisconnect = () => {
     if (confirm("¿Estás seguro de que deseas desconectar Google Drive?")) {
+      // Clear localStorage to ensure connection state is reset across all pages
+      localStorage.removeItem('googleDriveConnected');
+      localStorage.removeItem('googleDriveLastVerified');
       disconnectMutation.mutate();
     }
   };
