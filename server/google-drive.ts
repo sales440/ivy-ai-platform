@@ -494,6 +494,97 @@ export async function copyFile(
   }
 }
 
+// Client folder structure template
+const CLIENT_FOLDER_STRUCTURE = {
+  ROOT: 'Clientes',
+  SUBFOLDERS: [
+    'Base de Datos',
+    'Logos y Branding',
+    'Emails/Borradores',
+    'Emails/Enviados',
+    'Emails/Plantillas',
+    'Reportes/Campañas',
+    'Reportes/Análisis',
+    'Reportes/Métricas',
+    'Archivos Subidos',
+    'Archivos Descargados',
+    'Campañas/Activas',
+    'Campañas/Completadas',
+    'Campañas/Borradores',
+    'Listas de Contactos',
+  ],
+};
+
+// Create complete client folder structure
+export async function createClientFolderStructure(
+  oauth2Client: OAuth2Client,
+  clientId: string,
+  clientName: string,
+  rootFolderId: string
+): Promise<{
+  clientFolderId: string;
+  folderIds: Record<string, string>;
+}> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    // First, ensure "Clientes" folder exists under root
+    let clientsFolder = await getFolderByName(oauth2Client, CLIENT_FOLDER_STRUCTURE.ROOT, rootFolderId);
+    let clientsFolderId: string;
+    
+    if (!clientsFolder) {
+      const newFolder = await createFolder(oauth2Client, CLIENT_FOLDER_STRUCTURE.ROOT, rootFolderId);
+      clientsFolderId = newFolder.id;
+    } else {
+      clientsFolderId = clientsFolder.id;
+    }
+
+    // Create client folder with ID and name
+    const clientFolderName = `${clientId} - ${clientName}`;
+    const clientFolder = await createFolder(oauth2Client, clientFolderName, clientsFolderId);
+    const clientFolderId = clientFolder.id;
+
+    // Create all subfolders
+    const folderIds: Record<string, string> = {
+      root: clientFolderId,
+    };
+
+    for (const subfolderPath of CLIENT_FOLDER_STRUCTURE.SUBFOLDERS) {
+      const parts = subfolderPath.split('/');
+      let parentId = clientFolderId;
+      let currentPath = '';
+
+      for (const part of parts) {
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
+        
+        // Check if folder already exists
+        let existingFolder = await getFolderByName(oauth2Client, part, parentId);
+        
+        if (existingFolder) {
+          parentId = existingFolder.id;
+        } else {
+          const newFolder = await createFolder(oauth2Client, part, parentId);
+          parentId = newFolder.id;
+        }
+        
+        // Store the folder ID with a key based on the path
+        const key = currentPath.toLowerCase().replace(/\s+/g, '_').replace(/\//g, '_');
+        folderIds[key] = parentId;
+      }
+    }
+
+    console.log(`[Google Drive] Client folder structure created for ${clientName} (${clientId})`);
+
+    return {
+      clientFolderId,
+      folderIds,
+    };
+  } catch (error) {
+    console.error(`[Google Drive] Error creating client folder structure:`, error);
+    throw error;
+  }
+}
+
 // Get folder by name (search in parent)
 export async function getFolderByName(
   oauth2Client: OAuth2Client,

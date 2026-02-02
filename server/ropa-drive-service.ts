@@ -17,6 +17,7 @@ import {
   moveFile as moveDriveFile,
   copyFile as copyDriveFile,
   getFolderByName,
+  createClientFolderStructure as createClientFolders,
 } from './google-drive';
 import * as XLSX from 'xlsx';
 
@@ -604,6 +605,179 @@ export async function getFolderTreeSummary(): Promise<string> {
   }
 }
 
+// Create complete client folder structure in Google Drive
+export async function createClientFolderStructure(
+  clientId: string,
+  clientName: string
+): Promise<{
+  success: boolean;
+  clientFolderId?: string;
+  folderIds?: Record<string, string>;
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    const rootFolderId = folderIds.root;
+
+    if (!rootFolderId) {
+      return { success: false, error: 'No se encontró la carpeta raíz de Ivy.AI' };
+    }
+
+    const result = await createClientFolders(oauth2Client, clientId, clientName, rootFolderId);
+
+    return {
+      success: true,
+      clientFolderId: result.clientFolderId,
+      folderIds: result.folderIds,
+    };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error creating client folder structure:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Get client folder by ID
+export async function getClientFolder(clientId: string): Promise<{
+  success: boolean;
+  folder?: { id: string; name: string };
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    const rootFolderId = folderIds.root;
+
+    if (!rootFolderId) {
+      return { success: false, error: 'No se encontró la carpeta raíz de Ivy.AI' };
+    }
+
+    // Find Clientes folder
+    const clientesFolder = await getFolderByName(oauth2Client, 'Clientes', rootFolderId);
+    if (!clientesFolder) {
+      return { success: false, error: 'No se encontró la carpeta Clientes' };
+    }
+
+    // Search for client folder by ID prefix
+    const subfolders = await listSubfolders(oauth2Client, clientesFolder.id);
+    const clientFolder = subfolders.find(f => f.name.startsWith(clientId));
+
+    if (!clientFolder) {
+      return { success: false, error: `No se encontró carpeta para cliente ${clientId}` };
+    }
+
+    return {
+      success: true,
+      folder: { id: clientFolder.id, name: clientFolder.name },
+    };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error getting client folder:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Navigate to specific client subfolder
+export async function getClientSubfolder(
+  clientId: string,
+  subfolderPath: string // e.g., "Emails/Borradores" or "Reportes/Campañas"
+): Promise<{
+  success: boolean;
+  folder?: { id: string; name: string; path: string };
+  files?: Array<{ id: string; name: string; mimeType: string }>;
+  error?: string;
+}> {
+  try {
+    const clientFolderResult = await getClientFolder(clientId);
+    if (!clientFolderResult.success || !clientFolderResult.folder) {
+      return { success: false, error: clientFolderResult.error };
+    }
+
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client } = auth;
+    const parts = subfolderPath.split('/');
+    let currentFolderId = clientFolderResult.folder.id;
+    let currentPath = clientFolderResult.folder.name;
+
+    // Navigate through the path
+    for (const part of parts) {
+      const folder = await getFolderByName(oauth2Client, part, currentFolderId);
+      if (!folder) {
+        return { success: false, error: `No se encontró la subcarpeta "${part}" en ${currentPath}` };
+      }
+      currentFolderId = folder.id;
+      currentPath = `${currentPath}/${part}`;
+    }
+
+    // Get files in the folder
+    const files = await listFilesInFolder(oauth2Client, currentFolderId);
+
+    return {
+      success: true,
+      folder: { id: currentFolderId, name: parts[parts.length - 1], path: currentPath },
+      files: files.map(f => ({ id: f.id, name: f.name, mimeType: f.mimeType })),
+    };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error getting client subfolder:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// List all clients with their folder structure
+export async function listAllClients(): Promise<{
+  success: boolean;
+  clients?: Array<{ id: string; name: string; folderId: string }>;
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    const rootFolderId = folderIds.root;
+
+    if (!rootFolderId) {
+      return { success: false, error: 'No se encontró la carpeta raíz de Ivy.AI' };
+    }
+
+    // Find Clientes folder
+    const clientesFolder = await getFolderByName(oauth2Client, 'Clientes', rootFolderId);
+    if (!clientesFolder) {
+      return { success: true, clients: [] }; // No clients folder yet
+    }
+
+    // List all client folders
+    const subfolders = await listSubfolders(oauth2Client, clientesFolder.id);
+    const clients = subfolders.map(f => {
+      // Parse client ID and name from folder name (format: "IVY-2026-0001 - ClientName")
+      const match = f.name.match(/^(IVY-\d{4}-\d{4})\s*-\s*(.+)$/);
+      return {
+        id: match ? match[1] : f.name,
+        name: match ? match[2] : f.name,
+        folderId: f.id,
+      };
+    });
+
+    return { success: true, clients };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error listing clients:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export default {
   listAllFiles,
   listFolderContents,
@@ -617,4 +791,8 @@ export default {
   searchFiles,
   getClientListData,
   getFilesSummary,
+  createClientFolderStructure,
+  getClientFolder,
+  getClientSubfolder,
+  listAllClients,
 };

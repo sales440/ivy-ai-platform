@@ -1311,6 +1311,59 @@ export const driveTools = {
       return { success: false, error: error.message };
     }
   },
+
+  // ============ CLIENT FOLDER MANAGEMENT ============
+
+  // Create complete folder structure for a new client
+  async createClientFolderStructure(params: { clientId: string; clientName: string }) {
+    await logTool("createClientFolderStructure", "info", `Creating folder structure for client: ${params.clientId} - ${params.clientName}`);
+    try {
+      const result = await ropaDriveService.createClientFolderStructure(params.clientId, params.clientName);
+      if (result.success) {
+        await recordRopaLearning({
+          category: "client_management",
+          pattern: `Created folder structure for ${params.clientName}`,
+          frequency: 1,
+        });
+      }
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get client folder by ID
+  async getClientFolder(params: { clientId: string }) {
+    await logTool("getClientFolder", "info", `Getting folder for client: ${params.clientId}`);
+    try {
+      const result = await ropaDriveService.getClientFolder(params.clientId);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Navigate to specific client subfolder (e.g., "Emails/Borradores", "Reportes/Campañas")
+  async getClientSubfolder(params: { clientId: string; subfolderPath: string }) {
+    await logTool("getClientSubfolder", "info", `Getting subfolder ${params.subfolderPath} for client: ${params.clientId}`);
+    try {
+      const result = await ropaDriveService.getClientSubfolder(params.clientId, params.subfolderPath);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // List all clients with their folders
+  async listAllClients() {
+    await logTool("listAllClients", "info", "Listing all clients from Google Drive");
+    try {
+      const result = await ropaDriveService.listAllClients();
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
 };
 
 // ============ EXPORT ALL TOOLS ============

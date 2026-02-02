@@ -383,3 +383,10 @@
 - [x] Create database table for email drafts persistence
 - [x] Create backend endpoints for email draft CRUD
 - [x] Save approved/rejected emails to database permanently
+
+## Google Drive Client Folder Structure - Phase 36
+- [x] Design logical folder structure template for Ivy.AI clients
+- [x] Create root Ivy.AI folder structure in Google Drive
+- [x] Add ROPA tool to auto-create client folder structure
+- [x] Link client management with Google Drive folders
+- [x] Update ROPA to navigate client folders automatically
