@@ -3,13 +3,15 @@ import { useLocation } from "wouter";
 
 /**
  * Home page - Redirects to ROPA Dashboard v2
+ * Preserves query parameters for Google Drive OAuth callback
  */
 export default function Home() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    // Redirect to the new ROPA Dashboard v2
-    setLocation("/ropa-v2");
+    // Preserve query parameters when redirecting
+    const queryString = window.location.search;
+    setLocation("/ropa-v2" + queryString);
   }, [setLocation]);
 
   return (

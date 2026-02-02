@@ -120,6 +120,21 @@ async function createRopaTables() {
           metadata json,
           created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`
+      },
+      {
+        name: 'google_drive_tokens',
+        sql: `CREATE TABLE IF NOT EXISTS google_drive_tokens (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          user_id varchar(64) NOT NULL UNIQUE,
+          access_token text NOT NULL,
+          refresh_token text,
+          expiry_date bigint,
+          scope text,
+          token_type varchar(64),
+          folder_ids json,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
       }
     ];
 

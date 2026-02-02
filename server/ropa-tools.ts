@@ -4,6 +4,7 @@
  */
 
 import { createRopaLog, recordRopaMetric, createRopaAlert, recordRopaLearning } from "./ropa-db";
+import ropaDriveService from "./ropa-drive-service";
 
 // ============ UTILITY FUNCTIONS ============
 
@@ -1180,6 +1181,60 @@ export const visionTools = {
   },
 };
 
+// ============ 12. GOOGLE DRIVE & FILE MANAGEMENT ============
+
+export const driveTools = {
+  async listDriveFiles() {
+    await logTool("listDriveFiles", "info", "Listing all files from Google Drive");
+    try {
+      const result = await ropaDriveService.listAllFiles();
+      return { success: result.success, files: result.files, total: result.files.length, error: result.error };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async searchDriveFiles(params: { query: string }) {
+    await logTool("searchDriveFiles", "info", `Searching files: ${params.query}`);
+    try {
+      const result = await ropaDriveService.searchFiles(params.query);
+      return { success: result.success, files: result.files, total: result.files.length };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async getFileContent(params: { fileId: string }) {
+    await logTool("getFileContent", "info", `Getting file content: ${params.fileId}`);
+    try {
+      const result = await ropaDriveService.getFileContent(params.fileId);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async getClientListData(params: { fileId: string }) {
+    await logTool("getClientListData", "info", `Reading client list: ${params.fileId}`);
+    try {
+      const result = await ropaDriveService.getClientListData(params.fileId);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  async getDriveFilesSummary() {
+    await logTool("getDriveFilesSummary", "info", "Getting files summary for context");
+    try {
+      const summary = await ropaDriveService.getFilesSummary();
+      return { success: true, summary };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+};
+
 // ============ EXPORT ALL TOOLS ============
 
 export const ropaTools = {
@@ -1194,6 +1249,7 @@ export const ropaTools = {
   ...multiAgentTools,
   ...advancedFeaturesTools,
   ...codeTools,
+  ...driveTools,
 };
 
 // Tool registry for easy lookup
@@ -1222,6 +1278,7 @@ export const toolCategories = {
   "Multi-Agent System": Object.keys(multiAgentTools),
   "Advanced Features (NL, Self-Heal, Budget, Voice, Sentiment, Intel)": Object.keys(advancedFeaturesTools),
   "Code & Deployment": Object.keys(codeTools),
+  "Google Drive & Files": Object.keys(driveTools),
 };
 
 export const TOTAL_TOOLS = Object.keys(toolRegistry).length;

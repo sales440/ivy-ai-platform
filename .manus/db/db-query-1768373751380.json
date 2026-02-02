@@ -86,5 +86,5 @@
   "messages": [],
   "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint(11)\tNO\tPRI\tNULL\tauto_increment\nuser_id\tint(11)\tNO\t\tNULL\t\naccess_token\ttext\tNO\t\tNULL\t\nrefresh_token\ttext\tYES\t\tNULL\t\nexpiry_date\ttimestamp\tYES\t\tNULL\t\nscope\ttext\tYES\t\tNULL\t\ntoken_type\tvarchar(50)\tYES\t\tNULL\t\nfolder_ids\ttext\tYES\t\tNULL\t\ncreated_at\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdated_at\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\n",
   "stderr": "",
-  "execution_time_ms": 133
+  "execution_time_ms": 61
 }

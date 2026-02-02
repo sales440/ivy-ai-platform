@@ -356,29 +356,13 @@
 - [ ] Test ROPA platform navigation
 - [ ] Deploy fixes to Railway production
 
-## Google Drive Token Fix - Phase 34 (COMPLETED ✅)
-- [x] Diagnose Google Drive token saving issue (Unknown column 'user_id' error)
-- [x] Rewrite google-callback-handler.ts using raw SQL instead of Drizzle ORM
-- [x] Rewrite file-upload-router.ts using raw SQL for token retrieval
-- [x] Rewrite google-drive-sync.ts using raw SQL for token retrieval
-- [x] Rewrite google-drive-router.ts using raw SQL for all token operations
-- [x] Add checkConnection endpoint to file-upload-router
-- [ ] Test Google Drive OAuth flow in production
-- [ ] Verify tokens are saved correctly to database
-- [ ] Test file upload to Google Drive after fix
 
-## ROPA Asterisk Removal - Phase 35 (COMPLETED ✅)
-- [x] Update system prompt to explicitly forbid asterisks and formatting mentions
-- [x] Add comprehensive regex to remove all asterisks from responses
-- [x] Remove mentions of "asterisco", "negrita", "bold", "markdown" from responses
-- [x] Add instruction that responses will be read aloud
-- [ ] Test ROPA responses for asterisk-free output
+## ROPA Google Drive Integration - Phase 34
+- [ ] Crear servicio de acceso a Google Drive para ROPA
+- [ ] Implementar lectura de archivos Excel, Word, PDF, imágenes
+- [ ] Integrar con sistema de agentes para preparar campañas
+- [ ] Agregar visualización de archivos en Monitor
+- [ ] Permitir a ROPA responder consultas sobre archivos subidos
 
-## Google Drive Visual Feedback & File Upload Fix - Phase 36 (IN PROGRESS)
-- [ ] Add visual indicator for Google Drive connection status (green=connected, red=disconnected)
-- [ ] Fix file upload buttons (Logo, Email, Branding, etc.) not responding
-- [ ] Add connection status check on page load
-- [ ] Add loading spinner during OAuth flow
-- [ ] Add success/error toast notifications
-- [ ] Verify OAuth callback saves tokens correctly
-- [ ] Test complete file upload flow to Google Drive
+## ROPA Voice Toggle Fix - Phase 35
+- [x] Fix voice toggle button - when disabled should stop ongoing speech and prevent new speech
