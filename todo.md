@@ -379,3 +379,7 @@
 - [x] Create UI state inspection tools for ROPA (see Monitor, localStorage, active section)
 - [x] Create self-correction tools for ROPA (clear corrupted data, reset states)
 - [x] Add real-time interface visibility for ROPA
+- [x] Fix Monitor section not displaying email drafts - root cause bug investigation
+- [x] Create database table for email drafts persistence
+- [x] Create backend endpoints for email draft CRUD
+- [x] Save approved/rejected emails to database permanently

@@ -14,6 +14,7 @@ import { fileUploadRouter } from "./file-upload-router";
 import { googleDriveRouter } from "./google-drive-router";
 import { performanceRouter } from "./performance-router";
 import { clientManagementRouter } from "./client-management";
+import { emailDraftsRouter } from "./email-drafts-router";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -62,6 +63,9 @@ export const appRouter = router({
 
   // Client Management Router (ID único + Google Drive)
   clients: clientManagementRouter,
+
+  // Email Drafts Router (Monitor section persistence)
+  emailDrafts: emailDraftsRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: router({

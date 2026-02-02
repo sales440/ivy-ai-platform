@@ -290,3 +290,27 @@ export const clientFiles = mysqlTable("client_files", {
 
 export type ClientFile = typeof clientFiles.$inferSelect;
 export type InsertClientFile = typeof clientFiles.$inferInsert;
+
+// Email Drafts for Monitor section - persistent storage
+export const emailDrafts = mysqlTable("email_drafts", {
+  id: int("id").autoincrement().primaryKey(),
+  draftId: varchar("draft_id", { length: 64 }).notNull().unique(), // Unique ID for frontend reference
+  company: varchar("company", { length: 255 }).notNull(),
+  campaign: varchar("campaign", { length: 255 }),
+  subject: varchar("subject", { length: 500 }).notNull(),
+  body: text("body").notNull(),
+  htmlContent: text("html_content"), // Optional HTML version
+  recipientEmail: varchar("recipient_email", { length: 320 }),
+  recipientName: varchar("recipient_name", { length: 255 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected", "sent"]).default("pending").notNull(),
+  rejectionReason: text("rejection_reason"),
+  approvedBy: varchar("approved_by", { length: 64 }),
+  approvedAt: timestamp("approved_at"),
+  sentAt: timestamp("sent_at"),
+  createdBy: varchar("created_by", { length: 64 }), // ROPA or user who created it
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type EmailDraft = typeof emailDrafts.$inferSelect;
+export type InsertEmailDraft = typeof emailDrafts.$inferInsert;

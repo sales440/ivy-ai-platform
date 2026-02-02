@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `email_drafts` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `draft_id` varchar(64) NOT NULL UNIQUE,\n  `company` varchar(255) NOT NULL,\n  `campaign` varchar(255),\n  `subject` varchar(500) NOT NULL,\n  `body` text NOT NULL,\n  `html_content` text,\n  `recipient_email` varchar(320),\n  `recipient_name` varchar(255),\n  `status` enum('pending', 'approved', 'rejected', 'sent') NOT NULL DEFAULT 'pending',\n  `rejection_reason` text,\n  `approved_by` varchar(64),\n  `approved_at` timestamp,\n  `sent_at` timestamp,\n  `created_by` varchar(64),\n  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `email_drafts_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS `email_drafts` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `draft_id` varchar(64) NOT NULL UNIQUE,\n  `company` varchar(255) NOT NULL,\n  `campaign` varchar(255),\n  `subject` varchar(500) NOT NULL,\n  `body` text NOT NULL,\n  `html_content` text,\n  `recipient_email` varchar(320),\n  `recipient_name` varchar(255),\n  `status` enum('pending', 'approved', 'rejected', 'sent') NOT NULL DEFAULT 'pending',\n  `rejection_reason` text,\n  `approved_by` varchar(64),\n  `approved_at` timestamp,\n  `sent_at` timestamp,\n  `created_by` varchar(64),\n  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `email_drafts_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 225
+}

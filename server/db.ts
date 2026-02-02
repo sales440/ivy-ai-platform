@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, emailDrafts, InsertEmailDraft, EmailDraft } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -87,6 +87,110 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+// ============ EMAIL DRAFTS CRUD ============
+
+export async function createEmailDraft(draft: Omit<InsertEmailDraft, 'id'>): Promise<EmailDraft | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create email draft: database not available");
+    return null;
+  }
+
+  try {
+    await db.insert(emailDrafts).values(draft);
+    // Fetch the created draft
+    const result = await db.select().from(emailDrafts).where(eq(emailDrafts.draftId, draft.draftId)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to create email draft:", error);
+    throw error;
+  }
+}
+
+export async function getEmailDrafts(limit: number = 100): Promise<EmailDraft[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get email drafts: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db.select().from(emailDrafts).orderBy(desc(emailDrafts.createdAt)).limit(limit);
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get email drafts:", error);
+    return [];
+  }
+}
+
+export async function getEmailDraftById(draftId: string): Promise<EmailDraft | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get email draft: database not available");
+    return null;
+  }
+
+  try {
+    const result = await db.select().from(emailDrafts).where(eq(emailDrafts.draftId, draftId)).limit(1);
+    return result.length > 0 ? result[0] : null;
+  } catch (error) {
+    console.error("[Database] Failed to get email draft:", error);
+    return null;
+  }
+}
+
+export async function updateEmailDraftStatus(
+  draftId: string,
+  status: 'pending' | 'approved' | 'rejected' | 'sent',
+  approvedBy?: string,
+  rejectionReason?: string
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot update email draft: database not available");
+    return false;
+  }
+
+  try {
+    const updateData: Partial<EmailDraft> = { status };
+    
+    if (status === 'approved' && approvedBy) {
+      updateData.approvedBy = approvedBy;
+      updateData.approvedAt = new Date();
+    }
+    
+    if (status === 'rejected' && rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+    
+    if (status === 'sent') {
+      updateData.sentAt = new Date();
+    }
+
+    await db.update(emailDrafts).set(updateData).where(eq(emailDrafts.draftId, draftId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to update email draft:", error);
+    return false;
+  }
+}
+
+export async function deleteEmailDraft(draftId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot delete email draft: database not available");
+    return false;
+  }
+
+  try {
+    await db.delete(emailDrafts).where(eq(emailDrafts.draftId, draftId));
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to delete email draft:", error);
+    return false;
+  }
 }
 
 // TODO: add feature queries here as your schema grows.

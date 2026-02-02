@@ -180,14 +180,15 @@ export default function RopaDashboardV2() {
   const [localCompanies, setLocalCompanies] = useState<any[]>([]);
   const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
   
-  // Email drafts for Monitor section
+  // Email drafts for Monitor section - now persisted in database
   const [emailDrafts, setEmailDrafts] = useState<Array<{
     id: string;
+    draftId: string;
     company: string;
     subject: string;
     body: string;
     campaign: string;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'approved' | 'rejected' | 'sent';
     createdAt: string;
   }>>([]);
   const [monitorTab, setMonitorTab] = useState<'emails' | 'calls' | 'sms'>('emails');
@@ -306,28 +307,54 @@ export default function RopaDashboardV2() {
     }
   }, []);
   
-  // Load companies, campaigns and email drafts from localStorage
+  // Load companies and campaigns from localStorage
   useEffect(() => {
     const savedCompanies = localStorage.getItem('ropaCompanies');
     const savedCampaigns = localStorage.getItem('ropaCampaigns');
-    const savedEmailDrafts = localStorage.getItem('ropaEmailDrafts');
     if (savedCompanies) {
       try { setLocalCompanies(JSON.parse(savedCompanies)); } catch (e) {}
     }
     if (savedCampaigns) {
       try { setLocalCampaigns(JSON.parse(savedCampaigns)); } catch (e) {}
     }
-    if (savedEmailDrafts) {
-      try { setEmailDrafts(JSON.parse(savedEmailDrafts)); } catch (e) {}
-    }
   }, []);
   
-  // Save email drafts to localStorage when they change
+  // Load email drafts from database
+  const { data: emailDraftsData, refetch: refetchEmailDrafts } = trpc.emailDrafts.getAll.useQuery(
+    { limit: 100 },
+    { refetchInterval: 5000 } // Refresh every 5 seconds
+  );
+  
+  // Sync database drafts to local state
   useEffect(() => {
-    if (emailDrafts.length > 0) {
-      localStorage.setItem('ropaEmailDrafts', JSON.stringify(emailDrafts));
+    if (emailDraftsData?.drafts) {
+      const formattedDrafts = emailDraftsData.drafts.map((d: any) => ({
+        id: d.draftId,
+        draftId: d.draftId,
+        company: d.company,
+        subject: d.subject,
+        body: d.body,
+        campaign: d.campaign || 'General',
+        status: d.status as 'pending' | 'approved' | 'rejected' | 'sent',
+        createdAt: d.createdAt,
+      }));
+      setEmailDrafts(formattedDrafts);
     }
-  }, [emailDrafts]);
+  }, [emailDraftsData]);
+  
+  // Create email draft mutation
+  const createEmailDraftMutation = trpc.emailDrafts.create.useMutation({
+    onSuccess: () => {
+      refetchEmailDrafts();
+    },
+  });
+  
+  // Update email draft status mutation
+  const updateEmailDraftStatusMutation = trpc.emailDrafts.updateStatus.useMutation({
+    onSuccess: () => {
+      refetchEmailDrafts();
+    },
+  });
   
   // ============ ROPA UI STATE SYNC ============
   // Sync UI state to backend so ROPA can see what's happening in real-time
@@ -424,33 +451,37 @@ export default function RopaDashboardV2() {
   
   // ============ END ROPA UI STATE SYNC ============
   
-  // Function to add email draft from ROPA chat
-  const addEmailDraft = (company: string, subject: string, body: string, campaign: string) => {
-    const newDraft = {
-      id: `draft-${Date.now()}`,
-      company,
-      subject,
-      body,
-      campaign,
-      status: 'pending' as const,
-      createdAt: new Date().toISOString(),
-    };
-    setEmailDrafts(prev => {
-      const updated = [newDraft, ...prev];
-      localStorage.setItem('ropaEmailDrafts', JSON.stringify(updated));
-      return updated;
-    });
-    toast.success(`Email draft guardado para ${company}`);
+  // Function to add email draft from ROPA chat - now saves to database
+  const addEmailDraft = async (company: string, subject: string, body: string, campaign: string) => {
+    const draftId = `draft-${Date.now()}`;
+    try {
+      await createEmailDraftMutation.mutateAsync({
+        draftId,
+        company,
+        subject,
+        body,
+        campaign,
+        createdBy: 'ROPA',
+      });
+      toast.success(`Email draft guardado para ${company}`);
+    } catch (error) {
+      console.error('Error creating email draft:', error);
+      toast.error('Error al guardar el borrador de email');
+    }
   };
   
-  // Function to approve/reject email draft
-  const updateEmailDraftStatus = (id: string, status: 'approved' | 'rejected') => {
-    setEmailDrafts(prev => {
-      const updated = prev.map(d => d.id === id ? { ...d, status } : d);
-      localStorage.setItem('ropaEmailDrafts', JSON.stringify(updated));
-      return updated;
-    });
-    toast.success(status === 'approved' ? 'Email aprobado' : 'Email rechazado');
+  // Function to approve/reject email draft - now updates database
+  const updateEmailDraftStatus = async (id: string, status: 'approved' | 'rejected') => {
+    try {
+      await updateEmailDraftStatusMutation.mutateAsync({
+        draftId: id,
+        status,
+      });
+      toast.success(status === 'approved' ? 'Email aprobado y guardado en base de datos' : 'Email rechazado');
+    } catch (error) {
+      console.error('Error updating email draft status:', error);
+      toast.error('Error al actualizar el estado del email');
+    }
   };
   
   // Chat state

@@ -1,0 +1,21 @@
+CREATE TABLE `email_drafts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`draft_id` varchar(64) NOT NULL,
+	`company` varchar(255) NOT NULL,
+	`campaign` varchar(255),
+	`subject` varchar(500) NOT NULL,
+	`body` text NOT NULL,
+	`html_content` text,
+	`recipient_email` varchar(320),
+	`recipient_name` varchar(255),
+	`status` enum('pending','approved','rejected','sent') NOT NULL DEFAULT 'pending',
+	`rejection_reason` text,
+	`approved_by` varchar(64),
+	`approved_at` timestamp,
+	`sent_at` timestamp,
+	`created_by` varchar(64),
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `email_drafts_id` PRIMARY KEY(`id`),
+	CONSTRAINT `email_drafts_draft_id_unique` UNIQUE(`draft_id`)
+);
