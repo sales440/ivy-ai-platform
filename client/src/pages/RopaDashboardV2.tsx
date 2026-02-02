@@ -196,6 +196,25 @@ export default function RopaDashboardV2() {
   // Chat state - declared early for use in queries
   const [chatOpen, setChatOpen] = useState(false);
   
+  // Page visibility state - disable polling when tab is not active
+  const [isPageVisible, setIsPageVisible] = useState(true);
+  
+  // Track page visibility to disable polling when tab is not active
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = document.visibilityState === 'visible';
+      setIsPageVisible(visible);
+      if (visible) {
+        console.log('[Page Visibility] Tab is now active - polling enabled');
+      } else {
+        console.log('[Page Visibility] Tab is now hidden - polling disabled');
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+  
   // Google Drive connection state - Initialize from localStorage for persistence
   const [googleDriveConnected, setGoogleDriveConnected] = useState(() => {
     // Check localStorage first for immediate state restoration
@@ -324,7 +343,7 @@ export default function RopaDashboardV2() {
   // Load email drafts from database
   const { data: emailDraftsData, refetch: refetchEmailDrafts } = trpc.emailDrafts.getAll.useQuery(
     { limit: 100 },
-    { refetchInterval: 30000, enabled: activeSection === 'monitor' } // Refresh every 30 seconds, only when on Monitor section
+    { refetchInterval: isPageVisible ? 30000 : false, enabled: activeSection === 'monitor' && isPageVisible } // Refresh every 30 seconds, only when on Monitor section AND tab is visible
   );
   
   // Sync database drafts to local state
@@ -366,7 +385,7 @@ export default function RopaDashboardV2() {
   const updateUIStateMutation = trpc.ropa.updateUIState.useMutation();
   const { data: pendingCommands, refetch: refetchCommands } = trpc.ropa.getPendingCommands.useQuery(
     undefined,
-    { refetchInterval: 15000, enabled: chatOpen } // Check for commands every 15 seconds, only when chat is open
+    { refetchInterval: isPageVisible && chatOpen ? 15000 : false, enabled: chatOpen && isPageVisible } // Check for commands every 15 seconds, only when chat is open AND tab is visible
   );
   const markCommandExecutedMutation = trpc.ropa.markCommandExecuted.useMutation();
   
@@ -547,23 +566,23 @@ export default function RopaDashboardV2() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const chatWindowRef = useRef<HTMLDivElement>(null);
 
-  // Queries
+  // Queries - all polling disabled when tab is not visible
   const { data: stats, isLoading: statsLoading } = trpc.ropa.getDashboardStats.useQuery(undefined, {
-    refetchInterval: 60000, // Reduced to 60 seconds
+    refetchInterval: isPageVisible ? 60000 : false, // Only poll when tab is visible
   });
 
   const { data: status } = trpc.ropa.getStatus.useQuery(undefined, {
-    refetchInterval: 30000, // Reduced to 30 seconds
+    refetchInterval: isPageVisible ? 30000 : false, // Only poll when tab is visible
   });
 
   const { data: tasks } = trpc.ropa.getTasks.useQuery(undefined, {
-    refetchInterval: 60000, // Reduced to 60 seconds
+    refetchInterval: isPageVisible ? 60000 : false, // Only poll when tab is visible
   });
 
   const { data: chatHistory, refetch: refetchChat } = trpc.ropa.getChatHistory.useQuery();
 
   const { data: alerts } = trpc.ropa.getAlerts.useQuery(undefined, {
-    refetchInterval: 60000, // Reduced to 60 seconds
+    refetchInterval: isPageVisible ? 60000 : false, // Only poll when tab is visible
   });
 
   const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();

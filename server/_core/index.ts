@@ -55,12 +55,20 @@ async function startServer() {
     const authUrl = getAuthUrl();
     res.redirect(authUrl);
   });
-  // tRPC API
+  // tRPC API with error handling for aborted requests
   app.use(
     "/api/trpc",
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError: ({ error }) => {
+        // Suppress "request aborted" errors - these are normal when users navigate away
+        if (error.message === 'request aborted' || error.message?.includes('aborted')) {
+          return; // Don't log these errors
+        }
+        // Log other errors normally
+        console.error('[tRPC Error]', error.message);
+      },
     })
   );
   // development mode uses Vite, production mode uses static files
