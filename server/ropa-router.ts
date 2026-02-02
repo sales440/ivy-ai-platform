@@ -112,7 +112,37 @@ export const ropaRouter = router({
     .input(z.object({ message: z.string() }))
     .mutation(async ({ input }) => {
       // Extract the clean message without context for display
-      const cleanMessage = input.message.replace(/^\[CONTEXT:\s*\{[^}]+\}\]\s*/i, '').trim();
+      // The context JSON can have nested objects, so we need to find the matching closing bracket
+      let cleanMessage = input.message;
+      if (input.message.startsWith('[CONTEXT:')) {
+        // Find the position after [CONTEXT: {...}] by counting brackets
+        let bracketCount = 0;
+        let inContext = false;
+        let contextEndIndex = -1;
+        
+        for (let i = 0; i < input.message.length; i++) {
+          const char = input.message[i];
+          if (char === '{') {
+            bracketCount++;
+            inContext = true;
+          } else if (char === '}') {
+            bracketCount--;
+            if (inContext && bracketCount === 0) {
+              // Found the end of JSON, now find the closing ]
+              const remaining = input.message.slice(i + 1);
+              const closingBracket = remaining.indexOf(']');
+              if (closingBracket !== -1) {
+                contextEndIndex = i + 1 + closingBracket + 1;
+              }
+              break;
+            }
+          }
+        }
+        
+        if (contextEndIndex > 0) {
+          cleanMessage = input.message.slice(contextEndIndex).trim();
+        }
+      }
       
       // Save user message (clean version for display)
       await addRopaChatMessage({
