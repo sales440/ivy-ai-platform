@@ -193,6 +193,9 @@ export default function RopaDashboardV2() {
   const emailDrafts = allDrafts.filter(d => d.type === 'email');
   const [selectedEmailDraft, setSelectedEmailDraft] = useState<string | null>(null);
   
+  // Chat state - declared early for use in queries
+  const [chatOpen, setChatOpen] = useState(false);
+  
   // Google Drive connection state - Initialize from localStorage for persistence
   const [googleDriveConnected, setGoogleDriveConnected] = useState(() => {
     // Check localStorage first for immediate state restoration
@@ -321,7 +324,7 @@ export default function RopaDashboardV2() {
   // Load email drafts from database
   const { data: emailDraftsData, refetch: refetchEmailDrafts } = trpc.emailDrafts.getAll.useQuery(
     { limit: 100 },
-    { refetchInterval: 5000 } // Refresh every 5 seconds
+    { refetchInterval: 30000, enabled: activeSection === 'monitor' } // Refresh every 30 seconds, only when on Monitor section
   );
   
   // Sync database drafts to local state
@@ -363,7 +366,7 @@ export default function RopaDashboardV2() {
   const updateUIStateMutation = trpc.ropa.updateUIState.useMutation();
   const { data: pendingCommands, refetch: refetchCommands } = trpc.ropa.getPendingCommands.useQuery(
     undefined,
-    { refetchInterval: 3000 } // Check for commands every 3 seconds
+    { refetchInterval: 15000, enabled: chatOpen } // Check for commands every 15 seconds, only when chat is open
   );
   const markCommandExecutedMutation = trpc.ropa.markCommandExecuted.useMutation();
   
@@ -387,7 +390,7 @@ export default function RopaDashboardV2() {
     syncUIState();
     
     // Periodic sync
-    const interval = setInterval(syncUIState, 5000);
+    const interval = setInterval(syncUIState, 30000); // Reduced to 30 seconds
     return () => clearInterval(interval);
   }, [activeSection, emailDrafts, googleDriveConnected, localCompanies, localCampaigns]);
   
@@ -496,8 +499,7 @@ export default function RopaDashboardV2() {
     }
   };
   
-  // Chat state
-  const [chatOpen, setChatOpen] = useState(false);
+  // Chat state (chatOpen declared earlier for query dependencies)
   const [chatMinimized, setChatMinimized] = useState(false);
   const [chatMaximized, setChatMaximized] = useState(false);
   const [message, setMessage] = useState("");
@@ -547,21 +549,21 @@ export default function RopaDashboardV2() {
 
   // Queries
   const { data: stats, isLoading: statsLoading } = trpc.ropa.getDashboardStats.useQuery(undefined, {
-    refetchInterval: 5000,
+    refetchInterval: 60000, // Reduced to 60 seconds
   });
 
   const { data: status } = trpc.ropa.getStatus.useQuery(undefined, {
-    refetchInterval: 3000,
+    refetchInterval: 30000, // Reduced to 30 seconds
   });
 
   const { data: tasks } = trpc.ropa.getTasks.useQuery(undefined, {
-    refetchInterval: 5000,
+    refetchInterval: 60000, // Reduced to 60 seconds
   });
 
   const { data: chatHistory, refetch: refetchChat } = trpc.ropa.getChatHistory.useQuery();
 
   const { data: alerts } = trpc.ropa.getAlerts.useQuery(undefined, {
-    refetchInterval: 10000,
+    refetchInterval: 60000, // Reduced to 60 seconds
   });
 
   const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();
