@@ -1233,6 +1233,83 @@ export const driveTools = {
       return { success: false, error: error.message };
     }
   },
+
+  // NEW: List folder contents (subfolders and files)
+  async listFolderContents(params: { folderId?: string }) {
+    await logTool("listFolderContents", "info", `Listing folder contents: ${params.folderId || 'root'}`);
+    try {
+      const result = await ropaDriveService.listFolderContents(params.folderId);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Get full folder tree structure
+  async getFolderTree(params: { depth?: number }) {
+    await logTool("getFolderTree", "info", `Getting folder tree with depth: ${params.depth || 3}`);
+    try {
+      const result = await ropaDriveService.getFullFolderTree(params.depth || 3);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Get folder tree as formatted text
+  async getFolderTreeSummary() {
+    await logTool("getFolderTreeSummary", "info", "Getting folder tree summary");
+    try {
+      const summary = await ropaDriveService.getFolderTreeSummary();
+      return { success: true, summary };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Create a folder
+  async createDriveFolder(params: { folderName: string; parentFolder?: string }) {
+    await logTool("createDriveFolder", "info", `Creating folder: ${params.folderName} in ${params.parentFolder || 'root'}`);
+    try {
+      const result = await ropaDriveService.createFolder(params.folderName, params.parentFolder);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Delete a folder
+  async deleteDriveFolder(params: { folderIdOrName: string }) {
+    await logTool("deleteDriveFolder", "info", `Deleting folder: ${params.folderIdOrName}`);
+    try {
+      const result = await ropaDriveService.deleteFolder(params.folderIdOrName);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Move a file to another folder
+  async moveDriveFile(params: { fileId: string; destinationFolder: string }) {
+    await logTool("moveDriveFile", "info", `Moving file ${params.fileId} to ${params.destinationFolder}`);
+    try {
+      const result = await ropaDriveService.moveFile(params.fileId, params.destinationFolder);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Copy a file to another folder
+  async copyDriveFile(params: { fileId: string; destinationFolder: string; newFileName?: string }) {
+    await logTool("copyDriveFile", "info", `Copying file ${params.fileId} to ${params.destinationFolder}`);
+    try {
+      const result = await ropaDriveService.copyFile(params.fileId, params.destinationFolder, params.newFileName);
+      return result;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  },
 };
 
 // ============ EXPORT ALL TOOLS ============

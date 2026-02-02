@@ -366,3 +366,9 @@
 
 ## ROPA Voice Toggle Fix - Phase 35
 - [x] Fix voice toggle button - when disabled should stop ongoing speech and prevent new speech
+- [x] Fix ROPA Google Drive subfolder navigation - ROPA cannot see subfolders inside FAGOR folder
+- [x] Add ROPA capability to list subfolders and navigate folder tree
+- [x] Add ROPA capability to create folders and subfolders
+- [x] Add ROPA capability to delete folders
+- [x] Add ROPA capability to move files between folders
+- [x] Add ROPA capability to copy files between folders

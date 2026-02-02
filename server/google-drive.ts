@@ -268,3 +268,261 @@ export async function downloadFileFromDrive(
     throw error;
   }
 }
+
+// List subfolders in a folder
+export async function listSubfolders(
+  oauth2Client: OAuth2Client,
+  folderId: string
+): Promise<Array<{ id: string; name: string; createdTime: string }>> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+      fields: 'files(id, name, createdTime)',
+      orderBy: 'name',
+    });
+
+    const folders = response.data.files || [];
+    return folders.map(folder => ({
+      id: folder.id!,
+      name: folder.name!,
+      createdTime: folder.createdTime!,
+    }));
+  } catch (error) {
+    console.error('[Google Drive] Error listing subfolders:', error);
+    throw error;
+  }
+}
+
+// Get full folder tree structure recursively
+export async function getFolderTree(
+  oauth2Client: OAuth2Client,
+  folderId: string,
+  depth: number = 3
+): Promise<{
+  id: string;
+  name: string;
+  subfolders: any[];
+  files: Array<{ id: string; name: string; mimeType: string }>;
+}> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    // Get folder info
+    const folderInfo = await drive.files.get({
+      fileId: folderId,
+      fields: 'id, name',
+    });
+
+    // Get all items in folder
+    const response = await drive.files.list({
+      q: `'${folderId}' in parents and trashed=false`,
+      fields: 'files(id, name, mimeType, createdTime)',
+      orderBy: 'name',
+    });
+
+    const items = response.data.files || [];
+    const subfolders: any[] = [];
+    const files: Array<{ id: string; name: string; mimeType: string }> = [];
+
+    for (const item of items) {
+      if (item.mimeType === 'application/vnd.google-apps.folder') {
+        if (depth > 1) {
+          // Recursively get subfolder tree
+          const subTree = await getFolderTree(oauth2Client, item.id!, depth - 1);
+          subfolders.push(subTree);
+        } else {
+          subfolders.push({
+            id: item.id!,
+            name: item.name!,
+            subfolders: [],
+            files: [],
+          });
+        }
+      } else {
+        files.push({
+          id: item.id!,
+          name: item.name!,
+          mimeType: item.mimeType!,
+        });
+      }
+    }
+
+    return {
+      id: folderInfo.data.id!,
+      name: folderInfo.data.name!,
+      subfolders,
+      files,
+    };
+  } catch (error) {
+    console.error('[Google Drive] Error getting folder tree:', error);
+    throw error;
+  }
+}
+
+// Create a new folder
+export async function createFolder(
+  oauth2Client: OAuth2Client,
+  folderName: string,
+  parentFolderId: string
+): Promise<{ id: string; name: string; webViewLink: string }> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const fileMetadata = {
+      name: folderName,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentFolderId],
+    };
+
+    const response = await drive.files.create({
+      requestBody: fileMetadata,
+      fields: 'id, name, webViewLink',
+    });
+
+    console.log(`[Google Drive] Folder created: ${folderName} (${response.data.id})`);
+
+    return {
+      id: response.data.id!,
+      name: response.data.name!,
+      webViewLink: response.data.webViewLink || '',
+    };
+  } catch (error) {
+    console.error(`[Google Drive] Error creating folder ${folderName}:`, error);
+    throw error;
+  }
+}
+
+// Delete a folder (and optionally its contents)
+export async function deleteFolder(
+  oauth2Client: OAuth2Client,
+  folderId: string
+): Promise<void> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    await drive.files.delete({
+      fileId: folderId,
+    });
+
+    console.log(`[Google Drive] Folder deleted: ${folderId}`);
+  } catch (error) {
+    console.error(`[Google Drive] Error deleting folder ${folderId}:`, error);
+    throw error;
+  }
+}
+
+// Move a file to a different folder
+export async function moveFile(
+  oauth2Client: OAuth2Client,
+  fileId: string,
+  newParentFolderId: string
+): Promise<{ id: string; name: string; parents: string[] }> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    // Get current parents
+    const file = await drive.files.get({
+      fileId,
+      fields: 'parents',
+    });
+
+    const previousParents = file.data.parents?.join(',') || '';
+
+    // Move file to new parent
+    const response = await drive.files.update({
+      fileId,
+      addParents: newParentFolderId,
+      removeParents: previousParents,
+      fields: 'id, name, parents',
+    });
+
+    console.log(`[Google Drive] File moved: ${fileId} to ${newParentFolderId}`);
+
+    return {
+      id: response.data.id!,
+      name: response.data.name!,
+      parents: response.data.parents || [],
+    };
+  } catch (error) {
+    console.error(`[Google Drive] Error moving file ${fileId}:`, error);
+    throw error;
+  }
+}
+
+// Copy a file to a different folder
+export async function copyFile(
+  oauth2Client: OAuth2Client,
+  fileId: string,
+  destinationFolderId: string,
+  newFileName?: string
+): Promise<{ id: string; name: string; webViewLink: string }> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    // Get original file info
+    const originalFile = await drive.files.get({
+      fileId,
+      fields: 'name',
+    });
+
+    const copyMetadata: any = {
+      parents: [destinationFolderId],
+    };
+
+    if (newFileName) {
+      copyMetadata.name = newFileName;
+    }
+
+    const response = await drive.files.copy({
+      fileId,
+      requestBody: copyMetadata,
+      fields: 'id, name, webViewLink',
+    });
+
+    console.log(`[Google Drive] File copied: ${originalFile.data.name} to ${destinationFolderId}`);
+
+    return {
+      id: response.data.id!,
+      name: response.data.name!,
+      webViewLink: response.data.webViewLink || '',
+    };
+  } catch (error) {
+    console.error(`[Google Drive] Error copying file ${fileId}:`, error);
+    throw error;
+  }
+}
+
+// Get folder by name (search in parent)
+export async function getFolderByName(
+  oauth2Client: OAuth2Client,
+  folderName: string,
+  parentFolderId?: string
+): Promise<{ id: string; name: string } | null> {
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const query = parentFolderId
+      ? `name='${folderName}' and '${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+      : `name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+
+    const response = await drive.files.list({
+      q: query,
+      fields: 'files(id, name)',
+      spaces: 'drive',
+    });
+
+    if (response.data.files && response.data.files.length > 0) {
+      return {
+        id: response.data.files[0].id!,
+        name: response.data.files[0].name!,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`[Google Drive] Error finding folder ${folderName}:`, error);
+    throw error;
+  }
+}

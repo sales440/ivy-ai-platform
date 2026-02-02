@@ -1,11 +1,23 @@
 /**
  * ROPA Google Drive Service
- * Provides ROPA with access to read and process files from Google Drive
+ * Provides ROPA with full access to manage files and folders in Google Drive
  */
 
 import mysql from 'mysql2/promise';
 import { google } from 'googleapis';
-import { getOAuth2Client, setCredentials, downloadFileFromDrive, listFilesInFolder } from './google-drive';
+import { 
+  getOAuth2Client, 
+  setCredentials, 
+  downloadFileFromDrive, 
+  listFilesInFolder,
+  listSubfolders,
+  getFolderTree,
+  createFolder as createDriveFolder,
+  deleteFolder as deleteDriveFolder,
+  moveFile as moveDriveFile,
+  copyFile as copyDriveFile,
+  getFolderByName,
+} from './google-drive';
 import * as XLSX from 'xlsx';
 
 // Get raw MySQL connection
@@ -80,6 +92,7 @@ export async function listAllFiles(): Promise<{
 
     // List files from each folder
     const folderNames: Record<string, string> = {
+      root: 'Ivy.AI - FAGOR',
       branding: 'Logos & Branding',
       emailTemplates: 'Email Templates',
       callScripts: 'Call Scripts',
@@ -88,6 +101,12 @@ export async function listAllFiles(): Promise<{
       clientLists: 'Client Lists',
       exports: 'Exports',
       backups: 'Backups',
+      reports: 'Reportes',
+      daily: 'Daily',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      templates: 'Templates',
+      databases: 'Databases',
     };
 
     for (const [key, displayName] of Object.entries(folderNames)) {
@@ -112,6 +131,214 @@ export async function listAllFiles(): Promise<{
   } catch (error: any) {
     console.error('[ROPA Drive] Error listing files:', error);
     return { success: false, files: [], error: error.message };
+  }
+}
+
+// List subfolders in a specific folder
+export async function listFolderContents(folderId?: string): Promise<{
+  success: boolean;
+  folders: Array<{ id: string; name: string; createdTime: string }>;
+  files: Array<{ id: string; name: string; mimeType: string; createdTime: string }>;
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, folders: [], files: [], error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    const targetFolderId = folderId || folderIds.root;
+
+    if (!targetFolderId) {
+      return { success: false, folders: [], files: [], error: 'No se encontró la carpeta raíz' };
+    }
+
+    const subfolders = await listSubfolders(oauth2Client, targetFolderId);
+    const files = await listFilesInFolder(oauth2Client, targetFolderId);
+    
+    // Filter out folders from files (they're already in subfolders)
+    const actualFiles = files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder');
+
+    return { success: true, folders: subfolders, files: actualFiles };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error listing folder contents:', error);
+    return { success: false, folders: [], files: [], error: error.message };
+  }
+}
+
+// Get full folder tree structure
+export async function getFullFolderTree(depth: number = 3): Promise<{
+  success: boolean;
+  tree?: any;
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    const rootId = folderIds.root;
+
+    if (!rootId) {
+      return { success: false, error: 'No se encontró la carpeta raíz de Ivy.AI' };
+    }
+
+    const tree = await getFolderTree(oauth2Client, rootId, depth);
+    return { success: true, tree };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error getting folder tree:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Create a new folder
+export async function createFolder(folderName: string, parentFolderIdOrName?: string): Promise<{
+  success: boolean;
+  folder?: { id: string; name: string; webViewLink: string };
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    
+    // Determine parent folder ID
+    let parentId = folderIds.root;
+    if (parentFolderIdOrName) {
+      // Check if it's a known folder key
+      if (folderIds[parentFolderIdOrName]) {
+        parentId = folderIds[parentFolderIdOrName];
+      } else if (parentFolderIdOrName.length > 20) {
+        // Looks like a folder ID
+        parentId = parentFolderIdOrName;
+      } else {
+        // Try to find folder by name
+        const found = await getFolderByName(oauth2Client, parentFolderIdOrName, folderIds.root);
+        if (found) {
+          parentId = found.id;
+        }
+      }
+    }
+
+    const folder = await createDriveFolder(oauth2Client, folderName, parentId);
+    console.log(`[ROPA Drive] Created folder: ${folderName}`);
+    return { success: true, folder };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error creating folder:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Delete a folder
+export async function deleteFolder(folderIdOrName: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    
+    let folderId = folderIdOrName;
+    if (folderIdOrName.length < 20) {
+      // Try to find folder by name
+      const found = await getFolderByName(oauth2Client, folderIdOrName, folderIds.root);
+      if (found) {
+        folderId = found.id;
+      } else {
+        return { success: false, error: `No se encontró la carpeta: ${folderIdOrName}` };
+      }
+    }
+
+    await deleteDriveFolder(oauth2Client, folderId);
+    console.log(`[ROPA Drive] Deleted folder: ${folderIdOrName}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error deleting folder:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Move a file to a different folder
+export async function moveFile(fileId: string, destinationFolderIdOrName: string): Promise<{
+  success: boolean;
+  file?: { id: string; name: string; parents: string[] };
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    
+    // Determine destination folder ID
+    let destFolderId = destinationFolderIdOrName;
+    if (folderIds[destinationFolderIdOrName]) {
+      destFolderId = folderIds[destinationFolderIdOrName];
+    } else if (destinationFolderIdOrName.length < 20) {
+      // Try to find folder by name
+      const found = await getFolderByName(oauth2Client, destinationFolderIdOrName, folderIds.root);
+      if (found) {
+        destFolderId = found.id;
+      } else {
+        return { success: false, error: `No se encontró la carpeta destino: ${destinationFolderIdOrName}` };
+      }
+    }
+
+    const file = await moveDriveFile(oauth2Client, fileId, destFolderId);
+    console.log(`[ROPA Drive] Moved file: ${fileId} to ${destinationFolderIdOrName}`);
+    return { success: true, file };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error moving file:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Copy a file to a different folder
+export async function copyFile(fileId: string, destinationFolderIdOrName: string, newFileName?: string): Promise<{
+  success: boolean;
+  file?: { id: string; name: string; webViewLink: string };
+  error?: string;
+}> {
+  try {
+    const auth = await getAuthenticatedClient();
+    if (!auth) {
+      return { success: false, error: 'Google Drive no conectado' };
+    }
+
+    const { oauth2Client, folderIds } = auth;
+    
+    // Determine destination folder ID
+    let destFolderId = destinationFolderIdOrName;
+    if (folderIds[destinationFolderIdOrName]) {
+      destFolderId = folderIds[destinationFolderIdOrName];
+    } else if (destinationFolderIdOrName.length < 20) {
+      // Try to find folder by name
+      const found = await getFolderByName(oauth2Client, destinationFolderIdOrName, folderIds.root);
+      if (found) {
+        destFolderId = found.id;
+      } else {
+        return { success: false, error: `No se encontró la carpeta destino: ${destinationFolderIdOrName}` };
+      }
+    }
+
+    const file = await copyDriveFile(oauth2Client, fileId, destFolderId, newFileName);
+    console.log(`[ROPA Drive] Copied file: ${fileId} to ${destinationFolderIdOrName}`);
+    return { success: true, file };
+  } catch (error: any) {
+    console.error('[ROPA Drive] Error copying file:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -342,8 +569,50 @@ export async function getFilesSummary(): Promise<string> {
   }
 }
 
+// Helper function to format folder tree
+function formatTree(node: any, indent: string = ''): string {
+  let output = `${indent}📁 ${node.name}\n`;
+  
+  // List subfolders
+  for (const subfolder of node.subfolders || []) {
+    output += formatTree(subfolder, indent + '  ');
+  }
+  
+  // List files (max 3 per folder)
+  const files = node.files || [];
+  files.slice(0, 3).forEach((file: any) => {
+    output += `${indent}  📄 ${file.name}\n`;
+  });
+  if (files.length > 3) {
+    output += `${indent}  ... y ${files.length - 3} archivos más\n`;
+  }
+  
+  return output;
+}
+
+// Get folder tree as formatted string for display
+export async function getFolderTreeSummary(): Promise<string> {
+  try {
+    const result = await getFullFolderTree(3);
+    if (!result.success || !result.tree) {
+      return `No se pudo obtener la estructura de carpetas: ${result.error}`;
+    }
+
+    return formatTree(result.tree);
+  } catch (error: any) {
+    return `Error al obtener estructura de carpetas: ${error.message}`;
+  }
+}
+
 export default {
   listAllFiles,
+  listFolderContents,
+  getFullFolderTree,
+  getFolderTreeSummary,
+  createFolder,
+  deleteFolder,
+  moveFile,
+  copyFile,
   getFileContent,
   searchFiles,
   getClientListData,
