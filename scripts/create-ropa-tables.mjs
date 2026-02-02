@@ -135,6 +135,28 @@ async function createRopaTables() {
           created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )`
+      },
+      {
+        name: 'email_drafts',
+        sql: `CREATE TABLE IF NOT EXISTS email_drafts (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          draft_id varchar(64) NOT NULL UNIQUE,
+          company varchar(255) NOT NULL,
+          campaign varchar(255),
+          subject varchar(500) NOT NULL,
+          body text NOT NULL,
+          html_content text,
+          recipient_email varchar(320),
+          recipient_name varchar(255),
+          status enum('pending', 'approved', 'rejected', 'sent') NOT NULL DEFAULT 'pending',
+          rejection_reason text,
+          approved_by varchar(64),
+          approved_at timestamp NULL,
+          sent_at timestamp NULL,
+          created_by varchar(64),
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
       }
     ];
 

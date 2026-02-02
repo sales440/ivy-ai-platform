@@ -397,3 +397,15 @@
 - [x] Add approve/reject buttons to each draft item and popup
 - [x] Implement Google Drive integration to save approved drafts to client campaign folders
 - [x] Support different campaign types per client
+
+## Railway Production Fix - email_drafts table missing
+- [x] Create email_drafts table in production database via script
+- [x] Add email_drafts table creation to startup script
+- [ ] Verify table exists after deployment
+
+## Draft Editing in Monitor - Phase 38
+- [ ] Add edit mode toggle to MonitorDraftPopup component
+- [ ] Add editable fields for subject and body in popup
+- [ ] Create backend endpoint to update draft content
+- [ ] Add save changes button before approve/reject
+- [ ] Deploy to Railway
