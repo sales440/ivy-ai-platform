@@ -112,37 +112,65 @@ export const ropaRouter = router({
     .input(z.object({ message: z.string() }))
     .mutation(async ({ input }) => {
       // Extract the clean message without context for display
-      // The context JSON can have nested objects, so we need to find the matching closing bracket
+      // ROBUST APPROACH: Use regex first, then bracket counting as fallback
       let cleanMessage = input.message;
-      if (input.message.startsWith('[CONTEXT:')) {
-        // Find the position after [CONTEXT: {...}] by counting brackets
-        let bracketCount = 0;
-        let inContext = false;
-        let contextEndIndex = -1;
+      
+      console.log('[ROPA Chat] Raw message received, length:', input.message.length);
+      console.log('[ROPA Chat] Starts with CONTEXT:', input.message.startsWith('[CONTEXT:'));
+      
+      if (input.message.includes('[CONTEXT:')) {
+        // Method 1: Try to find the pattern [CONTEXT: ...] followed by actual message
+        // The context ends with }] and then the actual message follows
+        const contextMatch = input.message.match(/^\[CONTEXT:\s*\{[\s\S]*?\}\]\s*([\s\S]*)$/);
         
-        for (let i = 0; i < input.message.length; i++) {
-          const char = input.message[i];
-          if (char === '{') {
-            bracketCount++;
-            inContext = true;
-          } else if (char === '}') {
-            bracketCount--;
-            if (inContext && bracketCount === 0) {
-              // Found the end of JSON, now find the closing ]
-              const remaining = input.message.slice(i + 1);
-              const closingBracket = remaining.indexOf(']');
-              if (closingBracket !== -1) {
-                contextEndIndex = i + 1 + closingBracket + 1;
+        if (contextMatch && contextMatch[1]) {
+          cleanMessage = contextMatch[1].trim();
+          console.log('[ROPA Chat] Method 1 (regex) extracted message:', cleanMessage.substring(0, 50));
+        } else {
+          // Method 2: Bracket counting for complex nested JSON
+          let bracketCount = 0;
+          let inContext = false;
+          let contextEndIndex = -1;
+          
+          for (let i = 0; i < input.message.length; i++) {
+            const char = input.message[i];
+            if (char === '{') {
+              bracketCount++;
+              inContext = true;
+            } else if (char === '}') {
+              bracketCount--;
+              if (inContext && bracketCount === 0) {
+                // Found the end of JSON, now find the closing ]
+                const remaining = input.message.slice(i + 1);
+                const closingBracket = remaining.indexOf(']');
+                if (closingBracket !== -1) {
+                  contextEndIndex = i + 1 + closingBracket + 1;
+                }
+                break;
               }
-              break;
             }
           }
-        }
-        
-        if (contextEndIndex > 0) {
-          cleanMessage = input.message.slice(contextEndIndex).trim();
+          
+          if (contextEndIndex > 0) {
+            cleanMessage = input.message.slice(contextEndIndex).trim();
+            console.log('[ROPA Chat] Method 2 (brackets) extracted message:', cleanMessage.substring(0, 50));
+          } else {
+            console.log('[ROPA Chat] WARNING: Could not extract clean message, contextEndIndex:', contextEndIndex);
+          }
         }
       }
+      
+      // Final safety check: if cleanMessage still contains [CONTEXT, something went wrong
+      if (cleanMessage.includes('[CONTEXT:')) {
+        console.log('[ROPA Chat] ERROR: cleanMessage still contains CONTEXT, forcing extraction');
+        // Last resort: just remove everything before the last ]
+        const lastBracket = cleanMessage.lastIndexOf(']');
+        if (lastBracket !== -1 && lastBracket < cleanMessage.length - 1) {
+          cleanMessage = cleanMessage.slice(lastBracket + 1).trim();
+        }
+      }
+      
+      console.log('[ROPA Chat] Final clean message:', cleanMessage.substring(0, 100));
       
       // Save user message (clean version for display)
       await addRopaChatMessage({
