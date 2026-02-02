@@ -390,3 +390,10 @@
 - [x] Add ROPA tool to auto-create client folder structure
 - [x] Link client management with Google Drive folders
 - [x] Update ROPA to navigate client folders automatically
+
+## Monitor Section Redesign - Phase 37
+- [x] Create Monitor list view component showing all draft types (emails, calls, SMS)
+- [x] Create full-screen popup modal for draft preview on double-click
+- [x] Add approve/reject buttons to each draft item and popup
+- [x] Implement Google Drive integration to save approved drafts to client campaign folders
+- [x] Support different campaign types per client

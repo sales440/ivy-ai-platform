@@ -382,4 +382,117 @@ export const googleDriveRouter = router({
       throw new Error("Error al ejecutar limpieza manual");
     }
   }),
+
+  // Save approved draft to client's campaign folder in Google Drive
+  saveApprovedDraft: protectedProcedure
+    .input(
+      z.object({
+        company: z.string(),
+        campaign: z.string(),
+        type: z.enum(['email', 'call', 'sms']),
+        subject: z.string(),
+        body: z.string(),
+        draftId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      let connection: mysql.Connection | null = null;
+      try {
+        connection = await getRawConnection();
+        await ensureTableExists(connection);
+        
+        const [rows] = await connection.execute(
+          "SELECT access_token, refresh_token, expiry_date, scope, token_type, folder_ids FROM google_drive_tokens LIMIT 1"
+        ) as [any[], any];
+        
+        if (rows.length === 0) {
+          throw new Error("Google Drive no conectado");
+        }
+
+        const tokenRecord = rows[0];
+        const folderIds = typeof tokenRecord.folder_ids === 'string' 
+          ? JSON.parse(tokenRecord.folder_ids) 
+          : (tokenRecord.folder_ids || {});
+
+        // Setup OAuth client
+        const oauth2Client = getOAuth2Client();
+        setCredentials(oauth2Client, {
+          access_token: tokenRecord.access_token,
+          refresh_token: tokenRecord.refresh_token,
+          expiry_date: tokenRecord.expiry_date,
+          scope: tokenRecord.scope,
+          token_type: tokenRecord.token_type,
+        });
+
+        // Determine target folder based on type
+        let targetFolderId: string | null = null;
+        if (input.type === 'email') {
+          targetFolderId = folderIds.emailTemplates;
+        } else if (input.type === 'call') {
+          targetFolderId = folderIds.callScripts;
+        } else if (input.type === 'sms') {
+          targetFolderId = folderIds.smsTemplates;
+        }
+
+        if (!targetFolderId) {
+          // Fall back to campaigns folder
+          targetFolderId = folderIds.campaigns;
+        }
+
+        if (!targetFolderId) {
+          throw new Error("No se encontró carpeta de destino en Google Drive");
+        }
+
+        // Create content for the file
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const typeLabel = input.type === 'email' ? 'Email' : input.type === 'call' ? 'Script_Llamada' : 'SMS';
+        const fileName = `${typeLabel}_${input.company}_${input.campaign}_${timestamp}.txt`;
+        
+        const fileContent = `===========================================
+${typeLabel.toUpperCase()} APROBADO
+===========================================
+
+Empresa: ${input.company}
+Campaña: ${input.campaign}
+Tipo: ${input.type}
+Fecha de Aprobación: ${new Date().toLocaleString('es-ES')}
+ID del Borrador: ${input.draftId}
+
+-------------------------------------------
+ASUNTO / TÍTULO:
+-------------------------------------------
+${input.subject}
+
+-------------------------------------------
+CONTENIDO:
+-------------------------------------------
+${input.body}
+
+===========================================
+Generado por ROPA - Ivy.AI Platform
+===========================================`;
+
+        // Upload to Google Drive
+        const fileBuffer = Buffer.from(fileContent, 'utf-8');
+        const result = await uploadFileToDrive(
+          oauth2Client,
+          fileName,
+          fileBuffer,
+          'text/plain',
+          targetFolderId
+        );
+
+        return {
+          success: true,
+          message: `${typeLabel} guardado en Google Drive`,
+          fileId: result.id,
+          fileName: fileName,
+        };
+      } catch (error: any) {
+        console.error("[Google Drive] Save approved draft error:", error);
+        throw new Error(`Error al guardar en Google Drive: ${error.message}`);
+      } finally {
+        if (connection) await connection.end();
+      }
+    }),
 });

@@ -86,6 +86,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { APP_TITLE } from "@/const";
+import { MonitorDraftList } from "@/components/MonitorDraftList";
+import { MonitorDraftPopup, Draft, DraftType } from "@/components/MonitorDraftPopup";
 import {
   LineChart,
   Line,
@@ -180,18 +182,15 @@ export default function RopaDashboardV2() {
   const [localCompanies, setLocalCompanies] = useState<any[]>([]);
   const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
   
-  // Email drafts for Monitor section - now persisted in database
-  const [emailDrafts, setEmailDrafts] = useState<Array<{
-    id: string;
-    draftId: string;
-    company: string;
-    subject: string;
-    body: string;
-    campaign: string;
-    status: 'pending' | 'approved' | 'rejected' | 'sent';
-    createdAt: string;
-  }>>([]);
-  const [monitorTab, setMonitorTab] = useState<'emails' | 'calls' | 'sms'>('emails');
+  // All drafts for Monitor section - now persisted in database
+  const [allDrafts, setAllDrafts] = useState<Draft[]>([]);
+  const [monitorTab, setMonitorTab] = useState<DraftType | 'all'>('all');
+  const [monitorStatusFilter, setMonitorStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'sent' | 'all'>('all');
+  const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  
+  // Legacy emailDrafts for backward compatibility
+  const emailDrafts = allDrafts.filter(d => d.type === 'email');
   const [selectedEmailDraft, setSelectedEmailDraft] = useState<string | null>(null);
   
   // Google Drive connection state - Initialize from localStorage for persistence
@@ -328,17 +327,20 @@ export default function RopaDashboardV2() {
   // Sync database drafts to local state
   useEffect(() => {
     if (emailDraftsData?.drafts) {
-      const formattedDrafts = emailDraftsData.drafts.map((d: any) => ({
+      const formattedDrafts: Draft[] = emailDraftsData.drafts.map((d: any) => ({
         id: d.draftId,
         draftId: d.draftId,
+        type: (d.type || 'email') as DraftType,
         company: d.company,
         subject: d.subject,
         body: d.body,
         campaign: d.campaign || 'General',
         status: d.status as 'pending' | 'approved' | 'rejected' | 'sent',
         createdAt: d.createdAt,
+        recipient: d.recipient,
+        phoneNumber: d.phoneNumber,
       }));
-      setEmailDrafts(formattedDrafts);
+      setAllDrafts(formattedDrafts);
     }
   }, [emailDraftsData]);
   
@@ -406,7 +408,7 @@ export default function RopaDashboardV2() {
             break;
             
           case 'resetEmailDrafts':
-            setEmailDrafts([]);
+            setAllDrafts([]);
             localStorage.removeItem('ropaEmailDrafts');
             toast.info('ROPA reinició los borradores de email');
             break;
@@ -473,14 +475,24 @@ export default function RopaDashboardV2() {
   // Function to approve/reject email draft - now updates database
   const updateEmailDraftStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
+      // Find the draft to get company and campaign info
+      const draft = allDrafts.find(d => d.id === id);
+      
       await updateEmailDraftStatusMutation.mutateAsync({
         draftId: id,
         status,
       });
-      toast.success(status === 'approved' ? 'Email aprobado y guardado en base de datos' : 'Email rechazado');
+      
+      // Show success message
+      const typeLabel = draft?.type === 'email' ? 'Email' : draft?.type === 'call' ? 'Script' : 'SMS';
+      if (status === 'approved') {
+        toast.success(`${typeLabel} aprobado y guardado`);
+      } else {
+        toast.success('Borrador rechazado');
+      }
     } catch (error) {
       console.error('Error updating email draft status:', error);
-      toast.error('Error al actualizar el estado del email');
+      toast.error('Error al actualizar el estado del borrador');
     }
   };
   
@@ -1815,190 +1827,128 @@ export default function RopaDashboardV2() {
           {activeSection === "monitor" && (
             <div className="space-y-6">
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-slate-900/50 border-slate-800">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <Card className="bg-slate-900/50 border-slate-800 cursor-pointer hover:border-yellow-500/50 transition-colors" onClick={() => setMonitorStatusFilter('pending')}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-400 text-sm">Pendientes</p>
-                        <p className="text-2xl font-bold text-yellow-400">{emailDrafts.filter(d => d.status === 'pending').length}</p>
+                        <p className="text-2xl font-bold text-yellow-400">{allDrafts.filter(d => d.status === 'pending').length}</p>
                       </div>
                       <Clock className="h-8 w-8 text-yellow-400/50" />
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-slate-900/50 border-slate-800">
+                <Card className="bg-slate-900/50 border-slate-800 cursor-pointer hover:border-green-500/50 transition-colors" onClick={() => setMonitorStatusFilter('approved')}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-400 text-sm">Aprobados</p>
-                        <p className="text-2xl font-bold text-green-400">{emailDrafts.filter(d => d.status === 'approved').length}</p>
+                        <p className="text-2xl font-bold text-green-400">{allDrafts.filter(d => d.status === 'approved').length}</p>
                       </div>
                       <CheckCircle2 className="h-8 w-8 text-green-400/50" />
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-slate-900/50 border-slate-800">
+                <Card className="bg-slate-900/50 border-slate-800 cursor-pointer hover:border-red-500/50 transition-colors" onClick={() => setMonitorStatusFilter('rejected')}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-slate-400 text-sm">Rechazados</p>
-                        <p className="text-2xl font-bold text-red-400">{emailDrafts.filter(d => d.status === 'rejected').length}</p>
+                        <p className="text-2xl font-bold text-red-400">{allDrafts.filter(d => d.status === 'rejected').length}</p>
                       </div>
                       <AlertCircle className="h-8 w-8 text-red-400/50" />
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="bg-slate-900/50 border-slate-800">
+                <Card className="bg-slate-900/50 border-slate-800 cursor-pointer hover:border-blue-500/50 transition-colors" onClick={() => setMonitorStatusFilter('sent')}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-slate-400 text-sm">Total</p>
-                        <p className="text-2xl font-bold text-blue-400">{emailDrafts.length}</p>
+                        <p className="text-slate-400 text-sm">Enviados</p>
+                        <p className="text-2xl font-bold text-blue-400">{allDrafts.filter(d => d.status === 'sent').length}</p>
                       </div>
                       <Send className="h-8 w-8 text-blue-400/50" />
                     </div>
                   </CardContent>
                 </Card>
+                <Card className="bg-slate-900/50 border-slate-800 cursor-pointer hover:border-cyan-500/50 transition-colors" onClick={() => setMonitorStatusFilter('all')}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-slate-400 text-sm">Total</p>
+                        <p className="text-2xl font-bold text-cyan-400">{allDrafts.length}</p>
+                      </div>
+                      <FileText className="h-8 w-8 text-cyan-400/50" />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
-              {/* Content Tabs */}
+              {/* Content List */}
               <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-cyan-400" />
-                    Contenido Pendiente de Validación
-                  </CardTitle>
-                  <CardDescription>Revisa y aprueba emails, scripts de llamada y SMS antes de enviarlos</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {/* Tab Buttons */}
-                  <div className="flex gap-2 mb-6">
-                    <Button 
-                      variant="outline" 
-                      className={monitorTab === 'emails' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
-                      onClick={() => setMonitorTab('emails')}
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Emails ({emailDrafts.length})
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className={monitorTab === 'calls' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
-                      onClick={() => setMonitorTab('calls')}
-                    >
-                      <Phone className="w-4 h-4 mr-2" />
-                      Llamadas (0)
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className={monitorTab === 'sms' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
-                      onClick={() => setMonitorTab('sms')}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      SMS (0)
-                    </Button>
-                  </div>
-
-                  {/* Email List */}
-                  {monitorTab === 'emails' && emailDrafts.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {/* Email List */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-slate-400 mb-2">Borradores de Email</h4>
-                        <ScrollArea className="h-[400px]">
-                          {emailDrafts.map((draft) => (
-                            <div
-                              key={draft.id}
-                              onClick={() => setSelectedEmailDraft(draft.id)}
-                              className={`p-4 rounded-lg border cursor-pointer mb-2 transition-all ${
-                                selectedEmailDraft === draft.id
-                                  ? 'border-cyan-500 bg-cyan-500/10'
-                                  : 'border-slate-700 bg-slate-900/50 hover:border-slate-600'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <Badge className={draft.status === 'pending' ? 'bg-yellow-500' : draft.status === 'approved' ? 'bg-green-500' : 'bg-red-500'}>
-                                  {draft.status === 'pending' ? 'Pendiente' : draft.status === 'approved' ? 'Aprobado' : 'Rechazado'}
-                                </Badge>
-                                <span className="text-xs text-slate-500">{new Date(draft.createdAt).toLocaleDateString()}</span>
-                              </div>
-                              <p className="font-medium text-white truncate">{draft.subject}</p>
-                              <p className="text-sm text-cyan-400">{draft.company}</p>
-                              <p className="text-xs text-slate-500 mt-1">{draft.campaign}</p>
-                            </div>
-                          ))}
-                        </ScrollArea>
-                      </div>
-
-                      {/* Email Preview */}
-                      <div className="border border-slate-700 rounded-lg overflow-hidden">
-                        {selectedEmailDraft ? (
-                          <>
-                            {(() => {
-                              const draft = emailDrafts.find(d => d.id === selectedEmailDraft);
-                              if (!draft) return null;
-                              return (
-                                <div className="h-full flex flex-col">
-                                  {/* Company Header/Letterhead */}
-                                  <div className="bg-gradient-to-r from-cyan-600 to-teal-600 p-4">
-                                    <h3 className="text-xl font-bold text-white">{draft.company}</h3>
-                                    <p className="text-cyan-100 text-sm">Campaña: {draft.campaign}</p>
-                                  </div>
-                                  {/* Email Content */}
-                                  <div className="p-4 bg-white text-gray-800 flex-1">
-                                    <p className="font-semibold text-lg mb-4 text-gray-900">Asunto: {draft.subject}</p>
-                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: draft.body.replace(/\n/g, '<br/>') }} />
-                                  </div>
-                                  {/* Action Buttons */}
-                                  <div className="p-4 bg-slate-900 border-t border-slate-700 flex gap-2">
-                                    <Button
-                                      onClick={() => updateEmailDraftStatus(draft.id, 'approved')}
-                                      className="bg-green-600 hover:bg-green-700 flex-1"
-                                      disabled={draft.status !== 'pending'}
-                                    >
-                                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                                      Aprobar
-                                    </Button>
-                                    <Button
-                                      onClick={() => updateEmailDraftStatus(draft.id, 'rejected')}
-                                      variant="destructive"
-                                      className="flex-1"
-                                      disabled={draft.status !== 'pending'}
-                                    >
-                                      <AlertCircle className="w-4 h-4 mr-2" />
-                                      Rechazar
-                                    </Button>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </>
-                        ) : (
-                          <div className="h-[400px] flex items-center justify-center text-slate-500">
-                            <p>Selecciona un email para ver la vista previa</p>
-                          </div>
-                        )}
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Eye className="w-5 h-5 text-cyan-400" />
+                        Monitor de Validación
+                      </CardTitle>
+                      <CardDescription>Revisa y aprueba emails, scripts de llamada y SMS antes de enviarlos. Doble clic para ver en pantalla completa.</CardDescription>
                     </div>
-                  ) : (
-                    /* Empty State */
-                    <div className="text-center py-12 border border-dashed border-slate-700 rounded-xl">
-                      <Eye className="w-12 h-12 mx-auto text-slate-600 mb-4" />
-                      <p className="text-lg font-medium text-white mb-2">No hay contenido pendiente</p>
-                      <p className="text-sm text-slate-400 mb-4">Pídele a ROPA que genere contenido para tus campañas</p>
-                      <Button
-                        onClick={() => {
-                          setChatOpen(true);
-                          setChatMinimized(false);
-                        }}
-                        className="bg-gradient-to-r from-cyan-500 to-teal-500"
+                    {/* Filter Buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className={monitorTab === 'all' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
+                        onClick={() => setMonitorTab('all')}
                       >
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Hablar con ROPA
+                        Todos ({allDrafts.length})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className={monitorTab === 'email' ? "border-cyan-500 bg-cyan-500/20 text-cyan-400" : "border-slate-700"}
+                        onClick={() => setMonitorTab('email')}
+                      >
+                        <Mail className="w-4 h-4 mr-1" />
+                        Emails ({allDrafts.filter(d => d.type === 'email').length})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className={monitorTab === 'call' ? "border-green-500 bg-green-500/20 text-green-400" : "border-slate-700"}
+                        onClick={() => setMonitorTab('call')}
+                      >
+                        <Phone className="w-4 h-4 mr-1" />
+                        Llamadas ({allDrafts.filter(d => d.type === 'call').length})
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className={monitorTab === 'sms' ? "border-purple-500 bg-purple-500/20 text-purple-400" : "border-slate-700"}
+                        onClick={() => setMonitorTab('sms')}
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        SMS ({allDrafts.filter(d => d.type === 'sms').length})
                       </Button>
                     </div>
-                  )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {/* Draft List Component */}
+                  <MonitorDraftList
+                    drafts={allDrafts}
+                    filterType={monitorTab}
+                    filterStatus={monitorStatusFilter}
+                    onDoubleClick={(draft) => {
+                      setSelectedDraft(draft);
+                      setIsPopupOpen(true);
+                    }}
+                    onApprove={(draftId) => updateEmailDraftStatus(draftId, 'approved')}
+                    onReject={(draftId) => updateEmailDraftStatus(draftId, 'rejected')}
+                  />
 
                   {/* Instructions */}
                   <div className="mt-6 p-4 bg-slate-900/50 rounded-lg border border-slate-800">
@@ -2006,12 +1956,32 @@ export default function RopaDashboardV2() {
                     <ul className="text-sm text-slate-400 space-y-1">
                       <li>• Pídele a ROPA: "Genera un email de campaña para FAGOR Automation"</li>
                       <li>• ROPA creará el contenido y lo mostrará aquí para tu aprobación</li>
-                      <li>• Revisa, edita si es necesario, y aprueba o rechaza</li>
-                      <li>• Solo el contenido aprobado será enviado a los clientes</li>
+                      <li>• Haz doble clic en cualquier borrador para verlo en pantalla completa</li>
+                      <li>• Al aprobar, el contenido se guardará en la carpeta del cliente en Google Drive</li>
                     </ul>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Full Screen Popup */}
+              <MonitorDraftPopup
+                draft={selectedDraft}
+                isOpen={isPopupOpen}
+                onClose={() => {
+                  setIsPopupOpen(false);
+                  setSelectedDraft(null);
+                }}
+                onApprove={(draftId) => {
+                  updateEmailDraftStatus(draftId, 'approved');
+                  setIsPopupOpen(false);
+                  setSelectedDraft(null);
+                }}
+                onReject={(draftId) => {
+                  updateEmailDraftStatus(draftId, 'rejected');
+                  setIsPopupOpen(false);
+                  setSelectedDraft(null);
+                }}
+              />
             </div>
           )}
 
