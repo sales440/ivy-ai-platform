@@ -111,10 +111,13 @@ export const ropaRouter = router({
   sendChatMessage: protectedProcedure
     .input(z.object({ message: z.string() }))
     .mutation(async ({ input }) => {
-      // Save user message
+      // Extract the clean message without context for display
+      const cleanMessage = input.message.replace(/^\[CONTEXT:\s*\{[^}]+\}\]\s*/i, '').trim();
+      
+      // Save user message (clean version for display)
       await addRopaChatMessage({
         role: "user",
-        message: input.message,
+        message: cleanMessage,
       });
 
       // Get full conversation context with memory

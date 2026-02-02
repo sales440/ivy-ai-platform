@@ -408,4 +408,8 @@
 - [x] Add editable fields for subject and body in popup
 - [x] Create backend endpoint to update draft content
 - [x] Add save changes button before approve/reject
-- [ ] Deploy to Railway
+- [x] Deploy to Railway
+
+## ROPA Not Responding Fix - Phase 39
+- [x] Investigate why ROPA is not responding to messages
+- [x] Fix ROPA chat endpoint or LLM integration issue - cleaned context from displayed messages
