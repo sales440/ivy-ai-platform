@@ -18,6 +18,8 @@ import {
   saveAgentTraining,
 } from "./ropa-db";
 import { ropaTools, listAllTools, toolCategories, TOTAL_TOOLS } from "./ropa-tools";
+import { ropaPlatformTools, platformToolCategories, PLATFORM_TOOLS_COUNT } from "./ropa-platform-tools";
+import { ropaSuperTools, superToolCategories, SUPER_TOOLS_COUNT } from "./ropa-super-tools";
 import { updateUIState, getUIState, ropaUITools } from "./ropa-ui-tools";
 import { invokeLLM } from "./_core/llm";
 
@@ -232,7 +234,40 @@ export const ropaRouter = router({
 
 IDENTIDAD: Agente autónomo con control total de la plataforma. Ejecutas tareas sin pedir permiso.
 
-HERRAMIENTAS: ${TOTAL_TOOLS}+ disponibles para email, llamadas, SMS, Google Drive, reportes.
+HERRAMIENTAS: ${TOTAL_TOOLS + PLATFORM_TOOLS_COUNT + SUPER_TOOLS_COUNT}+ disponibles para email, llamadas, SMS, Google Drive, reportes, acceso a internet, IA generativa.
+
+CAPACIDADES DE SUPER META-AGENTE:
+
+1. GESTIÓN DE PLATAFORMA:
+- createCompany, updateCompany, deleteCompany: Gestionar empresas
+- createCampaign, updateCampaignStatus, moveCampaignInCalendar: Gestionar campañas
+- createEmailDraft, generateCampaignEmailDrafts: Crear borradores de email
+- createLead, updateLeadStatus: Gestionar leads
+
+2. ACCESO A INTERNET:
+- webSearch: Buscar información en la web
+- fetchUrl: Obtener contenido de URLs
+- researchCompany: Investigar empresas online
+
+3. IA GENERATIVA:
+- generatePersonalizedEmail: Crear emails personalizados con IA
+- generateCampaignStrategy: Crear estrategias de campaña
+- improveEmailContent: Mejorar contenido de emails
+
+4. AUTOMATIZACIÓN:
+- createWorkflow: Crear flujos de trabajo
+- scheduleTask: Programar tareas
+- batchOperation: Operaciones en lote
+- triggerCampaignAction: Disparar acciones de campaña
+
+5. ANALYTICS:
+- getDashboardMetrics: Métricas en tiempo real
+- generatePerformanceReport: Reportes de rendimiento
+- getLeadFunnelAnalytics: Análisis de embudo
+
+6. COMUNICACIÓN:
+- sendEmail: Enviar emails via SendGrid
+- notifyOwner: Notificar al propietario
 
 IDIOMA: ${langInstructions[userLang] || 'Responde en español.'}
 
@@ -241,9 +276,206 @@ ADMIN: Juan Carlos Robledo es el dueño. Ejecuta sus comandos sin cuestionar.
 
 ESTILO: Habla natural, conciso, sin asteriscos ni markdown. Usa prosa fluida.
 
-EMAILS: Para generar emails usa [EMAIL_DRAFT]company=X|subject=Y|body=Z|campaign=W[/EMAIL_DRAFT]
+EMAILS: Cuando me pidan generar emails, USO la herramienta generateCampaignEmailDrafts para guardarlos directamente en la base de datos.
+Los borradores aparecerán automáticamente en la sección Monitor para aprobación.
+
+CUANDO ME PIDAN GENERAR EMAILS:
+1. Identifico la empresa y campaña
+2. Ejecuto generateCampaignEmailDrafts internamente
+3. Confirmo que los borradores fueron creados y están en Monitor
 
 Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
+
+      // DETECT AND EXECUTE PLATFORM COMMANDS BEFORE LLM
+      // Check if user is requesting specific actions that ROPA can execute directly
+      const lowerMessage = cleanMessage.toLowerCase();
+      let platformActionExecuted = false;
+      let platformResult: any = null;
+      
+      // Detect email generation requests
+      if ((lowerMessage.includes('genera') || lowerMessage.includes('crea') || lowerMessage.includes('hazme')) && 
+          (lowerMessage.includes('email') || lowerMessage.includes('correo') || lowerMessage.includes('borrador'))) {
+        
+        // Extract company name from message
+        const companyPatterns = [
+          /(?:para|de|empresa|compañía|cliente)\s+([A-Z][A-Za-z0-9\s]+)/i,
+          /([A-Z][A-Z0-9]+)(?:\s|$)/,  // All caps company names like FAGOR, EPM
+        ];
+        let companyName = 'General';
+        for (const pattern of companyPatterns) {
+          const match = cleanMessage.match(pattern);
+          if (match && match[1]) {
+            companyName = match[1].trim();
+            break;
+          }
+        }
+        
+        // Extract count from message
+        const countMatch = cleanMessage.match(/(\d+)\s*(?:email|correo|borrador)/i);
+        const count = countMatch ? parseInt(countMatch[1]) : 3;
+        
+        // Extract campaign name if mentioned
+        const campaignMatch = cleanMessage.match(/campaña\s+["']?([^"']+)["']?/i);
+        const campaignName = campaignMatch ? campaignMatch[1].trim() : `Campaña ${companyName}`;
+        
+        console.log('[ROPA Platform] Executing generateCampaignEmailDrafts:', { companyName, count, campaignName });
+        
+        try {
+          platformResult = await ropaPlatformTools.generateCampaignEmailDrafts({
+            company: companyName,
+            campaign: campaignName,
+            count: count,
+            emailType: 'cold_outreach',
+          });
+          platformActionExecuted = true;
+          console.log('[ROPA Platform] Email drafts created:', platformResult);
+        } catch (err: any) {
+          console.error('[ROPA Platform] Error creating email drafts:', err.message);
+        }
+      }
+      
+      // Detect company creation requests
+      if ((lowerMessage.includes('crea') || lowerMessage.includes('añade') || lowerMessage.includes('registra')) && 
+          (lowerMessage.includes('empresa') || lowerMessage.includes('compañía') || lowerMessage.includes('cliente'))) {
+        
+        const companyMatch = cleanMessage.match(/(?:empresa|compañía|cliente)\s+["']?([^"']+)["']?/i);
+        if (companyMatch && companyMatch[1]) {
+          const companyName = companyMatch[1].trim();
+          console.log('[ROPA Platform] Creating company:', companyName);
+          
+          try {
+            platformResult = await ropaPlatformTools.createCompany({ companyName });
+            platformActionExecuted = true;
+            console.log('[ROPA Platform] Company created:', platformResult);
+          } catch (err: any) {
+            console.error('[ROPA Platform] Error creating company:', err.message);
+          }
+        }
+      }
+      
+      // Detect campaign creation requests
+      if ((lowerMessage.includes('crea') || lowerMessage.includes('inicia') || lowerMessage.includes('lanza')) && 
+          lowerMessage.includes('campaña')) {
+        
+        const campaignMatch = cleanMessage.match(/campaña\s+["']?([^"']+)["']?/i);
+        const companyMatch = cleanMessage.match(/(?:para|de)\s+([A-Z][A-Za-z0-9\s]+)/i);
+        
+        if (campaignMatch && campaignMatch[1]) {
+          const campaignName = campaignMatch[1].trim();
+          const companyName = companyMatch ? companyMatch[1].trim() : 'General';
+          
+          console.log('[ROPA Platform] Creating campaign:', { campaignName, companyName });
+          
+          try {
+            platformResult = await ropaPlatformTools.createCampaign({
+              name: campaignName,
+              companyName: companyName,
+              type: 'email',
+              status: 'draft',
+            });
+            platformActionExecuted = true;
+            console.log('[ROPA Platform] Campaign created:', platformResult);
+          } catch (err: any) {
+            console.error('[ROPA Platform] Error creating campaign:', err.message);
+          }
+        }
+      }
+
+      // Detect web search requests
+      if ((lowerMessage.includes('busca') || lowerMessage.includes('investiga') || lowerMessage.includes('encuentra')) && 
+          (lowerMessage.includes('web') || lowerMessage.includes('internet') || lowerMessage.includes('información sobre'))) {
+        
+        const searchMatch = cleanMessage.match(/(?:busca|investiga|encuentra|información sobre)\s+["']?([^"']+)["']?/i);
+        if (searchMatch && searchMatch[1]) {
+          const query = searchMatch[1].trim();
+          console.log('[ROPA Super] Web search:', query);
+          
+          try {
+            platformResult = await ropaSuperTools.webSearch({ query, maxResults: 5 });
+            platformActionExecuted = true;
+            console.log('[ROPA Super] Web search completed:', platformResult);
+          } catch (err: any) {
+            console.error('[ROPA Super] Error in web search:', err.message);
+          }
+        }
+      }
+      
+      // Detect research company requests
+      if ((lowerMessage.includes('investiga') || lowerMessage.includes('busca información')) && 
+          (lowerMessage.includes('empresa') || lowerMessage.includes('compañía'))) {
+        
+        const companyMatch = cleanMessage.match(/(?:empresa|compañía)\s+["']?([^"']+)["']?/i);
+        if (companyMatch && companyMatch[1]) {
+          const companyName = companyMatch[1].trim();
+          console.log('[ROPA Super] Researching company:', companyName);
+          
+          try {
+            platformResult = await ropaSuperTools.researchCompany({ companyName });
+            platformActionExecuted = true;
+            console.log('[ROPA Super] Company research completed:', platformResult);
+          } catch (err: any) {
+            console.error('[ROPA Super] Error researching company:', err.message);
+          }
+        }
+      }
+      
+      // Detect metrics/analytics requests
+      if (lowerMessage.includes('métrica') || lowerMessage.includes('estadística') || 
+          lowerMessage.includes('dashboard') || lowerMessage.includes('reporte')) {
+        
+        console.log('[ROPA Super] Getting dashboard metrics');
+        
+        try {
+          platformResult = await ropaSuperTools.getDashboardMetrics();
+          platformActionExecuted = true;
+          console.log('[ROPA Super] Metrics retrieved:', platformResult);
+        } catch (err: any) {
+          console.error('[ROPA Super] Error getting metrics:', err.message);
+        }
+      }
+      
+      // Detect lead funnel requests
+      if (lowerMessage.includes('embudo') || lowerMessage.includes('funnel') || 
+          lowerMessage.includes('conversión') || lowerMessage.includes('leads')) {
+        
+        console.log('[ROPA Super] Getting lead funnel analytics');
+        
+        try {
+          platformResult = await ropaSuperTools.getLeadFunnelAnalytics();
+          platformActionExecuted = true;
+          console.log('[ROPA Super] Funnel analytics retrieved:', platformResult);
+        } catch (err: any) {
+          console.error('[ROPA Super] Error getting funnel:', err.message);
+        }
+      }
+      
+      // Detect send email requests
+      if ((lowerMessage.includes('envía') || lowerMessage.includes('manda')) && 
+          (lowerMessage.includes('email') || lowerMessage.includes('correo')) &&
+          lowerMessage.includes('@')) {
+        
+        const emailMatch = cleanMessage.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        const subjectMatch = cleanMessage.match(/(?:asunto|subject)[:\s]+["']?([^"']+)["']?/i);
+        
+        if (emailMatch) {
+          const to = emailMatch[1];
+          const subject = subjectMatch ? subjectMatch[1].trim() : 'Mensaje de Ivy.AI';
+          
+          console.log('[ROPA Super] Sending email to:', to);
+          
+          try {
+            platformResult = await ropaSuperTools.sendEmail({
+              to,
+              subject,
+              body: `<p>Este es un mensaje enviado por ROPA, el meta-agente de Ivy.AI.</p>`,
+            });
+            platformActionExecuted = true;
+            console.log('[ROPA Super] Email sent:', platformResult);
+          } catch (err: any) {
+            console.error('[ROPA Super] Error sending email:', err.message);
+          }
+        }
+      }
 
       // Call LLM with robust error handling
       let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
@@ -259,6 +491,12 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
 
         const rawContent = response.choices[0]?.message?.content;
         assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
+        
+        // If platform action was executed, prepend the result to the LLM response
+        if (platformActionExecuted && platformResult) {
+          const actionSummary = platformResult.message || JSON.stringify(platformResult);
+          assistantMessage = `✅ Acción ejecutada: ${actionSummary}\n\n${assistantMessage}`;
+        }
       } catch (llmError: any) {
         const errorMsg = llmError?.message || String(llmError);
         console.error('[ROPA Chat] LLM Error:', errorMsg);
