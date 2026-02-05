@@ -413,3 +413,14 @@
 ## ROPA Not Responding Fix - Phase 39
 - [x] Investigate why ROPA is not responding to messages
 - [x] Fix ROPA chat endpoint or LLM integration issue - cleaned context from displayed messages
+
+
+## ROPA LLM Error Fix - Phase 40 (COMPLETED ✅)
+- [x] Diagnosticar error "hubo un error al procesar tu mensaje"
+- [x] Identificar causa: contexto de conversación demasiado largo (50 mensajes, 27000 chars)
+- [x] Reducir contexto de conversación de 20 a 6 mensajes
+- [x] Simplificar system prompt de 8000 a 500 caracteres
+- [x] Truncar mensajes largos a 1000 caracteres máximo
+- [x] Mejorar manejo de errores con mensajes específicos
+- [x] Verificar que ROPA responde correctamente
+- [x] Tiempo de respuesta < 2 segundos
