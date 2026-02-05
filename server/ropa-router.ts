@@ -817,3 +817,4 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
 });
 
 export type RopaRouter = typeof ropaRouter;
+// Railway deployment trigger - Thu Feb  5 16:24:14 EST 2026
