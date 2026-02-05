@@ -244,7 +244,8 @@ export const aiContentTools = {
         ],
       });
 
-      const content = response.choices[0]?.message?.content || "";
+      const rawContent = response.choices[0]?.message?.content || "";
+      const content = typeof rawContent === 'string' ? rawContent : '';
       const subjectMatch = content.match(/ASUNTO:\s*(.+)/i);
       const bodyMatch = content.match(/CUERPO:\s*([\s\S]+)/i);
 
