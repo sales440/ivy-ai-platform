@@ -622,6 +622,48 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
         }
       }
 
+      // If navigation command was executed, respond immediately without LLM
+      if (platformActionExecuted && platformResult && 
+          (lowerMessage.includes('ve a') || lowerMessage.includes('ir a') || lowerMessage.includes('navega') || 
+           lowerMessage.includes('llévame') || lowerMessage.includes('maximiza') || lowerMessage.includes('cierra'))) {
+        const navMessage = platformResult.message || 'Acción de navegación ejecutada.';
+        await addRopaChatMessage({
+          role: "assistant",
+          message: `✅ ${navMessage}`,
+        });
+        return { response: `✅ ${navMessage}` };
+      }
+
+      // If Google Drive command was executed, respond immediately without LLM
+      if (platformActionExecuted && platformResult && 
+          (lowerMessage.includes('google drive') || lowerMessage.includes('carpeta') || 
+           (lowerMessage.includes('archivo') && !lowerMessage.includes('web')))) {
+        let driveMessage = 'Operación de Google Drive completada.';
+        if (platformResult.files) {
+          driveMessage = `Encontré ${platformResult.files.length} archivos en Google Drive.`;
+        } else if (platformResult.clients) {
+          driveMessage = `Encontré ${platformResult.clients.length} clientes con carpetas en Google Drive.`;
+        } else if (platformResult.tree) {
+          driveMessage = `Estructura de carpetas obtenida con ${platformResult.tree.length} carpetas principales.`;
+        }
+        await addRopaChatMessage({
+          role: "assistant",
+          message: `✅ ${driveMessage}`,
+        });
+        return { response: `✅ ${driveMessage}` };
+      }
+
+      // If simple greeting, respond immediately without LLM for faster response
+      const simpleGreetings = ['hola', 'buenos días', 'buenas tardes', 'buenas noches', 'hey', 'hi'];
+      if (simpleGreetings.some(g => lowerMessage.trim() === g || lowerMessage.trim() === g + ' ropa')) {
+        const greetingResponse = '¡Hola! Soy ROPA, tu meta-agente autónomo. ¿En qué puedo ayudarte hoy?';
+        await addRopaChatMessage({
+          role: "assistant",
+          message: greetingResponse,
+        });
+        return { response: greetingResponse };
+      }
+
       // Call LLM with robust error handling
       let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
       try {
