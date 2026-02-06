@@ -22,6 +22,7 @@ import { ropaPlatformTools, platformToolCategories, PLATFORM_TOOLS_COUNT } from 
 import { ropaSuperTools, superToolCategories, SUPER_TOOLS_COUNT } from "./ropa-super-tools";
 import { updateUIState, getUIState, ropaUITools } from "./ropa-ui-tools";
 import { invokeLLM } from "./_core/llm";
+import ropaDriveService from "./ropa-drive-service";
 
 /**
  * ROPA tRPC Router
@@ -265,7 +266,18 @@ CAPACIDADES DE SUPER META-AGENTE:
 - generatePerformanceReport: Reportes de rendimiento
 - getLeadFunnelAnalytics: Análisis de embudo
 
-6. COMUNICACIÓN:
+6. GOOGLE DRIVE (ACCESO COMPLETO):
+- listAllFiles: Listar todos los archivos en Google Drive
+- listFolderContents: Ver contenido de una carpeta específica
+- getFullFolderTree: Ver estructura completa de carpetas
+- searchFiles: Buscar archivos por nombre
+- getFileContent: Leer contenido de archivos (Excel, Word, etc.)
+- createFolder: Crear carpetas nuevas
+- moveFile, copyFile: Mover/copiar archivos
+- getClientFolder: Acceder a carpeta de un cliente específico
+- listAllClients: Listar todos los clientes con sus carpetas
+
+7. COMUNICACIÓN:
 - sendEmail: Enviar emails via SendGrid
 - notifyOwner: Notificar al propietario
 
@@ -473,6 +485,52 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
             console.log('[ROPA Super] Email sent:', platformResult);
           } catch (err: any) {
             console.error('[ROPA Super] Error sending email:', err.message);
+          }
+        }
+      }
+
+      // Detect Google Drive requests
+      if ((lowerMessage.includes('google drive') || lowerMessage.includes('carpeta') || lowerMessage.includes('archivo')) &&
+          (lowerMessage.includes('ver') || lowerMessage.includes('lista') || lowerMessage.includes('muestra') || lowerMessage.includes('revisa') || lowerMessage.includes('busca'))) {
+        
+        console.log('[ROPA Drive] Processing Google Drive request');
+        
+        try {
+          // Check if looking for specific folder
+          if (lowerMessage.includes('cliente') || lowerMessage.includes('clientes')) {
+            platformResult = await ropaDriveService.listAllClients();
+          } else if (lowerMessage.includes('todo') || lowerMessage.includes('todos')) {
+            platformResult = await ropaDriveService.listAllFiles();
+          } else if (lowerMessage.includes('estructura') || lowerMessage.includes('carpetas')) {
+            platformResult = await ropaDriveService.getFullFolderTree();
+          } else {
+            // Default: list all files
+            platformResult = await ropaDriveService.listAllFiles();
+          }
+          platformActionExecuted = true;
+          console.log('[ROPA Drive] Google Drive operation completed:', platformResult);
+        } catch (err: any) {
+          console.error('[ROPA Drive] Error accessing Google Drive:', err.message);
+          platformResult = { success: false, error: err.message };
+        }
+      }
+      
+      // Detect file search in Google Drive
+      if ((lowerMessage.includes('busca') || lowerMessage.includes('encuentra')) && 
+          (lowerMessage.includes('archivo') || lowerMessage.includes('documento')) &&
+          !lowerMessage.includes('web') && !lowerMessage.includes('internet')) {
+        
+        const searchMatch = cleanMessage.match(/(?:archivo|documento)\s+["']?([^"']+)["']?/i);
+        if (searchMatch && searchMatch[1]) {
+          const query = searchMatch[1].trim();
+          console.log('[ROPA Drive] Searching files:', query);
+          
+          try {
+            platformResult = await ropaDriveService.searchFiles(query);
+            platformActionExecuted = true;
+            console.log('[ROPA Drive] File search completed:', platformResult);
+          } catch (err: any) {
+            console.error('[ROPA Drive] Error searching files:', err.message);
           }
         }
       }
