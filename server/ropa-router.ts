@@ -112,7 +112,7 @@ export const ropaRouter = router({
     return history.reverse(); // Oldest first for chat display
   }),
 
-  sendChatMessage: protectedProcedure
+  sendChatMessage: publicProcedure
     .input(z.object({ message: z.string() }))
     .mutation(async ({ input }) => {
       // Extract the clean message without context for display

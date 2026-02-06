@@ -454,3 +454,9 @@
 - [ ] ROPA auto-actualiza todas las páginas de Ivy.AI en tiempo real
 - [ ] Seguimiento de ROI y progreso de campañas
 - [ ] Desplegar a producción
+
+
+## Bug Fix: Chat message not sending - Phase 36
+- [ ] Change sendChatMessage to publicProcedure
+- [ ] Deploy to GitHub/Railway
+- [ ] Verify chat works in production
