@@ -23,6 +23,7 @@ import { ropaSuperTools, superToolCategories, SUPER_TOOLS_COUNT } from "./ropa-s
 import { updateUIState, getUIState, ropaUITools } from "./ropa-ui-tools";
 import { invokeLLM } from "./_core/llm";
 import ropaDriveService from "./ropa-drive-service";
+import { ropaNavigationTools, IVY_SECTIONS, IVY_DIALOGS } from "./ropa-navigation-service";
 
 /**
  * ROPA tRPC Router
@@ -281,6 +282,21 @@ CAPACIDADES DE SUPER META-AGENTE:
 - sendEmail: Enviar emails via SendGrid
 - notifyOwner: Notificar al propietario
 
+8. NAVEGACIÓN DE UI (CONTROL TOTAL DE IVY.AI):
+- navigateTo: Navegar a cualquier sección (dashboard, campañas, archivos, monitor, tareas, alertas, salud, calendario, configuración)
+- openDialog: Abrir diálogos (nueva empresa, nueva campaña)
+- closeDialog: Cerrar diálogos abiertos
+- clickElement: Hacer clic en botones o elementos
+- scrollTo: Desplazar la pantalla
+- toggleSidebar: Expandir/colapsar el menú lateral
+- refreshPage: Refrescar la página actual
+
+CUANDO ME PIDAN NAVEGAR:
+- "ve a campañas" -> navego a la sección de campañas
+- "abre nueva empresa" -> abro el diálogo de nueva empresa
+- "muéstrame el calendario" -> navego al calendario
+- "maximiza el chat" -> maximizo la ventana de chat
+
 IDIOMA: ${langInstructions[userLang] || 'Responde en español.'}
 
 
@@ -532,6 +548,77 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
           } catch (err: any) {
             console.error('[ROPA Drive] Error searching files:', err.message);
           }
+        }
+      }
+
+      // Detect navigation commands
+      if (lowerMessage.includes('ve a') || lowerMessage.includes('ir a') || lowerMessage.includes('navega') || 
+          lowerMessage.includes('llévame') || (lowerMessage.includes('abre') && !lowerMessage.includes('archivo'))) {
+        
+        const sectionMappings: Record<string, string> = {
+          'dashboard': 'dashboard', 'panel': 'dashboard', 'inicio': 'dashboard',
+          'campaña': 'campaigns', 'campañas': 'campaigns',
+          'archivo': 'files', 'archivos': 'files', 'drive': 'files',
+          'monitor': 'monitor', 'validación': 'monitor', 'borradores': 'monitor',
+          'tarea': 'tasks', 'tareas': 'tasks',
+          'alerta': 'alerts', 'alertas': 'alerts',
+          'salud': 'health', 'estado': 'health',
+          'calendario': 'calendar',
+          'configuración': 'config', 'config': 'config', 'ajustes': 'config',
+        };
+        
+        let targetSection = '';
+        for (const [keyword, section] of Object.entries(sectionMappings)) {
+          if (lowerMessage.includes(keyword)) {
+            targetSection = section;
+            break;
+          }
+        }
+        
+        if (targetSection) {
+          console.log('[ROPA Navigation] Navigating to:', targetSection);
+          try {
+            platformResult = await ropaNavigationTools.navigateTo({ section: targetSection as any });
+            platformActionExecuted = true;
+          } catch (err: any) {
+            console.error('[ROPA Navigation] Error:', err.message);
+          }
+        }
+        
+        if (lowerMessage.includes('nueva empresa') || lowerMessage.includes('crear empresa')) {
+          try {
+            platformResult = await ropaNavigationTools.openNewCompanyDialog();
+            platformActionExecuted = true;
+          } catch (err: any) {
+            console.error('[ROPA Navigation] Error opening dialog:', err.message);
+          }
+        }
+        
+        if (lowerMessage.includes('nueva campaña') || lowerMessage.includes('crear campaña')) {
+          try {
+            platformResult = await ropaNavigationTools.openNewCampaignDialog();
+            platformActionExecuted = true;
+          } catch (err: any) {
+            console.error('[ROPA Navigation] Error opening dialog:', err.message);
+          }
+        }
+      }
+      
+      if (lowerMessage.includes('cierra') && (lowerMessage.includes('chat') || lowerMessage.includes('ventana'))) {
+        try {
+          platformResult = await ropaNavigationTools.closeChat();
+          platformActionExecuted = true;
+        } catch (err: any) {
+          console.error('[ROPA Navigation] Error closing chat:', err.message);
+        }
+      }
+      
+      if (lowerMessage.includes('maximiza') || lowerMessage.includes('agranda') || lowerMessage.includes('pantalla completa')) {
+        try {
+          platformResult = await ropaNavigationTools.maximizeChat();
+          platformActionExecuted = true;
+        } catch (err: any) {
+          console.error('[ROPA Navigation] Error maximizing:', err.message);
         }
       }
 
@@ -906,7 +993,7 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
   advanceCampaignStage: protectedProcedure
     .input(z.object({
       campaignId: z.number(),
-      newStatus: z.enum(['draft', 'active', 'in_progress', 'completed', 'paused']),
+      newStatus: z.enum(['draft', 'active', 'completed', 'paused']),
     }))
     .mutation(async ({ input }) => {
       return await ropaSuperTools.advanceCampaignStage(input);
@@ -916,6 +1003,79 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
   getDashboardMetricsWithROI: publicProcedure.query(async () => {
     return await ropaSuperTools.getDashboardMetrics();
   }),
+
+  // ============ NAVIGATION CONTROL ============
+  navigateTo: publicProcedure
+    .input(z.object({ section: z.string() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.navigateTo({ section: input.section as any });
+    }),
+
+  listSections: publicProcedure.query(async () => {
+    return await ropaNavigationTools.listAvailableSections();
+  }),
+
+  openDialog: publicProcedure
+    .input(z.object({ dialog: z.string(), data: z.any().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.openDialog({ dialog: input.dialog as any, data: input.data });
+    }),
+
+  closeDialog: publicProcedure
+    .input(z.object({ dialog: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.closeDialog({ dialog: input.dialog });
+    }),
+
+  clickElement: publicProcedure
+    .input(z.object({ selector: z.string().optional(), id: z.string().optional(), buttonText: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.clickElement(input);
+    }),
+
+  scrollTo: publicProcedure
+    .input(z.object({ selector: z.string().optional(), id: z.string().optional(), position: z.enum(['top', 'bottom', 'center']).optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.scrollTo(input);
+    }),
+
+  toggleSidebar: publicProcedure
+    .input(z.object({ expanded: z.boolean().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.toggleSidebar(input);
+    }),
+
+  refreshPage: publicProcedure
+    .input(z.object({ section: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.refreshPage(input);
+    }),
+
+  highlightElement: publicProcedure
+    .input(z.object({ selector: z.string().optional(), id: z.string().optional(), duration: z.number().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.highlightElement(input);
+    }),
+
+  getNavigationCommands: publicProcedure.query(async () => {
+    return await ropaNavigationTools.getPendingCommands();
+  }),
+
+  markNavigationExecuted: publicProcedure
+    .input(z.object({ commandId: z.string(), result: z.any().optional() }))
+    .mutation(async ({ input }) => {
+      return await ropaNavigationTools.markCommandExecuted(input);
+    }),
+
+  clearNavigationCommands: publicProcedure.mutation(async () => {
+    return await ropaNavigationTools.clearPendingCommands();
+  }),
+
+  getNavigationHistory: publicProcedure
+    .input(z.object({ limit: z.number().optional() }))
+    .query(async ({ input }) => {
+      return await ropaNavigationTools.getCommandHistory(input);
+    }),
 });
 
 export type RopaRouter = typeof ropaRouter;

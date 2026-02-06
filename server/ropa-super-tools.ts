@@ -1126,7 +1126,7 @@ export const autoExecutionTools = {
     ]);
 
     // Calculate real-time metrics
-    const activeCampaigns = campaigns.filter(c => c.status === 'active' || c.status === 'in_progress');
+    const activeCampaigns = campaigns.filter(c => c.status === 'active');
     const pendingDrafts = drafts.filter(d => d.status === 'pending');
     const approvedDrafts = drafts.filter(d => d.status === 'approved');
     const sentDrafts = drafts.filter(d => d.status === 'sent');
@@ -1230,7 +1230,7 @@ export const autoExecutionTools = {
    */
   async advanceCampaignStage(params: { 
     campaignId: number; 
-    newStatus: 'draft' | 'active' | 'in_progress' | 'completed' | 'paused' 
+    newStatus: 'draft' | 'active' | 'completed' | 'paused' 
   }) {
     const db = await getDb();
     if (!db) throw new Error("Database not available");

@@ -396,6 +396,108 @@ export default function RopaDashboardV2() {
   );
   const markCommandExecutedMutation = trpc.ropa.markCommandExecuted.useMutation();
   
+  // Navigation commands from ROPA
+  const { data: navigationCommands, refetch: refetchNavigationCommands } = trpc.ropa.getNavigationCommands.useQuery(
+    undefined,
+    { refetchInterval: isPageVisible ? 2000 : false, enabled: isPageVisible }
+  );
+  const markNavigationExecutedMutation = trpc.ropa.markNavigationExecuted.useMutation();
+  
+  // Process navigation commands from ROPA
+  useEffect(() => {
+    if (!navigationCommands?.commands || navigationCommands.commands.length === 0) return;
+    
+    navigationCommands.commands.forEach(async (cmd: any) => {
+      console.log('[ROPA Navigation] Executing:', cmd.type, cmd.target, cmd.params);
+      
+      try {
+        switch (cmd.type) {
+          case 'navigate':
+            const sectionMap: Record<string, string> = {
+              '/': 'dashboard', '/campaigns': 'campaigns', '/files': 'files',
+              '/monitor': 'monitor', '/tasks': 'tasks', '/alerts': 'alerts',
+              '/health': 'health', '/calendar': 'calendar', '/config': 'settings',
+            };
+            const section = sectionMap[cmd.target] || cmd.target.replace('/', '');
+            if (section === 'calendar') {
+              navigate('/calendar');
+            } else {
+              setActiveSection(section);
+            }
+            toast.info(`ROPA navegó a: ${cmd.params?.sectionName || section}`);
+            break;
+            
+          case 'dialog':
+            if (cmd.params?.action === 'open') {
+              switch (cmd.target) {
+                case 'new-company-dialog': setShowNewCompanyDialog(true); break;
+                case 'new-campaign-dialog': setShowNewCampaignDialog(true); break;
+                case 'ropa-chat-window': setChatOpen(true); break;
+              }
+              toast.info(`ROPA abrió diálogo: ${cmd.target}`);
+            } else if (cmd.params?.action === 'close') {
+              setShowNewCompanyDialog(false);
+              setShowNewCampaignDialog(false);
+              setShowEditCompanyDialog(false);
+              if (cmd.target === 'ropaChat' || cmd.target === 'ropa-chat-window') setChatOpen(false);
+              toast.info('ROPA cerró el diálogo');
+            } else if (cmd.params?.action === 'maximize') {
+              setChatOpen(true);
+              setChatMaximized(true);
+              toast.info('ROPA maximizó el chat');
+            }
+            break;
+            
+          case 'click':
+            const element = document.querySelector(cmd.target) as HTMLElement;
+            if (element) {
+              element.click();
+              toast.info(`ROPA hizo clic en: ${cmd.params?.buttonText || cmd.target}`);
+            }
+            break;
+            
+          case 'scroll':
+            if (cmd.target === 'top') window.scrollTo({ top: 0, behavior: 'smooth' });
+            else if (cmd.target === 'bottom') window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            else {
+              const scrollTarget = document.querySelector(cmd.target);
+              if (scrollTarget) scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            break;
+            
+          case 'sidebar':
+            if (cmd.params?.expanded !== undefined) setSidebarCollapsed(!cmd.params.expanded);
+            else setSidebarCollapsed(prev => !prev);
+            toast.info('ROPA alternó el sidebar');
+            break;
+            
+          case 'refresh':
+            if (cmd.target === 'current' || !cmd.target) window.location.reload();
+            break;
+            
+          case 'highlight':
+            const highlightTarget = document.querySelector(cmd.target) as HTMLElement;
+            if (highlightTarget) {
+              const originalOutline = highlightTarget.style.outline;
+              highlightTarget.style.outline = '3px solid #06b6d4';
+              highlightTarget.style.outlineOffset = '2px';
+              setTimeout(() => {
+                highlightTarget.style.outline = originalOutline;
+                highlightTarget.style.outlineOffset = '';
+              }, cmd.params?.duration || 3000);
+              toast.info('ROPA resaltó un elemento');
+            }
+            break;
+        }
+        
+        await markNavigationExecutedMutation.mutateAsync({ commandId: cmd.id });
+        refetchNavigationCommands();
+      } catch (error) {
+        console.error('[ROPA Navigation] Error executing:', error);
+      }
+    });
+  }, [navigationCommands]);
+  
   // Sync UI state to backend every 5 seconds
   useEffect(() => {
     const syncUIState = () => {
