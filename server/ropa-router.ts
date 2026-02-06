@@ -814,6 +814,50 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
           return { success: false, message: 'Unknown command' };
       }
     }),
+
+  // ============ AUTO-EXECUTION & ROI ENDPOINTS ============
+
+  // Refresh all platform data in real-time
+  refreshPlatformData: publicProcedure.query(async () => {
+    return await ropaSuperTools.refreshPlatformData();
+  }),
+
+  // Process all approved campaigns automatically
+  processApprovedCampaigns: protectedProcedure.mutation(async () => {
+    return await ropaSuperTools.processApprovedCampaigns();
+  }),
+
+  // Execute a specific approved campaign
+  executeApprovedCampaign: protectedProcedure
+    .input(z.object({
+      campaignId: z.string(),
+      companyName: z.string(),
+    }))
+    .mutation(async ({ input }) => {
+      return await ropaSuperTools.executeApprovedCampaign(input);
+    }),
+
+  // Update campaign progress and ROI
+  updateCampaignProgress: publicProcedure
+    .input(z.object({ campaignId: z.string() }))
+    .query(async ({ input }) => {
+      return await ropaSuperTools.updateCampaignProgress(input);
+    }),
+
+  // Advance campaign to next stage in calendar
+  advanceCampaignStage: protectedProcedure
+    .input(z.object({
+      campaignId: z.number(),
+      newStatus: z.enum(['draft', 'active', 'in_progress', 'completed', 'paused']),
+    }))
+    .mutation(async ({ input }) => {
+      return await ropaSuperTools.advanceCampaignStage(input);
+    }),
+
+  // Get dashboard metrics with ROI
+  getDashboardMetricsWithROI: publicProcedure.query(async () => {
+    return await ropaSuperTools.getDashboardMetrics();
+  }),
 });
 
 export type RopaRouter = typeof ropaRouter;

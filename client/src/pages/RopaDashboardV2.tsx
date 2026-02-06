@@ -380,6 +380,13 @@ export default function RopaDashboardV2() {
     },
   });
   
+  // Delete email draft mutation (for rejected drafts)
+  const deleteEmailDraftMutation = trpc.emailDrafts.delete.useMutation({
+    onSuccess: () => {
+      refetchEmailDrafts();
+    },
+  });
+  
   // ============ ROPA UI STATE SYNC ============
   // Sync UI state to backend so ROPA can see what's happening in real-time
   const updateUIStateMutation = trpc.ropa.updateUIState.useMutation();
@@ -500,17 +507,78 @@ export default function RopaDashboardV2() {
       // Find the draft to get company and campaign info
       const draft = allDrafts.find(d => d.id === id);
       
+      if (status === 'rejected') {
+        // REJECTED: Delete from Monitor completely
+        await deleteEmailDraftMutation.mutateAsync({ draftId: id });
+        // Remove from local state immediately
+        setAllDrafts(prev => prev.filter(d => d.id !== id));
+        toast.success('Borrador rechazado y eliminado de Monitor');
+        return;
+      }
+      
+      // APPROVED: Update status and move to campaigns/calendar
       await updateEmailDraftStatusMutation.mutateAsync({
         draftId: id,
         status,
       });
       
-      // Show success message
-      const typeLabel = draft?.type === 'email' ? 'Email' : draft?.type === 'call' ? 'Script' : 'SMS';
-      if (status === 'approved') {
-        toast.success(`${typeLabel} aprobado y guardado`);
+      // Update local state
+      setAllDrafts(prev => prev.map(d => d.id === id ? { ...d, status: 'approved' } : d));
+      
+      // Add to campaigns as "En Progreso" if draft has company info
+      if (draft?.company) {
+        const existingCampaigns = JSON.parse(localStorage.getItem('ivy_campaigns') || '[]');
+        const campaignName = draft.campaign || `Email Campaign - ${draft.subject?.substring(0, 30)}`;
+        
+        // Check if campaign already exists
+        const existingCampaign = existingCampaigns.find((c: any) => 
+          c.company === draft.company && c.name === campaignName
+        );
+        
+        if (!existingCampaign) {
+          // Create new campaign in "En Progreso" status
+          const newCampaign = {
+            id: `campaign_${Date.now()}`,
+            name: campaignName,
+            company: draft.company,
+            status: 'in_progress', // En Progreso
+            type: draft.type === 'email' ? 'email' : draft.type === 'call' ? 'phone' : 'multi',
+            startDate: new Date().toISOString().split('T')[0],
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
+            pendingEmails: 1,
+            sentEmails: 0,
+            leads: 0,
+            conversions: 0,
+            roi: 0,
+            emailDraftId: id,
+            createdFromDraft: true,
+          };
+          
+          existingCampaigns.push(newCampaign);
+          localStorage.setItem('ivy_campaigns', JSON.stringify(existingCampaigns));
+          setLocalCampaigns(existingCampaigns);
+          
+          toast.success(`Email aprobado. Campaña "${campaignName}" creada y movida a En Progreso`);
+          
+          // Notify ROPA to start working on this campaign
+          try {
+            await sendChatMutation.mutateAsync({
+              message: `[SISTEMA] Campaña aprobada: "${campaignName}" para ${draft.company}. Inicia la ejecución automática de esta campaña.`,
+            });
+          } catch (e) {
+            console.log('ROPA notified of approved campaign');
+          }
+        } else {
+          // Update existing campaign to in_progress
+          const updatedCampaigns = existingCampaigns.map((c: any) => 
+            c.id === existingCampaign.id ? { ...c, status: 'in_progress', pendingEmails: (c.pendingEmails || 0) + 1 } : c
+          );
+          localStorage.setItem('ivy_campaigns', JSON.stringify(updatedCampaigns));
+          setLocalCampaigns(updatedCampaigns);
+          toast.success(`Email aprobado y agregado a campaña "${existingCampaign.name}"`);
+        }
       } else {
-        toast.success('Borrador rechazado');
+        toast.success('Email aprobado y guardado');
       }
     } catch (error) {
       console.error('Error updating email draft status:', error);

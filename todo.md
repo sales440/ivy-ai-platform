@@ -444,3 +444,13 @@
 - [x] Verificar respuestas rápidas (<2 segundos)
 - [ ] Guardar checkpoint final
 - [ ] Publicar a producción
+
+
+## Phase 32: Flujo Completo de Borradores y Auto-actualización ROPA
+- [ ] Borradores rechazados se eliminan de Monitor
+- [ ] Borradores aprobados pasan a Campañas como "En Progreso"
+- [ ] Borradores aprobados aparecen en Calendario como "En Progreso"
+- [ ] ROPA trabaja automáticamente en campañas aprobadas
+- [ ] ROPA auto-actualiza todas las páginas de Ivy.AI en tiempo real
+- [ ] Seguimiento de ROI y progreso de campañas
+- [ ] Desplegar a producción

@@ -993,6 +993,268 @@ export const dataManagementTools = {
   },
 };
 
+// ============ 7. AUTO-UPDATE & CAMPAIGN EXECUTION TOOLS ============
+
+export const autoExecutionTools = {
+  /**
+   * Execute approved campaign - sends emails, updates status, tracks ROI
+   */
+  async executeApprovedCampaign(params: { campaignId: string; companyName: string }) {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    await createRopaLog({
+      taskId: undefined,
+      level: "info",
+      message: `[AutoExecution] Starting campaign execution: ${params.campaignId}`,
+      metadata: params,
+    });
+
+    // Get approved drafts for this campaign
+    const approvedDrafts = await db.select()
+      .from(emailDrafts)
+      .where(and(
+        eq(emailDrafts.status, 'approved'),
+        like(emailDrafts.company, `%${params.companyName}%`)
+      ));
+
+    let sentCount = 0;
+    let failedCount = 0;
+
+    for (const draft of approvedDrafts) {
+      if (draft.recipientEmail) {
+        try {
+          // Send the email
+          const result = await communicationTools.sendEmail({
+            to: draft.recipientEmail,
+            subject: draft.subject || 'Mensaje de Ivy.AI',
+            body: draft.htmlContent || draft.body || '',
+          });
+
+          if (result.success) {
+            // Update draft status to 'sent'
+            await db.update(emailDrafts)
+              .set({ status: 'sent' })
+              .where(eq(emailDrafts.id, draft.id));
+            sentCount++;
+          } else {
+            failedCount++;
+          }
+        } catch (error) {
+          failedCount++;
+        }
+      }
+    }
+
+    await recordRopaMetric({
+      metricType: "campaign_executed",
+      value: String(sentCount),
+      unit: "emails_sent",
+      metadata: { campaignId: params.campaignId, failed: failedCount },
+    });
+
+    return {
+      success: true,
+      campaignId: params.campaignId,
+      emailsSent: sentCount,
+      emailsFailed: failedCount,
+      message: `Campaña ejecutada: ${sentCount} emails enviados, ${failedCount} fallidos`,
+    };
+  },
+
+  /**
+   * Update campaign progress and ROI in real-time
+   */
+  async updateCampaignProgress(params: { campaignId: string }) {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Get campaign metrics
+    const [sentEmails] = await db.select({ count: sql<number>`count(*)` })
+      .from(emailDrafts)
+      .where(eq(emailDrafts.status, 'sent'));
+
+    const [leads] = await db.select({ count: sql<number>`count(*)` })
+      .from(clientLeads)
+      .where(eq(clientLeads.status, 'qualified'));
+
+    const [conversions] = await db.select({ count: sql<number>`count(*)` })
+      .from(clientLeads)
+      .where(eq(clientLeads.status, 'closed_won'));
+
+    // Calculate ROI (simplified)
+    const emailCost = 0.01; // Cost per email
+    const avgDealValue = 5000; // Average deal value
+    const totalCost = (sentEmails?.count || 0) * emailCost;
+    const totalRevenue = (conversions?.count || 0) * avgDealValue;
+    const roi = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : 0;
+
+    return {
+      success: true,
+      campaignId: params.campaignId,
+      progress: {
+        emailsSent: sentEmails?.count || 0,
+        leadsGenerated: leads?.count || 0,
+        conversions: conversions?.count || 0,
+        roi: Math.round(roi),
+        roiFormatted: `${Math.round(roi)}%`,
+      },
+      timestamp: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Auto-refresh all platform data and sync campaigns
+   */
+  async refreshPlatformData() {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    await createRopaLog({
+      taskId: undefined,
+      level: "info",
+      message: "[AutoUpdate] Refreshing all platform data",
+      metadata: {},
+    });
+
+    // Get all current data
+    const [companies, campaigns, drafts, leads] = await Promise.all([
+      db.select().from(ivyClients),
+      db.select().from(salesCampaigns),
+      db.select().from(emailDrafts),
+      db.select().from(clientLeads),
+    ]);
+
+    // Calculate real-time metrics
+    const activeCampaigns = campaigns.filter(c => c.status === 'active' || c.status === 'in_progress');
+    const pendingDrafts = drafts.filter(d => d.status === 'pending');
+    const approvedDrafts = drafts.filter(d => d.status === 'approved');
+    const sentDrafts = drafts.filter(d => d.status === 'sent');
+    const qualifiedLeads = leads.filter(l => l.status === 'qualified');
+    const wonDeals = leads.filter(l => l.status === 'closed_won');
+
+    return {
+      success: true,
+      platformStatus: {
+        companies: {
+          total: companies.length,
+          active: companies.filter(c => c.status === 'active').length,
+        },
+        campaigns: {
+          total: campaigns.length,
+          active: activeCampaigns.length,
+          draft: campaigns.filter(c => c.status === 'draft').length,
+          completed: campaigns.filter(c => c.status === 'completed').length,
+        },
+        emailDrafts: {
+          total: drafts.length,
+          pending: pendingDrafts.length,
+          approved: approvedDrafts.length,
+          sent: sentDrafts.length,
+          rejected: drafts.filter(d => d.status === 'rejected').length,
+        },
+        leads: {
+          total: leads.length,
+          new: leads.filter(l => l.status === 'new').length,
+          qualified: qualifiedLeads.length,
+          closedWon: wonDeals.length,
+          closedLost: leads.filter(l => l.status === 'closed_lost').length,
+        },
+        roi: {
+          totalRevenue: wonDeals.length * 5000, // Estimated
+          conversionRate: leads.length > 0 ? Math.round((wonDeals.length / leads.length) * 100) : 0,
+        },
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Process all pending approved campaigns automatically
+   */
+  async processApprovedCampaigns() {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    await createRopaLog({
+      taskId: undefined,
+      level: "info",
+      message: "[AutoExecution] Processing all approved campaigns",
+      metadata: {},
+    });
+
+    // Get all approved drafts that haven't been sent
+    const approvedDrafts = await db.select()
+      .from(emailDrafts)
+      .where(eq(emailDrafts.status, 'approved'));
+
+    const results = [];
+    for (const draft of approvedDrafts) {
+      if (draft.recipientEmail) {
+        try {
+          const sendResult = await communicationTools.sendEmail({
+            to: draft.recipientEmail,
+            subject: draft.subject || 'Mensaje de Ivy.AI',
+            body: draft.htmlContent || draft.body || '',
+          });
+
+          if (sendResult.success) {
+            await db.update(emailDrafts)
+              .set({ status: 'sent' })
+              .where(eq(emailDrafts.id, draft.id));
+            results.push({ draftId: draft.id, status: 'sent' });
+          } else {
+            results.push({ draftId: draft.id, status: 'failed', error: sendResult.error });
+          }
+        } catch (error: any) {
+          results.push({ draftId: draft.id, status: 'failed', error: error.message });
+        }
+      }
+    }
+
+    const sentCount = results.filter(r => r.status === 'sent').length;
+    const failedCount = results.filter(r => r.status === 'failed').length;
+
+    return {
+      success: true,
+      processed: results.length,
+      sent: sentCount,
+      failed: failedCount,
+      results,
+      message: `Procesados ${results.length} borradores: ${sentCount} enviados, ${failedCount} fallidos`,
+    };
+  },
+
+  /**
+   * Move campaign to next stage in calendar
+   */
+  async advanceCampaignStage(params: { 
+    campaignId: number; 
+    newStatus: 'draft' | 'active' | 'in_progress' | 'completed' | 'paused' 
+  }) {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    await db.update(salesCampaigns)
+      .set({ status: params.newStatus })
+      .where(eq(salesCampaigns.id, params.campaignId));
+
+    await createRopaLog({
+      taskId: undefined,
+      level: "info",
+      message: `[Calendar] Campaign ${params.campaignId} moved to ${params.newStatus}`,
+      metadata: params,
+    });
+
+    return {
+      success: true,
+      campaignId: params.campaignId,
+      newStatus: params.newStatus,
+      message: `Campaña movida a: ${params.newStatus}`,
+    };
+  },
+};
+
 // ============ EXPORT ALL SUPER TOOLS ============
 
 export const ropaSuperTools = {
@@ -1031,6 +1293,13 @@ export const ropaSuperTools = {
   exportData: dataManagementTools.exportData,
   cleanupData: dataManagementTools.cleanupData,
   syncWithCRM: dataManagementTools.syncWithCRM,
+  
+  // Auto-Execution & Campaign Management
+  executeApprovedCampaign: autoExecutionTools.executeApprovedCampaign,
+  updateCampaignProgress: autoExecutionTools.updateCampaignProgress,
+  refreshPlatformData: autoExecutionTools.refreshPlatformData,
+  processApprovedCampaigns: autoExecutionTools.processApprovedCampaigns,
+  advanceCampaignStage: autoExecutionTools.advanceCampaignStage,
 };
 
 export const superToolCategories = {
@@ -1040,6 +1309,7 @@ export const superToolCategories = {
   "Analytics & Reporting": ["getDashboardMetrics", "generatePerformanceReport", "analyzeCampaignPerformance", "getLeadFunnelAnalytics"],
   "Multi-Channel Communication": ["sendEmail", "queueSMS", "logPhoneCall", "notifyOwner"],
   "Data Management": ["importLeadsFromData", "exportData", "cleanupData", "syncWithCRM"],
+  "Auto-Execution": ["executeApprovedCampaign", "updateCampaignProgress", "refreshPlatformData", "processApprovedCampaigns", "advanceCampaignStage"],
 };
 
 export const SUPER_TOOLS_COUNT = Object.keys(ropaSuperTools).length;
