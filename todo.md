@@ -460,3 +460,19 @@
 - [ ] Change sendChatMessage to publicProcedure
 - [ ] Deploy to GitHub/Railway
 - [ ] Verify chat works in production
+
+
+## DEFINITIVE FIX: ROPA Chat - Phase 37 (Expert Architect)
+- [x] Root cause: Frontend sending massive JSON context with every message
+- [x] Root cause: isSubmitting stuck on true when mutation fails (no onSettled)
+- [x] Root cause: LLM quota exhausted (412 error) with no fast fallback
+- [x] FIX: Remove context JSON from frontend messages (send clean text only)
+- [x] FIX: Add onSettled to always reset isSubmitting
+- [x] FIX: Simplify backend context parsing (remove 50-line bracket counter)
+- [x] FIX: Immediate responses for navigation, greetings, Drive commands (no LLM needed)
+- [x] FIX: Intelligent fallback when LLM fails (date, help, commands)
+- [x] Verified: hola ROPA → instant response
+- [x] Verified: ve a archivos → instant navigation
+- [x] Verified: que dia es hoy → instant date response
+- [x] Verified: campañas activas → fallback response (no LLM)
+- [ ] Deploy to Railway production

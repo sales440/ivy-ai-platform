@@ -759,10 +759,13 @@ export default function RopaDashboardV2() {
 
   // Mutations
   const sendChatMutation = trpc.ropa.sendChatMessage.useMutation({
+    onSettled: () => {
+      // ALWAYS reset isSubmitting regardless of success/error
+      setIsSubmitting(false);
+    },
     onSuccess: (data) => {
       refetchChat();
       setMessage("");
-      setIsSubmitting(false);
       // Play notification sound when ROPA responds
       playNotificationSound();
       // Increment unread badge if chat is minimized or closed
@@ -793,7 +796,6 @@ export default function RopaDashboardV2() {
       }
     },
     onError: (error) => {
-      setIsSubmitting(false);
       console.error('[ROPA Chat] Error sending message:', error);
       // Show error toast to user
       const errorMessage = error.message || 'Error al enviar mensaje';
@@ -907,17 +909,13 @@ export default function RopaDashboardV2() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || isSubmitting) return;
+    const trimmed = message.trim();
+    if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
-    // Include context about companies and campaigns in the message
-    const contextData = {
-      companies: localCompanies.map(c => ({ id: c.id, name: c.name, industry: c.industry })),
-      campaigns: localCampaigns.map(c => ({ id: c.id, name: c.name, company: localCompanies.find(co => co.id === c.companyId)?.name, status: c.status, type: c.type })),
-      pendingEmails: emailDrafts.filter(d => d.status === 'pending').length,
-    };
-    const enrichedMessage = `[CONTEXT: ${JSON.stringify(contextData)}] ${message}`;
-    sendChatMutation.mutate({ message: enrichedMessage });
+    // Send ONLY the clean user message - no context JSON prefix
+    // Context is available server-side via DB queries
+    sendChatMutation.mutate({ message: trimmed });
   };
 
   const handleMenuClick = (item: typeof menuItems[0]) => {
