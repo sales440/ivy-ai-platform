@@ -476,3 +476,13 @@
 - [x] Verified: que dia es hoy → instant date response
 - [x] Verified: campañas activas → fallback response (no LLM)
 - [ ] Deploy to Railway production
+
+
+## Phase 38: Integrar Google Gemini como LLM para ROPA
+- [x] Investigar API de Google Gemini 2.5 Pro
+- [x] Crear módulo de integración con Gemini en el backend
+- [x] Configurar API key de Google AI (GOOGLE_AI_API_KEY)
+- [x] Modificar ROPA router para usar Gemini en lugar del LLM de Manus
+- [x] Agregar fallback: Gemini → Manus LLM → respuesta local
+- [x] Probar que ROPA responde con Gemini
+- [x] Desplegar a producción

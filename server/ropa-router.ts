@@ -22,6 +22,7 @@ import { ropaPlatformTools, platformToolCategories, PLATFORM_TOOLS_COUNT } from 
 import { ropaSuperTools, superToolCategories, SUPER_TOOLS_COUNT } from "./ropa-super-tools";
 import { updateUIState, getUIState, ropaUITools } from "./ropa-ui-tools";
 import { invokeLLM } from "./_core/llm";
+import { invokeGemini, isGeminiConfigured } from "./gemini-llm";
 import ropaDriveService from "./ropa-drive-service";
 import { ropaNavigationTools, IVY_SECTIONS, IVY_DIALOGS } from "./ropa-navigation-service";
 
@@ -640,26 +641,61 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
         return { response: smartResponse };
       }
 
-      // Call LLM with intelligent fallback when quota is exhausted
+      // Call LLM with 3-tier fallback: Gemini → Manus LLM → Local responses
       let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
-      try {
-        console.log('[ROPA Chat] Calling LLM with', messages.length, 'messages');
-        const response = await invokeLLM({
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages,
-          ],
-        });
-        console.log('[ROPA Chat] LLM response received');
-        const rawContent = response.choices[0]?.message?.content;
-        assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
-      } catch (llmError: any) {
-        const errorMsg = llmError?.message || String(llmError);
-        console.error('[ROPA Chat] LLM Error:', errorMsg);
-        // INTELLIGENT FALLBACK when LLM is unavailable (quota exhausted, timeout, rate limit)
-        assistantMessage = generateFallbackResponse(lowerMessage, cleanMessage);
-        await addRopaChatMessage({ role: "assistant", message: assistantMessage });
-        return { response: assistantMessage };
+      const llmMessages = [
+        { role: "system", content: systemPrompt },
+        ...messages,
+      ];
+
+      // TIER 1: Try Google Gemini first (primary LLM)
+      if (isGeminiConfigured()) {
+        try {
+          console.log('[ROPA Chat] TIER 1: Calling Google Gemini...');
+          const geminiResult = await invokeGemini(llmMessages);
+          if (geminiResult) {
+            console.log('[ROPA Chat] Gemini responded successfully');
+            assistantMessage = geminiResult;
+          } else {
+            throw new Error('Gemini returned null');
+          }
+        } catch (geminiError: any) {
+          console.warn('[ROPA Chat] Gemini failed:', geminiError?.message || String(geminiError));
+          
+          // TIER 2: Fallback to Manus built-in LLM
+          try {
+            console.log('[ROPA Chat] TIER 2: Falling back to Manus LLM...');
+            const response = await invokeLLM({ messages: llmMessages });
+            const rawContent = response.choices[0]?.message?.content;
+            if (typeof rawContent === 'string' && rawContent.length > 0) {
+              console.log('[ROPA Chat] Manus LLM responded successfully');
+              assistantMessage = rawContent;
+            } else {
+              throw new Error('Manus LLM returned empty');
+            }
+          } catch (manusError: any) {
+            console.warn('[ROPA Chat] Manus LLM also failed:', manusError?.message || String(manusError));
+            
+            // TIER 3: Local fallback responses
+            console.log('[ROPA Chat] TIER 3: Using local fallback responses');
+            assistantMessage = generateFallbackResponse(lowerMessage, cleanMessage);
+            await addRopaChatMessage({ role: "assistant", message: assistantMessage });
+            return { response: assistantMessage };
+          }
+        }
+      } else {
+        // No Gemini configured, try Manus LLM directly
+        try {
+          console.log('[ROPA Chat] Calling Manus LLM (no Gemini configured)...');
+          const response = await invokeLLM({ messages: llmMessages });
+          const rawContent = response.choices[0]?.message?.content;
+          assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
+        } catch (llmError: any) {
+          console.error('[ROPA Chat] LLM Error:', llmError?.message || String(llmError));
+          assistantMessage = generateFallbackResponse(lowerMessage, cleanMessage);
+          await addRopaChatMessage({ role: "assistant", message: assistantMessage });
+          return { response: assistantMessage };
+        }
       }
       
       // Remove ALL asterisks and formatting mentions for clean speech output
