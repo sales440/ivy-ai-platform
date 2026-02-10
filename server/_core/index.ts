@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { initializeROPA } from "../ropa-autonomous";
 import { handleGoogleCallback } from "../google-callback-handler";
+import { ropaChatStreamRouter } from "../ropa-chat-stream";
 import { initializeBackupScheduler } from "../backup-scheduler";
 import { initializeCleanupScheduler } from "../backup-retention";
 import { startPerformanceMonitoring } from "../performance-monitor";
@@ -74,6 +75,9 @@ async function startServer() {
   
   // Google Drive OAuth callback
   app.get("/api/google/callback", handleGoogleCallback);
+  
+  // ROPA Chat Streaming endpoint (SSE)
+  app.use(ropaChatStreamRouter);
   
   // Google Drive OAuth initiation - redirect to Google
   app.get("/api/google-drive/auth", (req, res) => {

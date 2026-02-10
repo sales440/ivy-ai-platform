@@ -697,6 +697,11 @@ export default function RopaDashboardV2() {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [unreadMessages, setUnreadMessages] = useState(0);
   
+  // Streaming state for progressive text display
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  
   // ROPA Configuration state
   const [ropaConfig, setRopaConfig] = useState({
     operationMode: "autonomous" as "autonomous" | "guided" | "hybrid",
@@ -814,7 +819,7 @@ export default function RopaDashboardV2() {
   // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatHistory]);
+  }, [chatHistory, streamingText, isThinking]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -912,20 +917,98 @@ export default function RopaDashboardV2() {
     if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
+    setIsThinking(true);
+    setStreamingText("");
+    setIsStreaming(false);
     // Clear input immediately for responsive feel
     setMessage("");
     
-    // Safety timeout: reset isSubmitting after 60s in case request hangs
+    // Safety timeout: reset all states after 90s in case request hangs
     const safetyTimeout = setTimeout(() => {
       setIsSubmitting(false);
-      console.warn('[ROPA Chat] Safety timeout: resetting submit state after 60s');
-    }, 60000);
+      setIsThinking(false);
+      setIsStreaming(false);
+      setStreamingText("");
+      console.warn('[ROPA Chat] Safety timeout: resetting submit state after 90s');
+    }, 90000);
     
-    // Send ONLY the clean user message - no context JSON prefix
-    // Context is available server-side via DB queries
-    sendChatMutation.mutate({ message: trimmed }, {
-      onSettled: () => clearTimeout(safetyTimeout),
-    });
+    try {
+      // Use streaming SSE endpoint for progressive text display
+      const response = await fetch('/api/ropa/chat-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No reader available');
+      
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+            
+            try {
+              const event = JSON.parse(jsonStr);
+              
+              if (event.type === 'thinking') {
+                setIsThinking(true);
+              } else if (event.type === 'chunk') {
+                setIsThinking(false);
+                setIsStreaming(true);
+                fullText += event.text;
+                setStreamingText(fullText);
+              } else if (event.type === 'done') {
+                setIsStreaming(false);
+                setStreamingText("");
+                // Refetch chat history to get the saved messages
+                refetchChat();
+                // Play notification sound
+                playNotificationSound();
+                // Increment unread badge if chat is minimized or closed
+                if (!chatOpen || chatMinimized) {
+                  setUnreadMessages(prev => prev + 1);
+                }
+                // Text-to-speech for ROPA response
+                if (voiceEnabled && event.fullText) {
+                  speakText(event.fullText);
+                }
+              } else if (event.type === 'error') {
+                console.error('[ROPA Stream] Error:', event.message);
+                toast.error('Error al procesar el mensaje');
+              }
+            } catch (parseErr) {
+              // Skip malformed JSON
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      console.error('[ROPA Chat] Stream error:', error);
+      // Fallback to regular mutation if streaming fails
+      sendChatMutation.mutate({ message: trimmed });
+    } finally {
+      clearTimeout(safetyTimeout);
+      setIsSubmitting(false);
+      setIsThinking(false);
+      setIsStreaming(false);
+    }
   };
 
   const handleMenuClick = (item: typeof menuItems[0]) => {
@@ -2908,6 +2991,33 @@ export default function RopaDashboardV2() {
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Typing indicator - ROPA is thinking */}
+                      {isThinking && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] p-4 rounded-2xl bg-slate-800/80 border border-slate-700/50">
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-1">
+                                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              </div>
+                              <span className="text-xs text-slate-400 ml-1">ROPA está pensando...</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Streaming text - progressive display */}
+                      {isStreaming && streamingText && (
+                        <div className="flex justify-start">
+                          <div className="max-w-[80%] p-4 rounded-2xl bg-slate-800/80 text-slate-100 border border-cyan-500/30 shadow-lg shadow-cyan-500/10">
+                            <p className="text-sm whitespace-pre-wrap leading-relaxed">{streamingText}</p>
+                            <div className="inline-block w-1.5 h-4 bg-cyan-400 animate-pulse ml-0.5 align-text-bottom" />
+                          </div>
+                        </div>
+                      )}
+                      
                       <div ref={chatEndRef} />
                     </div>
                   ) : (

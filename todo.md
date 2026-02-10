@@ -494,5 +494,14 @@
 - [x] Add optimistic UI updates for instant message display
 - [x] Fix isSubmitting state getting stuck when batch fails
 - [x] Fix TypeScript compilation errors
-- [ ] Test chat response time in production
+- [x] Test chat response time in production
+- [x] Deploy to Railway
+
+
+## Phase 42: Typing Indicator + Streaming Responses for ROPA Chat
+- [x] Verify production chat response time after Railway deploy
+- [x] Add "ROPA está escribiendo..." typing indicator while LLM processes
+- [x] Implement streaming endpoint for progressive text display
+- [x] Update frontend to consume streaming responses
+- [x] Test streaming and typing indicator end-to-end
 - [ ] Deploy to Railway
