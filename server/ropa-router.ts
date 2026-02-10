@@ -664,7 +664,30 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
         return { response: greetingResponse };
       }
 
-      // Call LLM with robust error handling
+      // If a platform action was already executed, respond immediately WITHOUT LLM
+      if (platformActionExecuted && platformResult) {
+        let smartResponse = '';
+        if (platformResult.message) {
+          smartResponse = `✅ ${platformResult.message}`;
+        } else if (platformResult.drafts || platformResult.emailDrafts) {
+          const count = platformResult.drafts?.length || platformResult.count || 0;
+          smartResponse = `✅ He generado ${count} borradores de email. Puedes revisarlos en la sección Monitor.`;
+        } else if (platformResult.company) {
+          smartResponse = `✅ Empresa "${platformResult.company.name || platformResult.company}" creada exitosamente.`;
+        } else if (platformResult.campaign) {
+          smartResponse = `✅ Campaña creada exitosamente.`;
+        } else if (platformResult.results) {
+          smartResponse = `✅ Búsqueda completada. Encontré ${platformResult.results.length} resultados.`;
+        } else if (platformResult.success === false) {
+          smartResponse = `⚠️ La operación no se completó: ${platformResult.error || 'Error desconocido'}`;
+        } else {
+          smartResponse = `✅ Acción ejecutada correctamente.`;
+        }
+        await addRopaChatMessage({ role: "assistant", message: smartResponse });
+        return { response: smartResponse };
+      }
+
+      // Call LLM with intelligent fallback when quota is exhausted
       let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
       try {
         console.log('[ROPA Chat] Calling LLM with', messages.length, 'messages');
@@ -675,34 +698,14 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
           ],
         });
         console.log('[ROPA Chat] LLM response received');
-
         const rawContent = response.choices[0]?.message?.content;
         assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
-        
-        // If platform action was executed, prepend the result to the LLM response
-        if (platformActionExecuted && platformResult) {
-          const actionSummary = platformResult.message || JSON.stringify(platformResult);
-          assistantMessage = `✅ Acción ejecutada: ${actionSummary}\n\n${assistantMessage}`;
-        }
       } catch (llmError: any) {
         const errorMsg = llmError?.message || String(llmError);
         console.error('[ROPA Chat] LLM Error:', errorMsg);
-        console.error('[ROPA Chat] Full error:', JSON.stringify(llmError, null, 2));
-        
-        // Provide more specific error message
-        if (errorMsg.includes('timeout') || errorMsg.includes('abort')) {
-          assistantMessage = "La respuesta tardó demasiado. Por favor, intenta con una pregunta más corta.";
-        } else if (errorMsg.includes('rate limit')) {
-          assistantMessage = "Demasiadas solicitudes. Espera unos segundos e intenta de nuevo.";
-        } else {
-          assistantMessage = `Error temporal: ${errorMsg.substring(0, 100)}. Intenta de nuevo.`;
-        }
-        
-        // Still save the error response so user sees something
-        await addRopaChatMessage({
-          role: "assistant",
-          message: assistantMessage,
-        });
+        // INTELLIGENT FALLBACK when LLM is unavailable (quota exhausted, timeout, rate limit)
+        assistantMessage = generateFallbackResponse(lowerMessage, cleanMessage);
+        await addRopaChatMessage({ role: "assistant", message: assistantMessage });
         return { response: assistantMessage };
       }
       
@@ -1121,4 +1124,27 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
 });
 
 export type RopaRouter = typeof ropaRouter;
-// Railway deployment trigger - Thu Feb  5 16:24:14 EST 2026
+
+/** Intelligent fallback when LLM is unavailable */
+function generateFallbackResponse(lowerMsg: string, _original: string): string {
+  if (lowerMsg.includes('ve a') || lowerMsg.includes('ir a') || lowerMsg.includes('navega') || lowerMsg.includes('llévame'))
+    return 'Puedo navegar por ti. Dime la sección: Dashboard, Campañas, Archivos, Monitor, Tareas, Alertas, Salud, Calendario, o Configuración.';
+  if ((lowerMsg.includes('genera') || lowerMsg.includes('crea') || lowerMsg.includes('haz')) && (lowerMsg.includes('email') || lowerMsg.includes('correo')))
+    return 'Para generar emails necesito: empresa, campaña y cantidad. Ejemplo: "genera 3 emails para FAGOR campaña Training"';
+  if (lowerMsg.includes('empresa') || lowerMsg.includes('compañía') || lowerMsg.includes('cliente'))
+    return lowerMsg.includes('crea') || lowerMsg.includes('nueva') ? 'Para crear una empresa dime: "crea empresa [NOMBRE]"' : 'Puedo gestionar empresas. Comandos: crear empresa, listar empresas.';
+  if (lowerMsg.includes('campaña'))
+    return lowerMsg.includes('crea') || lowerMsg.includes('nueva') ? 'Para crear campaña dime: "crea campaña [NOMBRE] para [EMPRESA]"' : 'Puedo gestionar campañas. Comandos: crear campaña, ver campañas activas.';
+  if (lowerMsg.includes('drive') || lowerMsg.includes('carpeta') || (lowerMsg.includes('archivo') && (lowerMsg.includes('ver') || lowerMsg.includes('busca'))))
+    return 'Puedo acceder a Google Drive. Comandos: "muestra archivos de Drive", "busca archivo [nombre]", "muestra carpetas de clientes".';
+  if (lowerMsg.includes('qué día') || lowerMsg.includes('que dia') || lowerMsg.includes('fecha') || lowerMsg.includes('hora')) {
+    const now = new Date();
+    return `Hoy es ${now.toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Mexico_City' })}.`;
+  }
+  if (lowerMsg.includes('hola') || lowerMsg.includes('buenos') || lowerMsg.includes('buenas') || lowerMsg.includes('hey'))
+    return 'Hola! Soy ROPA, tu meta-agente autónomo. Estoy lista para ayudarte.';
+  if (lowerMsg.includes('ayuda') || lowerMsg.includes('help') || lowerMsg.includes('qué puedes'))
+    return 'Soy ROPA. Puedo: navegar entre secciones, generar emails, crear empresas y campañas, buscar archivos en Google Drive, mostrar métricas. ¿Qué necesitas?';
+  return 'Entendido. El sistema de IA está temporalmente limitado, pero puedo ejecutar acciones directas. Prueba: "ve a [sección]", "genera emails para [empresa]", "crea empresa [nombre]", "muestra archivos de Drive", o "ayuda".';
+}
+// Railway deployment trigger v2 - Mon Feb 10 2026
