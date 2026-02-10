@@ -644,8 +644,8 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
       // Call LLM with 3-tier fallback: Gemini → Manus LLM → Local responses
       let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
       const llmMessages = [
-        { role: "system", content: systemPrompt },
-        ...messages,
+        { role: "system" as const, content: systemPrompt },
+        ...messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
       ];
 
       // TIER 1: Try Google Gemini first (primary LLM)

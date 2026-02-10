@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, httpLink, splitLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
@@ -37,17 +37,34 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+const fetchWithCredentials = (input: RequestInfo | URL, init?: RequestInit) => {
+  return globalThis.fetch(input, {
+    ...(init ?? {}),
+    credentials: "include" as RequestCredentials,
+  });
+};
+
 const trpcClient = trpc.createClient({
   links: [
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      fetch(input, init) {
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          credentials: "include",
-        });
+    // Use splitLink to route chat mutations through a non-batched link
+    // This prevents chat messages from being delayed by other batched calls
+    splitLink({
+      condition(op) {
+        // Send chat messages through the non-batched link for instant delivery
+        return op.path === 'ropa.sendChatMessage';
       },
+      // Non-batched link for chat - sends immediately without waiting for other calls
+      true: httpLink({
+        url: "/api/trpc",
+        transformer: superjson,
+        fetch: fetchWithCredentials,
+      }),
+      // Batched link for everything else (queries, updateUIState, etc.)
+      false: httpBatchLink({
+        url: "/api/trpc",
+        transformer: superjson,
+        fetch: fetchWithCredentials,
+      }),
     }),
   ],
 });

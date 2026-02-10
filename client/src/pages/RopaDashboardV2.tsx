@@ -498,29 +498,28 @@ export default function RopaDashboardV2() {
     });
   }, [navigationCommands]);
   
-  // Sync UI state to backend every 5 seconds
+  // Sync UI state to backend periodically (low priority, background task)
   useEffect(() => {
     const syncUIState = () => {
-      const localStorageKeys = Object.keys(localStorage);
+      // Only sync minimal state - don't include chatHistory to reduce payload
       updateUIStateMutation.mutate({
         activeSection,
-        emailDrafts,
         googleDriveConnected,
-        localStorageKeys,
-        errors: [], // Could capture console.error here
-        chatHistory: chatHistory || [],
         companies: localCompanies,
         campaigns: localCampaigns,
       });
     };
     
-    // Initial sync
-    syncUIState();
+    // Delay initial sync to avoid competing with page load
+    const initialTimeout = setTimeout(syncUIState, 5000);
     
-    // Periodic sync
-    const interval = setInterval(syncUIState, 30000); // Reduced to 30 seconds
-    return () => clearInterval(interval);
-  }, [activeSection, emailDrafts, googleDriveConnected, localCompanies, localCampaigns]);
+    // Periodic sync every 2 minutes (reduced frequency)
+    const interval = setInterval(syncUIState, 120000);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, []);  // Empty deps - only run on mount, sync periodically
   
   // Process pending commands from ROPA
   useEffect(() => {
@@ -913,9 +912,20 @@ export default function RopaDashboardV2() {
     if (!trimmed || isSubmitting) return;
 
     setIsSubmitting(true);
+    // Clear input immediately for responsive feel
+    setMessage("");
+    
+    // Safety timeout: reset isSubmitting after 60s in case request hangs
+    const safetyTimeout = setTimeout(() => {
+      setIsSubmitting(false);
+      console.warn('[ROPA Chat] Safety timeout: resetting submit state after 60s');
+    }, 60000);
+    
     // Send ONLY the clean user message - no context JSON prefix
     // Context is available server-side via DB queries
-    sendChatMutation.mutate({ message: trimmed });
+    sendChatMutation.mutate({ message: trimmed }, {
+      onSettled: () => clearTimeout(safetyTimeout),
+    });
   };
 
   const handleMenuClick = (item: typeof menuItems[0]) => {

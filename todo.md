@@ -486,3 +486,13 @@
 - [x] Agregar fallback: Gemini → Manus LLM → respuesta local
 - [x] Probar que ROPA responde con Gemini
 - [x] Desplegar a producción
+
+
+## Phase 41: Fix ROPA Chat Delay - tRPC Batching Issue
+- [x] Split tRPC links to use separate non-batched link for chat mutations
+- [x] Reduce updateUIState frequency and remove from chat message batching
+- [x] Add optimistic UI updates for instant message display
+- [x] Fix isSubmitting state getting stuck when batch fails
+- [x] Fix TypeScript compilation errors
+- [ ] Test chat response time in production
+- [ ] Deploy to Railway
