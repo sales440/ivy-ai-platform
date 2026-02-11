@@ -447,9 +447,9 @@
 
 
 ## Phase 32: Flujo Completo de Borradores y Auto-actualización ROPA
-- [ ] Borradores rechazados se eliminan de Monitor
-- [ ] Borradores aprobados pasan a Campañas como "En Progreso"
-- [ ] Borradores aprobados aparecen en Calendario como "En Progreso"
+- [x] Borradores rechazados se eliminan de Monitor
+- [x] Borradores aprobados pasan a Campañas como "En Progreso"
+- [x] Borradores aprobados aparecen en Calendario como "En Progreso"
 - [ ] ROPA trabaja automáticamente en campañas aprobadas
 - [ ] ROPA auto-actualiza todas las páginas de Ivy.AI en tiempo real
 - [ ] Seguimiento de ROI y progreso de campañas
@@ -505,3 +505,50 @@
 - [x] Update frontend to consume streaming responses
 - [x] Test streaming and typing indicator end-to-end
 - [ ] Deploy to Railway
+
+
+## Phase 43: ROPA n8n Orchestration + Super Meta-Agent
+- [ ] Create n8n workflow "ROPA Meta-Agent - Ivy.AI Orchestrator" with Code node
+- [x] Test n8n webhook receives and processes messages correctly
+- [ ] Add n8n as 4th tier LLM fallback in ROPA backend (Gemini → Manus → n8n → Local)
+- [ ] Upgrade generateFallbackResponse to be a full intelligent ROPA Brain
+- [ ] Ensure ALL production tools work: navigation, companies, campaigns, emails, Drive, web search, analytics
+- [ ] Connect n8n webhook to Ivy.AI backend as orchestration proxy
+- [ ] Test end-to-end ROPA chat with all tools working
+- [ ] Save checkpoint
+
+## Phase 44: Update Gemini API Key
+- [ ] Update Gemini API key in n8n credentials
+- [ ] Update Gemini API key in Ivy.AI backend environment
+- [ ] Test Gemini LLM works with new key
+
+## Phase 45: ROPA Speed Optimization
+- [x] Optimize chat-stream endpoint to respond faster (< 2s for direct commands)
+- [x] Prioritize ROPA Brain TIER 0 for instant responses before LLM calls
+- [x] Reduce DB call overhead in chat flow
+
+## Phase 46: CRITICAL - Fix ROPA Chat 30min Delay Bug
+- [ ] Diagnose what is blocking/hanging in chat-stream endpoint
+- [ ] Fix the blocking issue
+- [ ] Verify response time < 3 seconds
+
+## Phase 48: Fix ROPA Navigation Not Working
+- [ ] Diagnose why ROPA says "Navegando a Campañas" but frontend doesn't change page
+- [ ] Fix navigation command execution in frontend
+- [ ] Verify navigation works for all sections
+
+## Phase 44: Full Email Approval Flow + Campaign/Calendar Integration
+- [x] Backend: sendApprovedEmails endpoint calls n8n mass email webhook (Outlook)
+- [x] Backend: emailSendCallback endpoint receives n8n delivery results
+- [x] Backend: When emails approved → auto-create/update campaign as "En Progreso" in DB
+- [x] Backend: When emails approved → auto-update calendar with In Progress campaigns
+- [x] Frontend: "Confirmar Envío" button for approved emails in Monitor (requires owner click)
+- [x] Frontend: Cancel button to abort pending sends
+- [x] Frontend: Update draft status to "sent" after n8n confirms delivery
+- [x] Frontend: Professional HTML email preview in Monitor popup with FAGOR branding
+- [x] Frontend: Rejected drafts removed from Monitor list
+- [x] Frontend: Calendar auto-displays all In Progress campaigns from DB
+- [x] Frontend: Dashboard auto-refresh on section navigation
+- [x] Frontend: Real campaign progress tracking on dashboard
+- [x] Write vitest tests for new endpoints (10 tests passing)
+- [ ] Save checkpoint

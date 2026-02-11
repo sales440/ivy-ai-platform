@@ -113,12 +113,14 @@ export default function RopaCalendar() {
     newCompanyName: "",
   });
 
-  // Get campaigns from API
-  const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();
+  // Get campaigns from API (DB)
+  const { data: dbCampaigns, refetch: refetchDbCampaigns } = trpc.campaigns.getCampaigns.useQuery(undefined, {
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
 
-  // Load campaigns and companies from localStorage (synced with Dashboard)
+  // Load campaigns from BOTH DB and localStorage, merge and deduplicate
   useEffect(() => {
-    const loadFromLocalStorage = () => {
+    const loadAndMergeCampaigns = () => {
       // Load companies
       const savedCompanies = localStorage.getItem('ropaCompanies');
       let companies: any[] = [];
@@ -131,14 +133,40 @@ export default function RopaCalendar() {
         }
       }
 
-      // Load campaigns and convert to KanbanCards
+      const allKanbanCards: KanbanCard[] = [];
+      const seenIds = new Set<string | number>();
+
+      // 1. Load from DB campaigns first (source of truth for approved drafts)
+      if (dbCampaigns && Array.isArray(dbCampaigns)) {
+        for (const campaign of dbCampaigns) {
+          // salesCampaigns schema: name, type, status, targetAudience, content, startDate, createdBy, createdAt
+          const companyName = campaign.targetAudience || campaign.createdBy || 'Sin Empresa';
+          const card: KanbanCard = {
+            id: campaign.id,
+            name: campaign.name,
+            type: (campaign.type as any) || 'email',
+            status: statusToColumn(campaign.status),
+            company: companyName,
+            targetAudience: campaign.content || 'Campaña de email',
+            scheduledDate: campaign.startDate ? new Date(campaign.startDate).toISOString().split('T')[0] : new Date(campaign.createdAt).toISOString().split('T')[0],
+            color: getCompanyColor(companyName, companies),
+          };
+          allKanbanCards.push(card);
+          seenIds.add(campaign.id);
+        }
+      }
+
+      // 2. Load from localStorage (for campaigns not yet in DB)
       const savedCampaigns = localStorage.getItem('ropaCampaigns');
       if (savedCampaigns) {
         try {
           const campaignsData = JSON.parse(savedCampaigns);
-          const kanbanCards: KanbanCard[] = campaignsData.map((campaign: any) => {
-            const companyName = companies.find((c: any) => c.id === campaign.companyId)?.name || 'Sin Empresa';
-            return {
+          for (const campaign of campaignsData) {
+            // Skip if already loaded from DB
+            if (seenIds.has(campaign.id)) continue;
+            
+            const companyName = campaign.company || companies.find((c: any) => c.id === campaign.companyId)?.name || 'Sin Empresa';
+            const card: KanbanCard = {
               id: campaign.id,
               name: campaign.name,
               type: campaign.type as "email" | "phone" | "social_media" | "multi_channel",
@@ -148,33 +176,36 @@ export default function RopaCalendar() {
               scheduledDate: campaign.createdAt ? new Date(campaign.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
               color: getCompanyColor(companyName, companies),
             };
-          });
-          setCards(kanbanCards);
+            allKanbanCards.push(card);
+            seenIds.add(campaign.id);
+          }
         } catch (e) {
           console.error('Error parsing campaigns:', e);
         }
       }
+
+      setCards(allKanbanCards);
     };
 
-    loadFromLocalStorage();
+    loadAndMergeCampaigns();
 
     // Listen for storage changes from other tabs/components
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'ropaCampaigns' || e.key === 'ropaCompanies') {
-        loadFromLocalStorage();
+        loadAndMergeCampaigns();
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Also poll for changes every 2 seconds (for same-tab updates)
-    const interval = setInterval(loadFromLocalStorage, 2000);
+    // Also poll for changes every 3 seconds (for same-tab updates)
+    const interval = setInterval(loadAndMergeCampaigns, 3000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
-  }, []);
+  }, [dbCampaigns]);
 
   // Filter cards by company
   const filteredCards = selectedCompany === "all"

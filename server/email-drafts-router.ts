@@ -7,7 +7,10 @@ import {
   updateEmailDraftStatus,
   updateEmailDraftContent,
   deleteEmailDraft,
+  getApprovedEmailDrafts,
+  createCampaignFromApprovedDraft,
 } from "./db";
+import { sendApprovedEmailsViaN8n, processEmailCallback, createCampaignFromDrafts } from "./email-send-service";
 
 /**
  * Email Drafts Router
@@ -98,6 +101,82 @@ export const emailDraftsRouter = router({
     .mutation(async ({ input }) => {
       const success = await deleteEmailDraft(input.draftId);
       return { success };
+    }),
+
+  // Get all approved emails ready to send
+  getApproved: publicProcedure.query(async () => {
+    const drafts = await getApprovedEmailDrafts();
+    return { success: true, drafts, count: drafts.length };
+  }),
+
+  // SEND APPROVED EMAILS via n8n/Outlook
+  // This is the "Confirmar Envío" endpoint - requires owner explicit action
+  sendApproved: protectedProcedure
+    .input(z.object({
+      draftIds: z.array(z.string()),
+    }))
+    .mutation(async ({ input }) => {
+      console.log(`[Email Send] Owner confirmed sending ${input.draftIds.length} emails via n8n/Outlook`);
+      
+      const result = await sendApprovedEmailsViaN8n(input.draftIds);
+      
+      // If emails were sent successfully, create a campaign in the DB
+      if (result.sentCount > 0) {
+        const sentDrafts = await getApprovedEmailDrafts();
+        // Get the drafts that were just sent
+        const justSent = sentDrafts.filter(d => input.draftIds.includes(d.draftId));
+        if (justSent.length > 0) {
+          const campaignId = await createCampaignFromDrafts(justSent);
+          console.log(`[Email Send] Campaign created: ${campaignId}`);
+          return { ...result, campaignId };
+        }
+      }
+      
+      return result;
+    }),
+
+  // Cancel pending send (revert to approved status)
+  cancelSend: protectedProcedure
+    .input(z.object({ draftIds: z.array(z.string()) }))
+    .mutation(async ({ input }) => {
+      console.log(`[Email Send] Owner cancelled sending ${input.draftIds.length} emails`);
+      let count = 0;
+      for (const draftId of input.draftIds) {
+        const success = await updateEmailDraftStatus(draftId, 'approved');
+        if (success) count++;
+      }
+      return { success: true, cancelledCount: count };
+    }),
+
+  // Approve draft AND create campaign in DB
+  approveAndCreateCampaign: protectedProcedure
+    .input(z.object({
+      draftId: z.string(),
+      rejectionReason: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // 1. Approve the draft
+      const approved = await updateEmailDraftStatus(
+        input.draftId,
+        'approved',
+        ctx.user?.openId
+      );
+      
+      if (!approved) return { success: false, error: 'Failed to approve draft' };
+      
+      // 2. Get the draft details
+      const draft = await getEmailDraftById(input.draftId);
+      if (!draft) return { success: false, error: 'Draft not found' };
+      
+      // 3. Create campaign in DB as "active" (En Progreso)
+      const campaignId = await createCampaignFromApprovedDraft({
+        name: `${draft.campaign || 'Email Campaign'} - ${draft.company}`,
+        company: draft.company,
+        type: 'email',
+        draftCount: 1,
+      });
+      
+      return { success: true, campaignId, draftId: input.draftId };
     }),
 });
 

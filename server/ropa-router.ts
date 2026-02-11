@@ -25,6 +25,8 @@ import { invokeLLM } from "./_core/llm";
 import { invokeGemini, isGeminiConfigured } from "./gemini-llm";
 import ropaDriveService from "./ropa-drive-service";
 import { ropaNavigationTools, IVY_SECTIONS, IVY_DIALOGS } from "./ropa-navigation-service";
+import { processWithRopaBrain } from "./ropa-brain";
+import { callN8nRopa } from "./ropa-n8n-service";
 
 /**
  * ROPA tRPC Router
@@ -641,7 +643,7 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
         return { response: smartResponse };
       }
 
-      // Call LLM with 3-tier fallback: Gemini → Manus LLM → Local responses
+      // Call LLM with 5-tier fallback: Gemini → Manus LLM → n8n → ROPA Brain
       let assistantMessage = "Lo siento, no pude procesar tu mensaje.";
       const llmMessages = [
         { role: "system" as const, content: systemPrompt },
@@ -661,40 +663,48 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
           }
         } catch (geminiError: any) {
           console.warn('[ROPA Chat] Gemini failed:', geminiError?.message || String(geminiError));
-          
-          // TIER 2: Fallback to Manus built-in LLM
-          try {
-            console.log('[ROPA Chat] TIER 2: Falling back to Manus LLM...');
-            const response = await invokeLLM({ messages: llmMessages });
-            const rawContent = response.choices[0]?.message?.content;
-            if (typeof rawContent === 'string' && rawContent.length > 0) {
-              console.log('[ROPA Chat] Manus LLM responded successfully');
-              assistantMessage = rawContent;
-            } else {
-              throw new Error('Manus LLM returned empty');
-            }
-          } catch (manusError: any) {
-            console.warn('[ROPA Chat] Manus LLM also failed:', manusError?.message || String(manusError));
-            
-            // TIER 3: Local fallback responses
-            console.log('[ROPA Chat] TIER 3: Using local fallback responses');
-            assistantMessage = generateFallbackResponse(lowerMessage, cleanMessage);
-            await addRopaChatMessage({ role: "assistant", message: assistantMessage });
-            return { response: assistantMessage };
-          }
         }
-      } else {
-        // No Gemini configured, try Manus LLM directly
+      }
+
+      // TIER 2: Fallback to Manus built-in LLM
+      if (assistantMessage === "Lo siento, no pude procesar tu mensaje.") {
         try {
-          console.log('[ROPA Chat] Calling Manus LLM (no Gemini configured)...');
+          console.log('[ROPA Chat] TIER 2: Falling back to Manus LLM...');
           const response = await invokeLLM({ messages: llmMessages });
           const rawContent = response.choices[0]?.message?.content;
-          assistantMessage = typeof rawContent === 'string' ? rawContent : "Lo siento, no pude procesar tu mensaje.";
-        } catch (llmError: any) {
-          console.error('[ROPA Chat] LLM Error:', llmError?.message || String(llmError));
-          assistantMessage = generateFallbackResponse(lowerMessage, cleanMessage);
-          await addRopaChatMessage({ role: "assistant", message: assistantMessage });
-          return { response: assistantMessage };
+          if (typeof rawContent === 'string' && rawContent.length > 0) {
+            console.log('[ROPA Chat] Manus LLM responded successfully');
+            assistantMessage = rawContent;
+          }
+        } catch (manusError: any) {
+          console.warn('[ROPA Chat] Manus LLM failed:', manusError?.message || String(manusError));
+        }
+      }
+
+      // TIER 3: Fallback to n8n Orchestrator
+      if (assistantMessage === "Lo siento, no pude procesar tu mensaje.") {
+        try {
+          console.log('[ROPA Chat] TIER 3: Falling back to n8n orchestrator...');
+          const n8nResult = await callN8nRopa(cleanMessage, 'system');
+          if (n8nResult && n8nResult.success && n8nResult.response) {
+            console.log('[ROPA Chat] n8n orchestrator responded successfully');
+            assistantMessage = n8nResult.response;
+          }
+        } catch (n8nError: any) {
+          console.warn('[ROPA Chat] n8n failed:', n8nError?.message || String(n8nError));
+        }
+      }
+
+      // TIER 4: ROPA Brain intelligent fallback
+      if (assistantMessage === "Lo siento, no pude procesar tu mensaje.") {
+        try {
+          console.log('[ROPA Chat] TIER 4: Using ROPA Brain intelligent fallback...');
+          const brainResult = await processWithRopaBrain(cleanMessage);
+          assistantMessage = brainResult.response;
+          console.log('[ROPA Chat] ROPA Brain responded with intent:', brainResult.intent);
+        } catch (brainError: any) {
+          console.warn('[ROPA Chat] ROPA Brain failed:', brainError?.message || String(brainError));
+          assistantMessage = 'Estoy procesando tu solicitud. Prueba: "ve a [sección]", "genera emails para [empresa]", "crea empresa [nombre]", o "ayuda".';
         }
       }
       

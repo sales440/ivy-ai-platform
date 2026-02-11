@@ -1,6 +1,6 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, emailDrafts, InsertEmailDraft, EmailDraft } from "../drizzle/schema";
+import { InsertUser, users, emailDrafts, InsertEmailDraft, EmailDraft, salesCampaigns } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -213,6 +213,89 @@ export async function deleteEmailDraft(draftId: string): Promise<boolean> {
   } catch (error) {
     console.error("[Database] Failed to delete email draft:", error);
     return false;
+  }
+}
+
+/**
+ * Get all approved email drafts (ready to send)
+ */
+export async function getApprovedEmailDrafts(): Promise<EmailDraft[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get approved email drafts: database not available");
+    return [];
+  }
+
+  try {
+    const result = await db.select().from(emailDrafts)
+      .where(eq(emailDrafts.status, 'approved'))
+      .orderBy(desc(emailDrafts.approvedAt));
+    return result;
+  } catch (error) {
+    console.error("[Database] Failed to get approved email drafts:", error);
+    return [];
+  }
+}
+
+/**
+ * Mark multiple drafts as sent
+ */
+export async function markDraftsAsSent(draftIds: string[]): Promise<boolean> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot mark drafts as sent: database not available");
+    return false;
+  }
+
+  try {
+    for (const draftId of draftIds) {
+      await db.update(emailDrafts).set({
+        status: 'sent',
+        sentAt: new Date(),
+      }).where(eq(emailDrafts.draftId, draftId));
+    }
+    return true;
+  } catch (error) {
+    console.error("[Database] Failed to mark drafts as sent:", error);
+    return false;
+  }
+}
+
+/**
+ * Create a campaign in the DB from approved email drafts
+ */
+export async function createCampaignFromApprovedDraft(params: {
+  name: string;
+  company: string;
+  type: 'email' | 'phone' | 'social_media' | 'multi_channel';
+  draftCount: number;
+}): Promise<number | null> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot create campaign: database not available");
+    return null;
+  }
+
+  try {
+    const [result] = await db.insert(salesCampaigns).values({
+      name: params.name,
+      type: params.type,
+      status: 'active',
+      targetAudience: `${params.company} - ${params.draftCount} emails aprobados`,
+      content: `Campaña creada automáticamente desde ${params.draftCount} emails aprobados en Monitor`,
+      metrics: JSON.stringify({
+        pendingEmails: params.draftCount,
+        sentEmails: 0,
+        openRate: 0,
+        clickRate: 0,
+        conversions: 0,
+      }),
+      createdBy: 'ROPA',
+    });
+    return result.insertId;
+  } catch (error) {
+    console.error("[Database] Failed to create campaign from draft:", error);
+    return null;
   }
 }
 

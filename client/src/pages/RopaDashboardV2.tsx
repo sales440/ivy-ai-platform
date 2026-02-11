@@ -188,6 +188,7 @@ export default function RopaDashboardV2() {
   const [monitorStatusFilter, setMonitorStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'sent' | 'all'>('all');
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
   
   // Legacy emailDrafts for backward compatibility
   const emailDrafts = allDrafts.filter(d => d.type === 'email');
@@ -386,6 +387,59 @@ export default function RopaDashboardV2() {
       refetchEmailDrafts();
     },
   });
+
+  // Send approved emails mutation (Confirmar Envío)
+  const sendApprovedMutation = trpc.emailDrafts.sendApproved.useMutation({
+    onSuccess: (data) => {
+      refetchEmailDrafts();
+      if (data.sentCount > 0) {
+        toast.success(`${data.sentCount} email(s) enviado(s) exitosamente via Outlook`);
+      }
+      if (data.failedCount > 0) {
+        toast.error(`${data.failedCount} email(s) fallaron al enviar`);
+      }
+      setIsSendingEmails(false);
+    },
+    onError: (error) => {
+      toast.error('Error al enviar emails: ' + error.message);
+      setIsSendingEmails(false);
+    },
+  });
+
+  // Cancel send mutation
+  const cancelSendMutation = trpc.emailDrafts.cancelSend.useMutation({
+    onSuccess: () => {
+      refetchEmailDrafts();
+      toast.info('Envío cancelado');
+    },
+  });
+
+  // Approve and create campaign mutation
+  const approveAndCreateCampaignMutation = trpc.emailDrafts.approveAndCreateCampaign.useMutation({
+    onSuccess: (data) => {
+      refetchEmailDrafts();
+      if (data.success && data.campaignId) {
+        toast.success(`Email aprobado. Campaña creada (ID: ${data.campaignId}) y movida a En Progreso`);
+      }
+    },
+  });
+
+  // Handle confirm send (Confirmar Envío button)
+  const handleConfirmSend = async (draftIds: string[]) => {
+    if (draftIds.length === 0) return;
+    setIsSendingEmails(true);
+    try {
+      await sendApprovedMutation.mutateAsync({ draftIds });
+    } catch (error) {
+      setIsSendingEmails(false);
+    }
+  };
+
+  // Handle cancel send
+  const handleCancelSend = async (draftIds: string[]) => {
+    if (draftIds.length === 0) return;
+    await cancelSendMutation.mutateAsync({ draftIds });
+  };
   
   // ============ ROPA UI STATE SYNC ============
   // Sync UI state to backend so ROPA can see what's happening in real-time
@@ -602,7 +656,7 @@ export default function RopaDashboardV2() {
     }
   };
   
-  // Function to approve/reject email draft - now updates database
+  // Function to approve/reject email draft - now updates database AND creates campaign in DB
   const updateEmailDraftStatus = async (id: string, status: 'approved' | 'rejected') => {
     try {
       // Find the draft to get company and campaign info
@@ -617,66 +671,71 @@ export default function RopaDashboardV2() {
         return;
       }
       
-      // APPROVED: Update status and move to campaigns/calendar
-      await updateEmailDraftStatusMutation.mutateAsync({
-        draftId: id,
-        status,
-      });
+      // APPROVED: Use the new approveAndCreateCampaign endpoint
+      // This creates the campaign in the DB and approves the draft in one call
+      try {
+        await approveAndCreateCampaignMutation.mutateAsync({ draftId: id });
+      } catch (e) {
+        // Fallback: just update status if the combined endpoint fails
+        await updateEmailDraftStatusMutation.mutateAsync({ draftId: id, status });
+      }
       
       // Update local state
       setAllDrafts(prev => prev.map(d => d.id === id ? { ...d, status: 'approved' } : d));
       
-      // Add to campaigns as "En Progreso" if draft has company info
+      // Also update localStorage for calendar sync
       if (draft?.company) {
-        const existingCampaigns = JSON.parse(localStorage.getItem('ivy_campaigns') || '[]');
         const campaignName = draft.campaign || `Email Campaign - ${draft.subject?.substring(0, 30)}`;
         
-        // Check if campaign already exists
-        const existingCampaign = existingCampaigns.find((c: any) => 
+        // Update ropaCampaigns localStorage for calendar
+        const existingRopaCampaigns = JSON.parse(localStorage.getItem('ropaCampaigns') || '[]');
+        const existingCampaign = existingRopaCampaigns.find((c: any) => 
           c.company === draft.company && c.name === campaignName
         );
         
         if (!existingCampaign) {
-          // Create new campaign in "En Progreso" status
           const newCampaign = {
             id: `campaign_${Date.now()}`,
             name: campaignName,
             company: draft.company,
-            status: 'in_progress', // En Progreso
-            type: draft.type === 'email' ? 'email' : draft.type === 'call' ? 'phone' : 'multi',
+            companyId: null,
+            status: 'active', // Maps to "En Progreso" in calendar
+            type: draft.type === 'email' ? 'email' : draft.type === 'call' ? 'phone' : 'multi_channel',
             startDate: new Date().toISOString().split('T')[0],
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
+            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            description: `Campaña creada desde email aprobado en Monitor`,
             pendingEmails: 1,
             sentEmails: 0,
-            leads: 0,
-            conversions: 0,
-            roi: 0,
             emailDraftId: id,
             createdFromDraft: true,
+            createdAt: new Date().toISOString(),
           };
+          existingRopaCampaigns.push(newCampaign);
+          localStorage.setItem('ropaCampaigns', JSON.stringify(existingRopaCampaigns));
           
-          existingCampaigns.push(newCampaign);
-          localStorage.setItem('ivy_campaigns', JSON.stringify(existingCampaigns));
-          setLocalCampaigns(existingCampaigns);
+          // Also update ivy_campaigns for backward compat
+          const ivyCampaigns = JSON.parse(localStorage.getItem('ivy_campaigns') || '[]');
+          ivyCampaigns.push(newCampaign);
+          localStorage.setItem('ivy_campaigns', JSON.stringify(ivyCampaigns));
           
-          toast.success(`Email aprobado. Campaña "${campaignName}" creada y movida a En Progreso`);
-          
-          // Notify ROPA to start working on this campaign
-          try {
-            await sendChatMutation.mutateAsync({
-              message: `[SISTEMA] Campaña aprobada: "${campaignName}" para ${draft.company}. Inicia la ejecución automática de esta campaña.`,
-            });
-          } catch (e) {
-            console.log('ROPA notified of approved campaign');
-          }
+          setLocalCampaigns(existingRopaCampaigns);
+          toast.success(`Email aprobado. Campaña "${campaignName}" creada en Campañas y Calendario`);
         } else {
-          // Update existing campaign to in_progress
-          const updatedCampaigns = existingCampaigns.map((c: any) => 
-            c.id === existingCampaign.id ? { ...c, status: 'in_progress', pendingEmails: (c.pendingEmails || 0) + 1 } : c
+          const updatedCampaigns = existingRopaCampaigns.map((c: any) => 
+            c.id === existingCampaign.id ? { ...c, status: 'active', pendingEmails: (c.pendingEmails || 0) + 1 } : c
           );
-          localStorage.setItem('ivy_campaigns', JSON.stringify(updatedCampaigns));
+          localStorage.setItem('ropaCampaigns', JSON.stringify(updatedCampaigns));
           setLocalCampaigns(updatedCampaigns);
           toast.success(`Email aprobado y agregado a campaña "${existingCampaign.name}"`);
+        }
+        
+        // Notify ROPA to start working on this campaign
+        try {
+          await sendChatMutation.mutateAsync({
+            message: `[SISTEMA] Campaña aprobada: "${campaignName}" para ${draft.company}. Inicia la ejecución automática de esta campaña.`,
+          });
+        } catch (e) {
+          console.log('ROPA notified of approved campaign');
         }
       } else {
         toast.success('Email aprobado y guardado');
@@ -741,25 +800,44 @@ export default function RopaDashboardV2() {
   const chatWindowRef = useRef<HTMLDivElement>(null);
 
   // Queries - all polling disabled when tab is not visible
-  const { data: stats, isLoading: statsLoading } = trpc.ropa.getDashboardStats.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 60000 : false, // Only poll when tab is visible
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.ropa.getDashboardStats.useQuery(undefined, {
+    refetchInterval: isPageVisible ? 15000 : false, // Refresh every 15s for real-time dashboard
   });
 
-  const { data: status } = trpc.ropa.getStatus.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 30000 : false, // Only poll when tab is visible
+  const { data: status, refetch: refetchStatus } = trpc.ropa.getStatus.useQuery(undefined, {
+    refetchInterval: isPageVisible ? 15000 : false,
   });
 
-  const { data: tasks } = trpc.ropa.getTasks.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 60000 : false, // Only poll when tab is visible
+  const { data: tasks, refetch: refetchTasks } = trpc.ropa.getTasks.useQuery(undefined, {
+    refetchInterval: isPageVisible ? 30000 : false,
   });
 
   const { data: chatHistory, refetch: refetchChat } = trpc.ropa.getChatHistory.useQuery();
+  const trpcUtils = trpc.useUtils();
 
-  const { data: alerts } = trpc.ropa.getAlerts.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 60000 : false, // Only poll when tab is visible
+  const { data: alerts, refetch: refetchAlerts } = trpc.ropa.getAlerts.useQuery(undefined, {
+    refetchInterval: isPageVisible ? 30000 : false,
   });
 
-  const { data: campaigns } = trpc.campaigns.getCampaigns.useQuery();
+  const { data: campaigns, refetch: refetchCampaigns } = trpc.campaigns.getCampaigns.useQuery(undefined, {
+    refetchInterval: isPageVisible ? 10000 : false, // Refresh campaigns every 10s
+  });
+
+  // Auto-refresh all data when navigating between sections
+  useEffect(() => {
+    // Refetch relevant data when section changes
+    if (activeSection === 'dashboard') {
+      refetchStats();
+      refetchStatus();
+      refetchCampaigns();
+    } else if (activeSection === 'monitor') {
+      refetchEmailDrafts();
+    } else if (activeSection === 'campaigns') {
+      refetchCampaigns();
+    } else if (activeSection === 'tasks') {
+      refetchTasks();
+    }
+  }, [activeSection]);
 
   // Mutations
   const sendChatMutation = trpc.ropa.sendChatMessage.useMutation({
@@ -922,6 +1000,18 @@ export default function RopaDashboardV2() {
     setIsStreaming(false);
     // Clear input immediately for responsive feel
     setMessage("");
+    
+    // Add user message to chat immediately (optimistic update for instant feedback)
+    const optimisticUserMsg = {
+      id: Date.now(),
+      role: 'user' as const,
+      message: trimmed,
+      createdAt: new Date(),
+    };
+    // Use tRPC query cache for optimistic update (instant feedback)
+    trpcUtils.ropa.getChatHistory.setData(undefined, (old: any) => 
+      old ? [...old, optimisticUserMsg] : [optimisticUserMsg]
+    );
     
     // Safety timeout: reset all states after 90s in case request hangs
     const safetyTimeout = setTimeout(() => {
@@ -2240,6 +2330,9 @@ export default function RopaDashboardV2() {
                     }}
                     onApprove={(draftId) => updateEmailDraftStatus(draftId, 'approved')}
                     onReject={(draftId) => updateEmailDraftStatus(draftId, 'rejected')}
+                    onConfirmSend={handleConfirmSend}
+                    onCancelSend={handleCancelSend}
+                    isSending={isSendingEmails}
                   />
 
                   {/* Instructions */}
@@ -2248,8 +2341,9 @@ export default function RopaDashboardV2() {
                     <ul className="text-sm text-slate-400 space-y-1">
                       <li>• Pídele a ROPA: "Genera un email de campaña para FAGOR Automation"</li>
                       <li>• ROPA creará el contenido y lo mostrará aquí para tu aprobación</li>
-                      <li>• Haz doble clic en cualquier borrador para verlo en pantalla completa</li>
-                      <li>• Al aprobar, el contenido se guardará en la carpeta del cliente en Google Drive</li>
+                      <li>• Haz doble clic en cualquier borrador para ver el preview profesional HTML</li>
+                      <li>• Al aprobar, se crea automáticamente una campaña "En Progreso" en Campañas y Calendario</li>
+                      <li>• Selecciona emails aprobados y haz clic en "Confirmar Envío" para enviar via Outlook/n8n</li>
                     </ul>
                   </div>
                 </CardContent>

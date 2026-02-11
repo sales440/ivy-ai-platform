@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { initializeROPA } from "../ropa-autonomous";
 import { handleGoogleCallback } from "../google-callback-handler";
 import { ropaChatStreamRouter } from "../ropa-chat-stream";
+import { processEmailCallback } from "../email-send-service";
 import { initializeBackupScheduler } from "../backup-scheduler";
 import { initializeCleanupScheduler } from "../backup-retention";
 import { startPerformanceMonitoring } from "../performance-monitor";
@@ -79,6 +80,17 @@ async function startServer() {
   // ROPA Chat Streaming endpoint (SSE)
   app.use(ropaChatStreamRouter);
   
+  // Email callback endpoint for n8n to report delivery results
+  app.post("/api/email-callback", async (req, res) => {
+    try {
+      const result = await processEmailCallback(req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error('[Email Callback] Error:', error.message);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Google Drive OAuth initiation - redirect to Google
   app.get("/api/google-drive/auth", (req, res) => {
     const { getAuthUrl } = require("../google-drive");
