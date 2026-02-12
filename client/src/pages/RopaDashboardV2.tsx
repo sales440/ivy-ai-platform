@@ -455,7 +455,7 @@ export default function RopaDashboardV2() {
   // Navigation commands from ROPA
   const { data: navigationCommands, refetch: refetchNavigationCommands } = trpc.ropa.getNavigationCommands.useQuery(
     undefined,
-    { refetchInterval: isPageVisible ? 2000 : false, enabled: isPageVisible }
+    { refetchInterval: isPageVisible ? 5000 : false, enabled: isPageVisible }
   );
   const markNavigationExecutedMutation = trpc.ropa.markNavigationExecuted.useMutation();
   
@@ -822,7 +822,7 @@ export default function RopaDashboardV2() {
   });
 
   const { data: campaigns, refetch: refetchCampaigns } = trpc.campaigns.getCampaigns.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 10000 : false, // Refresh campaigns every 10s
+    refetchInterval: isPageVisible ? 30000 : false, // Refresh campaigns every 30s
   });
 
   // Auto-refresh all data when navigating between sections

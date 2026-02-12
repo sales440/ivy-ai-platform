@@ -558,3 +558,10 @@
 - [x] Make ROPA greeting time-aware based on user's local time/day
 - [x] Add "Borrar Empresas" button in Campaigns page to delete companies
 - [x] Write vitest tests (10 tests passing)
+
+## Phase 46: Fix Production DB - sales_campaigns table missing
+- [x] Verified sales_campaigns table exists in production DB (not missing)
+- [x] Add try-catch protection to campaigns query to prevent error spam
+- [ ] Push fix to GitHub for Railway deployment
+- [x] Reduced all polling intervals (5s→30s, 3s→30s, 2s→5s) to prevent DB connection exhaustion
+- [ ] Verify production logs are clean

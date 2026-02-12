@@ -44,13 +44,17 @@ export const campaignsRouter = router({
     const db = await getDb();
     if (!db) return [];
 
-    const files = await db
-      .select()
-      .from(uploadedFiles)
-      .where(eq(uploadedFiles.uploadedBy, ctx.user.openId))
-      .orderBy(desc(uploadedFiles.createdAt));
-
-    return files;
+    try {
+      const files = await db
+        .select()
+        .from(uploadedFiles)
+        .where(eq(uploadedFiles.uploadedBy, ctx.user.openId))
+        .orderBy(desc(uploadedFiles.createdAt));
+      return files;
+    } catch (error) {
+      console.warn('[Files] Query failed, returning empty list:', (error as Error).message?.substring(0, 100));
+      return [];
+    }
   }),
 
   // Parse uploaded file and create leads
@@ -138,8 +142,13 @@ export const campaignsRouter = router({
     const db = await getDb();
     if (!db) return [];
 
-    const leads = await db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt));
-    return leads;
+    try {
+      const leads = await db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt));
+      return leads;
+    } catch (error) {
+      console.warn('[Leads] Query failed, returning empty list:', (error as Error).message?.substring(0, 100));
+      return [];
+    }
   }),
 
   // Generate campaign with ROPA
@@ -226,11 +235,16 @@ export const campaignsRouter = router({
     const db = await getDb();
     if (!db) return [];
 
-    const campaigns = await db
-      .select()
-      .from(salesCampaigns)
-      .orderBy(desc(salesCampaigns.createdAt));
-    return campaigns;
+    try {
+      const campaigns = await db
+        .select()
+        .from(salesCampaigns)
+        .orderBy(desc(salesCampaigns.createdAt));
+      return campaigns;
+    } catch (error) {
+      console.warn('[Campaigns] Query failed, returning empty list:', (error as Error).message?.substring(0, 100));
+      return [];
+    }
   }),
 
   // Update campaign status

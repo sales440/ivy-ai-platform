@@ -114,8 +114,15 @@ export default function RopaCalendar() {
   });
 
   // Get campaigns from API (DB)
+  const [isCalendarVisible, setIsCalendarVisible] = useState(!document.hidden);
+  useEffect(() => {
+    const handler = () => setIsCalendarVisible(!document.hidden);
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, []);
+
   const { data: dbCampaigns, refetch: refetchDbCampaigns } = trpc.campaigns.getCampaigns.useQuery(undefined, {
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: isCalendarVisible ? 30000 : false, // Auto-refresh every 30 seconds only when visible
   });
 
   // Load campaigns from BOTH DB and localStorage, merge and deduplicate

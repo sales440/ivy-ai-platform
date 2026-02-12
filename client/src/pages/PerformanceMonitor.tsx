@@ -10,12 +10,12 @@ export default function PerformanceMonitor() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   
   const { data: healthData, refetch: refetchHealth } = trpc.performance.getHealthStatus.useQuery(undefined, {
-    refetchInterval: autoRefresh ? 5000 : false,
+    refetchInterval: autoRefresh ? 30000 : false,
   });
   
   const { data: historyData } = trpc.performance.getHistory.useQuery(
     { limit: 50 },
-    { refetchInterval: autoRefresh ? 10000 : false }
+    { refetchInterval: autoRefresh ? 30000 : false }
   );
   
   const collectNow = trpc.performance.collectNow.useMutation({

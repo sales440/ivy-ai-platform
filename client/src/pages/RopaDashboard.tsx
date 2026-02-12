@@ -15,21 +15,21 @@ export default function RopaDashboard() {
 
   // Queries
   const { data: stats, isLoading: statsLoading } = trpc.ropa.getDashboardStats.useQuery(undefined, {
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   const { data: status } = trpc.ropa.getStatus.useQuery(undefined, {
-    refetchInterval: 3000,
+    refetchInterval: 30000,
   });
 
   const { data: tasks } = trpc.ropa.getTasks.useQuery(undefined, {
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   const { data: chatHistory, refetch: refetchChat } = trpc.ropa.getChatHistory.useQuery();
 
   const { data: alerts } = trpc.ropa.getAlerts.useQuery(undefined, {
-    refetchInterval: 10000,
+    refetchInterval: 60000,
   });
 
   // Mutations
