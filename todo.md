@@ -552,3 +552,9 @@
 - [x] Frontend: Real campaign progress tracking on dashboard
 - [x] Write vitest tests for new endpoints (10 tests passing)
 - [ ] Save checkpoint
+
+## Phase 45: Bug Fixes - Calendar Route & ROPA Time-Aware Greeting
+- [x] Fix /calendar route returning 404 (add route in App.tsx)
+- [x] Make ROPA greeting time-aware based on user's local time/day
+- [x] Add "Borrar Empresas" button in Campaigns page to delete companies
+- [x] Write vitest tests (10 tests passing)

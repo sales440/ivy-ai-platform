@@ -33,7 +33,7 @@ export interface RopaBrainResult {
  * Process a message through ROPA's local intelligence engine.
  * Returns an intelligent response with optional platform actions.
  */
-export async function processWithRopaBrain(cleanMessage: string): Promise<RopaBrainResult> {
+export async function processWithRopaBrain(cleanMessage: string, clientHour?: number, clientDay?: string): Promise<RopaBrainResult> {
   const msg = cleanMessage.toLowerCase().trim();
   
   let response = '';
@@ -48,9 +48,11 @@ export async function processWithRopaBrain(cleanMessage: string): Promise<RopaBr
   
   if (isGreeting && msg.length < 60) {
     intent = 'greeting';
-    const hour = new Date().getHours();
+    // Use client's local hour for time-aware greeting (fallback to server time)
+    const hour = typeof clientHour === 'number' ? clientHour : new Date().getHours();
     const timeGreeting = hour < 12 ? 'Buenos días' : hour < 18 ? 'Buenas tardes' : 'Buenas noches';
-    response = `${timeGreeting}! Soy ROPA, tu meta-agente autónomo de Ivy.AI. Estoy listo para ejecutar cualquier tarea. ¿Qué necesitas?`;
+    const dayInfo = clientDay ? ` Hoy es ${clientDay}.` : '';
+    response = `${timeGreeting}!${dayInfo} Soy ROPA, tu meta-agente autónomo de Ivy.AI. Estoy listo para ejecutar cualquier tarea. ¿Qué necesitas?`;
     return { response, intent, command, platformActionExecuted, platformResult };
   }
 

@@ -188,12 +188,16 @@ function sendSSE(res: Response, data: any) {
  * - data: {"type":"error","message":"..."} - Error occurred
  */
 ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Response) => {
-  const { message } = req.body;
+  const { message, clientHour, clientDay } = req.body;
 
   if (!message || typeof message !== 'string') {
     res.status(400).json({ error: 'Message is required' });
     return;
   }
+
+  // Use client's local hour for time-aware greetings, fallback to server time
+  const userHour = typeof clientHour === 'number' ? clientHour : new Date().getHours();
+  const userDay = typeof clientDay === 'string' ? clientDay : undefined;
 
   // Clean message
   let cleanMessage = message;
@@ -220,7 +224,7 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
   if (isDirectCommand(cleanMessage)) {
     console.log('[ROPA Stream] TIER 0: Direct command detected, using ROPA Brain');
     try {
-      const brainResult = await processWithRopaBrain(cleanMessage);
+      const brainResult = await processWithRopaBrain(cleanMessage, userHour, userDay);
       const responseText = cleanAssistantMessage(brainResult.response);
       
       // Save assistant message (non-blocking for speed)
@@ -343,7 +347,7 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
     if (!fullResponse) {
       try {
         console.log('[ROPA Stream] TIER 5: Using ROPA Brain intelligent fallback...');
-        const brainResult = await processWithRopaBrain(cleanMessage);
+        const brainResult = await processWithRopaBrain(cleanMessage, userHour, userDay);
         fullResponse = brainResult.response;
         sendSSE(res, { type: 'chunk', text: fullResponse });
         console.log('[ROPA Stream] TIER 5: ROPA Brain responded with intent:', brainResult.intent);
@@ -399,7 +403,7 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
     
     // Even on error, try ROPA Brain as last resort
     try {
-      const brainResult = await processWithRopaBrain(cleanMessage);
+      const brainResult = await processWithRopaBrain(cleanMessage, userHour, userDay);
       const responseText = cleanAssistantMessage(brainResult.response);
       addRopaChatMessage({ role: "assistant", message: responseText }).catch(() => {});
       sendSSE(res, { type: 'chunk', text: responseText });

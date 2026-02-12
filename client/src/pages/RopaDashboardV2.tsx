@@ -174,6 +174,8 @@ export default function RopaDashboardV2() {
   
   // Company & Campaign Management state
   const [showNewCompanyDialog, setShowNewCompanyDialog] = useState(false);
+  const [showDeleteCompanyDialog, setShowDeleteCompanyDialog] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<any>(null);
   const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false);
   const [showEditCompanyDialog, setShowEditCompanyDialog] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
@@ -1027,7 +1029,7 @@ export default function RopaDashboardV2() {
       const response = await fetch('/api/ropa/chat-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        body: JSON.stringify({ message: trimmed, clientHour: new Date().getHours(), clientDay: new Date().toLocaleDateString('es-ES', { weekday: 'long' }) }),
       });
       
       if (!response.ok) {
@@ -1712,6 +1714,15 @@ export default function RopaDashboardV2() {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nueva Campaña
+                </Button>
+                <Button
+                  onClick={() => setShowDeleteCompanyDialog(true)}
+                  variant="outline"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                  disabled={localCompanies.length === 0}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Borrar Empresas
                 </Button>
               </div>
 
@@ -3211,6 +3222,87 @@ export default function RopaDashboardV2() {
           })}
         </span>
       </div>
+
+      {/* Delete Company Dialog */}
+      <Dialog open={showDeleteCompanyDialog} onOpenChange={setShowDeleteCompanyDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Borrar Empresas
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Selecciona la empresa que deseas eliminar. Se eliminarán también todas sus campañas asociadas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {localCompanies.map((company) => (
+              <div
+                key={company.id}
+                className="flex items-center justify-between p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-red-500/50 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-teal-500 flex items-center justify-center">
+                    <Building2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-white text-sm">{company.name}</h4>
+                    <p className="text-xs text-slate-400">{company.industry}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                  onClick={() => {
+                    setCompanyToDelete(company);
+                  }}
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Eliminar
+                </Button>
+              </div>
+            ))}
+          </div>
+          {companyToDelete && (
+            <div className="mt-4 p-4 rounded-lg border border-red-500/50 bg-red-500/10">
+              <p className="text-sm text-red-300 mb-3">
+                ¿Estás seguro de que deseas eliminar <strong>{companyToDelete.name}</strong>? Se eliminarán todas sus campañas y datos asociados. Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-600 text-slate-300"
+                  onClick={() => setCompanyToDelete(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => {
+                    const updated = localCompanies.filter(c => c.id !== companyToDelete.id);
+                    setLocalCompanies(updated);
+                    localStorage.setItem('ropaCompanies', JSON.stringify(updated));
+                    // Also remove campaigns for this company
+                    const updatedCampaigns = localCampaigns.filter(c => c.companyId !== companyToDelete.id);
+                    setLocalCampaigns(updatedCampaigns);
+                    localStorage.setItem('ropaCampaigns', JSON.stringify(updatedCampaigns));
+                    toast.success(`Empresa "${companyToDelete.name}" eliminada correctamente`);
+                    setCompanyToDelete(null);
+                    if (updated.length === 0) {
+                      setShowDeleteCompanyDialog(false);
+                    }
+                  }}
+                >
+                  Sí, Eliminar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* New Company Dialog */}
       <Dialog open={showNewCompanyDialog} onOpenChange={setShowNewCompanyDialog}>

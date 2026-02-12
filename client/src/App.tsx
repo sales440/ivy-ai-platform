@@ -23,6 +23,7 @@ function Router() {
       {/* New ROPA Dashboard v2 */}
       <Route path={"/ropa-v2"} component={RopaDashboardV2} />
       <Route path={"/ropa/calendar"} component={RopaCalendar} />
+      <Route path={"/calendar"} component={RopaCalendar} />
       <Route path={"/ab-testing"} component={ABTestingDashboard} />
       <Route path={"/predictive-insights"} component={PredictiveInsights} />
       <Route path={"/google-drive"} component={GoogleDriveSettings} />
