@@ -585,6 +585,56 @@ export default function RopaDashboardV2() {
               } else {
                 toast.error(`No se encontró borrador pendiente${companyName !== '__CURRENT__' ? ` para ${companyName}` : ''}`);
               }
+            } else if (cmd.params?.action === 'editDraft' && cmd.target === 'draft-action') {
+              // ROPA wants to edit a draft - open it in edit mode
+              const companyName = cmd.params?.companyName || '';
+              const draftIndex = cmd.params?.draftIndex || 0;
+              const newSubject = cmd.params?.newSubject;
+              const newBody = cmd.params?.newBody;
+              
+              // Find the target draft
+              let targetDraft: Draft | undefined;
+              if (companyName === '__CURRENT__' && selectedDraft) {
+                targetDraft = selectedDraft;
+              } else {
+                const companyDrafts = allDrafts
+                  .filter(d => d.company?.toLowerCase().includes(companyName.toLowerCase()) && d.status === 'pending')
+                  .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+                targetDraft = companyDrafts[Math.min(draftIndex, companyDrafts.length - 1)];
+              }
+              
+              if (targetDraft) {
+                // If ROPA provided new subject/body, update the draft directly
+                if (newSubject || newBody) {
+                  try {
+                    // Use the updateContent mutation if available
+                    const updatedSubject = newSubject || targetDraft.subject;
+                    const updatedBody = newBody || targetDraft.body;
+                    // Update via tRPC
+                    await fetch('/api/trpc/emailDrafts.updateContent', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ json: { draftId: targetDraft.id, subject: updatedSubject, body: updatedBody } }),
+                    });
+                    toast.success(`Borrador de ${targetDraft.company} editado por ROPA`);
+                    // Refresh drafts
+                    refetchDrafts?.();
+                  } catch (err) {
+                    toast.error('Error al editar el borrador');
+                  }
+                }
+                // Open the draft popup in edit mode
+                setActiveSection('monitor');
+                setTimeout(() => {
+                  setSelectedDraft(targetDraft!);
+                  setIsPopupOpen(true);
+                  // Trigger edit mode via a custom event
+                  window.dispatchEvent(new CustomEvent('ropa-edit-draft', { detail: { draftId: targetDraft!.id, newSubject, newBody } }));
+                  toast.info(`Borrador de ${targetDraft!.company} abierto en modo edici\u00f3n`);
+                }, 500);
+              } else {
+                toast.error(`No se encontr\u00f3 borrador pendiente${companyName !== '__CURRENT__' ? ` para ${companyName}` : ''}`);
+              }
             }
             break;
             

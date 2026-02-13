@@ -235,6 +235,32 @@ export const ropaNavigationTools = {
   },
 
   /**
+   * Edit a draft: open it in edit mode with optional new subject/body.
+   * If newSubject or newBody are provided, the frontend will pre-fill them.
+   */
+  async editDraftForCompany(params: { companyName: string; draftIndex?: number; newSubject?: string; newBody?: string }) {
+    // Navigate to monitor first
+    await ropaNavigationTools.navigateTo({ section: 'monitor' });
+    
+    const command: NavigationCommand = {
+      id: `editdraft_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      type: 'dialog',
+      target: 'draft-action',
+      params: { 
+        action: 'editDraft', 
+        companyName: params.companyName,
+        draftIndex: params.draftIndex || 0,
+        newSubject: params.newSubject || null,
+        newBody: params.newBody || null,
+      },
+      createdAt: new Date().toISOString(),
+      executed: false,
+    };
+    navigationQueue.push(command);
+    return { success: true, commandId: command.id, message: `Abriendo borrador de ${params.companyName} en modo edición...` };
+  },
+
+  /**
    * Reject and delete a draft by company name (first pending draft).
    */
   async rejectDraftForCompany(params: { companyName: string; draftIndex?: number }) {

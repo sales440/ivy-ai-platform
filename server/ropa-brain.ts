@@ -254,6 +254,41 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     return { response, intent, command, platformActionExecuted, platformResult };
   }
 
+  // Detect: "edita el borrador de EMPRESA", "cambia el asunto del borrador de EMPRESA a X"
+  const editKeywords = ['edita', 'editar', 'modifica', 'modificar', 'cambia', 'cambiar', 'actualiza', 'actualizar', 'reescribe', 'reescribir', 'corrige', 'corregir'];
+  const editDraftNouns = ['borrador', 'draft', 'email', 'correo', 'asunto', 'contenido', 'cuerpo', 'texto'];
+  if (matchesAny(msg, editKeywords) && matchesAny(msg, editDraftNouns) && !matchesAny(msg, emailGenVerbs.filter(v => !editKeywords.includes(v)))) {
+    intent = 'edit_draft';
+    // Extract company name
+    const editCompanyMatch = cleanMessage.match(/(?:de|para|borrador\s+de)\s+(?:la empresa\s+)?["']?([A-Z][A-Za-z0-9\u00C0-\u00FF\s]+)["']?/i);
+    const companyName = editCompanyMatch ? editCompanyMatch[1].trim() : '';
+    
+    // Extract new subject: "cambia el asunto a X" or "asunto: X"
+    const subjectMatch = cleanMessage.match(/(?:asunto\s+(?:a|por|:)\s*)["']?(.+?)["']?$/i);
+    const newSubject = subjectMatch ? subjectMatch[1].trim() : undefined;
+    
+    // Extract new body: "cambia el contenido a X" or "texto: X"
+    const bodyMatch = cleanMessage.match(/(?:(?:contenido|cuerpo|texto|body)\s+(?:a|por|:)\s*)["']?(.+?)["']?$/i);
+    const newBody = bodyMatch ? bodyMatch[1].trim() : undefined;
+    
+    try {
+      platformResult = await ropaNavigationTools.editDraftForCompany({ 
+        companyName, 
+        newSubject, 
+        newBody 
+      });
+      platformActionExecuted = true;
+      if (newSubject || newBody) {
+        response = `Editando el borrador de ${companyName || 'la empresa'}. ${newSubject ? `Nuevo asunto: "${newSubject}". ` : ''}${newBody ? 'Contenido actualizado. ' : ''}Revisa el cambio en Monitor.`;
+      } else {
+        response = `Abriendo el borrador de ${companyName || 'la empresa'} en modo edici\u00f3n. Puedes modificar el asunto y contenido directamente, o d\u00edme qu\u00e9 cambios quieres hacer.`;
+      }
+    } catch (err: any) {
+      response = `Error al editar el borrador: ${err.message}. Puedes editarlo manualmente en Monitor.`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
   // Detect: "abre el borrador de EMPRESA", "abre el primer borrador de EMPRESA"
   const openDraftMatch = cleanMessage.match(/(?:abre|abrir|muestra|mostrar|ver|enseña|enseñame|déjame ver|dejame ver)\s+(?:el\s+)?(?:primer\s+|segundo\s+|tercer\s+|\d+[°º]?\s+)?(?:borrador|draft|email|correo)\s+(?:de\s+(?:la empresa\s+)?)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
   if (openDraftMatch) {

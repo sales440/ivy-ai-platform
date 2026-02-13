@@ -154,7 +154,7 @@ const FAGOR_PROFILE: BrandProfile = {
 const PETLIFE360_PROFILE: BrandProfile = {
   companyName: 'PETLIFE 360',
   sector: 'consumer',
-  logoUrl: null, // Will be loaded from Google Drive
+  logoUrl: 'https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/XUtNGarYULMkdOPY.png',
   primaryColor: '#FF6B35',
   secondaryColor: '#2EC4B6',
   accentColor: '#FF6B35',

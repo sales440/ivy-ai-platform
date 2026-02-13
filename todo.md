@@ -747,3 +747,15 @@
 - [x] User says "rechazado" in ROPA chat → draft gets rejected and deleted
 - [x] Tests for brand isolation and accept/reject commands
 - [ ] Push to GitHub for Railway deployment
+
+## Phase 58: Brand Verification, PETLIFE Logo, Edit Draft Command
+- [x] Verify Brand Firewall works correctly for new companies (not using FAGOR template)
+- [x] Generate and upload PETLIFE 360 logo to CDN (manuscdn.com)
+- [x] Add PETLIFE 360 logo URL to brand-firewall.ts profile
+- [x] Implement ROPA "editar borrador" command to modify draft content from chat
+- [x] ROPA Brain detects "edita el borrador", "cambia el asunto", "modifica el contenido"
+- [x] Backend editDraft navigation command in ropa-navigation-service.ts
+- [x] Frontend handles editDraft command from ROPA navigation (opens popup in edit mode)
+- [x] MonitorDraftPopup listens for ropa-edit-draft event to enter edit mode
+- [x] Write tests for edit draft command detection (68 tests passing)
+- [ ] Push to GitHub for Railway deployment

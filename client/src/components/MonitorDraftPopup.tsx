@@ -268,6 +268,21 @@ export function MonitorDraftPopup({
     }
   }, [draft]);
 
+  // Listen for ROPA edit draft command
+  useEffect(() => {
+    const handleRopaEdit = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (draft && detail?.draftId === draft.id) {
+        // Enter edit mode
+        setIsEditing(true);
+        if (detail.newSubject) setEditedSubject(detail.newSubject);
+        if (detail.newBody) setEditedBody(detail.newBody);
+      }
+    };
+    window.addEventListener('ropa-edit-draft', handleRopaEdit);
+    return () => window.removeEventListener('ropa-edit-draft', handleRopaEdit);
+  }, [draft]);
+
   // Update iframe content when in fullscreen mode
   useEffect(() => {
     if (isFullScreen && iframeRef.current && draft) {
