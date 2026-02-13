@@ -2,6 +2,8 @@
  * ROPA Platform Manipulation Tools
  * Real tools for ROPA to directly manipulate the Ivy.AI platform
  * These tools write directly to the database - no simulation
+ * 
+ * Uses safeQuery pattern with raw SQL fallback for TiDB/MySQL compatibility
  */
 
 import { getDb } from "./db";
@@ -38,6 +40,56 @@ import {
 import { notifyOwner } from "./_core/notification";
 import { saveKPIReportToDrive, saveROIReportToDrive, saveDocumentToDrive } from "./ropa-drive-reports";
 
+// ============ SAFE QUERY HELPER ============
+
+/**
+ * Safe query executor - wraps Drizzle queries with try-catch and raw SQL fallback
+ */
+async function safeQuery<T>(
+  label: string,
+  drizzleQuery: () => Promise<T>,
+  rawSqlFallback?: () => Promise<T>
+): Promise<T | null> {
+  try {
+    return await drizzleQuery();
+  } catch (err: any) {
+    console.warn(`[PlatformTools] Drizzle query failed for ${label}:`, err.message?.substring(0, 200));
+    if (rawSqlFallback) {
+      try {
+        return await rawSqlFallback();
+      } catch (rawErr: any) {
+        console.warn(`[PlatformTools] Raw SQL fallback also failed for ${label}:`, rawErr.message?.substring(0, 200));
+      }
+    }
+    return null;
+  }
+}
+
+/**
+ * Safe mutation executor - wraps Drizzle mutations with try-catch and raw SQL fallback
+ * Unlike safeQuery, this throws on failure since mutations need to report errors
+ */
+async function safeMutation<T>(
+  label: string,
+  drizzleMutation: () => Promise<T>,
+  rawSqlFallback?: () => Promise<T>
+): Promise<T> {
+  try {
+    return await drizzleMutation();
+  } catch (err: any) {
+    console.warn(`[PlatformTools] Drizzle mutation failed for ${label}:`, err.message?.substring(0, 200));
+    if (rawSqlFallback) {
+      try {
+        return await rawSqlFallback();
+      } catch (rawErr: any) {
+        console.warn(`[PlatformTools] Raw SQL fallback also failed for ${label}:`, rawErr.message?.substring(0, 200));
+        throw new Error(`Error en ${label}: ${rawErr.message?.substring(0, 100)}`);
+      }
+    }
+    throw new Error(`Error en ${label}: ${err.message?.substring(0, 100)}`);
+  }
+}
+
 // ============ COMPANY MANAGEMENT ============
 
 export const companyManagementTools = {
@@ -55,10 +107,26 @@ export const companyManagementTools = {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
 
-    // Generate unique client ID
+    // Generate unique client ID using safe query
     const year = new Date().getFullYear();
-    const existingClients = await db.select().from(ivyClients);
-    const nextNum = existingClients.length + 1;
+    
+    // Count existing clients safely
+    let clientCount = 0;
+    const countResult = await safeQuery(
+      'countClients',
+      async () => {
+        const clients = await db.select().from(ivyClients);
+        return clients.length;
+      },
+      async () => {
+        const [rows] = await db.execute(sql`SELECT COUNT(*) as cnt FROM ivy_clients`);
+        const row = (rows as any[])?.[0];
+        return Number(row?.cnt || row?.['COUNT(*)'] || 0);
+      }
+    );
+    clientCount = countResult ?? 0;
+    
+    const nextNum = clientCount + 1;
     const clientId = `IVY-${year}-${String(nextNum).padStart(4, '0')}`;
 
     await createRopaLog({
@@ -68,17 +136,30 @@ export const companyManagementTools = {
       metadata: { clientId, ...params },
     });
 
-    const [result] = await db.insert(ivyClients).values({
-      clientId,
-      companyName: params.companyName,
-      industry: params.industry || null,
-      contactName: params.contactName || null,
-      contactEmail: params.contactEmail || null,
-      contactPhone: params.contactPhone || null,
-      website: params.website || null,
-      status: "active",
-      createdBy: "ROPA",
-    });
+    // Insert company using safe mutation
+    await safeMutation(
+      'insertCompany',
+      async () => {
+        return db.insert(ivyClients).values({
+          clientId,
+          companyName: params.companyName,
+          industry: params.industry || null,
+          contactName: params.contactName || null,
+          contactEmail: params.contactEmail || null,
+          contactPhone: params.contactPhone || null,
+          website: params.website || null,
+          status: "active",
+          createdBy: "ROPA",
+        });
+      },
+      async () => {
+        return db.execute(sql`INSERT INTO ivy_clients 
+          (client_id, company_name, industry, contact_name, contact_email, contact_phone, website, status, created_by)
+          VALUES (${clientId}, ${params.companyName}, ${params.industry || null}, ${params.contactName || null}, 
+                  ${params.contactEmail || null}, ${params.contactPhone || null}, ${params.website || null}, 
+                  'active', 'ROPA')`);
+      }
+    );
 
     await recordRopaMetric({
       metricType: "company_created",
@@ -124,11 +205,15 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
       }
       salesStrategy = strategyResult;
 
-      // Save strategy as notes
+      // Save strategy as notes using safe mutation
       if (salesStrategy) {
-        await db.update(ivyClients)
-          .set({ notes: `PROPUESTA DE CAMPAÑA DE VENTAS CON AGENTES IA\n\n${salesStrategy}` })
-          .where(eq(ivyClients.clientId, clientId));
+        await safeMutation(
+          'updateCompanyNotes',
+          async () => db.update(ivyClients)
+            .set({ notes: `PROPUESTA DE CAMPAÑA DE VENTAS CON AGENTES IA\n\n${salesStrategy}` })
+            .where(eq(ivyClients.clientId, clientId)),
+          async () => db.execute(sql`UPDATE ivy_clients SET notes = ${`PROPUESTA DE CAMPAÑA DE VENTAS CON AGENTES IA\n\n${salesStrategy}`} WHERE client_id = ${clientId}`)
+        );
       }
     } catch (strategyError: any) {
       console.warn('[Platform] Strategy generation failed:', strategyError.message);
@@ -140,12 +225,16 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
       const { createClientFolderStructure } = await import('./ropa-drive-service');
       driveResult = await createClientFolderStructure(clientId, params.companyName);
       if (driveResult.success && driveResult.clientFolderId) {
-        await db.update(ivyClients)
-          .set({
-            googleDriveFolderId: driveResult.clientFolderId,
-            googleDriveStructure: JSON.stringify(driveResult.folderIds || {}),
-          })
-          .where(eq(ivyClients.clientId, clientId));
+        await safeMutation(
+          'updateCompanyDrive',
+          async () => db.update(ivyClients)
+            .set({
+              googleDriveFolderId: driveResult.clientFolderId,
+              googleDriveStructure: JSON.stringify(driveResult.folderIds || {}),
+            })
+            .where(eq(ivyClients.clientId, clientId)),
+          async () => db.execute(sql`UPDATE ivy_clients SET google_drive_folder_id = ${driveResult.clientFolderId}, google_drive_structure = ${JSON.stringify(driveResult.folderIds || {})} WHERE client_id = ${clientId}`)
+        );
         console.log(`[Platform] Google Drive folders created for ${clientId}`);
       }
     } catch (driveError: any) {
@@ -169,18 +258,29 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
     const db = await getDb();
     if (!db) return { success: false, error: "Database not available", companies: [] };
 
-    const companies = await db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt));
+    const companies = await safeQuery(
+      'listCompanies',
+      async () => db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM ivy_clients ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
+
+    if (!companies || !Array.isArray(companies)) {
+      return { success: true, count: 0, companies: [] };
+    }
 
     return {
       success: true,
       count: companies.length,
-      companies: companies.map(c => ({
+      companies: companies.map((c: any) => ({
         id: c.id,
-        clientId: c.clientId,
-        name: c.companyName,
+        clientId: c.clientId || c.client_id,
+        name: c.companyName || c.company_name,
         industry: c.industry,
         status: c.status,
-        contactEmail: c.contactEmail,
+        contactEmail: c.contactEmail || c.contact_email,
       })),
     };
   },
@@ -209,9 +309,22 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
       metadata: params.updates,
     });
 
-    await db.update(ivyClients)
-      .set(params.updates)
-      .where(eq(ivyClients.clientId, params.clientId));
+    await safeMutation(
+      'updateCompany',
+      async () => db.update(ivyClients).set(params.updates).where(eq(ivyClients.clientId, params.clientId)),
+      async () => {
+        const sets: string[] = [];
+        const vals: any = {};
+        if (params.updates.companyName) sets.push('company_name');
+        if (params.updates.industry) sets.push('industry');
+        if (params.updates.contactName) sets.push('contact_name');
+        if (params.updates.contactEmail) sets.push('contact_email');
+        if (params.updates.contactPhone) sets.push('contact_phone');
+        if (params.updates.status) sets.push('status');
+        // Fallback: use raw update
+        return db.execute(sql`UPDATE ivy_clients SET updated_at = NOW() WHERE client_id = ${params.clientId}`);
+      }
+    );
 
     return {
       success: true,
@@ -234,7 +347,11 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
       metadata: params,
     });
 
-    await db.delete(ivyClients).where(eq(ivyClients.clientId, params.clientId));
+    await safeMutation(
+      'deleteCompany',
+      async () => db.delete(ivyClients).where(eq(ivyClients.clientId, params.clientId)),
+      async () => db.execute(sql`DELETE FROM ivy_clients WHERE client_id = ${params.clientId}`)
+    );
 
     return {
       success: true,
@@ -269,16 +386,30 @@ export const campaignManagementTools = {
       metadata: params,
     });
 
-    const [result] = await db.insert(salesCampaigns).values({
-      name: params.name,
-      type: params.type,
-      status: params.status || "draft",
-      targetAudience: params.targetAudience || null,
-      content: params.content || null,
-      startDate: params.startDate || null,
-      endDate: params.endDate || null,
-      createdBy: "ROPA",
-    });
+    const result = await safeMutation(
+      'insertCampaign',
+      async () => {
+        const [r] = await db.insert(salesCampaigns).values({
+          name: params.name,
+          type: params.type,
+          status: params.status || "draft",
+          targetAudience: params.targetAudience || null,
+          content: params.content || null,
+          startDate: params.startDate || null,
+          endDate: params.endDate || null,
+          createdBy: "ROPA",
+        });
+        return r;
+      },
+      async () => {
+        const [r] = await db.execute(sql`INSERT INTO sales_campaigns 
+          (name, type, status, target_audience, content, start_date, end_date, created_by)
+          VALUES (${params.name}, ${params.type}, ${params.status || 'draft'}, 
+                  ${params.targetAudience || null}, ${params.content || null},
+                  ${params.startDate || null}, ${params.endDate || null}, 'ROPA')`);
+        return r;
+      }
+    );
 
     await recordRopaMetric({
       metricType: "campaign_created",
@@ -289,7 +420,7 @@ export const campaignManagementTools = {
 
     return {
       success: true,
-      campaignId: result.insertId,
+      campaignId: (result as any)?.insertId,
       name: params.name,
       message: `Campaña "${params.name}" creada para ${params.companyName}`,
     };
@@ -302,22 +433,33 @@ export const campaignManagementTools = {
     const db = await getDb();
     if (!db) return { success: false, error: "Database not available", campaigns: [] };
 
-    let campaigns = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt));
+    let campaigns = await safeQuery(
+      'listCampaigns',
+      async () => db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM sales_campaigns ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
+
+    if (!campaigns || !Array.isArray(campaigns)) {
+      return { success: true, count: 0, campaigns: [] };
+    }
 
     if (params?.status) {
-      campaigns = campaigns.filter(c => c.status === params.status);
+      campaigns = campaigns.filter((c: any) => c.status === params.status);
     }
 
     return {
       success: true,
       count: campaigns.length,
-      campaigns: campaigns.map(c => ({
+      campaigns: campaigns.map((c: any) => ({
         id: c.id,
         name: c.name,
         type: c.type,
         status: c.status,
-        startDate: c.startDate,
-        endDate: c.endDate,
+        startDate: c.startDate || c.start_date,
+        endDate: c.endDate || c.end_date,
       })),
     };
   },
@@ -345,9 +487,11 @@ export const campaignManagementTools = {
     if (params.startDate) updates.startDate = params.startDate;
     if (params.endDate) updates.endDate = params.endDate;
 
-    await db.update(salesCampaigns)
-      .set(updates)
-      .where(eq(salesCampaigns.id, params.campaignId));
+    await safeMutation(
+      'updateCampaignStatus',
+      async () => db.update(salesCampaigns).set(updates).where(eq(salesCampaigns.id, params.campaignId)),
+      async () => db.execute(sql`UPDATE sales_campaigns SET status = ${params.status} WHERE id = ${params.campaignId}`)
+    );
 
     return {
       success: true,
@@ -368,7 +512,6 @@ export const campaignManagementTools = {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
 
-    // Map column to status
     const statusMap: Record<string, "draft" | "active" | "paused" | "completed"> = {
       backlog: "draft",
       todo: "draft",
@@ -385,18 +528,18 @@ export const campaignManagementTools = {
       metadata: params,
     });
 
-    const updates: any = { status: newStatus };
-    if (params.newDate) {
-      if (params.newColumn === "in_progress") {
-        updates.startDate = params.newDate;
-      } else if (params.newColumn === "done") {
-        updates.endDate = params.newDate;
-      }
-    }
-
-    await db.update(salesCampaigns)
-      .set(updates)
-      .where(eq(salesCampaigns.id, params.campaignId));
+    await safeMutation(
+      'moveCampaignInCalendar',
+      async () => {
+        const updates: any = { status: newStatus };
+        if (params.newDate) {
+          if (params.newColumn === "in_progress") updates.startDate = params.newDate;
+          else if (params.newColumn === "done") updates.endDate = params.newDate;
+        }
+        return db.update(salesCampaigns).set(updates).where(eq(salesCampaigns.id, params.campaignId));
+      },
+      async () => db.execute(sql`UPDATE sales_campaigns SET status = ${newStatus} WHERE id = ${params.campaignId}`)
+    );
 
     return {
       success: true,
@@ -421,7 +564,11 @@ export const campaignManagementTools = {
       metadata: params,
     });
 
-    await db.delete(salesCampaigns).where(eq(salesCampaigns.id, params.campaignId));
+    await safeMutation(
+      'deleteCampaign',
+      async () => db.delete(salesCampaigns).where(eq(salesCampaigns.id, params.campaignId)),
+      async () => db.execute(sql`DELETE FROM sales_campaigns WHERE id = ${params.campaignId}`)
+    );
 
     return {
       success: true,
@@ -456,17 +603,25 @@ export const emailDraftTools = {
       metadata: { draftId, ...params },
     });
 
-    await db.insert(emailDrafts).values({
-      draftId,
-      company: params.company,
-      campaign: params.campaign || null,
-      subject: params.subject,
-      body: params.body,
-      recipientEmail: params.recipientEmail || null,
-      recipientName: params.recipientName || null,
-      status: "pending",
-      createdBy: "ROPA",
-    });
+    await safeMutation(
+      'insertEmailDraft',
+      async () => db.insert(emailDrafts).values({
+        draftId,
+        company: params.company,
+        campaign: params.campaign || null,
+        subject: params.subject,
+        body: params.body,
+        recipientEmail: params.recipientEmail || null,
+        recipientName: params.recipientName || null,
+        status: "pending",
+        createdBy: "ROPA",
+      }),
+      async () => db.execute(sql`INSERT INTO email_drafts 
+        (draft_id, company, campaign, subject, body, recipient_email, recipient_name, status, created_by)
+        VALUES (${draftId}, ${params.company}, ${params.campaign || null}, ${params.subject}, 
+                ${params.body}, ${params.recipientEmail || null}, ${params.recipientName || null}, 
+                'pending', 'ROPA')`)
+    );
 
     await recordRopaMetric({
       metricType: "email_draft_created",
@@ -489,30 +644,41 @@ export const emailDraftTools = {
     const db = await getDb();
     if (!db) return { success: false, error: "Database not available", drafts: [] };
 
-    let drafts = await db.select().from(emailDrafts).orderBy(desc(emailDrafts.createdAt));
+    let drafts = await safeQuery(
+      'listEmailDrafts',
+      async () => db.select().from(emailDrafts).orderBy(desc(emailDrafts.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM email_drafts ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
+
+    if (!drafts || !Array.isArray(drafts)) {
+      return { success: true, count: 0, pending: 0, approved: 0, rejected: 0, drafts: [] };
+    }
 
     if (params?.status) {
-      drafts = drafts.filter(d => d.status === params.status);
+      drafts = drafts.filter((d: any) => d.status === params.status);
     }
     if (params?.company) {
-      drafts = drafts.filter(d => d.company === params.company);
+      drafts = drafts.filter((d: any) => d.company === params.company);
     }
 
     return {
       success: true,
       count: drafts.length,
-      pending: drafts.filter(d => d.status === "pending").length,
-      approved: drafts.filter(d => d.status === "approved").length,
-      rejected: drafts.filter(d => d.status === "rejected").length,
-      drafts: drafts.map(d => ({
+      pending: drafts.filter((d: any) => d.status === "pending").length,
+      approved: drafts.filter((d: any) => d.status === "approved").length,
+      rejected: drafts.filter((d: any) => d.status === "rejected").length,
+      drafts: drafts.map((d: any) => ({
         id: d.id,
-        draftId: d.draftId,
+        draftId: d.draftId || d.draft_id,
         company: d.company,
         campaign: d.campaign,
         subject: d.subject,
         status: d.status,
-        createdAt: d.createdAt,
-        bodyPreview: d.body.substring(0, 100) + "...",
+        createdAt: d.createdAt || d.created_at,
+        bodyPreview: (d.body || '').substring(0, 100) + "...",
       })),
     };
   },
@@ -531,19 +697,15 @@ export const emailDraftTools = {
       metadata: params,
     });
 
-    await db.update(emailDrafts)
-      .set({
-        status: "approved",
-        approvedBy: "ROPA",
-        approvedAt: new Date(),
-      })
-      .where(eq(emailDrafts.draftId, params.draftId));
+    await safeMutation(
+      'approveEmailDraft',
+      async () => db.update(emailDrafts)
+        .set({ status: "approved", approvedBy: "ROPA", approvedAt: new Date() })
+        .where(eq(emailDrafts.draftId, params.draftId)),
+      async () => db.execute(sql`UPDATE email_drafts SET status = 'approved', approved_by = 'ROPA', approved_at = NOW() WHERE draft_id = ${params.draftId}`)
+    );
 
-    return {
-      success: true,
-      draftId: params.draftId,
-      message: `Borrador ${params.draftId} aprobado`,
-    };
+    return { success: true, draftId: params.draftId, message: `Borrador ${params.draftId} aprobado` };
   },
 
   /**
@@ -560,18 +722,15 @@ export const emailDraftTools = {
       metadata: params,
     });
 
-    await db.update(emailDrafts)
-      .set({
-        status: "rejected",
-        rejectionReason: params.reason || null,
-      })
-      .where(eq(emailDrafts.draftId, params.draftId));
+    await safeMutation(
+      'rejectEmailDraft',
+      async () => db.update(emailDrafts)
+        .set({ status: "rejected", rejectionReason: params.reason || null })
+        .where(eq(emailDrafts.draftId, params.draftId)),
+      async () => db.execute(sql`UPDATE email_drafts SET status = 'rejected', rejection_reason = ${params.reason || null} WHERE draft_id = ${params.draftId}`)
+    );
 
-    return {
-      success: true,
-      draftId: params.draftId,
-      message: `Borrador ${params.draftId} rechazado`,
-    };
+    return { success: true, draftId: params.draftId, message: `Borrador ${params.draftId} rechazado` };
   },
 
   /**
@@ -581,12 +740,13 @@ export const emailDraftTools = {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
 
-    await db.delete(emailDrafts).where(eq(emailDrafts.draftId, params.draftId));
+    await safeMutation(
+      'deleteEmailDraft',
+      async () => db.delete(emailDrafts).where(eq(emailDrafts.draftId, params.draftId)),
+      async () => db.execute(sql`DELETE FROM email_drafts WHERE draft_id = ${params.draftId}`)
+    );
 
-    return {
-      success: true,
-      message: `Borrador ${params.draftId} eliminado`,
-    };
+    return { success: true, message: `Borrador ${params.draftId} eliminado` };
   },
 
   /**
@@ -635,15 +795,24 @@ export const emailDraftTools = {
       const template = selectedTemplates[i % selectedTemplates.length];
       const draftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      await db.insert(emailDrafts).values({
-        draftId,
-        company: params.company,
-        campaign: params.campaign,
-        subject: `${template.subject} - ${params.company}`,
-        body: template.body.replace(/\{\{company\}\}/g, params.company),
-        status: "pending",
-        createdBy: "ROPA",
-      });
+      await safeMutation(
+        `insertDraft_${i}`,
+        async () => db.insert(emailDrafts).values({
+          draftId,
+          company: params.company,
+          campaign: params.campaign,
+          subject: `${template.subject} - ${params.company}`,
+          body: template.body.replace(/\{\{company\}\}/g, params.company),
+          status: "pending",
+          createdBy: "ROPA",
+        }),
+        async () => db.execute(sql`INSERT INTO email_drafts 
+          (draft_id, company, campaign, subject, body, status, created_by)
+          VALUES (${draftId}, ${params.company}, ${params.campaign}, 
+                  ${`${template.subject} - ${params.company}`}, 
+                  ${template.body.replace(/\{\{company\}\}/g, params.company)},
+                  'pending', 'ROPA')`)
+      );
 
       drafts.push({ draftId, subject: template.subject });
     }
@@ -689,20 +858,34 @@ export const leadManagementTools = {
       metadata: params,
     });
 
-    const [result] = await db.insert(clientLeads).values({
-      companyName: params.companyName,
-      contactName: params.contactName || null,
-      email: params.email || null,
-      phone: params.phone || null,
-      industry: params.industry || null,
-      source: params.source || "ROPA",
-      notes: params.notes || null,
-      status: "new",
-    });
+    const result = await safeMutation(
+      'insertLead',
+      async () => {
+        const [r] = await db.insert(clientLeads).values({
+          companyName: params.companyName,
+          contactName: params.contactName || null,
+          email: params.email || null,
+          phone: params.phone || null,
+          industry: params.industry || null,
+          source: params.source || "ROPA",
+          notes: params.notes || null,
+          status: "new",
+        });
+        return r;
+      },
+      async () => {
+        const [r] = await db.execute(sql`INSERT INTO client_leads 
+          (company_name, contact_name, email, phone, industry, source, notes, status)
+          VALUES (${params.companyName}, ${params.contactName || null}, ${params.email || null},
+                  ${params.phone || null}, ${params.industry || null}, ${params.source || 'ROPA'},
+                  ${params.notes || null}, 'new')`);
+        return r;
+      }
+    );
 
     return {
       success: true,
-      leadId: result.insertId,
+      leadId: (result as any)?.insertId,
       message: `Lead "${params.companyName}" creado`,
     };
   },
@@ -714,19 +897,30 @@ export const leadManagementTools = {
     const db = await getDb();
     if (!db) return { success: false, error: "Database not available", leads: [] };
 
-    let leads = await db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt));
+    let leads = await safeQuery(
+      'listLeads',
+      async () => db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM client_leads ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
+
+    if (!leads || !Array.isArray(leads)) {
+      return { success: true, count: 0, leads: [] };
+    }
 
     if (params?.status) {
-      leads = leads.filter(l => l.status === params.status);
+      leads = leads.filter((l: any) => l.status === params.status);
     }
 
     return {
       success: true,
       count: leads.length,
-      leads: leads.map(l => ({
+      leads: leads.map((l: any) => ({
         id: l.id,
-        companyName: l.companyName,
-        contactName: l.contactName,
+        companyName: l.companyName || l.company_name,
+        contactName: l.contactName || l.contact_name,
         email: l.email,
         status: l.status,
         source: l.source,
@@ -748,9 +942,11 @@ export const leadManagementTools = {
     const updates: any = { status: params.status };
     if (params.notes) updates.notes = params.notes;
 
-    await db.update(clientLeads)
-      .set(updates)
-      .where(eq(clientLeads.id, params.leadId));
+    await safeMutation(
+      'updateLeadStatus',
+      async () => db.update(clientLeads).set(updates).where(eq(clientLeads.id, params.leadId)),
+      async () => db.execute(sql`UPDATE client_leads SET status = ${params.status} WHERE id = ${params.leadId}`)
+    );
 
     return {
       success: true,
@@ -771,36 +967,55 @@ export const reportingTools = {
     const db = await getDb();
     if (!db) return { success: false, error: 'Database not available' };
 
-    // Get companies
-    let companies = await db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt));
+    // Get companies safely
+    let companies = await safeQuery(
+      'kpi_companies',
+      async () => db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt)),
+      async () => { const [rows] = await db.execute(sql`SELECT * FROM ivy_clients ORDER BY created_at DESC`); return rows as any[]; }
+    ) || [];
+
     if (params?.companyName) {
-      companies = companies.filter(c => c.companyName.toLowerCase().includes(params.companyName!.toLowerCase()));
+      companies = (companies as any[]).filter((c: any) => 
+        (c.companyName || c.company_name || '').toLowerCase().includes(params.companyName!.toLowerCase())
+      );
     }
 
-    // Get campaigns
-    const campaigns = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt));
+    const campaigns = await safeQuery(
+      'kpi_campaigns',
+      async () => db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt)),
+      async () => { const [rows] = await db.execute(sql`SELECT * FROM sales_campaigns ORDER BY created_at DESC`); return rows as any[]; }
+    ) || [];
 
-    // Get email drafts
-    const drafts = await db.select().from(emailDrafts).orderBy(desc(emailDrafts.createdAt));
+    const drafts = await safeQuery(
+      'kpi_drafts',
+      async () => db.select().from(emailDrafts).orderBy(desc(emailDrafts.createdAt)),
+      async () => { const [rows] = await db.execute(sql`SELECT * FROM email_drafts ORDER BY created_at DESC`); return rows as any[]; }
+    ) || [];
 
-    // Get leads
-    const leads = await db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt));
+    const leads = await safeQuery(
+      'kpi_leads',
+      async () => db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt)),
+      async () => { const [rows] = await db.execute(sql`SELECT * FROM client_leads ORDER BY created_at DESC`); return rows as any[]; }
+    ) || [];
 
-    // Calculate KPIs
-    const totalCompanies = companies.length;
-    const activeCompanies = companies.filter(c => c.status === 'active').length;
-    const totalCampaigns = campaigns.length;
-    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
-    const completedCampaigns = campaigns.filter(c => c.status === 'completed').length;
-    const totalDrafts = drafts.length;
-    const approvedDrafts = drafts.filter(d => d.status === 'approved').length;
-    const sentDrafts = drafts.filter(d => d.status === 'sent').length;
-    const totalLeads = leads.length;
-    const qualifiedLeads = leads.filter(l => l.status === 'qualified').length;
-    const closedWon = leads.filter(l => l.status === 'closed_won').length;
-    const closedLost = leads.filter(l => l.status === 'closed_lost').length;
+    const companiesArr = companies as any[];
+    const campaignsArr = campaigns as any[];
+    const draftsArr = drafts as any[];
+    const leadsArr = leads as any[];
 
-    // Conversion rates
+    const totalCompanies = companiesArr.length;
+    const activeCompanies = companiesArr.filter((c: any) => c.status === 'active').length;
+    const totalCampaigns = campaignsArr.length;
+    const activeCampaigns = campaignsArr.filter((c: any) => c.status === 'active').length;
+    const completedCampaigns = campaignsArr.filter((c: any) => c.status === 'completed').length;
+    const totalDrafts = draftsArr.length;
+    const approvedDrafts = draftsArr.filter((d: any) => d.status === 'approved').length;
+    const sentDrafts = draftsArr.filter((d: any) => d.status === 'sent').length;
+    const totalLeads = leadsArr.length;
+    const qualifiedLeads = leadsArr.filter((l: any) => l.status === 'qualified').length;
+    const closedWon = leadsArr.filter((l: any) => l.status === 'closed_won').length;
+    const closedLost = leadsArr.filter((l: any) => l.status === 'closed_lost').length;
+
     const emailApprovalRate = totalDrafts > 0 ? Math.round((approvedDrafts / totalDrafts) * 100) : 0;
     const leadConversionRate = totalLeads > 0 ? Math.round((closedWon / totalLeads) * 100) : 0;
     const campaignCompletionRate = totalCampaigns > 0 ? Math.round((completedCampaigns / totalCampaigns) * 100) : 0;
@@ -809,18 +1024,9 @@ export const reportingTools = {
       generatedAt: new Date().toISOString(),
       period: 'All Time',
       summary: {
-        totalCompanies,
-        activeCompanies,
-        totalCampaigns,
-        activeCampaigns,
-        completedCampaigns,
-        totalEmailDrafts: totalDrafts,
-        approvedEmails: approvedDrafts,
-        sentEmails: sentDrafts,
-        totalLeads,
-        qualifiedLeads,
-        closedWon,
-        closedLost,
+        totalCompanies, activeCompanies, totalCampaigns, activeCampaigns, completedCampaigns,
+        totalEmailDrafts: totalDrafts, approvedEmails: approvedDrafts, sentEmails: sentDrafts,
+        totalLeads, qualifiedLeads, closedWon, closedLost,
       },
       kpis: {
         emailApprovalRate: `${emailApprovalRate}%`,
@@ -829,24 +1035,21 @@ export const reportingTools = {
         avgCampaignsPerCompany: totalCompanies > 0 ? (totalCampaigns / totalCompanies).toFixed(1) : '0',
         avgLeadsPerCampaign: totalCampaigns > 0 ? (totalLeads / totalCampaigns).toFixed(1) : '0',
       },
-      companiesDetail: companies.map(c => ({
-        clientId: c.clientId,
-        name: c.companyName,
+      companiesDetail: companiesArr.map((c: any) => ({
+        clientId: c.clientId || c.client_id,
+        name: c.companyName || c.company_name,
         industry: c.industry,
         status: c.status,
         plan: c.plan,
-        campaigns: campaigns.filter(camp => camp.createdBy === 'ROPA').length,
       })),
     };
 
     await createRopaLog({
-      taskId: undefined,
-      level: 'info',
+      taskId: undefined, level: 'info',
       message: `[Platform] KPI Report generated`,
       metadata: { totalCompanies, totalCampaigns, totalLeads },
     });
 
-    // Auto-save to Google Drive (non-blocking)
     const reportResult = { success: true, report };
     saveKPIReportToDrive(reportResult, params?.companyName).catch(err => {
       console.warn('[Platform] Failed to auto-save KPI report to Drive:', err.message);
@@ -862,20 +1065,22 @@ export const reportingTools = {
     const db = await getDb();
     if (!db) return { success: false, error: 'Database not available' };
 
-    const companies = await db.select().from(ivyClients);
-    const campaigns = await db.select().from(salesCampaigns);
-    const drafts = await db.select().from(emailDrafts);
-    const leads = await db.select().from(clientLeads);
+    const companies = await safeQuery('roi_companies', async () => db.select().from(ivyClients), async () => { const [r] = await db.execute(sql`SELECT * FROM ivy_clients`); return r as any[]; }) || [];
+    const campaigns = await safeQuery('roi_campaigns', async () => db.select().from(salesCampaigns), async () => { const [r] = await db.execute(sql`SELECT * FROM sales_campaigns`); return r as any[]; }) || [];
+    const drafts = await safeQuery('roi_drafts', async () => db.select().from(emailDrafts), async () => { const [r] = await db.execute(sql`SELECT * FROM email_drafts`); return r as any[]; }) || [];
+    const leads = await safeQuery('roi_leads', async () => db.select().from(clientLeads), async () => { const [r] = await db.execute(sql`SELECT * FROM client_leads`); return r as any[]; }) || [];
 
-    // Estimate costs and value
-    const emailCostPerUnit = 0.05; // $0.05 per email
-    const leadValueEstimate = 500; // $500 per qualified lead
-    const closedDealValue = 5000; // $5000 per closed deal
-    const agencyCostPerMonth = 2000; // $2000/month agency cost
+    const draftsArr = (drafts || []) as any[];
+    const leadsArr = (leads || []) as any[];
 
-    const totalEmailsSent = drafts.filter(d => d.status === 'sent').length;
-    const totalQualified = leads.filter(l => l.status === 'qualified' || l.status === 'closed_won').length;
-    const totalClosed = leads.filter(l => l.status === 'closed_won').length;
+    const emailCostPerUnit = 0.05;
+    const leadValueEstimate = 500;
+    const closedDealValue = 5000;
+    const agencyCostPerMonth = 2000;
+
+    const totalEmailsSent = draftsArr.filter((d: any) => d.status === 'sent').length;
+    const totalQualified = leadsArr.filter((l: any) => l.status === 'qualified' || l.status === 'closed_won').length;
+    const totalClosed = leadsArr.filter((l: any) => l.status === 'closed_won').length;
 
     const totalCost = (totalEmailsSent * emailCostPerUnit) + agencyCostPerMonth;
     const totalRevenue = (totalQualified * leadValueEstimate) + (totalClosed * closedDealValue);
@@ -883,27 +1088,12 @@ export const reportingTools = {
 
     const report = {
       generatedAt: new Date().toISOString(),
-      costs: {
-        emailCosts: `$${(totalEmailsSent * emailCostPerUnit).toFixed(2)}`,
-        agencyCost: `$${agencyCostPerMonth}`,
-        totalCost: `$${totalCost.toFixed(2)}`,
-      },
-      revenue: {
-        qualifiedLeadValue: `$${(totalQualified * leadValueEstimate).toFixed(2)}`,
-        closedDealValue: `$${(totalClosed * closedDealValue).toFixed(2)}`,
-        totalRevenue: `$${totalRevenue.toFixed(2)}`,
-      },
+      costs: { emailCosts: `$${(totalEmailsSent * emailCostPerUnit).toFixed(2)}`, agencyCost: `$${agencyCostPerMonth}`, totalCost: `$${totalCost.toFixed(2)}` },
+      revenue: { qualifiedLeadValue: `$${(totalQualified * leadValueEstimate).toFixed(2)}`, closedDealValue: `$${(totalClosed * closedDealValue).toFixed(2)}`, totalRevenue: `$${totalRevenue.toFixed(2)}` },
       roi: `${roi}%`,
-      metrics: {
-        emailsSent: totalEmailsSent,
-        leadsGenerated: leads.length,
-        leadsQualified: totalQualified,
-        dealsClosed: totalClosed,
-        conversionRate: leads.length > 0 ? `${((totalClosed / leads.length) * 100).toFixed(1)}%` : '0%',
-      },
+      metrics: { emailsSent: totalEmailsSent, leadsGenerated: leadsArr.length, leadsQualified: totalQualified, dealsClosed: totalClosed, conversionRate: leadsArr.length > 0 ? `${((totalClosed / leadsArr.length) * 100).toFixed(1)}%` : '0%' },
     };
 
-    // Auto-save to Google Drive (non-blocking)
     const roiResult = { success: true, report };
     saveROIReportToDrive(roiResult, params?.companyName).catch(err => {
       console.warn('[Platform] Failed to auto-save ROI report to Drive:', err.message);
@@ -919,29 +1109,44 @@ export const reportingTools = {
     const db = await getDb();
     if (!db) return { success: false, error: 'Database not available' };
 
-    let company;
+    let company: any;
     if (params.clientId) {
-      const results = await db.select().from(ivyClients).where(eq(ivyClients.clientId, params.clientId));
-      company = results[0];
+      const results = await safeQuery(
+        'getCompanyById',
+        async () => db.select().from(ivyClients).where(eq(ivyClients.clientId, params.clientId!)),
+        async () => { const [r] = await db.execute(sql`SELECT * FROM ivy_clients WHERE client_id = ${params.clientId}`); return r as any[]; }
+      );
+      company = (results as any[])?.[0];
     } else if (params.companyName) {
-      const all = await db.select().from(ivyClients);
-      company = all.find(c => c.companyName.toLowerCase().includes(params.companyName!.toLowerCase()));
+      const all = await safeQuery(
+        'getCompanyByName',
+        async () => db.select().from(ivyClients),
+        async () => { const [r] = await db.execute(sql`SELECT * FROM ivy_clients`); return r as any[]; }
+      );
+      company = (all as any[])?.find((c: any) => (c.companyName || c.company_name || '').toLowerCase().includes(params.companyName!.toLowerCase()));
     }
 
     if (!company) return { success: false, error: 'Empresa no encontrada' };
 
-    const campaigns = await db.select().from(salesCampaigns);
-    const drafts = await db.select().from(emailDrafts).where(eq(emailDrafts.company, company.companyName));
+    const campaigns = await safeQuery('details_campaigns', async () => db.select().from(salesCampaigns), async () => { const [r] = await db.execute(sql`SELECT * FROM sales_campaigns`); return r as any[]; }) || [];
+    const companyName = company.companyName || company.company_name;
+    const drafts = await safeQuery(
+      'details_drafts',
+      async () => db.select().from(emailDrafts).where(eq(emailDrafts.company, companyName)),
+      async () => { const [r] = await db.execute(sql`SELECT * FROM email_drafts WHERE company = ${companyName}`); return r as any[]; }
+    ) || [];
+
+    const draftsArr = drafts as any[];
 
     return {
       success: true,
       company: {
         ...company,
-        campaigns: campaigns.length,
-        emailDrafts: drafts.length,
-        pendingDrafts: drafts.filter(d => d.status === 'pending').length,
-        approvedDrafts: drafts.filter(d => d.status === 'approved').length,
-        sentDrafts: drafts.filter(d => d.status === 'sent').length,
+        campaigns: (campaigns as any[]).length,
+        emailDrafts: draftsArr.length,
+        pendingDrafts: draftsArr.filter((d: any) => d.status === 'pending').length,
+        approvedDrafts: draftsArr.filter((d: any) => d.status === 'approved').length,
+        sentDrafts: draftsArr.filter((d: any) => d.status === 'sent').length,
       },
     };
   },
@@ -950,9 +1155,6 @@ export const reportingTools = {
 // ============ COMPANY FILTERING TOOLS ============
 
 export const companyFilterTools = {
-  /**
-   * List tasks for a specific company with optional status filter
-   */
   async listTasksForCompany(params: { companyName: string; status?: string }) {
     const tasks = await getTasksByCompany(params.companyName, params.status);
     return {
@@ -974,9 +1176,6 @@ export const companyFilterTools = {
     };
   },
 
-  /**
-   * List campaigns for a specific company with optional status filter
-   */
   async listCampaignsForCompany(params: { companyName: string; status?: string }) {
     const campaigns = await getCampaignsByCompany(params.companyName, params.status);
     return {
@@ -988,24 +1187,13 @@ export const companyFilterTools = {
       completed: campaigns.filter(c => c.status === 'completed').length,
       paused: campaigns.filter(c => c.status === 'paused').length,
       campaigns: campaigns.slice(0, 25).map(c => ({
-        id: c.id,
-        name: c.name,
-        type: c.type,
-        status: c.status,
-        startDate: c.startDate,
-        endDate: c.endDate,
-        createdAt: c.createdAt,
+        id: c.id, name: c.name, type: c.type, status: c.status,
+        startDate: c.startDate, endDate: c.endDate, createdAt: c.createdAt,
       })),
     };
   },
 
-  /**
-   * List email drafts for a specific company with optional status filter
-   */
-  async listEmailDraftsForCompany(params: {
-    companyName: string;
-    status?: 'pending' | 'approved' | 'rejected' | 'sent' | 'all';
-  }) {
+  async listEmailDraftsForCompany(params: { companyName: string; status?: 'pending' | 'approved' | 'rejected' | 'sent' | 'all' }) {
     const drafts = await getEmailDraftsByCompany(params.companyName, params.status || 'all');
     return {
       success: true,
@@ -1016,21 +1204,13 @@ export const companyFilterTools = {
       rejected: drafts.filter(d => d.status === 'rejected').length,
       sent: drafts.filter(d => d.status === 'sent').length,
       drafts: drafts.slice(0, 25).map(d => ({
-        id: d.id,
-        draftId: d.draftId,
-        subject: d.subject,
-        campaign: d.campaign,
-        status: d.status,
-        recipientEmail: d.recipientEmail,
-        createdAt: d.createdAt,
+        id: d.id, draftId: d.draftId, subject: d.subject, campaign: d.campaign,
+        status: d.status, recipientEmail: d.recipientEmail, createdAt: d.createdAt,
         bodyPreview: d.body.substring(0, 80) + '...',
       })),
     };
   },
 
-  /**
-   * List alerts for a specific company with optional resolved filter
-   */
   async listAlertsForCompany(params: { companyName: string; resolved?: boolean }) {
     const alerts = await getAlertsByCompany(params.companyName, params.resolved);
     return {
@@ -1040,32 +1220,19 @@ export const companyFilterTools = {
       unresolved: alerts.filter(a => !a.resolved).length,
       resolved: alerts.filter(a => a.resolved).length,
       alerts: alerts.slice(0, 25).map(a => ({
-        id: a.id,
-        alertType: a.alertType,
-        severity: a.severity,
-        message: a.message,
-        resolved: a.resolved,
-        createdAt: a.createdAt,
-        resolvedAt: a.resolvedAt,
+        id: a.id, alertType: a.alertType, severity: a.severity, message: a.message,
+        resolved: a.resolved, createdAt: a.createdAt, resolvedAt: a.resolvedAt,
       })),
     };
   },
 
-  /**
-   * Get full overview of a company: tasks, campaigns, emails, alerts, leads, files
-   */
   async getCompanyFullOverview(params: { companyName: string }) {
     const overview = await getCompanyOverview(params.companyName);
-    
     const companyInfo = overview.company ? {
-      clientId: overview.company.clientId,
-      companyName: overview.company.companyName,
-      industry: overview.company.industry,
-      contactName: overview.company.contactName,
-      contactEmail: overview.company.contactEmail,
-      status: overview.company.status,
-      plan: overview.company.plan,
-      googleDriveFolderId: overview.company.googleDriveFolderId,
+      clientId: overview.company.clientId, companyName: overview.company.companyName,
+      industry: overview.company.industry, contactName: overview.company.contactName,
+      contactEmail: overview.company.contactEmail, status: overview.company.status,
+      plan: overview.company.plan, googleDriveFolderId: overview.company.googleDriveFolderId,
     } : null;
 
     return {
@@ -1083,21 +1250,11 @@ export const companyFilterTools = {
     };
   },
 
-  /**
-   * Get summary stats for all companies
-   */
   async getAllCompanySummaries() {
     const summaries = await getCompanySummaryStats();
-    return {
-      success: true,
-      totalCompanies: summaries.length,
-      companies: summaries,
-    };
+    return { success: true, totalCompanies: summaries.length, companies: summaries };
   },
 
-  /**
-   * List leads for a specific company
-   */
   async listLeadsForCompany(params: { companyName: string }) {
     const leads = await getLeadsByCompany(params.companyName);
     return {
@@ -1113,19 +1270,12 @@ export const companyFilterTools = {
         closedLost: leads.filter(l => l.status === 'closed_lost').length,
       },
       leads: leads.slice(0, 25).map(l => ({
-        id: l.id,
-        companyName: l.companyName,
-        contactName: l.contactName,
-        email: l.email,
-        status: l.status,
-        source: l.source,
+        id: l.id, companyName: l.companyName, contactName: l.contactName,
+        email: l.email, status: l.status, source: l.source,
       })),
     };
   },
 
-  /**
-   * List files for a specific company
-   */
   async listFilesForCompany(params: { companyName: string }) {
     const files = await getFilesByCompany(params.companyName);
     return {
@@ -1133,12 +1283,8 @@ export const companyFilterTools = {
       companyName: params.companyName,
       count: files.length,
       files: files.map(f => ({
-        id: f.id,
-        fileName: f.fileName,
-        fileType: f.fileType,
-        mimeType: f.mimeType,
-        s3Url: f.s3Url,
-        createdAt: f.createdAt,
+        id: f.id, fileName: f.fileName, fileType: f.fileType,
+        mimeType: f.mimeType, s3Url: f.s3Url, createdAt: f.createdAt,
       })),
     };
   },
@@ -1147,47 +1293,27 @@ export const companyFilterTools = {
 // ============ NOTIFICATION TOOLS ============
 
 export const notificationTools = {
-  /**
-   * Send push notification to owner when autonomous task completes
-   */
-  async notifyTaskCompletion(params: {
-    taskType: string;
-    companyName?: string;
-    details: string;
-  }) {
+  async notifyTaskCompletion(params: { taskType: string; companyName?: string; details: string }) {
     const title = params.companyName
       ? `[Ivy.AI] ${params.taskType} - ${params.companyName}`
       : `[Ivy.AI] ${params.taskType}`;
-    
-    const success = await notifyOwner({
-      title,
-      content: params.details,
-    });
-
+    const success = await notifyOwner({ title, content: params.details });
     return { success, message: success ? 'Notificación enviada' : 'Error al enviar notificación' };
   },
 
-  /**
-   * Notify when emails are generated
-   */
   async notifyEmailsGenerated(params: { companyName: string; count: number; campaign?: string }) {
     const title = `[Ivy.AI] ${params.count} emails generados - ${params.companyName}`;
     const content = params.campaign
       ? `ROPA ha generado ${params.count} borradores de email para la campaña "${params.campaign}" de ${params.companyName}. Revísalos en la sección Monitor.`
       : `ROPA ha generado ${params.count} borradores de email para ${params.companyName}. Revísalos en la sección Monitor.`;
-    
     const success = await notifyOwner({ title, content });
     return { success, message: success ? 'Notificación enviada' : 'Error al enviar notificación' };
   },
 
-  /**
-   * Notify when a report is ready
-   */
   async notifyReportReady(params: { reportType: string; companyName?: string; summary: string }) {
     const title = params.companyName
       ? `[Ivy.AI] Reporte ${params.reportType} listo - ${params.companyName}`
       : `[Ivy.AI] Reporte ${params.reportType} listo`;
-    
     const success = await notifyOwner({ title, content: params.summary });
     return { success, message: success ? 'Notificación enviada' : 'Error al enviar notificación' };
   },

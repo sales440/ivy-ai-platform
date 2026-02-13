@@ -638,4 +638,27 @@
 - [x] Handle taskType vs type field name mismatch in ropaTasks
 - [x] Add 15 new tests for robust error handling (all passing)
 - [x] Verify all 114 tests pass
-- [ ] Push to GitHub and deploy to Railway
+- [x] Push to GitHub and deploy to Railway
+
+## Fix: "Failed query" error when creating companies via ROPA chat
+- [x] Apply safeQuery pattern to createCompany in ropa-platform-tools.ts
+- [x] Apply safeQuery pattern to all other DB operations in ropa-platform-tools.ts (listCompanies, createCampaign, etc.)
+- [ ] Apply safeQuery pattern to campaigns-router.ts DB queries
+- [x] Run tests and verify
+- [x] Push to GitHub for Railway deployment
+
+## n8n Integration for Mass Outreach
+- [x] Fix createCompany "Failed query" error with safeQuery/raw SQL fallback
+- [x] Fix all other DB queries in ropa-platform-tools.ts with safeQuery pattern
+- [x] Explore n8n instance and available workflows
+- [x] Integrate existing n8n email workflow (Ivy.AI - Mass Email Sender via Outlook)
+- [ ] Create n8n webhook workflow for phone calls (requires Twilio in n8n)
+- [ ] Create n8n webhook workflow for SMS messages (requires Twilio in n8n)
+- [x] Create n8n-integration.ts service (sendMassEmails, sendMassSMS, triggerMassCalls, executeMultiChannelCampaign)
+- [x] Add ROPA Brain intents for mass email and send approved drafts
+- [x] Update ROPA system prompt with n8n mass outreach capabilities
+- [x] Add n8n webhook URL environment variables (N8N_WEBHOOK_BASE_URL, N8N_EMAIL_WEBHOOK_PATH, etc.)
+- [x] Add 6 vitest tests for n8n integration (all passing)
+- [x] All 120 tests passing
+- [ ] Auto-trigger n8n workflows when new company is created
+- [x] Push to GitHub for Railway deployment

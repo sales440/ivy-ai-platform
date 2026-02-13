@@ -21,6 +21,7 @@ import { ropaPlatformTools } from "./ropa-platform-tools";
 import { ropaSuperTools } from "./ropa-super-tools";
 import { ropaNavigationTools, IVY_SECTIONS } from "./ropa-navigation-service";
 import ropaDriveService from "./ropa-drive-service";
+import { n8nOutreachService } from "./n8n-integration";
 
 export interface RopaBrainResult {
   response: string;
@@ -410,6 +411,101 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
       } catch (err: any) {
         response = `Error enviando email: ${err.message}`;
       }
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // ============ 11b. MASS EMAIL / n8n OUTREACH ============
+  const massEmailKeywords = ['envío masivo', 'envio masivo', 'email masivo', 'emails masivos', 'correo masivo', 'correos masivos', 'mass email', 'mass emails', 'enviar masivo', 'campaña de email', 'campaña email', 'campaña de correo', 'blast email', 'email blast', 'enviar emails a', 'enviar correos a', 'enviar emails masivos', 'enviar correos masivos', 'lanzar campaña', 'ejecutar campaña', 'disparar campaña', 'enviar campaña'];
+  const isN8NOutreach = matchesAny(msg, massEmailKeywords);
+  
+  if (isN8NOutreach) {
+    intent = 'n8n_mass_outreach';
+    
+    // Extract company name
+    const companyMatch = cleanMessage.match(/(?:para|de|a)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+?)["']?(?:\s*$|\s+con|\s+sobre|\s+asunto)/i);
+    const companyName = companyMatch ? companyMatch[1].trim() : null;
+    
+    if (!companyName) {
+      response = `Para enviar emails masivos necesito saber:\n` +
+        `1. Nombre de la empresa\n` +
+        `2. Lista de destinatarios (emails)\n` +
+        `3. Asunto del email\n` +
+        `4. Contenido del email\n\n` +
+        `Ejemplo: "Envío masivo para PETLIFE 360 con asunto 'Propuesta de servicios IA'"\n\n` +
+        `También puedo generar borradores primero: "genera emails para [EMPRESA]"\n` +
+        `Y luego enviarlos: "enviar borradores aprobados de [EMPRESA]"\n\n` +
+        `El envío se realiza a través de n8n con Outlook (rpcommercegroup@gmail.com).`;
+    } else {
+      // Check n8n health first
+      try {
+        const health = await n8nOutreachService.email.checkHealth();
+        if (health.available) {
+          response = `Servicio de envío masivo disponible via n8n/Outlook.\n\n` +
+            `Para ${companyName}, necesito:\n` +
+            `- Lista de emails destinatarios\n` +
+            `- Asunto del email\n` +
+            `- Contenido HTML del email\n\n` +
+            `Opciones:\n` +
+            `1. "genera 5 emails para ${companyName}" → Crear borradores primero\n` +
+            `2. Proporciona los datos directamente para envío inmediato\n\n` +
+            `Webhook: ${health.webhookUrl}\n` +
+            `Sender: rpcommercegroup@gmail.com (Outlook)`;
+        } else {
+          response = `El servicio de envío masivo n8n no está disponible en este momento: ${health.message}\n` +
+            `Puedo generar borradores de email mientras tanto: "genera emails para ${companyName}"`;
+        }
+      } catch (err: any) {
+        response = `Error verificando servicio n8n: ${err.message}. Puedo generar borradores: "genera emails para ${companyName}"`;
+      }
+      platformActionExecuted = true;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // ============ 11c. SEND APPROVED DRAFTS via n8n ============
+  const sendDraftsKeywords = ['enviar borradores', 'enviar drafts', 'enviar aprobados', 'send drafts', 'send approved', 'despachar borradores', 'enviar los borradores', 'enviar los emails aprobados', 'enviar correos aprobados'];
+  if (matchesAny(msg, sendDraftsKeywords)) {
+    intent = 'send_approved_drafts';
+    
+    const companyMatch = cleanMessage.match(/(?:de|para|a)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+?)(?:["']|$)/i);
+    const companyName = companyMatch ? companyMatch[1].trim() : null;
+    
+    try {
+      // Get approved drafts
+      const draftsResult = await ropaPlatformTools.listEmailDrafts({ status: 'approved', company: companyName || undefined });
+      const approvedDrafts = draftsResult.drafts || [];
+      
+      if (approvedDrafts.length === 0) {
+        response = companyName 
+          ? `No hay borradores aprobados para ${companyName}. Primero genera y aprueba borradores: "genera emails para ${companyName}"`
+          : `No hay borradores aprobados. Primero genera y aprueba borradores.`;
+      } else {
+        // Convert approved drafts to email recipients for n8n
+        const emails = approvedDrafts.map((d: any) => ({
+          to: d.recipientEmail || d.recipient_email || '',
+          subject: d.subject,
+          body: d.body || d.bodyPreview || '',
+          recipientName: d.recipientName || d.recipient_name || '',
+        })).filter((e: any) => e.to && e.to.includes('@'));
+        
+        if (emails.length === 0) {
+          response = `Hay ${approvedDrafts.length} borradores aprobados pero ninguno tiene email de destinatario. Actualiza los borradores con emails de contacto.`;
+        } else {
+          const result = await n8nOutreachService.email.sendMassEmails({
+            company: companyName || 'General',
+            campaign: approvedDrafts[0]?.campaign || 'Direct',
+            emails,
+          });
+          platformResult = result;
+          platformActionExecuted = true;
+          response = result.success 
+            ? `Enviados ${emails.length} emails via n8n/Outlook para ${companyName || 'varias empresas'}. Batch ID: ${result.batchId}. Los resultados llegarán por callback.`
+            : `Error enviando emails: ${result.message}`;
+        }
+      }
+    } catch (err: any) {
+      response = `Error al enviar borradores: ${err.message}`;
     }
     return { response, intent, command, platformActionExecuted, platformResult };
   }
@@ -857,6 +953,8 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     `- Empresas: "crea empresa [nombre]"\n` +
     `- Campañas: "crea campaña [nombre] para [empresa]"\n` +
     `- Emails: "genera emails para [empresa]"\n` +
+    `- Envío masivo: "envío masivo para [empresa]"\n` +
+    `- Enviar borradores: "enviar borradores aprobados de [empresa]"\n` +
     `- Drive: "muestra archivos de Drive"\n` +
     `- Web: "busca en internet [tema]"\n` +
     `- Stats: "muestra estadísticas"\n` +

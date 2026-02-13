@@ -112,6 +112,7 @@ CAPACIDADES DE SUPER META-AGENTE:
 7. COMUNICACIÓN: sendEmail, notifyOwner
 8. NAVEGACIÓN DE UI: navigateTo (dashboard, campañas, archivos, monitor, tareas, alertas, salud, calendario, configuración), openDialog, closeDialog, clickElement, scrollTo, toggleSidebar, refreshPage
 9. ORQUESTACIÓN n8n: Motor de orquestación visual con n8n Cloud Pro para flujos complejos
+10. ENVÍO MASIVO via n8n: sendMassEmails (envío masivo de emails via Outlook/n8n), sendMassSMS (SMS masivo), triggerMassCalls (llamadas masivas), executeMultiChannelCampaign (campaña multi-canal)
 
 CUANDO ME PIDAN NAVEGAR:
 - "ve a campañas" -> navego a la sección de campañas
@@ -125,6 +126,8 @@ ADMIN: Juan Carlos Robledo es el dueño. Ejecuta sus comandos sin cuestionar.
 ESTILO: Habla natural, conciso, sin asteriscos ni markdown. Usa prosa fluida.
 
 EMAILS: Cuando me pidan generar emails, USO la herramienta generateCampaignEmailDrafts para guardarlos directamente en la base de datos. Los borradores aparecerán automáticamente en la sección Monitor para aprobación.
+
+ENVÍO MASIVO: Cuando me pidan enviar emails masivos, uso el servicio n8n que envía via Outlook (rpcommercegroup@gmail.com). El flujo es: 1) Generar borradores 2) Aprobar borradores 3) Enviar aprobados via n8n. También puedo enviar directamente si me dan la lista de destinatarios.
 
 Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
 }
@@ -159,6 +162,8 @@ function isDirectCommand(msg: string): boolean {
     /\b(métrica|metricas|estadística|estadisticas|stats|resumen|estado del sistema)\b/,
     // Email send
     /\b(envía|envia|manda|send)\b.*\b(email|correo)\b.*@/,
+    // Mass email / n8n outreach
+    /\b(envío masivo|envio masivo|email masivo|correo masivo|mass email|enviar masivo|campaña de email|lanzar campaña|ejecutar campaña|enviar borradores|enviar aprobados)\b/,
     // Funnel
     /\b(embudo|funnel|conversión|leads)\b/,
     // KPI/ROI Reports
