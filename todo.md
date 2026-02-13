@@ -625,3 +625,8 @@
 - [x] Push notifications: notifyTaskCompletion, notifyEmailsGenerated, notifyReportReady
 - [x] Push notifications integrated into ROPA Brain email generation and KPI report flows
 - [x] 99 vitest tests passing (8 test files, 34 in ropa-features.test.ts)
+
+## Phase 54: Production Bug Fixes
+- [x] Fix getCampaignsByCompany - removed .limit() from all queries (TiDB LIMIT parameter bug)
+- [x] Verify all company filter DB queries match actual table columns
+- [x] Added missing columns to sales_campaigns via ALTER TABLE

@@ -43,7 +43,7 @@ export async function findCompanyByName(companyName: string) {
   const normalized = normalizeCompanyName(companyName);
   
   // Try exact match first
-  const clients = await db.select().from(ivyClients).limit(100);
+  const clients = await db.select().from(ivyClients);
   
   // Fuzzy match: check if the search term is contained in company name or vice versa
   const match = clients.find(c => {
@@ -74,7 +74,7 @@ export async function getTasksByCompany(companyName: string, statusFilter?: stri
   const normalized = normalizeCompanyName(companyName);
   
   // Get all tasks and filter by company name in taskType or output
-  const allTasks = await db.select().from(ropaTasks).orderBy(desc(ropaTasks.createdAt)).limit(200);
+  const allTasks = await db.select().from(ropaTasks).orderBy(desc(ropaTasks.createdAt));
   
   return allTasks.filter(task => {
     const taskStr = JSON.stringify(task).toLowerCase();
@@ -94,7 +94,7 @@ export async function getCampaignsByCompany(companyName: string, statusFilter?: 
   const normalized = normalizeCompanyName(companyName);
   
   // Get campaigns - check name and targetAudience fields
-  const allCampaigns = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt)).limit(200);
+  const allCampaigns = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt));
   
   return allCampaigns.filter(campaign => {
     const campaignStr = JSON.stringify(campaign).toLowerCase();
@@ -120,12 +120,10 @@ export async function getEmailDraftsByCompany(
   if (statusFilter && statusFilter !== 'all') {
     drafts = await db.select().from(emailDrafts)
       .where(eq(emailDrafts.status, statusFilter))
-      .orderBy(desc(emailDrafts.createdAt))
-      .limit(200);
+      .orderBy(desc(emailDrafts.createdAt));
   } else {
     drafts = await db.select().from(emailDrafts)
-      .orderBy(desc(emailDrafts.createdAt))
-      .limit(200);
+      .orderBy(desc(emailDrafts.createdAt));
   }
   
   return drafts.filter(draft => {
@@ -149,12 +147,10 @@ export async function getCampaignContentByCompany(
   if (statusFilter && statusFilter !== 'all') {
     content = await db.select().from(campaignContent)
       .where(eq(campaignContent.status, statusFilter))
-      .orderBy(desc(campaignContent.createdAt))
-      .limit(200);
+      .orderBy(desc(campaignContent.createdAt));
   } else {
     content = await db.select().from(campaignContent)
-      .orderBy(desc(campaignContent.createdAt))
-      .limit(200);
+      .orderBy(desc(campaignContent.createdAt));
   }
   
   return content.filter(c => {
@@ -175,12 +171,10 @@ export async function getAlertsByCompany(companyName: string, resolvedFilter?: b
   if (resolvedFilter !== undefined) {
     alerts = await db.select().from(ropaAlerts)
       .where(eq(ropaAlerts.resolved, resolvedFilter))
-      .orderBy(desc(ropaAlerts.createdAt))
-      .limit(200);
+      .orderBy(desc(ropaAlerts.createdAt));
   } else {
     alerts = await db.select().from(ropaAlerts)
-      .orderBy(desc(ropaAlerts.createdAt))
-      .limit(200);
+      .orderBy(desc(ropaAlerts.createdAt));
   }
   
   return alerts.filter(alert => {
@@ -198,8 +192,7 @@ export async function getLeadsByCompany(companyName: string) {
   const normalized = normalizeCompanyName(companyName);
   
   const leads = await db.select().from(clientLeads)
-    .orderBy(desc(clientLeads.createdAt))
-    .limit(200);
+    .orderBy(desc(clientLeads.createdAt));
   
   return leads.filter(lead => {
     return normalizeCompanyName(lead.companyName).includes(normalized) ||
@@ -216,8 +209,7 @@ export async function getFilesByCompany(companyName: string) {
   const normalized = normalizeCompanyName(companyName);
   
   const files = await db.select().from(companyFiles)
-    .orderBy(desc(companyFiles.createdAt))
-    .limit(200);
+    .orderBy(desc(companyFiles.createdAt));
   
   return files.filter(file => {
     return normalizeCompanyName(file.companyName).includes(normalized) ||
