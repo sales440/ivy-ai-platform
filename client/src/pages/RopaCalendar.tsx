@@ -236,7 +236,28 @@ export default function RopaCalendar() {
     e.dataTransfer.dropEffect = "move";
   };
 
-  // Handle drop - persist to BOTH localStorage keys to prevent revert
+  // Mutation for calendar drag-and-drop propagation
+  const moveCampaignMutation = trpc.campaigns.moveCampaign.useMutation({
+    onSuccess: (data) => {
+      if (data.success) {
+        toast.success(`${data.message}`);
+        refetchDbCampaigns();
+      } else {
+        toast.error(`Error: ${data.message}`);
+      }
+    },
+    onError: (err) => {
+      console.error('Error propagating calendar change:', err);
+    },
+  });
+
+  const updateStatusMutation = trpc.campaigns.updateCampaignStatus.useMutation({
+    onSuccess: () => {
+      refetchDbCampaigns();
+    },
+  });
+
+  // Handle drop - persist to DB + localStorage + propagate via API
   const handleDrop = (e: React.DragEvent, columnId: KanbanColumn) => {
     e.preventDefault();
     if (draggedCard) {
@@ -246,15 +267,14 @@ export default function RopaCalendar() {
                        columnId === 'paused' ? 'paused' : 
                        columnId === 'completed' ? 'completed' : 'draft';
       
-      // Update cards state immediately
+      // Update cards state immediately (optimistic)
       const updatedCards = cards.map((card) =>
         card.id === draggedCard.id ? { ...card, status: columnId } : card
       );
       setCards(updatedCards);
       
-      // Persist to BOTH localStorage keys (ropaCampaigns is the main one)
+      // Persist to localStorage for immediate feedback
       try {
-        // Update ropaCampaigns (main storage used by loadFromLocalStorage)
         const ropaCampaigns = JSON.parse(localStorage.getItem('ropaCampaigns') || '[]');
         const updatedRopaCampaigns = ropaCampaigns.map((campaign: any) => {
           if (campaign.id === draggedCard.id) {
@@ -264,7 +284,6 @@ export default function RopaCalendar() {
         });
         localStorage.setItem('ropaCampaigns', JSON.stringify(updatedRopaCampaigns));
         
-        // Also update 'campaigns' for backwards compatibility
         const localCampaigns = JSON.parse(localStorage.getItem('campaigns') || '[]');
         const updatedCampaigns = localCampaigns.map((campaign: any) => {
           if (campaign.id === draggedCard.id) {
@@ -273,13 +292,27 @@ export default function RopaCalendar() {
           return campaign;
         });
         localStorage.setItem('campaigns', JSON.stringify(updatedCampaigns));
-        
-        toast.success(`Campaña movida a ${columns.find(c => c.id === columnId)?.title}`);
       } catch (e) {
-        console.error('Error updating campaign:', e);
-        toast.error('Error al actualizar campaña');
+        console.error('Error updating localStorage:', e);
       }
       
+      // Propagate to DB + update tasks/drafts/alerts via API
+      if (typeof draggedCard.id === 'number') {
+        // DB campaign - use propagation API
+        moveCampaignMutation.mutate({
+          campaignId: draggedCard.id,
+          newStartDate: new Date().toISOString(),
+          newStatus,
+        });
+      } else {
+        // localStorage-only campaign - just update status
+        updateStatusMutation.mutate({
+          campaignId: Number(draggedCard.id),
+          status: newStatus as "draft" | "active" | "paused" | "completed",
+        });
+      }
+      
+      toast.success(`Campaña movida a ${columns.find(c => c.id === columnId)?.title}`);
       setDraggedCard(null);
     }
   };

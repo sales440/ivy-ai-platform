@@ -22,6 +22,7 @@ import { ropaSuperTools } from "./ropa-super-tools";
 import { ropaNavigationTools, IVY_SECTIONS } from "./ropa-navigation-service";
 import ropaDriveService from "./ropa-drive-service";
 import { n8nOutreachService } from "./n8n-integration";
+import { runFullOnboarding, onboardAllExistingCompanies, propagateCalendarChange, monitorCampaignProgress } from "./ropa-onboarding-engine";
 
 export interface RopaBrainResult {
   response: string;
@@ -256,7 +257,22 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
       try {
         platformResult = await ropaPlatformTools.createCompany({ companyName });
         platformActionExecuted = true;
-        response = `Empresa "${companyName}" creada exitosamente. Puedes verla en la sección de Campañas.`;
+        response = `Empresa "${companyName}" creada exitosamente. Iniciando onboarding autónomo...\n\n`;
+        
+        // Trigger autonomous onboarding in background
+        const clientId = platformResult?.clientId || platformResult?.client_id || `CLI-${Date.now()}`;
+        runFullOnboarding(clientId, companyName).then(result => {
+          console.log(`[ROPA] Onboarding completed for ${companyName}: ${result.campaignsCreated} campaigns, ${result.tasksCreated} tasks, ${result.draftsCreated} drafts`);
+        }).catch(err => {
+          console.error(`[ROPA] Onboarding failed for ${companyName}:`, err.message);
+        });
+        
+        response += `ROPA está analizando el perfil de ${companyName} desde Google Drive y generará automáticamente:\n` +
+          `- Campañas de marketing personalizadas\n` +
+          `- Tareas desglosadas por campaña\n` +
+          `- Borradores de email/SMS/llamadas para aprobación\n` +
+          `- Alertas de mercado\n\n` +
+          `Revisa la sección de Monitor para aprobar los borradores cuando estén listos.`;
       } catch (err: any) {
         response = `Error al crear la empresa: ${err.message}`;
       }
@@ -506,6 +522,84 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
       }
     } catch (err: any) {
       response = `Error al enviar borradores: ${err.message}`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // ============ 11d. ONBOARD EXISTING COMPANIES ============
+  const onboardKeywords = ['onboarding', 'onboard', 'inicializar empresas', 'inicializar todas', 'analizar todas', 'analizar empresas', 'onboardear', 'activar empresas', 'activar todas las empresas', 'procesar empresas'];
+  if (matchesAny(msg, onboardKeywords)) {
+    intent = 'onboard_all_companies';
+    response = 'Iniciando onboarding autónomo de todas las empresas existentes. Esto puede tomar varios minutos...\n\n';
+    
+    onboardAllExistingCompanies().then(result => {
+      console.log(`[ROPA] Batch onboarding: ${result.onboarded.length} onboarded, ${result.skipped.length} skipped, ${result.errors.length} errors`);
+    }).catch(err => {
+      console.error('[ROPA] Batch onboarding failed:', err.message);
+    });
+    
+    response += 'ROPA está procesando cada empresa:\n' +
+      '1. Leyendo documentos de Google Drive\n' +
+      '2. Analizando perfil con IA\n' +
+      '3. Generando campañas personalizadas\n' +
+      '4. Creando tareas y borradores\n' +
+      '5. Generando alertas de mercado\n\n' +
+      'Recibirás notificaciones cuando cada empresa esté lista.';
+    platformActionExecuted = true;
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // ============ 11e. ONBOARD SPECIFIC COMPANY ============
+  const onboardSpecificKeywords = ['onboard', 'onboarding de', 'inicializar', 'analizar perfil de', 'procesar empresa'];
+  if (matchesAny(msg, onboardSpecificKeywords) && matchesAny(msg, companyNouns)) {
+    intent = 'onboard_company';
+    const companyMatch = cleanMessage.match(/(?:empresa|compañía|compania|cliente|company)\s+["']?([^"']+)["']?/i);
+    if (companyMatch && companyMatch[1]) {
+      const companyName = companyMatch[1].trim();
+      response = `Iniciando onboarding autónomo de ${companyName}...\n\n`;
+      
+      // Find client ID
+      try {
+        const companies = await ropaPlatformTools.listCompanies();
+        const found = companies?.companies?.find((c: any) => 
+          (c.companyName || c.company_name || '').toLowerCase().includes(companyName.toLowerCase())
+        );
+        const clientId = found?.clientId || found?.client_id || `CLI-${Date.now()}`;
+        
+        runFullOnboarding(clientId, companyName).then(result => {
+          console.log(`[ROPA] Onboarding completed for ${companyName}: ${result.campaignsCreated} campaigns`);
+        }).catch(err => {
+          console.error(`[ROPA] Onboarding failed for ${companyName}:`, err.message);
+        });
+        
+        response += `Procesando ${companyName}:\n` +
+          `- Leyendo Google Drive\n` +
+          `- Analizando perfil\n` +
+          `- Generando campañas\n` +
+          `- Creando tareas y borradores\n\n` +
+          `Te notificaré cuando esté listo.`;
+        platformActionExecuted = true;
+      } catch (err: any) {
+        response = `Error al iniciar onboarding: ${err.message}`;
+      }
+    } else {
+      response = 'Dime qué empresa quieres procesar: "onboarding de [NOMBRE]"';
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // ============ 11f. MONITOR CAMPAIGN PROGRESS ============
+  const monitorKeywords = ['monitorear', 'monitoreo', 'progreso', 'progress', 'kpi', 'rendimiento', 'performance', 'revisar progreso', 'ver progreso'];
+  if (matchesAny(msg, monitorKeywords) && matchesAny(msg, campaignNouns.concat(['campañas', 'campaigns']))) {
+    intent = 'monitor_progress';
+    try {
+      const companyMatch = cleanMessage.match(/(?:de|para)\s+([A-Z][A-Za-z0-9\s]+)/i);
+      const companyName = companyMatch ? companyMatch[1].trim() : undefined;
+      await monitorCampaignProgress(companyName);
+      platformActionExecuted = true;
+      response = `Monitoreo de progreso completado${companyName ? ` para ${companyName}` : ' para todas las empresas'}. Revisa la sección de Alertas para ver los resultados.`;
+    } catch (err: any) {
+      response = `Error al monitorear progreso: ${err.message}`;
     }
     return { response, intent, command, platformActionExecuted, platformResult };
   }

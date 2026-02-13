@@ -662,3 +662,38 @@
 - [x] All 120 tests passing
 - [ ] Auto-trigger n8n workflows when new company is created
 - [x] Push to GitHub for Railway deployment
+
+## Phase 55: ROPA Autonomous Company Onboarding Workflow
+- [x] Fix INSERT company error in production (safeQuery + raw SQL fallback)
+- [x] Build autonomous onboarding engine: on company creation, read Google Drive docs
+- [x] Parse company profile from Drive docs (industry, products, target market, brand voice)
+- [x] Auto-generate marketing campaigns based on company profile
+- [x] Create tasks per campaign in Tareas section with progress tracking
+- [x] Generate market alerts in Alertas section (client preferences, market changes)
+- [x] Auto-adjust campaigns based on market intelligence
+- [x] Generate email/SMS/call drafts and present in Monitor for approval
+- [x] Sync all campaigns to Calendar with company filter and drag-and-drop
+- [x] Calendar drag-and-drop updates propagate to all sections (Tareas, Alertas, Monitor, ROPA)
+- [ ] Company filter works across all pages (Dashboard, Campañas, Calendario, Tareas, Alertas)
+- [x] Run tests and verify (132 tests passing)
+- [ ] Push to GitHub for Railway deployment
+
+## Phase 55b: ROPA Advanced Configuration - Autonomous Onboarding Engine
+- [x] Create ropa-onboarding-engine.ts with full autonomous workflow (~950 lines)
+- [x] Protocol 1: Google Drive ingestion - read all docs from company folder
+- [x] Protocol 1: LLM analysis of company profile (brand, products, target market)
+- [x] Protocol 1: Auto-generate marketing campaigns based on profile analysis
+- [x] Protocol 2A: Task decomposition - break campaigns into granular executable tasks
+- [x] Protocol 2B: Market Watch alerts - track consumer/market changes per company
+- [x] Protocol 2B: Auto-propose campaign adjustments based on market alerts
+- [x] Protocol 2C: Monitor approval workflow - email/SMS/call drafts pending approval
+- [x] Protocol 3: Calendar multi-company visualization with company filter
+- [x] Protocol 3: Drag-and-drop chain reaction - update Tasks, Monitor, Reports on date change
+- [x] Protocol 3: Viability recalculation after calendar drag-and-drop
+- [x] Protocol 4: 24/7 progress monitoring with KPI color coding in Calendar
+- [x] Integrate onboarding engine into createCompany flow
+- [x] Add ROPA Brain intents for onboarding commands (onboard_all, onboard_specific, monitor_progress)
+- [x] Update campaigns-router.ts with calendar sync endpoints (moveCampaign, getCampaignContent, updateContentStatus, getCompanies)
+- [x] Apply autonomous onboarding engine to ALL companies (existing like FAGOR, EPM, TechStart + new like PETLIFE 360)
+- [x] Add "onboard existing companies" startup routine in ropa-autonomous.ts (30s delay after boot)
+- [x] 132 tests passing (12 new onboarding engine tests)

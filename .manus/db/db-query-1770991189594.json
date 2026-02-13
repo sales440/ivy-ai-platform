@@ -1,0 +1,13 @@
+{
+  "query": "SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY ORDINAL_POSITION) as columns FROM information_schema.COLUMNS WHERE TABLE_NAME = 'ivy_clients';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY ORDINAL_POSITION) as columns FROM information_schema.COLUMNS WHERE TABLE_NAME = 'ivy_clients';",
+  "rows": [
+    {
+      "columns": "id,client_id,company_name,industry,contact_name,contact_email,contact_phone,address,website,logo_url,google_drive_folder_id,google_drive_structure,status,plan,notes,created_by,created_at,updated_at"
+    }
+  ],
+  "messages": [],
+  "stdout": "columns\nid,client_id,company_name,industry,contact_name,contact_email,contact_phone,address,website,logo_url,google_drive_folder_id,google_drive_structure,status,plan,notes,created_by,created_at,updated_at\n",
+  "stderr": "",
+  "execution_time_ms": 61
+}

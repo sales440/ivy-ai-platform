@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, client_id, company_name FROM ivy_clients WHERE client_id = 'TEST-001'; DELETE FROM ivy_clients WHERE client_id = 'TEST-001';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT id, client_id, company_name FROM ivy_clients WHERE client_id = 'TEST-001'; DELETE FROM ivy_clients WHERE client_id = 'TEST-001';",
+  "rows": [
+    {
+      "id": "1",
+      "client_id": "TEST-001",
+      "company_name": "TEST COMPANY"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tclient_id\tcompany_name\n1\tTEST-001\tTEST COMPANY\n",
+  "stderr": "",
+  "execution_time_ms": 68
+}

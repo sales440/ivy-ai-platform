@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import { getDb } from "./db";
-import { clientLeads, salesCampaigns, uploadedFiles } from "../drizzle/schema";
+import { clientLeads, salesCampaigns, uploadedFiles, ivyClients } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
 import { eq, desc } from "drizzle-orm";
@@ -308,4 +308,74 @@ export const campaignsRouter = router({
 
       return { success: true };
     }),
+
+  // Calendar drag-and-drop propagation
+  moveCampaign: protectedProcedure
+    .input(
+      z.object({
+        campaignId: z.number(),
+        newStartDate: z.string(),
+        newStatus: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { propagateCalendarChange } = await import("./ropa-onboarding-engine");
+      return propagateCalendarChange(
+        input.campaignId,
+        new Date(input.newStartDate),
+        input.newStatus
+      );
+    }),
+
+  // Get campaign content (drafts for Monitor approval)
+  getCampaignContent: protectedProcedure.query(async () => {
+    if (isCircuitOpen('getCampaignContent')) return [];
+    const db = await getDb();
+    if (!db) return [];
+    try {
+      const { campaignContent } = await import("../drizzle/schema");
+      const result = await db.select().from(campaignContent).orderBy(desc(campaignContent.createdAt));
+      recordSuccess('getCampaignContent');
+      return result;
+    } catch (e) {
+      recordFailure('getCampaignContent');
+      console.warn('[getCampaignContent] Failed:', (e as any).message);
+      return [];
+    }
+  }),
+
+  // Approve/reject campaign content
+  updateContentStatus: protectedProcedure
+    .input(
+      z.object({
+        contentId: z.number(),
+        status: z.enum(["approved", "rejected", "pending"]),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { campaignContent } = await import("../drizzle/schema");
+      await db
+        .update(campaignContent)
+        .set({ status: input.status })
+        .where(eq(campaignContent.id, input.contentId));
+      return { success: true };
+    }),
+
+  // Get all companies for calendar filter
+  getCompanies: protectedProcedure.query(async () => {
+    if (isCircuitOpen('getCompanies')) return [];
+    const db = await getDb();
+    if (!db) return [];
+    try {
+      const result = await db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt));
+      recordSuccess('getCompanies');
+      return result;
+    } catch (e) {
+      recordFailure('getCompanies');
+      console.warn('[getCompanies] Failed:', (e as any).message);
+      return [];
+    }
+  }),
 });

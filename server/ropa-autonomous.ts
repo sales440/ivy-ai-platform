@@ -6,6 +6,7 @@
 import { ropaTools } from "./ropa-tools";
 import { createRopaTask, updateRopaTaskStatus, getRopaConfig, setRopaConfig, createRopaLog, createRopaAlert } from "./ropa-db";
 import { initializeFileManagerAgent, FileManager } from "./file-manager-agent";
+import { onboardAllExistingCompanies, startCampaignMonitoringCycle, stopCampaignMonitoringCycle } from "./ropa-onboarding-engine";
 
 let maintenanceInterval: NodeJS.Timeout | null = null;
 let healthCheckInterval: NodeJS.Timeout | null = null;
@@ -48,8 +49,20 @@ export async function initializeROPA() {
   startMaintenanceCycle();
   startMarketIntelligenceCycle();
   startFileSyncCycle(); // New: Sync files to Google Drive
+  startCampaignMonitoringCycle(); // New: 24/7 campaign progress monitoring
 
-  console.log("[ROPA] ✅ Autonomous operations started");
+  // Onboard existing companies that haven't been processed yet (delayed to avoid startup overload)
+  setTimeout(async () => {
+    try {
+      console.log("[ROPA] \uD83D\uDE80 Starting batch onboarding of existing companies...");
+      const result = await onboardAllExistingCompanies();
+      console.log(`[ROPA] Batch onboarding complete: ${result.onboarded.length} onboarded, ${result.skipped.length} skipped, ${result.errors.length} errors`);
+    } catch (err: any) {
+      console.error("[ROPA] Batch onboarding failed:", err.message);
+    }
+  }, 30000); // Wait 30 seconds after startup
+
+  console.log("[ROPA] \u2705 Autonomous operations started");
 }
 
 /**
@@ -332,6 +345,7 @@ export async function stopROPA() {
   if (maintenanceInterval) clearInterval(maintenanceInterval);
   if (marketIntelligenceInterval) clearInterval(marketIntelligenceInterval);
   if (fileSyncInterval) clearInterval(fileSyncInterval);
+  stopCampaignMonitoringCycle();
 
   await setRopaConfig("ropa_status", {
     enabled: false,
