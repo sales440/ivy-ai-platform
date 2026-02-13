@@ -630,3 +630,12 @@
 - [x] Fix getCampaignsByCompany - removed .limit() from all queries (TiDB LIMIT parameter bug)
 - [x] Verify all company filter DB queries match actual table columns
 - [x] Added missing columns to sales_campaigns via ALTER TABLE
+
+## Fix: Company Filter SQL Error in Production
+- [x] Diagnose "Failed query" errors in production for company filtering
+- [x] Rewrite ropa-company-filters.ts with safeQuery wrapper and raw SQL fallback
+- [x] Handle both Drizzle field names (camelCase) and raw SQL field names (snake_case)
+- [x] Handle taskType vs type field name mismatch in ropaTasks
+- [x] Add 15 new tests for robust error handling (all passing)
+- [x] Verify all 114 tests pass
+- [ ] Push to GitHub and deploy to Railway

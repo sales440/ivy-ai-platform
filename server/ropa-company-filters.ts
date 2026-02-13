@@ -8,6 +8,8 @@
  * - Alerts by company
  * - Full company overview (all data combined)
  * - Company list with summary stats
+ * 
+ * Uses raw SQL fallback for TiDB/MySQL compatibility when Drizzle ORM queries fail.
  */
 
 import { eq, desc, and, like, sql } from "drizzle-orm";
@@ -34,6 +36,29 @@ function normalizeCompanyName(name: string): string {
 }
 
 /**
+ * Safe query executor - wraps Drizzle queries with try-catch and raw SQL fallback
+ */
+async function safeQuery<T>(
+  label: string,
+  drizzleQuery: () => Promise<T>,
+  rawSqlFallback?: () => Promise<T>
+): Promise<T | null> {
+  try {
+    return await drizzleQuery();
+  } catch (err: any) {
+    console.warn(`[CompanyFilters] Drizzle query failed for ${label}:`, err.message?.substring(0, 200));
+    if (rawSqlFallback) {
+      try {
+        return await rawSqlFallback();
+      } catch (rawErr: any) {
+        console.warn(`[CompanyFilters] Raw SQL fallback also failed for ${label}:`, rawErr.message?.substring(0, 200));
+      }
+    }
+    return null;
+  }
+}
+
+/**
  * Find a company by fuzzy name match
  */
 export async function findCompanyByName(companyName: string) {
@@ -42,12 +67,20 @@ export async function findCompanyByName(companyName: string) {
 
   const normalized = normalizeCompanyName(companyName);
   
-  // Try exact match first
-  const clients = await db.select().from(ivyClients);
+  const clients = await safeQuery(
+    'findCompanyByName',
+    async () => db.select().from(ivyClients),
+    async () => {
+      const [rows] = await db.execute(sql`SELECT * FROM ivy_clients`);
+      return rows as any[];
+    }
+  );
+  
+  if (!clients || !Array.isArray(clients)) return null;
   
   // Fuzzy match: check if the search term is contained in company name or vice versa
-  const match = clients.find(c => {
-    const cn = normalizeCompanyName(c.companyName);
+  const match = clients.find((c: any) => {
+    const cn = normalizeCompanyName(c.companyName || c.company_name || '');
     return cn === normalized || cn.includes(normalized) || normalized.includes(cn);
   });
   
@@ -61,8 +94,16 @@ export async function listAllCompanies() {
   const db = await getDb();
   if (!db) return [];
 
-  const clients = await db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt));
-  return clients;
+  const result = await safeQuery(
+    'listAllCompanies',
+    async () => db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt)),
+    async () => {
+      const [rows] = await db.execute(sql`SELECT * FROM ivy_clients ORDER BY created_at DESC`);
+      return rows as any[];
+    }
+  );
+  
+  return result || [];
 }
 
 // ============ TASKS BY COMPANY ============
@@ -73,13 +114,22 @@ export async function getTasksByCompany(companyName: string, statusFilter?: stri
 
   const normalized = normalizeCompanyName(companyName);
   
-  // Get all tasks and filter by company name in taskType or output
-  const allTasks = await db.select().from(ropaTasks).orderBy(desc(ropaTasks.createdAt));
+  const allTasks = await safeQuery(
+    'getTasksByCompany',
+    async () => db.select().from(ropaTasks).orderBy(desc(ropaTasks.createdAt)),
+    async () => {
+      const [rows] = await db.execute(sql`SELECT * FROM ropa_tasks ORDER BY created_at DESC`);
+      return rows as any[];
+    }
+  );
   
-  return allTasks.filter(task => {
+  if (!allTasks || !Array.isArray(allTasks)) return [];
+  
+  return allTasks.filter((task: any) => {
     const taskStr = JSON.stringify(task).toLowerCase();
+    const taskType = task.taskType || task.type || task.task_type || '';
     const matchesCompany = taskStr.includes(normalized) || 
-      (task.taskType && normalizeCompanyName(task.taskType).includes(normalized));
+      (taskType && normalizeCompanyName(taskType).includes(normalized));
     const matchesStatus = !statusFilter || task.status === statusFilter;
     return matchesCompany && matchesStatus;
   });
@@ -93,10 +143,18 @@ export async function getCampaignsByCompany(companyName: string, statusFilter?: 
 
   const normalized = normalizeCompanyName(companyName);
   
-  // Get campaigns - check name and targetAudience fields
-  const allCampaigns = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt));
+  const allCampaigns = await safeQuery(
+    'getCampaignsByCompany',
+    async () => db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt)),
+    async () => {
+      const [rows] = await db.execute(sql`SELECT * FROM sales_campaigns ORDER BY created_at DESC`);
+      return rows as any[];
+    }
+  );
   
-  return allCampaigns.filter(campaign => {
+  if (!allCampaigns || !Array.isArray(allCampaigns)) return [];
+  
+  return allCampaigns.filter((campaign: any) => {
     const campaignStr = JSON.stringify(campaign).toLowerCase();
     const matchesCompany = campaignStr.includes(normalized);
     const matchesStatus = !statusFilter || campaign.status === statusFilter;
@@ -115,20 +173,36 @@ export async function getEmailDraftsByCompany(
 
   const normalized = normalizeCompanyName(companyName);
   
-  // Email drafts have a 'company' field directly
-  let drafts;
+  let drafts: any[] | null;
   if (statusFilter && statusFilter !== 'all') {
-    drafts = await db.select().from(emailDrafts)
-      .where(eq(emailDrafts.status, statusFilter))
-      .orderBy(desc(emailDrafts.createdAt));
+    drafts = await safeQuery(
+      'getEmailDraftsByCompany_filtered',
+      async () => db.select().from(emailDrafts)
+        .where(eq(emailDrafts.status, statusFilter))
+        .orderBy(desc(emailDrafts.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM email_drafts WHERE status = ${statusFilter} ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
   } else {
-    drafts = await db.select().from(emailDrafts)
-      .orderBy(desc(emailDrafts.createdAt));
+    drafts = await safeQuery(
+      'getEmailDraftsByCompany_all',
+      async () => db.select().from(emailDrafts)
+        .orderBy(desc(emailDrafts.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM email_drafts ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
   }
   
-  return drafts.filter(draft => {
-    return normalizeCompanyName(draft.company).includes(normalized) ||
-           normalized.includes(normalizeCompanyName(draft.company));
+  if (!drafts || !Array.isArray(drafts)) return [];
+  
+  return drafts.filter((draft: any) => {
+    const draftCompany = draft.company || draft.companyName || draft.company_name || '';
+    return normalizeCompanyName(draftCompany).includes(normalized) ||
+           normalized.includes(normalizeCompanyName(draftCompany));
   });
 }
 
@@ -143,19 +217,36 @@ export async function getCampaignContentByCompany(
 
   const normalized = normalizeCompanyName(companyName);
   
-  let content;
+  let content: any[] | null;
   if (statusFilter && statusFilter !== 'all') {
-    content = await db.select().from(campaignContent)
-      .where(eq(campaignContent.status, statusFilter))
-      .orderBy(desc(campaignContent.createdAt));
+    content = await safeQuery(
+      'getCampaignContentByCompany_filtered',
+      async () => db.select().from(campaignContent)
+        .where(eq(campaignContent.status, statusFilter))
+        .orderBy(desc(campaignContent.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM campaign_content WHERE status = ${statusFilter} ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
   } else {
-    content = await db.select().from(campaignContent)
-      .orderBy(desc(campaignContent.createdAt));
+    content = await safeQuery(
+      'getCampaignContentByCompany_all',
+      async () => db.select().from(campaignContent)
+        .orderBy(desc(campaignContent.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM campaign_content ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
   }
   
-  return content.filter(c => {
-    return normalizeCompanyName(c.companyName).includes(normalized) ||
-           normalized.includes(normalizeCompanyName(c.companyName));
+  if (!content || !Array.isArray(content)) return [];
+  
+  return content.filter((c: any) => {
+    const cName = c.companyName || c.company_name || '';
+    return normalizeCompanyName(cName).includes(normalized) ||
+           normalized.includes(normalizeCompanyName(cName));
   });
 }
 
@@ -167,17 +258,34 @@ export async function getAlertsByCompany(companyName: string, resolvedFilter?: b
 
   const normalized = normalizeCompanyName(companyName);
   
-  let alerts;
+  let alerts: any[] | null;
   if (resolvedFilter !== undefined) {
-    alerts = await db.select().from(ropaAlerts)
-      .where(eq(ropaAlerts.resolved, resolvedFilter))
-      .orderBy(desc(ropaAlerts.createdAt));
+    alerts = await safeQuery(
+      'getAlertsByCompany_filtered',
+      async () => db.select().from(ropaAlerts)
+        .where(eq(ropaAlerts.resolved, resolvedFilter))
+        .orderBy(desc(ropaAlerts.createdAt)),
+      async () => {
+        const resolvedVal = resolvedFilter ? 1 : 0;
+        const [rows] = await db.execute(sql`SELECT * FROM ropa_alerts WHERE resolved = ${resolvedVal} ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
   } else {
-    alerts = await db.select().from(ropaAlerts)
-      .orderBy(desc(ropaAlerts.createdAt));
+    alerts = await safeQuery(
+      'getAlertsByCompany_all',
+      async () => db.select().from(ropaAlerts)
+        .orderBy(desc(ropaAlerts.createdAt)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM ropa_alerts ORDER BY created_at DESC`);
+        return rows as any[];
+      }
+    );
   }
   
-  return alerts.filter(alert => {
+  if (!alerts || !Array.isArray(alerts)) return [];
+  
+  return alerts.filter((alert: any) => {
     const alertStr = JSON.stringify(alert).toLowerCase();
     return alertStr.includes(normalized);
   });
@@ -191,12 +299,22 @@ export async function getLeadsByCompany(companyName: string) {
 
   const normalized = normalizeCompanyName(companyName);
   
-  const leads = await db.select().from(clientLeads)
-    .orderBy(desc(clientLeads.createdAt));
+  const leads = await safeQuery(
+    'getLeadsByCompany',
+    async () => db.select().from(clientLeads)
+      .orderBy(desc(clientLeads.createdAt)),
+    async () => {
+      const [rows] = await db.execute(sql`SELECT * FROM client_leads ORDER BY created_at DESC`);
+      return rows as any[];
+    }
+  );
   
-  return leads.filter(lead => {
-    return normalizeCompanyName(lead.companyName).includes(normalized) ||
-           normalized.includes(normalizeCompanyName(lead.companyName));
+  if (!leads || !Array.isArray(leads)) return [];
+  
+  return leads.filter((lead: any) => {
+    const leadCompany = lead.companyName || lead.company_name || '';
+    return normalizeCompanyName(leadCompany).includes(normalized) ||
+           normalized.includes(normalizeCompanyName(leadCompany));
   });
 }
 
@@ -208,12 +326,22 @@ export async function getFilesByCompany(companyName: string) {
 
   const normalized = normalizeCompanyName(companyName);
   
-  const files = await db.select().from(companyFiles)
-    .orderBy(desc(companyFiles.createdAt));
+  const files = await safeQuery(
+    'getFilesByCompany',
+    async () => db.select().from(companyFiles)
+      .orderBy(desc(companyFiles.createdAt)),
+    async () => {
+      const [rows] = await db.execute(sql`SELECT * FROM company_files ORDER BY created_at DESC`);
+      return rows as any[];
+    }
+  );
   
-  return files.filter(file => {
-    return normalizeCompanyName(file.companyName).includes(normalized) ||
-           normalized.includes(normalizeCompanyName(file.companyName));
+  if (!files || !Array.isArray(files)) return [];
+  
+  return files.filter((file: any) => {
+    const fileCompany = file.companyName || file.company_name || '';
+    return normalizeCompanyName(fileCompany).includes(normalized) ||
+           normalized.includes(normalizeCompanyName(fileCompany));
   });
 }
 
@@ -300,17 +428,18 @@ export async function getCompanySummaryStats() {
   const companies = await listAllCompanies();
   
   const summaries = await Promise.all(
-    companies.map(async (company) => {
+    companies.map(async (company: any) => {
+      const companyName = company.companyName || company.company_name || '';
       const [tasks, campaigns, drafts, alerts] = await Promise.all([
-        getTasksByCompany(company.companyName),
-        getCampaignsByCompany(company.companyName),
-        getEmailDraftsByCompany(company.companyName, 'all'),
-        getAlertsByCompany(company.companyName),
+        getTasksByCompany(companyName),
+        getCampaignsByCompany(companyName),
+        getEmailDraftsByCompany(companyName, 'all'),
+        getAlertsByCompany(companyName),
       ]);
 
       return {
-        clientId: company.clientId,
-        companyName: company.companyName,
+        clientId: company.clientId || company.client_id,
+        companyName: companyName,
         status: company.status,
         plan: company.plan,
         tasks: tasks.length,
