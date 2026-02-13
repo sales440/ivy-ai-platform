@@ -119,6 +119,81 @@ async function safeDbMutation<T>(label: string, fn: () => Promise<T>, fallback?:
   }
 }
 
+// ============ SAFE JSON PARSING HELPER ============
+
+/**
+ * Safely parse JSON from LLM responses with sanitization and multiple strategies.
+ * Handles: markdown code blocks, trailing commas, truncated JSON, single quotes, etc.
+ */
+function safeJsonParse<T = any>(raw: string, label: string): T | null {
+  if (!raw || typeof raw !== 'string') return null;
+  
+  // Strategy 1: Clean markdown code blocks and try direct parse
+  let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  
+  try {
+    return JSON.parse(cleaned);
+  } catch (e1) {
+    // Strategy 2: Fix common LLM JSON issues
+    try {
+      // Remove trailing commas before } or ]
+      let fixed = cleaned.replace(/,\s*([}\]])/g, '$1');
+      // Fix single quotes to double quotes (but not inside strings)
+      fixed = fixed.replace(/'/g, '"');
+      // Remove control characters
+      fixed = fixed.replace(/[\x00-\x1F\x7F]/g, ' ');
+      return JSON.parse(fixed);
+    } catch (e2) {
+      // Strategy 3: Try to extract JSON from surrounding text
+      try {
+        const startIdx = cleaned.search(/[\[{]/);
+        if (startIdx >= 0) {
+          const substr = cleaned.substring(startIdx);
+          // Try parsing from start char, progressively trimming from end
+          try {
+            return JSON.parse(substr);
+          } catch (_) {
+            // Find the last matching bracket and try that substring
+            const openChar = substr[0];
+            const closeChar = openChar === '{' ? '}' : ']';
+            const lastClose = substr.lastIndexOf(closeChar);
+            if (lastClose > 0) {
+              try {
+                return JSON.parse(substr.substring(0, lastClose + 1));
+              } catch (__) { /* fall through */ }
+            }
+          }
+        }
+      } catch (e3) { /* fall through */ }
+      
+      // Strategy 4: For truncated JSON, try to close open brackets
+      {
+        try {
+          let truncated = cleaned;
+          // Count open/close brackets
+          const openBraces = (truncated.match(/{/g) || []).length;
+          const closeBraces = (truncated.match(/}/g) || []).length;
+          const openBrackets = (truncated.match(/\[/g) || []).length;
+          const closeBrackets = (truncated.match(/\]/g) || []).length;
+          
+          // Remove trailing comma if present
+          truncated = truncated.replace(/,\s*$/, '');
+          
+          // Close missing brackets
+          for (let i = 0; i < openBrackets - closeBrackets; i++) truncated += ']';
+          for (let i = 0; i < openBraces - closeBraces; i++) truncated += '}';
+          
+          return JSON.parse(truncated);
+        } catch (e4) {
+          console.warn(`[OnboardingEngine] All JSON parse strategies failed for ${label}:`, raw.substring(0, 200));
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 // ============ PROTOCOL 1: GOOGLE DRIVE INGESTION & PROFILE ANALYSIS ============
 
 /**
@@ -254,10 +329,8 @@ Responde SOLO con el JSON, sin markdown ni texto adicional.`;
     };
 
     if (analysisResult) {
-      try {
-        // Clean JSON from markdown code blocks
-        const cleanJson = analysisResult.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const parsed = JSON.parse(cleanJson);
+      const parsed = safeJsonParse(analysisResult, 'companyProfileAnalysis');
+      if (parsed) {
         profile = {
           ...profile,
           industry: parsed.industry || profile.industry,
@@ -269,8 +342,6 @@ Responde SOLO con el JSON, sin markdown ni texto adicional.`;
           uniqueSellingPoints: parsed.uniqueSellingPoints || profile.uniqueSellingPoints,
           documentsSummary: parsed.documentsSummary || profile.documentsSummary,
         };
-      } catch (parseErr) {
-        console.warn("[Onboarding] Failed to parse LLM analysis:", parseErr);
       }
     }
 
@@ -391,10 +462,9 @@ Responde SOLO con el JSON array, sin markdown.`;
     }
 
     try {
-      const cleanJson = campaignResult.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      const parsed = JSON.parse(cleanJson);
+      const parsed = safeJsonParse(campaignResult, 'campaignGeneration');
       
-      if (!Array.isArray(parsed)) {
+      if (!parsed || !Array.isArray(parsed)) {
         return getDefaultCampaignPlans(profile);
       }
 
@@ -707,10 +777,9 @@ Responde SOLO con el JSON array.`;
 
     if (alertResult) {
       try {
-        const cleanJson = alertResult.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        const alerts = JSON.parse(cleanJson);
+        const alerts = safeJsonParse(alertResult, 'marketAlerts');
         
-        if (Array.isArray(alerts)) {
+        if (alerts && Array.isArray(alerts)) {
           for (const alert of alerts) {
             await createRopaAlert({
               severity: alert.severity === "warning" ? "warning" : "info",

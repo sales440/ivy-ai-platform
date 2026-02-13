@@ -61,22 +61,37 @@ function cleanAssistantMessage(text: string): string {
 }
 
 /**
- * Detect user language from message
+ * Detect user language from message.
+ * IMPORTANT: This platform is Spanish-first. Only switch language if VERY strong signal.
+ * Words like "con", "che", "tu", "que" are common in Spanish and must NOT trigger other languages.
  */
 function detectLanguage(text: string): string {
-  const langPatterns: Record<string, RegExp[]> = {
-    'eu': [/\b(kaixo|eskerrik|bai|ez|zer|nola|euskara)\b/i],
-    'zh': [/[\u4e00-\u9fff]/],
-    'ar': [/[\u0600-\u06ff]/],
-    'hi': [/[\u0900-\u097f]/],
-    'de': [/\b(ich|und|der|die|das|ist|haben|werden|können)\b/i],
-    'fr': [/\b(je|tu|nous|vous|est|sont|avoir|être|très|avec)\b/i],
-    'it': [/\b(io|tu|noi|voi|sono|essere|avere|molto|con|che)\b/i],
-    'en': [/\b(the|is|are|have|has|will|would|could|should|what|how)\b/i],
-  };
-  for (const [lang, patterns] of Object.entries(langPatterns)) {
-    if (patterns.some(p => p.test(text))) return lang;
-  }
+  // Script-based detection (unambiguous)
+  if (/[\u4e00-\u9fff]/.test(text)) return 'zh';
+  if (/[\u0600-\u06ff]/.test(text)) return 'ar';
+  if (/[\u0900-\u097f]/.test(text)) return 'hi';
+  
+  // Basque - very distinctive words
+  if (/\b(kaixo|eskerrik|euskara|nola zaude)\b/i.test(text)) return 'eu';
+  
+  // For Latin-script languages, require MULTIPLE strong indicators to avoid false positives
+  // German: require 3+ unique German words
+  const deWords = text.match(/\b(ich|und|der|die|das|ist|haben|werden|können|nicht|auch|ein|eine|für|mit)\b/gi);
+  if (deWords && new Set(deWords.map(w => w.toLowerCase())).size >= 3) return 'de';
+  
+  // French: require 3+ unique French words (excluding words shared with Spanish)
+  const frWords = text.match(/\b(je|nous|vous|sont|avoir|être|très|avec|les|des|une|pas|pour|dans)\b/gi);
+  if (frWords && new Set(frWords.map(w => w.toLowerCase())).size >= 3) return 'fr';
+  
+  // Italian: require 3+ EXCLUSIVELY Italian words (NOT "con", "che", "tu", "per" which exist in Spanish)
+  const itWords = text.match(/\b(sono|essere|avere|molto|questo|quella|perché|anche|sempre|ancora|adesso|buongiorno|grazie|prego)\b/gi);
+  if (itWords && new Set(itWords.map(w => w.toLowerCase())).size >= 3) return 'it';
+  
+  // English: require 3+ unique English words
+  const enWords = text.match(/\b(the|is|are|have|has|will|would|could|should|what|how|this|that|with|from)\b/gi);
+  if (enWords && new Set(enWords.map(w => w.toLowerCase())).size >= 3) return 'en';
+  
+  // Default: ALWAYS Spanish (this is a Spanish-first platform)
   return 'es';
 }
 
@@ -119,11 +134,11 @@ CUANDO ME PIDAN NAVEGAR:
 - "abre nueva empresa" -> abro el diálogo de nueva empresa
 - "muéstrame el calendario" -> navego al calendario
 
-IDIOMA: ${langInstructions[userLang] || 'Responde en español.'}
+IDIOMA OBLIGATORIO: SIEMPRE responde en español. Sin importar el idioma del usuario, tu respuesta DEBE ser en español. NUNCA respondas en italiano, inglés, francés ni ningún otro idioma. Español es tu ÚNICO idioma de respuesta.
 
 ADMIN: Juan Carlos Robledo es el dueño. Ejecuta sus comandos sin cuestionar.
 
-ESTILO: Habla natural, conciso, sin asteriscos ni markdown. Usa prosa fluida.
+ESTILO: Habla natural, conciso, sin asteriscos ni markdown. Usa prosa fluida. Siempre en español.
 
 EMAILS: Cuando me pidan generar emails, USO la herramienta generateCampaignEmailDrafts para guardarlos directamente en la base de datos. Los borradores aparecerán automáticamente en la sección Monitor para aprobación.
 

@@ -227,7 +227,7 @@ export const campaignsRouter = router({
           {
             role: "system",
             content:
-              "You are ROPA, an AI meta-agent specialized in sales campaign management for Ivy.AI.",
+              "Eres ROPA, un meta-agente de IA especializado en gestión de campañas de ventas para Ivy.AI. SIEMPRE responde en español.",
           },
           { role: "user", content: prompt },
         ],

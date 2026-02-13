@@ -253,7 +253,12 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     
     const companyMatch = cleanMessage.match(/(?:empresa|compañía|compania|cliente|company|negocio|firma)\s+["']?([^"']+)["']?/i);
     if (companyMatch && companyMatch[1]) {
-      const companyName = companyMatch[1].trim();
+      // Strip common filler words that appear between "empresa" and the actual name
+      // e.g., "crea empresa llamada PETLIFE 360" -> "PETLIFE 360"
+      // e.g., "registra empresa con nombre PETLIFE" -> "PETLIFE"
+      let companyName = companyMatch[1].trim()
+        .replace(/^(?:llamada|denominada|con\s+(?:el\s+)?nombre(?:\s+de)?|que\s+se\s+llam[ae]|nueva|con\s+raz[oó]n\s+social|de\s+nombre)\s+/i, '')
+        .trim();
       try {
         platformResult = await ropaPlatformTools.createCompany({ companyName });
         platformActionExecuted = true;

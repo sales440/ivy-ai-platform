@@ -718,3 +718,15 @@
 - [x] Update ropa-onboarding-engine.ts to use Brand Firewall for draft generation
 - [x] 19 Brand Firewall tests + 151 total tests all passing
 - [ ] Push to GitHub for Railway deployment
+
+
+## Phase 55: Critical Bug Fixes - Language, JSON Parsing, Company Names
+- [x] Fix ROPA responding in Italian: detectLanguage false positive on "con"/"che" (Spanish words)
+- [x] Remove Italian language detection from detectLanguage in ropa-chat-stream.ts
+- [x] Remove Italian language detection from detectLanguage in ropa-router.ts
+- [x] Force Spanish as mandatory language in ALL system prompts (not conditional)
+- [x] Fix JSON parse errors in onboarding engine (add retry + sanitization)
+- [x] Fix company name extraction: "Crea empresa PETLIFE 360" → created "llamada PETLIFE 360"
+- [x] Fix all LLM system prompts to include explicit Spanish enforcement
+- [x] Update tests for language detection and JSON parsing
+- [ ] Push to GitHub and deploy to Railway

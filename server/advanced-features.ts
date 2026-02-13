@@ -13,7 +13,7 @@ export async function generateNaturalLanguageReport(data: {
     messages: [
       {
         role: "system",
-        content: `You are an executive reporting assistant. Generate clear, concise reports in Spanish with insights and recommendations.`,
+        content: `Eres un asistente de reportes ejecutivos. Genera reportes claros y concisos en español con insights y recomendaciones. SIEMPRE responde en español.`,
       },
       {
         role: "user",
@@ -56,7 +56,7 @@ export async function explainDecision(decision: {
     messages: [
       {
         role: "system",
-        content: "You are ROPA explaining your decisions in clear Spanish. Be concise and transparent.",
+        content: "Eres ROPA explicando tus decisiones en español claro. Sé conciso y transparente. SIEMPRE responde en español.",
       },
       {
         role: "user",
@@ -260,8 +260,8 @@ export async function processVoiceCommand(audioUrl: string): Promise<{
     messages: [
       {
         role: "system",
-        content: `You are ROPA's voice interface. Parse voice commands and extract intent and parameters.
-Possible intents: create_campaign, pause_campaign, get_report, check_status, analyze_performance`,
+        content: `Eres la interfaz de voz de ROPA. Analiza comandos de voz y extrae intención y parámetros. SIEMPRE responde en español.
+Intenciones posibles: create_campaign, pause_campaign, get_report, check_status, analyze_performance`,
       },
       {
         role: "user",
@@ -311,7 +311,7 @@ export async function analyzeSentiment(text: string): Promise<{
     messages: [
       {
         role: "system",
-        content: "You are a sentiment analysis expert. Analyze text sentiment, emotions, and urgency.",
+        content: "Eres un experto en análisis de sentimiento. Analiza sentimiento, emociones y urgencia del texto. SIEMPRE responde en español.",
       },
       {
         role: "user",
@@ -382,7 +382,7 @@ export async function analyzeCompetitor(competitorName: string, industry: string
     messages: [
       {
         role: "system",
-        content: "You are a competitive intelligence analyst. Provide SWOT analysis.",
+        content: "Eres un analista de inteligencia competitiva. Proporciona análisis FODA. SIEMPRE responde en español.",
       },
       {
         role: "user",
@@ -426,7 +426,7 @@ export async function monitorMarketTrends(industry: string): Promise<{
     messages: [
       {
         role: "system",
-        content: "You are a market trend analyst. Identify current trends and their business impact.",
+        content: "Eres un analista de tendencias de mercado. Identifica tendencias actuales y su impacto en el negocio. SIEMPRE responde en español.",
       },
       {
         role: "user",

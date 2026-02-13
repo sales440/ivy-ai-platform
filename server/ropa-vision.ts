@@ -21,13 +21,13 @@ export async function analyzeScreenshot(
       messages: [
         {
           role: "system",
-          content: `You are ROPA's vision system. Analyze dashboard screenshots and extract:
-1. Key metrics and their values
-2. Visual anomalies or issues
-3. Actionable recommendations
-4. Important UI elements
+          content: `Eres el sistema de visión de ROPA. SIEMPRE responde en español. Analiza capturas de pantalla del dashboard y extrae:
+1. Métricas clave y sus valores
+2. Anomalías visuales o problemas
+3. Recomendaciones accionables
+4. Elementos importantes de la UI
 
-Return a JSON object with: summary, detectedElements (array), metrics (object), recommendations (array), anomalies (array)`,
+Devuelve un objeto JSON con: summary, detectedElements (array), metrics (object), recommendations (array), anomalies (array)`,
         },
         {
           role: "user",
@@ -129,12 +129,12 @@ export async function compareScreenshots(
       messages: [
         {
           role: "system",
-          content: `Compare two dashboard screenshots (before and after) and identify:
-1. Changes that occurred
-2. Improvements (positive changes)
-3. Regressions (negative changes)
+          content: `Compara dos capturas de pantalla del dashboard (antes y después) e identifica. SIEMPRE responde en español.
+1. Cambios que ocurrieron
+2. Mejoras (cambios positivos)
+3. Regresiones (cambios negativos)
 
-Return JSON with: changes (array), improvements (array), regressions (array)`,
+Devuelve JSON con: changes (array), improvements (array), regressions (array)`,
         },
         {
           role: "user",
@@ -200,7 +200,7 @@ export async function monitorForCondition(
       messages: [
         {
           role: "system",
-          content: "You are checking if a condition is met based on dashboard analysis. Answer only 'yes' or 'no'.",
+          content: "Verificas si una condición se cumple basándote en el análisis del dashboard. Responde solo 'yes' o 'no'.",
         },
         {
           role: "user",
