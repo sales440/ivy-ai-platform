@@ -6,6 +6,42 @@ import { storagePut } from "./storage";
 import { invokeLLM } from "./_core/llm";
 import { eq, desc } from "drizzle-orm";
 
+// Circuit breaker: track consecutive failures per query
+const circuitBreaker: Record<string, { failures: number; pausedUntil: number }> = {};
+const MAX_FAILURES = 3;
+const PAUSE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
+function isCircuitOpen(key: string): boolean {
+  const cb = circuitBreaker[key];
+  if (!cb) return false;
+  if (cb.failures >= MAX_FAILURES) {
+    if (Date.now() < cb.pausedUntil) return true;
+    // Reset after pause period
+    cb.failures = 0;
+    cb.pausedUntil = 0;
+    return false;
+  }
+  return false;
+}
+
+function recordFailure(key: string): void {
+  if (!circuitBreaker[key]) {
+    circuitBreaker[key] = { failures: 0, pausedUntil: 0 };
+  }
+  circuitBreaker[key].failures++;
+  if (circuitBreaker[key].failures >= MAX_FAILURES) {
+    circuitBreaker[key].pausedUntil = Date.now() + PAUSE_DURATION_MS;
+    console.log(`[Circuit Breaker] ${key} paused for 5 minutes after ${MAX_FAILURES} consecutive failures`);
+  }
+}
+
+function recordSuccess(key: string): void {
+  if (circuitBreaker[key]) {
+    circuitBreaker[key].failures = 0;
+    circuitBreaker[key].pausedUntil = 0;
+  }
+}
+
 export const campaignsRouter = router({
   // Upload file with client data
   uploadFile: protectedProcedure
@@ -41,6 +77,7 @@ export const campaignsRouter = router({
 
   // Get uploaded files
   getFiles: protectedProcedure.query(async ({ ctx }) => {
+    if (isCircuitOpen('getFiles')) return [];
     const db = await getDb();
     if (!db) return [];
 
@@ -50,9 +87,10 @@ export const campaignsRouter = router({
         .from(uploadedFiles)
         .where(eq(uploadedFiles.uploadedBy, ctx.user.openId))
         .orderBy(desc(uploadedFiles.createdAt));
+      recordSuccess('getFiles');
       return files;
     } catch (error) {
-      console.warn('[Files] Query failed, returning empty list:', (error as Error).message?.substring(0, 100));
+      recordFailure('getFiles');
       return [];
     }
   }),
@@ -139,14 +177,16 @@ export const campaignsRouter = router({
 
   // Get client leads
   getLeads: protectedProcedure.query(async () => {
+    if (isCircuitOpen('getLeads')) return [];
     const db = await getDb();
     if (!db) return [];
 
     try {
       const leads = await db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt));
+      recordSuccess('getLeads');
       return leads;
     } catch (error) {
-      console.warn('[Leads] Query failed, returning empty list:', (error as Error).message?.substring(0, 100));
+      recordFailure('getLeads');
       return [];
     }
   }),
@@ -232,6 +272,7 @@ export const campaignsRouter = router({
 
   // Get campaigns
   getCampaigns: protectedProcedure.query(async () => {
+    if (isCircuitOpen('getCampaigns')) return [];
     const db = await getDb();
     if (!db) return [];
 
@@ -240,9 +281,10 @@ export const campaignsRouter = router({
         .select()
         .from(salesCampaigns)
         .orderBy(desc(salesCampaigns.createdAt));
+      recordSuccess('getCampaigns');
       return campaigns;
     } catch (error) {
-      console.warn('[Campaigns] Query failed, returning empty list:', (error as Error).message?.substring(0, 100));
+      recordFailure('getCampaigns');
       return [];
     }
   }),

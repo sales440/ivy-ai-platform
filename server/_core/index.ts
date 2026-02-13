@@ -108,6 +108,10 @@ async function startServer() {
         if (error.message === 'request aborted' || error.message?.includes('aborted')) {
           return; // Don't log these errors
         }
+        // Suppress "Failed query" errors from DB polling - handled by circuit breaker
+        if (error.message?.includes('Failed query')) {
+          return; // Circuit breaker handles these silently
+        }
         // Log other errors normally
         console.error('[tRPC Error]', error.message);
       },

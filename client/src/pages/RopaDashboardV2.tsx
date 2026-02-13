@@ -455,7 +455,7 @@ export default function RopaDashboardV2() {
   // Navigation commands from ROPA
   const { data: navigationCommands, refetch: refetchNavigationCommands } = trpc.ropa.getNavigationCommands.useQuery(
     undefined,
-    { refetchInterval: isPageVisible ? 5000 : false, enabled: isPageVisible }
+    { refetchInterval: isPageVisible ? 15000 : false, enabled: isPageVisible }
   );
   const markNavigationExecutedMutation = trpc.ropa.markNavigationExecuted.useMutation();
   
@@ -803,7 +803,7 @@ export default function RopaDashboardV2() {
 
   // Queries - all polling disabled when tab is not visible
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = trpc.ropa.getDashboardStats.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 15000 : false, // Refresh every 15s for real-time dashboard
+    refetchInterval: isPageVisible ? 60000 : false, // Refresh every 60s for dashboard
   });
 
   const { data: status, refetch: refetchStatus } = trpc.ropa.getStatus.useQuery(undefined, {
