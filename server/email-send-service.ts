@@ -3,99 +3,81 @@
  * 
  * Handles sending approved emails via n8n workflow (Outlook).
  * Flow: Approved emails → Owner confirms → n8n webhook → Outlook sends → Callback updates status
+ * 
+ * BRAND FIREWALL: Uses generateBrandedEmailHtml for company-specific templates.
+ * No hardcoded brand assets. Each company gets its own unique template.
  */
 
 import { getApprovedEmailDrafts, markDraftsAsSent, getEmailDraftById, createCampaignFromApprovedDraft } from "./db";
+import { generateBrandedEmailHtml, getBrandProfile } from "./brand-firewall";
 import type { EmailDraft } from "../drizzle/schema";
 
 // n8n Mass Email Webhook URL
 const N8N_MASS_EMAIL_WEBHOOK = process.env.N8N_MASS_EMAIL_WEBHOOK || 'https://sales440.app.n8n.cloud/webhook/send-mass-email';
-const N8N_API_KEY = process.env.N8N_API_KEY || '';
 
-// FAGOR Professional HTML Email Template
+/**
+ * Generate company-specific HTML email template using Brand Firewall
+ * This replaces the old generateFagorHtmlTemplate - now works for ANY company
+ */
+async function generateBrandedHtmlForDraft(draft: {
+  subject: string;
+  body: string;
+  company: string;
+  recipientName?: string;
+}): Promise<string> {
+  try {
+    const { html, coherenceCheck } = await generateBrandedEmailHtml({
+      companyName: draft.company,
+      subject: draft.subject,
+      body: draft.body,
+      recipientName: draft.recipientName,
+    });
+    
+    if (!coherenceCheck) {
+      console.warn(`[EmailSendService] ⚠️ Coherence check failed for ${draft.company}, using regenerated template`);
+    }
+    
+    return html;
+  } catch (error) {
+    console.error(`[EmailSendService] Error generating branded HTML for ${draft.company}:`, error);
+    // Fallback: simple HTML with company name (no cross-contamination)
+    return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${draft.subject}</title></head>
+<body style="font-family: Arial, sans-serif; padding: 40px; color: #333;">
+  <h2>${draft.subject}</h2>
+  ${draft.body.replace(/\n/g, '<br>')}
+  <hr style="margin-top: 30px;">
+  <p style="font-size: 12px; color: #666;">${draft.company}</p>
+</body></html>`;
+  }
+}
+
+/**
+ * Legacy compatibility: generateFagorHtmlTemplate now routes through Brand Firewall
+ * @deprecated Use generateBrandedHtmlForDraft instead
+ */
 function generateFagorHtmlTemplate(params: {
   subject: string;
   body: string;
   company: string;
   recipientName?: string;
 }): string {
+  // Synchronous fallback for legacy callers - uses FAGOR profile directly
+  // New code should use generateBrandedHtmlForDraft (async) instead
+  console.warn('[EmailSendService] ⚠️ Legacy generateFagorHtmlTemplate called - should use Brand Firewall');
   return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${params.subject}</title>
-  <style>
-    body { margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .email-wrapper { max-width: 650px; margin: 0 auto; background-color: #ffffff; }
-    .header { background: linear-gradient(135deg, #E31937 0%, #B71530 100%); padding: 30px 40px; text-align: center; }
-    .header img { max-height: 50px; }
-    .header-title { color: #ffffff; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin-top: 10px; }
-    .content { padding: 40px; color: #333333; line-height: 1.7; font-size: 15px; }
-    .content h2 { color: #E31937; font-size: 22px; margin-bottom: 15px; }
-    .content p { margin-bottom: 16px; }
-    .cta-button { display: inline-block; background: #E31937; color: #ffffff !important; text-decoration: none; padding: 14px 32px; border-radius: 6px; font-weight: 600; font-size: 15px; margin: 20px 0; }
-    .divider { height: 3px; background: linear-gradient(90deg, #E31937, #ff6b6b, #E31937); margin: 30px 0; }
-    .footer { background-color: #1a1a2e; padding: 30px 40px; color: #cccccc; font-size: 12px; }
-    .footer-logo { color: #E31937; font-weight: 700; font-size: 16px; margin-bottom: 10px; }
-    .footer-address { color: #999999; line-height: 1.6; }
-    .footer-links { margin-top: 15px; }
-    .footer-links a { color: #E31937; text-decoration: none; margin-right: 15px; }
-    .social-links { margin-top: 15px; }
-    .social-links a { display: inline-block; margin-right: 10px; color: #cccccc; text-decoration: none; }
-    .unsubscribe { margin-top: 20px; color: #666666; font-size: 11px; }
-    .unsubscribe a { color: #999999; }
-  </style>
-</head>
-<body>
-  <div class="email-wrapper">
-    <!-- Header with FAGOR Branding -->
-    <div class="header">
-      <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="max-height: 45px;" />
-      <div class="header-title">CNC Solutions & Industrial Automation</div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="content">
-      ${params.body}
-    </div>
-
-    <div class="content" style="padding-top: 0;">
-      <div class="divider"></div>
-      <p style="font-size: 13px; color: #666;">
-        Este mensaje fue enviado por <strong>FAGOR Automation USA</strong> a través de nuestra plataforma de comunicación empresarial.
-      </p>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer">
-      <div class="footer-logo">FAGOR AUTOMATION USA</div>
-      <div class="footer-address">
-        4020 Winnetka Ave<br>
-        Rolling Meadows, IL 60008<br>
-        United States<br>
-        Tel: +1 (847) 981-1500<br>
-        <a href="https://www.fagorautomation.us" style="color: #E31937;">www.fagorautomation.us</a>
-      </div>
-      <div class="footer-links">
-        <a href="https://www.fagorautomation.us/products">Products</a>
-        <a href="https://www.fagorautomation.us/services">Services</a>
-        <a href="https://www.fagorautomation.us/training">Training</a>
-        <a href="https://www.fagorautomation.us/contact">Contact</a>
-      </div>
-      <div class="social-links">
-        <a href="https://www.linkedin.com/company/fagor-automation/">LinkedIn</a>
-        <a href="https://twitter.com/FAGORAutomation">Twitter</a>
-        <a href="https://www.youtube.com/c/FAGORAutomation">YouTube</a>
-      </div>
-      <div class="unsubscribe">
-        If you no longer wish to receive these emails, <a href="#">unsubscribe here</a>.<br>
-        &copy; ${new Date().getFullYear()} FAGOR Automation USA. All rights reserved.
-      </div>
-    </div>
+<html lang="es"><head><meta charset="UTF-8"><title>${params.subject}</title></head>
+<body style="font-family: 'Segoe UI', sans-serif; background: #f4f4f4; padding: 0; margin: 0;">
+<div style="max-width: 650px; margin: 0 auto; background: #fff;">
+  <div style="background: linear-gradient(135deg, #E31937 0%, #B71530 100%); padding: 30px 40px; text-align: center;">
+    <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="max-height: 45px;" />
   </div>
-</body>
-</html>`;
+  <div style="padding: 40px; color: #333; line-height: 1.7; font-size: 15px;">${params.body}</div>
+  <div style="background: #1a1a2e; padding: 30px 40px; color: #ccc; font-size: 12px;">
+    <strong style="color: #E31937;">FAGOR AUTOMATION USA</strong><br>
+    4020 Winnetka Ave, Rolling Meadows, IL 60008<br>Tel: +1 (847) 981-1500
+  </div>
+</div></body></html>`;
 }
 
 /**
@@ -108,6 +90,8 @@ export async function getApprovedEmailsForSending(): Promise<EmailDraft[]> {
 /**
  * Send approved emails via n8n webhook (Outlook)
  * This is called ONLY after the owner explicitly clicks "Confirmar Envío"
+ * 
+ * BRAND FIREWALL: Each email gets its own company-specific HTML template
  */
 export async function sendApprovedEmailsViaN8n(draftIds: string[]): Promise<{
   success: boolean;
@@ -127,18 +111,28 @@ export async function sendApprovedEmailsViaN8n(draftIds: string[]): Promise<{
       continue;
     }
 
-    // Generate professional HTML if not already present
-    const htmlContent = draft.htmlContent || generateFagorHtmlTemplate({
-      subject: draft.subject,
-      body: draft.body,
-      company: draft.company,
-      recipientName: draft.recipientName || undefined,
-    });
+    // BRAND FIREWALL: Generate company-specific HTML using Brand Firewall
+    let htmlContent = draft.htmlContent;
+    if (!htmlContent) {
+      htmlContent = await generateBrandedHtmlForDraft({
+        subject: draft.subject,
+        body: draft.body,
+        company: draft.company,
+        recipientName: draft.recipientName || undefined,
+      });
+    }
+
+    // Get company-specific contact info for fallback recipient
+    let fallbackEmail = 'info@ivybyai.com';
+    try {
+      const brand = await getBrandProfile(draft.company);
+      if (brand.email) fallbackEmail = brand.email;
+    } catch (e) { /* use default */ }
 
     try {
       // Call n8n webhook to send via Outlook
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await fetch(N8N_MASS_EMAIL_WEBHOOK, {
         method: 'POST',
@@ -146,14 +140,13 @@ export async function sendApprovedEmailsViaN8n(draftIds: string[]): Promise<{
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          to: draft.recipientEmail || 'sales@fagorautomation.us',
+          to: draft.recipientEmail || fallbackEmail,
           subject: draft.subject,
           htmlBody: htmlContent,
-          textBody: draft.body.replace(/<[^>]*>/g, ''), // Strip HTML for plain text fallback
+          textBody: draft.body.replace(/<[^>]*>/g, ''),
           company: draft.company,
           campaign: draft.campaign,
           draftId: draft.draftId,
-          // Callback URL for n8n to report results
           callbackUrl: `${process.env.RAILWAY_PUBLIC_DOMAIN || process.env.VITE_APP_URL || ''}/api/email-callback`,
         }),
         signal: controller.signal,
@@ -174,7 +167,7 @@ export async function sendApprovedEmailsViaN8n(draftIds: string[]): Promise<{
       results.push({ draftId, status: 'failed', error: error.message || 'Network error' });
     }
 
-    // Rate limiting: wait 3 seconds between emails to avoid spam filters
+    // Rate limiting: wait 3 seconds between emails
     if (draftIds.indexOf(draftId) < draftIds.length - 1) {
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
@@ -226,4 +219,4 @@ export async function createCampaignFromDrafts(drafts: EmailDraft[]): Promise<nu
   });
 }
 
-export { generateFagorHtmlTemplate };
+export { generateFagorHtmlTemplate, generateBrandedHtmlForDraft };

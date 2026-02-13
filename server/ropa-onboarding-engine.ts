@@ -19,6 +19,7 @@ import {
   emailDrafts,
   campaignContent,
 } from "../drizzle/schema";
+import { generateBrandedEmailHtml, generateBrandedCallScript, generateBrandedSmsTemplate } from "./brand-firewall";
 import {
   ropaTasks,
   ropaAlerts,
@@ -562,10 +563,39 @@ export async function persistCampaignPlan(
         }
       }
 
-      // Create drafts in email_drafts (for Monitor approval)
+      // BRAND FIREWALL: Create drafts with company-specific HTML templates
       for (const draft of campaign.drafts) {
         const draftId = `onboard_draft_${profile.clientId}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
         try {
+          // Generate brand-specific HTML for the draft
+          let htmlContent = '';
+          try {
+            if (draft.type === 'email' || !draft.type) {
+              const brandResult = await generateBrandedEmailHtml({
+                companyName: profile.companyName,
+                subject: draft.subject,
+                body: draft.body,
+              });
+              htmlContent = brandResult.html;
+              if (!brandResult.coherenceCheck) {
+                console.warn(`[Onboarding] ⚠️ Brand coherence failed for ${profile.companyName} draft: ${draft.subject}`);
+              }
+            } else if (draft.type === 'sms') {
+              htmlContent = await generateBrandedSmsTemplate({
+                companyName: profile.companyName,
+                body: draft.body,
+              });
+            } else if (draft.type === 'call_script') {
+              htmlContent = await generateBrandedCallScript({
+                companyName: profile.companyName,
+                body: draft.body,
+                campaignName: campaign.name,
+              });
+            }
+          } catch (brandErr) {
+            console.warn(`[Onboarding] Brand Firewall error for ${profile.companyName}:`, brandErr);
+          }
+
           await safeDbMutation("insertDraft",
             async () => db.insert(emailDrafts).values({
               draftId,
@@ -573,10 +603,11 @@ export async function persistCampaignPlan(
               campaign: campaign.name,
               subject: draft.subject,
               body: draft.body,
+              htmlContent: htmlContent || undefined,
               status: "pending",
               createdBy: "ROPA-Onboarding",
             }),
-            async () => db.execute(sql`INSERT INTO email_drafts (draft_id, company, campaign, subject, body, status, created_by) VALUES (${draftId}, ${profile.companyName}, ${campaign.name}, ${draft.subject}, ${draft.body}, 'pending', 'ROPA-Onboarding')`)
+            async () => db.execute(sql`INSERT INTO email_drafts (draft_id, company, campaign, subject, body, html_content, status, created_by) VALUES (${draftId}, ${profile.companyName}, ${campaign.name}, ${draft.subject}, ${draft.body}, ${htmlContent || ''}, 'pending', 'ROPA-Onboarding')`)
           );
           draftsCreated++;
         } catch (e) {
@@ -584,19 +615,33 @@ export async function persistCampaignPlan(
         }
       }
 
-      // Also create campaign_content entries for approval workflow
+      // BRAND FIREWALL: Also create campaign_content entries with branded HTML
       for (const draft of campaign.drafts) {
         try {
+          // Generate brand-specific HTML for campaign_content too
+          let contentHtml = '';
+          try {
+            if (draft.type === 'email' || !draft.type) {
+              const brandResult = await generateBrandedEmailHtml({
+                companyName: profile.companyName,
+                subject: draft.subject,
+                body: draft.body,
+              });
+              contentHtml = brandResult.html;
+            }
+          } catch (e) { /* fallback: no html */ }
+
           await safeDbMutation("insertCampaignContent",
             async () => db.insert(campaignContent).values({
               companyName: profile.companyName,
               contentType: draft.type === "call_script" ? "call_script" : draft.type === "sms" ? "sms" : "email",
               subject: draft.subject,
               body: draft.body,
+              htmlContent: contentHtml || undefined,
               status: "pending",
               targetRecipients: draft.recipientType,
             }),
-            async () => db.execute(sql`INSERT INTO campaign_content (company_name, content_type, subject, body, status, target_recipients) VALUES (${profile.companyName}, ${draft.type === "call_script" ? "call_script" : draft.type === "sms" ? "sms" : "email"}, ${draft.subject}, ${draft.body}, 'pending', ${draft.recipientType})`)
+            async () => db.execute(sql`INSERT INTO campaign_content (company_name, content_type, subject, body, html_content, status, target_recipients) VALUES (${profile.companyName}, ${draft.type === "call_script" ? "call_script" : draft.type === "sms" ? "sms" : "email"}, ${draft.subject}, ${draft.body}, ${contentHtml || ''}, 'pending', ${draft.recipientType})`)
           );
         } catch (e) {
           console.warn(`[Onboarding] Failed to create campaign content for: ${draft.subject}`);

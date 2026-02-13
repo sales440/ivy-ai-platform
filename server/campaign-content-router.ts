@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import { campaignContent } from "../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
+import { generateBrandedEmailHtml, generateBrandedCallScript, generateBrandedSmsTemplate } from "./brand-firewall";
 
 export const campaignContentRouter = router({
   // List all pending content for validation
@@ -89,10 +90,23 @@ export const campaignContentRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      // Generate HTML content with company letterhead for emails
+      // BRAND FIREWALL: Generate company-specific HTML template
       let htmlContent = input.htmlContent;
       if (input.contentType === "email" && !htmlContent) {
-        htmlContent = generateEmailWithLetterhead(input);
+        try {
+          const result = await generateBrandedEmailHtml({
+            companyName: input.companyName,
+            subject: input.subject || '',
+            body: input.body,
+          });
+          htmlContent = result.html;
+          if (!result.coherenceCheck) {
+            console.warn(`[CampaignContent] Brand coherence check failed for ${input.companyName}`);
+          }
+        } catch (e) {
+          console.error('[CampaignContent] Brand Firewall error, using fallback:', e);
+          htmlContent = generateEmailWithLetterhead(input);
+        }
       }
       
       const result = await db.insert(campaignContent).values({
@@ -260,18 +274,29 @@ FORMATO DE RESPUESTA (JSON):
         const contentStr = typeof messageContent === 'string' ? messageContent : JSON.stringify(messageContent);
         const content = JSON.parse(contentStr || "{}");
         
-        // Generate HTML with letterhead
-        const htmlContent = generateEmailWithLetterhead({
-          companyName: input.companyName,
-          companyLogo: input.companyLogo,
-          companyAddress: input.companyAddress,
-          companyPhone: input.companyPhone,
-          companyEmail: input.companyEmail,
-          companyWebsite: input.companyWebsite,
-          subject: content.subject,
-          body: content.body,
-          contentType: "email",
-        });
+        // BRAND FIREWALL: Generate company-specific HTML template
+        let htmlContent: string;
+        try {
+          const brandResult = await generateBrandedEmailHtml({
+            companyName: input.companyName,
+            subject: content.subject,
+            body: content.body,
+          });
+          htmlContent = brandResult.html;
+        } catch (e) {
+          console.error('[CampaignContent] Brand Firewall error in generateCreativeEmail:', e);
+          htmlContent = generateEmailWithLetterhead({
+            companyName: input.companyName,
+            companyLogo: input.companyLogo,
+            companyAddress: input.companyAddress,
+            companyPhone: input.companyPhone,
+            companyEmail: input.companyEmail,
+            companyWebsite: input.companyWebsite,
+            subject: content.subject,
+            body: content.body,
+            contentType: "email",
+          });
+        }
 
         return {
           success: true,

@@ -704,3 +704,17 @@
 - [x] Created centralized ivy-clients-db.ts module with raw SQL for all ivy_clients operations
 - [x] All 132 tests passing
 - [ ] Push to GitHub for Railway deployment
+
+## Brand Firewall - Eliminate Cross-Contamination of Visual Assets (Feb 13)
+- [x] Create brand-firewall.ts service with isolated brand profiles per company (~700 lines)
+- [x] Implement Zero Trust isolation: clearBrandContext() + setActiveBrand() memory wipe
+- [x] Build dynamic HTML template generator based on company profile from Google Drive
+- [x] Case A: PETLIFE 360 template (warm orange/coral, rounded borders, friendly typography, pet wellness)
+- [x] Case B: FAGOR template (minimalist, red/black/white, rigid structure, industrial/B2B)
+- [x] Pre-render coherence check: runCoherenceCheck() verifies logo matches campaign company
+- [x] Auto-discard and regenerate drafts that fail coherence check
+- [x] Update email-send-service.ts to use Brand Firewall (replaced generateFagorHtmlTemplate)
+- [x] Update campaign-content-router.ts to use Brand Firewall (replaced generateEmailWithLetterhead)
+- [x] Update ropa-onboarding-engine.ts to use Brand Firewall for draft generation
+- [x] 19 Brand Firewall tests + 151 total tests all passing
+- [ ] Push to GitHub for Railway deployment

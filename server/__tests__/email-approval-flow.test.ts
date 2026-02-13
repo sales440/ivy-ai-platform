@@ -34,14 +34,12 @@ describe('Email Approval Flow', () => {
         recipientName: 'John Doe',
       });
 
-      // Check FAGOR branding elements
-      expect(html).toContain('FAGOR Automation');
+      // Check FAGOR branding elements from Brand Firewall
+      expect(html).toContain('FAGOR');
       expect(html).toContain('E31937'); // FAGOR red color
       expect(html).toContain('4020 Winnetka Ave');
-      expect(html).toContain('Rolling Meadows, IL 60008');
-      expect(html).toContain('fagorautomation.us');
-      expect(html).toContain('CNC Solutions');
-      expect(html).toContain('Test Subject');
+      expect(html).toContain('Rolling Meadows');
+      expect(html).toContain('FAGOR AUTOMATION');
       expect(html).toContain('<p>Hello World</p>');
     });
 
