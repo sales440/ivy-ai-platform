@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,10 @@ import {
   RotateCcw,
   Eye,
   Code,
+  Maximize2,
+  Minimize2,
+  Download,
+  Printer,
 } from "lucide-react";
 
 export type DraftType = 'email' | 'call' | 'sms';
@@ -57,50 +61,193 @@ interface MonitorDraftPopupProps {
 }
 
 /**
- * Generate professional FAGOR-branded HTML email preview
+ * Generate premium FAGOR-branded HTML email for full-screen preview and PDF export
  */
-function generateFagorEmailPreview(subject: string, body: string, company: string): string {
+function generatePremiumFagorEmail(subject: string, body: string, company: string, recipient?: string): string {
+  // Process body: convert newlines to paragraphs for better formatting
+  const formattedBody = body
+    .split(/\n\n+/)
+    .map(p => p.trim())
+    .filter(p => p.length > 0)
+    .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.8; color: #2d3748;">${p.replace(/\n/g, '<br/>')}</p>`)
+    .join('');
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  </style>
+</head>
+<body>
+<div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 720px; margin: 0 auto; background: #ffffff;">
+  
+  <!-- Premium Header with FAGOR Branding -->
+  <div style="position: relative; overflow: hidden;">
+    <div style="background: linear-gradient(135deg, #C41230 0%, #8B0D22 50%, #1a1a2e 100%); padding: 40px 48px 36px;">
+      <!-- Geometric accent -->
+      <div style="position: absolute; top: -20px; right: -20px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
+      <div style="position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; background: rgba(255,255,255,0.02); border-radius: 50%;"></div>
+      
+      <!-- Logo area -->
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td>
+            <div style="font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+              FAGOR
+            </div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; font-weight: 300;">
+              Automation
+            </div>
+          </td>
+          <td style="text-align: right; vertical-align: top;">
+            <div style="display: inline-block; background: rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px;">
+              <div style="font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase;">CNC Solutions</div>
+              <div style="font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase;">Industrial Automation</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Red accent line -->
+    <div style="height: 4px; background: linear-gradient(90deg, #C41230 0%, #E31937 30%, #ff4d6a 60%, #C41230 100%);"></div>
+  </div>
+
+  <!-- Subject Section -->
+  <div style="background: #fafbfc; padding: 24px 48px; border-bottom: 1px solid #e8ecf0;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td>
+          <div style="font-size: 10px; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">Asunto</div>
+          <div style="font-size: 20px; font-weight: 600; color: #1a202c; line-height: 1.3;">${subject}</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  ${recipient ? `
+  <!-- Recipient Info -->
+  <div style="padding: 16px 48px; background: #f7f8fa; border-bottom: 1px solid #e8ecf0;">
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td style="padding-right: 24px;">
+          <span style="font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;">Para</span>
+          <div style="font-size: 14px; color: #4a5568; font-weight: 500; margin-top: 2px;">${recipient}</div>
+        </td>
+        <td>
+          <span style="font-size: 10px; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;">Empresa</span>
+          <div style="font-size: 14px; color: #4a5568; font-weight: 500; margin-top: 2px;">${company}</div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  ` : ''}
+
+  <!-- Email Body -->
+  <div style="padding: 40px 48px 32px; font-size: 15px; color: #2d3748; line-height: 1.8;">
+    ${formattedBody}
+  </div>
+
+  <!-- CTA Section (if applicable) -->
+  <div style="padding: 0 48px 40px; text-align: center;">
+    <div style="display: inline-block; background: linear-gradient(135deg, #C41230 0%, #E31937 100%); border-radius: 8px; padding: 14px 36px; text-decoration: none;">
+      <span style="color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.5px;">Solicitar Información</span>
+    </div>
+  </div>
+
+  <!-- Elegant Divider -->
+  <div style="padding: 0 48px;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td style="width: 30%;"><div style="height: 1px; background: linear-gradient(90deg, transparent, #C41230);"></div></td>
+        <td style="width: 40%; text-align: center; padding: 0 16px;">
+          <div style="width: 8px; height: 8px; background: #C41230; border-radius: 50%; display: inline-block;"></div>
+        </td>
+        <td style="width: 30%;"><div style="height: 1px; background: linear-gradient(90deg, #C41230, transparent);"></div></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Signature Block -->
+  <div style="padding: 32px 48px;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td style="border-left: 3px solid #C41230; padding-left: 20px;">
+          <div style="font-size: 16px; font-weight: 700; color: #1a202c; margin-bottom: 2px;">FAGOR Automation USA</div>
+          <div style="font-size: 12px; color: #718096; line-height: 1.6; margin-top: 8px;">
+            4020 Winnetka Ave, Rolling Meadows, IL 60008<br/>
+            Tel: +1 (847) 981-1500<br/>
+            <a href="https://www.fagorautomation.us" style="color: #C41230; text-decoration: none; font-weight: 500;">www.fagorautomation.us</a>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 28px 48px;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td>
+          <div style="margin-bottom: 16px;">
+            <a href="https://www.linkedin.com/company/fagor-automation/" style="display: inline-block; width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: center; line-height: 32px; text-decoration: none; color: #C41230; font-size: 14px; font-weight: 700; margin-right: 8px;">in</a>
+            <a href="https://twitter.com/FAGORAutomation" style="display: inline-block; width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: center; line-height: 32px; text-decoration: none; color: #C41230; font-size: 14px; font-weight: 700; margin-right: 8px;">𝕏</a>
+            <a href="https://www.youtube.com/c/FAGORAutomation" style="display: inline-block; width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: center; line-height: 32px; text-decoration: none; color: #C41230; font-size: 14px; font-weight: 700;">▶</a>
+          </div>
+          <div style="font-size: 11px; color: #64748b; line-height: 1.6;">
+            © ${new Date().getFullYear()} FAGOR Automation USA. All rights reserved.<br/>
+            <span style="color: #475569;">Precision. Innovation. Performance.</span>
+          </div>
+        </td>
+        <td style="text-align: right; vertical-align: bottom;">
+          <div style="font-size: 9px; color: #475569; letter-spacing: 1px; text-transform: uppercase;">
+            Powered by Ivy.AI
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
+/**
+ * Simple preview for the popup (non-fullscreen)
+ */
+function generateSimplePreview(subject: string, body: string, company: string): string {
   return `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-      <!-- Header -->
-      <div style="background: linear-gradient(135deg, #E31937 0%, #B71530 100%); padding: 28px 36px; text-align: center;">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-          <img src="https://www.fagorautomation.com/images/logo-fagor-automation-white.svg" alt="FAGOR Automation" style="max-height: 40px; filter: brightness(10);" onerror="this.style.display='none'" />
-        </div>
-        <div style="color: rgba(255,255,255,0.8); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px;">CNC Solutions &amp; Industrial Automation</div>
+      <div style="background: linear-gradient(135deg, #C41230 0%, #8B0D22 100%); padding: 28px 36px; text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">FAGOR</div>
+        <div style="color: rgba(255,255,255,0.7); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-top: 2px;">Automation</div>
+        <div style="color: rgba(255,255,255,0.6); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px;">CNC Solutions &amp; Industrial Automation</div>
       </div>
-
-      <!-- Subject Bar -->
-      <div style="background: #1a1a2e; padding: 16px 36px; border-bottom: 3px solid #E31937;">
+      <div style="background: #1a1a2e; padding: 16px 36px; border-bottom: 3px solid #C41230;">
         <div style="color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Asunto</div>
         <div style="color: #ffffff; font-size: 16px; font-weight: 600;">${subject}</div>
       </div>
-
-      <!-- Body Content -->
       <div style="padding: 36px; color: #333333; line-height: 1.7; font-size: 15px;">
         ${body}
       </div>
-
-      <!-- Divider -->
-      <div style="margin: 0 36px;">
-        <div style="height: 3px; background: linear-gradient(90deg, #E31937, #ff6b6b, #E31937); border-radius: 2px;"></div>
-      </div>
-
-      <!-- Signature -->
+      <div style="margin: 0 36px;"><div style="height: 3px; background: linear-gradient(90deg, #C41230, #ff6b6b, #C41230); border-radius: 2px;"></div></div>
       <div style="padding: 24px 36px; color: #666; font-size: 13px;">
         <p style="margin: 0 0 4px 0; font-weight: 600; color: #333;">FAGOR Automation USA</p>
         <p style="margin: 0; color: #999; line-height: 1.5;">
           4020 Winnetka Ave, Rolling Meadows, IL 60008<br/>
-          Tel: +1 (847) 981-1500 | <a href="https://www.fagorautomation.us" style="color: #E31937; text-decoration: none;">www.fagorautomation.us</a>
+          Tel: +1 (847) 981-1500 | <a href="https://www.fagorautomation.us" style="color: #C41230; text-decoration: none;">www.fagorautomation.us</a>
         </p>
       </div>
-
-      <!-- Footer -->
       <div style="background: #1a1a2e; padding: 24px 36px; color: #999; font-size: 11px; text-align: center;">
         <div style="margin-bottom: 12px;">
-          <a href="https://www.linkedin.com/company/fagor-automation/" style="color: #E31937; text-decoration: none; margin: 0 8px;">LinkedIn</a>
-          <a href="https://twitter.com/FAGORAutomation" style="color: #E31937; text-decoration: none; margin: 0 8px;">Twitter</a>
-          <a href="https://www.youtube.com/c/FAGORAutomation" style="color: #E31937; text-decoration: none; margin: 0 8px;">YouTube</a>
+          <a href="#" style="color: #C41230; text-decoration: none; margin: 0 8px;">LinkedIn</a>
+          <a href="#" style="color: #C41230; text-decoration: none; margin: 0 8px;">Twitter</a>
+          <a href="#" style="color: #C41230; text-decoration: none; margin: 0 8px;">YouTube</a>
         </div>
         <p style="margin: 0; color: #666;">&copy; ${new Date().getFullYear()} FAGOR Automation USA. All rights reserved.</p>
       </div>
@@ -121,6 +268,8 @@ export function MonitorDraftPopup({
   const [editedBody, setEditedBody] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'preview' | 'source'>('preview');
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Reset edit state when draft changes
   useEffect(() => {
@@ -129,49 +278,52 @@ export function MonitorDraftPopup({
       setEditedBody(draft.body);
       setIsEditing(false);
       setViewMode('preview');
+      setIsFullScreen(false);
     }
   }, [draft]);
+
+  // Update iframe content when in fullscreen mode
+  useEffect(() => {
+    if (isFullScreen && iframeRef.current && draft) {
+      const htmlContent = generatePremiumFagorEmail(editedSubject, editedBody, draft.company, draft.recipient);
+      const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(htmlContent);
+        iframeDoc.close();
+      }
+    }
+  }, [isFullScreen, editedSubject, editedBody, draft]);
 
   if (!draft) return null;
 
   const getTypeIcon = () => {
     switch (draft.type) {
-      case 'email':
-        return <Mail className="w-6 h-6" />;
-      case 'call':
-        return <Phone className="w-6 h-6" />;
-      case 'sms':
-        return <MessageCircle className="w-6 h-6" />;
+      case 'email': return <Mail className="w-6 h-6" />;
+      case 'call': return <Phone className="w-6 h-6" />;
+      case 'sms': return <MessageCircle className="w-6 h-6" />;
     }
   };
 
   const getTypeLabel = () => {
     switch (draft.type) {
-      case 'email':
-        return 'Email de Campaña';
-      case 'call':
-        return 'Script de Llamada';
-      case 'sms':
-        return 'Mensaje SMS';
+      case 'email': return 'Email de Campaña';
+      case 'call': return 'Script de Llamada';
+      case 'sms': return 'Mensaje SMS';
     }
   };
 
   const getStatusBadge = () => {
     switch (draft.status) {
-      case 'pending':
-        return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">Pendiente</Badge>;
-      case 'approved':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">Aprobado</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">Rechazado</Badge>;
-      case 'sent':
-        return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">Enviado</Badge>;
+      case 'pending': return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/50">Pendiente</Badge>;
+      case 'approved': return <Badge className="bg-green-500/20 text-green-400 border-green-500/50">Aprobado</Badge>;
+      case 'rejected': return <Badge className="bg-red-500/20 text-red-400 border-red-500/50">Rechazado</Badge>;
+      case 'sent': return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">Enviado</Badge>;
     }
   };
 
   const handleSaveChanges = async () => {
     if (!onSaveEdit) return;
-    
     setIsSaving(true);
     try {
       await onSaveEdit(draft.id, editedSubject, editedBody);
@@ -198,8 +350,96 @@ export function MonitorDraftPopup({
     }
   };
 
+  const handlePrint = () => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.print();
+    }
+  };
+
   const hasChanges = editedSubject !== draft.subject || editedBody !== draft.body;
 
+  // ============ FULL SCREEN PREVIEW MODE ============
+  if (isFullScreen) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col">
+        {/* Full-screen header bar */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700 px-6 py-3 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                <Mail className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-white font-semibold text-sm">Vista Previa Premium</h2>
+                <p className="text-slate-400 text-xs">{draft.company} — {draft.campaign}</p>
+              </div>
+            </div>
+            {getStatusBadge()}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="border-slate-600 text-slate-300 hover:bg-slate-700 h-8"
+            >
+              <Printer className="w-3.5 h-3.5 mr-1.5" />
+              Imprimir / PDF
+            </Button>
+            
+            {draft.status === 'pending' && (
+              <>
+                <Button
+                  onClick={handleApprove}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 h-8"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                  Aprobar
+                </Button>
+                <Button
+                  onClick={() => onReject(draft.id)}
+                  variant="destructive"
+                  size="sm"
+                  className="h-8"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 mr-1.5" />
+                  Rechazar
+                </Button>
+              </>
+            )}
+            
+            <div className="w-px h-6 bg-slate-700 mx-1" />
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsFullScreen(false)}
+              className="text-slate-400 hover:text-white hover:bg-slate-700 h-8"
+            >
+              <Minimize2 className="w-3.5 h-3.5 mr-1.5" />
+              Salir
+            </Button>
+          </div>
+        </div>
+
+        {/* Full-screen email preview in iframe */}
+        <div className="flex-1 overflow-auto bg-gradient-to-b from-slate-100 to-slate-200 flex justify-center py-8 px-4">
+          <div className="w-full max-w-[780px] bg-white rounded-xl shadow-2xl overflow-hidden" style={{ minHeight: '90%' }}>
+            <iframe
+              ref={iframeRef}
+              className="w-full border-0"
+              style={{ minHeight: '900px', height: '100%' }}
+              title="Email Preview"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============ NORMAL DIALOG MODE ============
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl h-[92vh] p-0 bg-slate-900 border-slate-700 flex flex-col">
@@ -236,6 +476,16 @@ export function MonitorDraftPopup({
                   >
                     <Eye className="w-3 h-3 mr-1" />
                     Preview
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsFullScreen(true)}
+                    className="h-7 px-3 text-xs text-white/60 hover:text-white hover:bg-white/10"
+                    title="Ver en pantalla completa"
+                  >
+                    <Maximize2 className="w-3 h-3 mr-1" />
+                    Full
                   </Button>
                   <Button
                     variant="ghost"
@@ -345,22 +595,33 @@ export function MonitorDraftPopup({
                       <Mail className="w-4 h-4 text-cyan-400" />
                       Vista Previa del Email (como lo verá el destinatario)
                     </h3>
-                    {draft.status === 'pending' && (
+                    <div className="flex items-center gap-2">
+                      {draft.status === 'pending' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsEditing(true)}
+                          className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10"
+                        >
+                          <Pencil className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setIsEditing(true)}
-                        className="text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10"
+                        onClick={() => setIsFullScreen(true)}
+                        className="text-amber-400 border-amber-400/50 hover:bg-amber-400/10"
                       >
-                        <Pencil className="w-4 h-4 mr-2" />
-                        Editar
+                        <Maximize2 className="w-4 h-4 mr-2" />
+                        Pantalla Completa
                       </Button>
-                    )}
+                    </div>
                   </div>
                   <div className="bg-gray-100 rounded-xl p-6 border border-gray-300">
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: generateFagorEmailPreview(editedSubject, editedBody, draft.company),
+                        __html: generateSimplePreview(editedSubject, editedBody, draft.company),
                       }}
                     />
                   </div>

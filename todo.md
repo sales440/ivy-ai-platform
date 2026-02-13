@@ -562,6 +562,11 @@
 ## Phase 46: Fix Production DB - sales_campaigns table missing
 - [x] Verified sales_campaigns table exists in production DB (not missing)
 - [x] Add try-catch protection to campaigns query to prevent error spam
-- [ ] Push fix to GitHub for Railway deployment
+- [x] Push fix to GitHub for Railway deployment
 - [x] Reduced all polling intervals (5s→30s, 3s→30s, 2s→5s) to prevent DB connection exhaustion
 - [ ] Verify production logs are clean
+
+## Phase 47: Full-Screen Preview Button + Premium Email Template
+- [x] Activate Preview button in MonitorDraftPopup to open full-screen email view
+- [x] Upgrade email HTML template to high-end/premium quality for PDF attachment
+- [ ] Push to GitHub for Railway deployment
