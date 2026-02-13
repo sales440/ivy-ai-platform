@@ -11,6 +11,7 @@ import {
   createCampaignFromApprovedDraft,
 } from "./db";
 import { sendApprovedEmailsViaN8n, processEmailCallback, createCampaignFromDrafts } from "./email-send-service";
+import { getBrandProfile, generateBrandedEmailHtml } from "./brand-firewall";
 
 /**
  * Email Drafts Router
@@ -146,6 +147,63 @@ export const emailDraftsRouter = router({
         if (success) count++;
       }
       return { success: true, cancelledCount: count };
+    }),
+
+  // Get brand profile for a company (used by frontend to render dynamic previews)
+  getBrandProfile: publicProcedure
+    .input(z.object({ companyName: z.string() }))
+    .query(async ({ input }) => {
+      const profile = await getBrandProfile(input.companyName);
+      return {
+        companyName: profile.companyName,
+        sector: profile.sector,
+        logoUrl: profile.logoUrl,
+        primaryColor: profile.primaryColor,
+        secondaryColor: profile.secondaryColor,
+        accentColor: profile.accentColor,
+        backgroundColor: profile.backgroundColor,
+        headerBackground: profile.headerBackground,
+        textColor: profile.textColor,
+        fontFamily: profile.fontFamily,
+        headerFontSize: profile.headerFontSize,
+        bodyFontSize: profile.bodyFontSize,
+        borderRadius: profile.borderRadius,
+        headerStyle: profile.headerStyle,
+        layoutStyle: profile.layoutStyle,
+        toneVisual: profile.toneVisual,
+        address: profile.address,
+        phone: profile.phone,
+        email: profile.email,
+        website: profile.website,
+        socialLinks: profile.socialLinks,
+        legalNotice: profile.legalNotice,
+        unsubscribeText: profile.unsubscribeText,
+        ctaText: profile.ctaText,
+        ctaStyle: profile.ctaStyle,
+        footerBackground: profile.footerBackground,
+        footerTextColor: profile.footerTextColor,
+        dividerStyle: profile.dividerStyle,
+      };
+    }),
+
+  // Regenerate HTML content for a draft using Brand Firewall
+  regenerateHtml: publicProcedure
+    .input(z.object({
+      companyName: z.string(),
+      subject: z.string(),
+      body: z.string(),
+      recipientName: z.string().optional(),
+      ctaText: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const result = await generateBrandedEmailHtml({
+        companyName: input.companyName,
+        subject: input.subject,
+        body: input.body,
+        recipientName: input.recipientName,
+        ctaText: input.ctaText,
+      });
+      return { html: result.html, coherenceCheck: result.coherenceCheck };
     }),
 
   // Approve draft AND create campaign in DB

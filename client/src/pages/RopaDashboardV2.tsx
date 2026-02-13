@@ -361,10 +361,11 @@ export default function RopaDashboardV2() {
         company: d.company,
         subject: d.subject,
         body: d.body,
+        htmlContent: d.htmlContent || undefined,
         campaign: d.campaign || 'General',
         status: d.status as 'pending' | 'approved' | 'rejected' | 'sent',
         createdAt: d.createdAt,
-        recipient: d.recipient,
+        recipient: d.recipientName || d.recipient,
         phoneNumber: d.phoneNumber,
       }));
       setAllDrafts(formattedDrafts);
@@ -521,6 +522,69 @@ export default function RopaDashboardV2() {
               setChatOpen(true);
               setChatMaximized(true);
               toast.info('ROPA maximizó el chat');
+            } else if (cmd.params?.action === 'openDraft' && cmd.target === 'draft-popup') {
+              // ROPA wants to open a specific draft in the Monitor popup
+              const companyName = cmd.params?.companyName || '';
+              const draftIndex = cmd.params?.draftIndex || 0;
+              // Ensure we're on monitor section
+              setActiveSection('monitor');
+              // Wait for drafts to load, then find and open the matching draft
+              setTimeout(() => {
+                const companyDrafts = allDrafts
+                  .filter(d => d.company?.toLowerCase().includes(companyName.toLowerCase()) && d.status === 'pending')
+                  .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+                if (companyDrafts.length > 0) {
+                  const targetDraft = companyDrafts[Math.min(draftIndex, companyDrafts.length - 1)];
+                  setSelectedDraft(targetDraft);
+                  setIsPopupOpen(true);
+                  toast.success(`ROPA abrió borrador de ${companyName}`);
+                } else {
+                  // Try without status filter
+                  const anyDrafts = allDrafts
+                    .filter(d => d.company?.toLowerCase().includes(companyName.toLowerCase()))
+                    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+                  if (anyDrafts.length > 0) {
+                    const targetDraft = anyDrafts[Math.min(draftIndex, anyDrafts.length - 1)];
+                    setSelectedDraft(targetDraft);
+                    setIsPopupOpen(true);
+                    toast.success(`ROPA abrió borrador de ${companyName}`);
+                  } else {
+                    toast.error(`No se encontraron borradores para ${companyName}`);
+                  }
+                }
+              }, 500);
+            } else if ((cmd.params?.action === 'approveDraft' || cmd.params?.action === 'rejectDraft') && cmd.target === 'draft-action') {
+              // ROPA wants to approve or reject a draft
+              const companyName = cmd.params?.companyName || '';
+              const draftIndex = cmd.params?.draftIndex || 0;
+              const isApprove = cmd.params?.action === 'approveDraft';
+              
+              // Find the target draft
+              let targetDraft: Draft | undefined;
+              if (companyName === '__CURRENT__' && selectedDraft) {
+                // Use the currently open draft
+                targetDraft = selectedDraft;
+              } else {
+                const companyDrafts = allDrafts
+                  .filter(d => d.company?.toLowerCase().includes(companyName.toLowerCase()) && d.status === 'pending')
+                  .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+                targetDraft = companyDrafts[Math.min(draftIndex, companyDrafts.length - 1)];
+              }
+              
+              if (targetDraft) {
+                if (isApprove) {
+                  updateEmailDraftStatus(targetDraft.id, 'approved');
+                  toast.success(`Borrador de ${targetDraft.company} aprobado por ROPA`);
+                } else {
+                  updateEmailDraftStatus(targetDraft.id, 'rejected');
+                  toast.success(`Borrador de ${targetDraft.company} rechazado y eliminado por ROPA`);
+                }
+                // Close popup if it was open
+                setIsPopupOpen(false);
+                setSelectedDraft(null);
+              } else {
+                toast.error(`No se encontró borrador pendiente${companyName !== '__CURRENT__' ? ` para ${companyName}` : ''}`);
+              }
             }
             break;
             

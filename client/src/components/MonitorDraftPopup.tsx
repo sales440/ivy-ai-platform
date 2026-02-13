@@ -44,6 +44,7 @@ export interface Draft {
   company: string;
   subject: string;
   body: string;
+  htmlContent?: string;
   campaign: string;
   status: 'pending' | 'approved' | 'rejected' | 'sent';
   createdAt: string;
@@ -62,9 +63,6 @@ interface MonitorDraftPopupProps {
 }
 
 /**
- * Generate premium FAGOR-branded HTML email for full-screen preview and PDF export
- */
-/**
  * Auto-suggest CTA text based on campaign name
  */
 function suggestCtaText(campaign: string): string {
@@ -77,17 +75,33 @@ function suggestCtaText(campaign: string): string {
   if (c.includes('warranty') || c.includes('garantía')) return 'Extend Warranty';
   if (c.includes('digital') || c.includes('suite') || c.includes('software')) return 'Explore Digital Suite';
   if (c.includes('automation')) return 'Discover Automation Solutions';
+  if (c.includes('pet') || c.includes('mascota')) return 'Descubrir Más';
   return 'Solicitar Información';
 }
 
-function generatePremiumFagorEmail(subject: string, body: string, company: string, recipient?: string, ctaText?: string): string {
-  // Process body: convert newlines to paragraphs for better formatting
+/**
+ * Generate dynamic brand-aware HTML email for full-screen preview and PDF export.
+ * If htmlContent from Brand Firewall is available, use it directly.
+ * Otherwise, generate a dynamic template based on company name.
+ */
+function generateDynamicEmailPreview(subject: string, body: string, company: string, recipient?: string, ctaText?: string, htmlContent?: string): string {
+  // If we have pre-generated HTML from Brand Firewall, use it directly
+  if (htmlContent) {
+    return htmlContent;
+  }
+  
+  // Fallback: generate a neutral professional template (no hardcoded brand)
   const formattedBody = body
     .split(/\n\n+/)
     .map(p => p.trim())
     .filter(p => p.length > 0)
     .map(p => `<p style="margin: 0 0 16px 0; line-height: 1.8; color: #2d3748;">${p.replace(/\n/g, '<br/>')}</p>`)
     .join('');
+
+  // Use neutral blue/professional colors as fallback
+  const primaryColor = '#2563EB';
+  const secondaryColor = '#1E40AF';
+  const headerBg = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
 
   return `<!DOCTYPE html>
 <html>
@@ -102,47 +116,28 @@ function generatePremiumFagorEmail(subject: string, body: string, company: strin
 <body>
 <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 720px; margin: 0 auto; background: #ffffff;">
   
-  <!-- Premium Header with FAGOR Branding -->
+  <!-- Header: Dynamic Company -->
   <div style="position: relative; overflow: hidden;">
-    <div style="background: linear-gradient(135deg, #C41230 0%, #8B0D22 50%, #1a1a2e 100%); padding: 40px 48px 36px;">
-      <!-- Geometric accent -->
+    <div style="background: ${headerBg}; padding: 40px 48px 36px;">
       <div style="position: absolute; top: -20px; right: -20px; width: 200px; height: 200px; background: rgba(255,255,255,0.03); border-radius: 50%;"></div>
-      <div style="position: absolute; bottom: -40px; left: -40px; width: 160px; height: 160px; background: rgba(255,255,255,0.02); border-radius: 50%;"></div>
-      
-      <!-- Logo area -->
       <table cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
           <td>
-            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="height: 48px; width: auto;" />
-          </td>
-          <td style="text-align: right; vertical-align: top;">
-            <div style="display: inline-block; background: rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px;">
-              <div style="font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase;">CNC Solutions</div>
-              <div style="font-size: 10px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase;">Industrial Automation</div>
-            </div>
+            <span style="color: #ffffff; font-weight: 700; font-size: 24px; letter-spacing: 0.5px;">${company}</span>
           </td>
         </tr>
       </table>
     </div>
-    
-    <!-- Red accent line -->
-    <div style="height: 4px; background: linear-gradient(90deg, #C41230 0%, #E31937 30%, #ff4d6a 60%, #C41230 100%);"></div>
+    <div style="height: 4px; background: linear-gradient(90deg, ${primaryColor} 0%, #60a5fa 50%, ${primaryColor} 100%);"></div>
   </div>
 
   <!-- Subject Section -->
   <div style="background: #fafbfc; padding: 24px 48px; border-bottom: 1px solid #e8ecf0;">
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td>
-          <div style="font-size: 10px; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">Asunto</div>
-          <div style="font-size: 20px; font-weight: 600; color: #1a202c; line-height: 1.3;">${subject}</div>
-        </td>
-      </tr>
-    </table>
+    <div style="font-size: 10px; color: #94a3b8; letter-spacing: 2px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">Asunto</div>
+    <div style="font-size: 20px; font-weight: 600; color: #1a202c; line-height: 1.3;">${subject}</div>
   </div>
 
   ${recipient ? `
-  <!-- Recipient Info -->
   <div style="padding: 16px 48px; background: #f7f8fa; border-bottom: 1px solid #e8ecf0;">
     <table cellpadding="0" cellspacing="0" border="0">
       <tr>
@@ -164,64 +159,34 @@ function generatePremiumFagorEmail(subject: string, body: string, company: strin
     ${formattedBody}
   </div>
 
-  <!-- CTA Section (if applicable) -->
+  <!-- CTA -->
   <div style="padding: 0 48px 40px; text-align: center;">
-    <div style="display: inline-block; background: linear-gradient(135deg, #C41230 0%, #E31937 100%); border-radius: 8px; padding: 14px 36px; text-decoration: none;">
+    <div style="display: inline-block; background: ${headerBg}; border-radius: 8px; padding: 14px 36px; text-decoration: none;">
       <span style="color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.5px;">${ctaText || 'Solicitar Información'}</span>
     </div>
   </div>
 
-  <!-- Elegant Divider -->
+  <!-- Divider -->
   <div style="padding: 0 48px;">
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td style="width: 30%;"><div style="height: 1px; background: linear-gradient(90deg, transparent, #C41230);"></div></td>
-        <td style="width: 40%; text-align: center; padding: 0 16px;">
-          <div style="width: 8px; height: 8px; background: #C41230; border-radius: 50%; display: inline-block;"></div>
-        </td>
-        <td style="width: 30%;"><div style="height: 1px; background: linear-gradient(90deg, #C41230, transparent);"></div></td>
-      </tr>
-    </table>
+    <div style="height: 3px; background: linear-gradient(90deg, ${primaryColor}, #60a5fa, ${primaryColor}); border-radius: 2px;"></div>
   </div>
 
-  <!-- Signature Block -->
+  <!-- Signature -->
   <div style="padding: 32px 48px;">
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td style="border-left: 3px solid #C41230; padding-left: 20px;">
-          <div style="font-size: 16px; font-weight: 700; color: #1a202c; margin-bottom: 2px;">FAGOR Automation USA</div>
-          <div style="font-size: 12px; color: #718096; line-height: 1.6; margin-top: 8px;">
-            4020 Winnetka Ave, Rolling Meadows, IL 60008<br/>
-            Tel: +1 (847) 981-1500<br/>
-            <a href="https://www.fagorautomation.us" style="color: #C41230; text-decoration: none; font-weight: 500;">www.fagorautomation.us</a>
-          </div>
-        </td>
-      </tr>
-    </table>
+    <div style="border-left: 3px solid ${primaryColor}; padding-left: 20px;">
+      <div style="font-size: 16px; font-weight: 700; color: #1a202c; margin-bottom: 2px;">${company}</div>
+      <div style="font-size: 12px; color: #718096; line-height: 1.6; margin-top: 8px;">
+        Email generado por Ivy.AI
+      </div>
+    </div>
   </div>
 
   <!-- Footer -->
-  <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 28px 48px;">
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-      <tr>
-        <td>
-          <div style="margin-bottom: 16px;">
-            <a href="https://www.linkedin.com/company/fagor-automation/" style="display: inline-block; width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: center; line-height: 32px; text-decoration: none; color: #C41230; font-size: 14px; font-weight: 700; margin-right: 8px;">in</a>
-            <a href="https://twitter.com/FAGORAutomation" style="display: inline-block; width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: center; line-height: 32px; text-decoration: none; color: #C41230; font-size: 14px; font-weight: 700; margin-right: 8px;">𝕏</a>
-            <a href="https://www.youtube.com/c/FAGORAutomation" style="display: inline-block; width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; text-align: center; line-height: 32px; text-decoration: none; color: #C41230; font-size: 14px; font-weight: 700;">▶</a>
-          </div>
-          <div style="font-size: 11px; color: #64748b; line-height: 1.6;">
-            © ${new Date().getFullYear()} FAGOR Automation USA. All rights reserved.<br/>
-            <span style="color: #475569;">Precision. Innovation. Performance.</span>
-          </div>
-        </td>
-        <td style="text-align: right; vertical-align: bottom;">
-          <div style="font-size: 9px; color: #475569; letter-spacing: 1px; text-transform: uppercase;">
-            Powered by Ivy.AI
-          </div>
-        </td>
-      </tr>
-    </table>
+  <div style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); padding: 28px 48px;">
+    <div style="font-size: 11px; color: #64748b; line-height: 1.6;">
+      &copy; ${new Date().getFullYear()} ${company}. Todos los derechos reservados.<br/>
+      <span style="font-size: 9px; color: #475569; letter-spacing: 1px; text-transform: uppercase;">Powered by Ivy.AI</span>
+    </div>
   </div>
 
 </div>
@@ -230,42 +195,44 @@ function generatePremiumFagorEmail(subject: string, body: string, company: strin
 }
 
 /**
- * Simple preview for the popup (non-fullscreen)
+ * Simple preview for the popup (non-fullscreen).
+ * Uses htmlContent from Brand Firewall if available, otherwise generates neutral template.
  */
-function generateSimplePreview(subject: string, body: string, company: string, ctaText?: string): string {
+function generateSimplePreview(subject: string, body: string, company: string, ctaText?: string, htmlContent?: string): string {
+  // If we have pre-generated HTML from Brand Firewall, use it directly
+  if (htmlContent) {
+    return htmlContent;
+  }
+  
+  // Fallback: neutral professional preview (no hardcoded brand)
+  const primaryColor = '#2563EB';
+  const headerBg = `linear-gradient(135deg, ${primaryColor} 0%, #1E40AF 100%)`;
+  
   return `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-      <div style="background: linear-gradient(135deg, #C41230 0%, #8B0D22 100%); padding: 28px 36px; text-align: center;">
-        <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="height: 40px; width: auto; margin-bottom: 8px;" />
-        <div style="color: rgba(255,255,255,0.6); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px;">CNC Solutions &amp; Industrial Automation</div>
+      <div style="background: ${headerBg}; padding: 28px 36px; text-align: center;">
+        <span style="color: #ffffff; font-weight: 700; font-size: 22px; letter-spacing: 0.5px;">${company}</span>
       </div>
-      <div style="background: #1a1a2e; padding: 16px 36px; border-bottom: 3px solid #C41230;">
+      <div style="background: #1E293B; padding: 16px 36px; border-bottom: 3px solid ${primaryColor};">
         <div style="color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Asunto</div>
         <div style="color: #ffffff; font-size: 16px; font-weight: 600;">${subject}</div>
       </div>
       <div style="padding: 36px; color: #333333; line-height: 1.7; font-size: 15px;">
-        ${body}
+        ${body.replace(/\n/g, '<br/>')}
       </div>
       <div style="padding: 0 36px 24px; text-align: center;">
-        <div style="display: inline-block; background: linear-gradient(135deg, #C41230 0%, #E31937 100%); border-radius: 6px; padding: 12px 32px;">
-          <span style="color: #ffffff; font-size: 13px; font-weight: 600;">${ctaText || 'Solicitar Informaci\u00f3n'}</span>
+        <div style="display: inline-block; background: ${headerBg}; border-radius: 6px; padding: 12px 32px;">
+          <span style="color: #ffffff; font-size: 13px; font-weight: 600;">${ctaText || 'Solicitar Información'}</span>
         </div>
       </div>
-      <div style="margin: 0 36px;"><div style="height: 3px; background: linear-gradient(90deg, #C41230, #ff6b6b, #C41230); border-radius: 2px;"></div></div>
+      <div style="margin: 0 36px;"><div style="height: 3px; background: linear-gradient(90deg, ${primaryColor}, #60a5fa, ${primaryColor}); border-radius: 2px;"></div></div>
       <div style="padding: 24px 36px; color: #666; font-size: 13px;">
-        <p style="margin: 0 0 4px 0; font-weight: 600; color: #333;">FAGOR Automation USA</p>
-        <p style="margin: 0; color: #999; line-height: 1.5;">
-          4020 Winnetka Ave, Rolling Meadows, IL 60008<br/>
-          Tel: +1 (847) 981-1500 | <a href="https://www.fagorautomation.us" style="color: #C41230; text-decoration: none;">www.fagorautomation.us</a>
-        </p>
+        <p style="margin: 0 0 4px 0; font-weight: 600; color: #333;">${company}</p>
+        <p style="margin: 0; color: #999; line-height: 1.5;">Email generado por Ivy.AI</p>
       </div>
-      <div style="background: #1a1a2e; padding: 24px 36px; color: #999; font-size: 11px; text-align: center;">
-        <div style="margin-bottom: 12px;">
-          <a href="#" style="color: #C41230; text-decoration: none; margin: 0 8px;">LinkedIn</a>
-          <a href="#" style="color: #C41230; text-decoration: none; margin: 0 8px;">Twitter</a>
-          <a href="#" style="color: #C41230; text-decoration: none; margin: 0 8px;">YouTube</a>
-        </div>
-        <p style="margin: 0; color: #666;">&copy; ${new Date().getFullYear()} FAGOR Automation USA. All rights reserved.</p>
+      <div style="background: #1E293B; padding: 24px 36px; color: #999; font-size: 11px; text-align: center;">
+        <p style="margin: 0; color: #666;">&copy; ${new Date().getFullYear()} ${company}. Todos los derechos reservados.</p>
+        <p style="margin: 4px 0 0; color: #475569; font-size: 9px; letter-spacing: 1px; text-transform: uppercase;">Powered by Ivy.AI</p>
       </div>
     </div>
   `;
@@ -304,11 +271,11 @@ export function MonitorDraftPopup({
   // Update iframe content when in fullscreen mode
   useEffect(() => {
     if (isFullScreen && iframeRef.current && draft) {
-      const htmlContent = generatePremiumFagorEmail(editedSubject, editedBody, draft.company, draft.recipient, editedCtaText);
+      const previewHtml = generateDynamicEmailPreview(editedSubject, editedBody, draft.company, draft.recipient, editedCtaText, draft.htmlContent);
       const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
       if (iframeDoc) {
         iframeDoc.open();
-        iframeDoc.write(htmlContent);
+        iframeDoc.write(previewHtml);
         iframeDoc.close();
       }
     }
@@ -372,7 +339,7 @@ export function MonitorDraftPopup({
 
   const handlePrint = () => {
     if (!draft) return;
-    const htmlContent = generatePremiumFagorEmail(editedSubject, editedBody, draft.company, draft.recipient, editedCtaText);
+    const previewHtml = generateDynamicEmailPreview(editedSubject, editedBody, draft.company, draft.recipient, editedCtaText, draft.htmlContent);
     const printWindow = window.open('', '_blank', 'width=800,height=900');
     if (printWindow) {
       printWindow.document.write(`
@@ -390,7 +357,7 @@ export function MonitorDraftPopup({
           </style>
         </head>
         <body>
-          ${htmlContent}
+          ${previewHtml}
           <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); }<\/script>
         </body>
         </html>
@@ -633,7 +600,7 @@ export function MonitorDraftPopup({
                   </div>
                   <div className="mt-2 p-2 bg-slate-800/30 rounded border border-slate-700/50">
                     <div className="flex items-center gap-2">
-                      <div className="px-4 py-1.5 bg-gradient-to-r from-red-700 to-red-600 rounded text-white text-xs font-semibold">
+                      <div className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded text-white text-xs font-semibold">
                         {editedCtaText || 'Solicitar Información'}
                       </div>
                       <span className="text-xs text-slate-500">← Preview del botón</span>
@@ -697,7 +664,7 @@ export function MonitorDraftPopup({
                   <div className="bg-gray-100 rounded-xl p-6 border border-gray-300">
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: generateSimplePreview(editedSubject, editedBody, draft.company, editedCtaText),
+                        __html: generateSimplePreview(editedSubject, editedBody, draft.company, editedCtaText, draft.htmlContent),
                       }}
                     />
                   </div>
@@ -723,7 +690,7 @@ export function MonitorDraftPopup({
                       </Button>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="px-4 py-1.5 bg-gradient-to-r from-red-700 to-red-600 rounded text-white text-xs font-semibold">
+                      <div className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded text-white text-xs font-semibold">
                         {editedCtaText || 'Solicitar Información'}
                       </div>
                       <span className="text-xs text-slate-500">← Así se verá en el email</span>

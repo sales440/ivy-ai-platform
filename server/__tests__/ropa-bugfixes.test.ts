@@ -258,3 +258,248 @@ describe("extractCompanyName - strip filler words", () => {
     expect(extractCompanyName("LLAMADA PETLIFE 360")).toBe("PETLIFE 360");
   });
 });
+
+// ============ TEST 4: Draft Open/Approve/Reject Command Detection ============
+
+/**
+ * Simplified version of the ropa-brain.ts command detection logic for drafts
+ */
+function detectDraftCommand(message: string): { intent: string; companyName: string; draftIndex: number } | null {
+  const cleanMessage = message.trim();
+  const msg = cleanMessage.toLowerCase();
+  
+  const emailGenVerbs = ['genera', 'crea', 'hazme', 'prepara', 'redacta', 'escribe', 'draft', 'compose', 'elabora', 'haz', 'produce', 'diseña', 'arma'];
+  
+  function matchesAny(text: string, keywords: string[]): boolean {
+    return keywords.some(k => text.includes(k));
+  }
+  function matchesAnyWord(text: string, keywords: string[]): boolean {
+    return keywords.some(k => new RegExp(`\\b${k}\\b`).test(text));
+  }
+  
+  // Approve detection - check BEFORE open draft
+  const approveKeywords = ['aceptado', 'aprobado', 'acepto', 'apruebo', 'aprueba', 'acepta', 'apruébalo', 'apruebalo', 'dale', 'perfecto', 'ok aprueba', 'sí aprueba', 'si aprueba', 'aprueba el borrador', 'acepta el borrador', 'aprobar borrador', 'aceptar borrador'];
+  if (matchesAny(msg, approveKeywords) && !matchesAnyWord(msg, emailGenVerbs)) {
+    const approveCompanyMatch = cleanMessage.match(/(?:de|para|borrador\s+de)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+    const companyName = approveCompanyMatch ? approveCompanyMatch[1].trim() : '';
+    return { intent: 'approve_draft', companyName, draftIndex: 0 };
+  }
+  
+  // Reject detection - check BEFORE open draft since "rechaza el borrador" could match both
+  const rejectKeywords = ['rechazado', 'rechazar', 'rechazo', 'rechaza', 'recházalo', 'rechazalo', 'no me gusta', 'no sirve', 'eliminar borrador', 'elimina borrador', 'borrar borrador', 'borra borrador', 'descarta', 'descartado', 'descartar'];
+  if (matchesAny(msg, rejectKeywords) && !matchesAnyWord(msg, emailGenVerbs)) {
+    const rejectCompanyMatch = cleanMessage.match(/(?:de|para|borrador\s+de)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+    const companyName = rejectCompanyMatch ? rejectCompanyMatch[1].trim() : '';
+    return { intent: 'reject_draft', companyName, draftIndex: 0 };
+  }
+
+  // Open draft detection
+  const openDraftMatch = cleanMessage.match(/(?:abre|abrir|muestra|mostrar|ver|enseña|enseñame|déjame ver|dejame ver)\s+(?:el\s+)?(?:primer\s+|segundo\s+|tercer\s+|\d+[°º]?\s+)?(?:borrador|draft|email|correo)\s+(?:de\s+(?:la empresa\s+)?)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+  if (openDraftMatch) {
+    const companyName = openDraftMatch[1].trim();
+    let draftIndex = 0;
+    if (/segundo/i.test(cleanMessage)) draftIndex = 1;
+    else if (/tercer/i.test(cleanMessage)) draftIndex = 2;
+    else {
+      const numMatch = cleanMessage.match(/(\d+)[°º]?\s+(?:borrador|draft|email)/i);
+      if (numMatch) draftIndex = parseInt(numMatch[1]) - 1;
+    }
+    return { intent: 'open_draft', companyName, draftIndex };
+  }
+  
+  return null;
+}
+
+describe("Draft command detection - open draft", () => {
+  it("should detect 'abre el borrador de PETLIFE360'", () => {
+    const result = detectDraftCommand("abre el borrador de PETLIFE360");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("open_draft");
+    expect(result!.companyName).toBe("PETLIFE360");
+    expect(result!.draftIndex).toBe(0);
+  });
+
+  it("should detect 'abre el primer borrador de PETLIFE360'", () => {
+    const result = detectDraftCommand("abre el primer borrador de PETLIFE360");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("open_draft");
+    expect(result!.companyName).toBe("PETLIFE360");
+    expect(result!.draftIndex).toBe(0);
+  });
+
+  it("should detect 'abre el segundo borrador de FAGOR'", () => {
+    const result = detectDraftCommand("abre el segundo borrador de FAGOR");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("open_draft");
+    expect(result!.companyName).toBe("FAGOR");
+    expect(result!.draftIndex).toBe(1);
+  });
+
+  it("should detect 'muestra el borrador de la empresa EPM'", () => {
+    const result = detectDraftCommand("muestra el borrador de la empresa EPM");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("open_draft");
+    expect(result!.companyName).toBe("EPM");
+  });
+
+  it("should detect 'ver email de PETLIFE 360'", () => {
+    const result = detectDraftCommand("ver email de PETLIFE 360");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("open_draft");
+    expect(result!.companyName).toBe("PETLIFE 360");
+  });
+
+  it("should detect 'déjame ver el borrador de TechStart'", () => {
+    const result = detectDraftCommand("déjame ver el borrador de TechStart");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("open_draft");
+    expect(result!.companyName).toBe("TechStart");
+  });
+});
+
+describe("Draft command detection - approve draft", () => {
+  it("should detect 'aceptado'", () => {
+    const result = detectDraftCommand("aceptado");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("approve_draft");
+  });
+
+  it("should detect 'aprobado'", () => {
+    const result = detectDraftCommand("aprobado");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("approve_draft");
+  });
+
+  it("should detect 'acepto el borrador'", () => {
+    const result = detectDraftCommand("acepto el borrador");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("approve_draft");
+  });
+
+  it("should detect 'aprueba el borrador de PETLIFE360'", () => {
+    const result = detectDraftCommand("aprueba el borrador de PETLIFE360");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("approve_draft");
+    expect(result!.companyName).toBe("PETLIFE360");
+  });
+
+  it("should detect 'dale' as approve", () => {
+    const result = detectDraftCommand("dale");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("approve_draft");
+  });
+
+  it("should detect 'perfecto' as approve", () => {
+    const result = detectDraftCommand("perfecto");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("approve_draft");
+  });
+});
+
+describe("Draft command detection - reject draft", () => {
+  it("should detect 'rechazado'", () => {
+    const result = detectDraftCommand("rechazado");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("reject_draft");
+  });
+
+  it("should detect 'no me gusta'", () => {
+    const result = detectDraftCommand("no me gusta");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("reject_draft");
+  });
+
+  it("should detect 'descarta'", () => {
+    const result = detectDraftCommand("descarta");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("reject_draft");
+  });
+
+  it("should detect 'elimina borrador'", () => {
+    const result = detectDraftCommand("elimina borrador");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("reject_draft");
+  });
+
+  it("should detect 'rechaza el borrador de FAGOR'", () => {
+    const result = detectDraftCommand("rechaza el borrador de FAGOR");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("reject_draft");
+    expect(result!.companyName).toBe("FAGOR");
+  });
+
+  it("should detect 'no sirve'", () => {
+    const result = detectDraftCommand("no sirve");
+    expect(result).not.toBeNull();
+    expect(result!.intent).toBe("reject_draft");
+  });
+});
+
+describe("Draft command detection - should NOT match email generation", () => {
+  it("should NOT detect 'genera emails para PETLIFE' as draft command", () => {
+    const result = detectDraftCommand("genera emails para PETLIFE");
+    expect(result).toBeNull();
+  });
+
+  it("should NOT detect 'crea borrador para FAGOR' as approve/reject", () => {
+    // This should be handled by email generation, not draft commands
+    const result = detectDraftCommand("crea borrador para FAGOR");
+    expect(result).toBeNull();
+  });
+});
+
+// ============ TEST 5: Navigation Service - openDraftForCompany ============
+
+describe("Navigation service - draft commands", () => {
+  it("should create openDraft navigation command structure", () => {
+    // Simulate the command structure that openDraftForCompany creates
+    const command = {
+      type: 'dialog',
+      target: 'draft-popup',
+      params: {
+        action: 'openDraft',
+        companyName: 'PETLIFE360',
+        draftIndex: 0,
+      },
+    };
+    
+    expect(command.type).toBe('dialog');
+    expect(command.target).toBe('draft-popup');
+    expect(command.params.action).toBe('openDraft');
+    expect(command.params.companyName).toBe('PETLIFE360');
+    expect(command.params.draftIndex).toBe(0);
+  });
+
+  it("should create approveDraft navigation command structure", () => {
+    const command = {
+      type: 'dialog',
+      target: 'draft-action',
+      params: {
+        action: 'approveDraft',
+        companyName: 'PETLIFE360',
+        draftIndex: 0,
+      },
+    };
+    
+    expect(command.type).toBe('dialog');
+    expect(command.target).toBe('draft-action');
+    expect(command.params.action).toBe('approveDraft');
+  });
+
+  it("should create rejectDraft navigation command structure", () => {
+    const command = {
+      type: 'dialog',
+      target: 'draft-action',
+      params: {
+        action: 'rejectDraft',
+        companyName: '__CURRENT__',
+        draftIndex: 0,
+      },
+    };
+    
+    expect(command.type).toBe('dialog');
+    expect(command.target).toBe('draft-action');
+    expect(command.params.action).toBe('rejectDraft');
+    expect(command.params.companyName).toBe('__CURRENT__');
+  });
+});

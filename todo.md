@@ -729,4 +729,21 @@
 - [x] Fix company name extraction: "Crea empresa PETLIFE 360" → created "llamada PETLIFE 360"
 - [x] Fix all LLM system prompts to include explicit Spanish enforcement
 - [x] Update tests for language detection and JSON parsing
-- [ ] Push to GitHub and deploy to Railway
+- [x] Push to GitHub and deploy to Railway
+
+## Phase 56: ROPA Draft Opening, Accept/Reject Flow in Monitor
+- [x] ROPA command to open/show a draft navigates to Monitor page and highlights the draft
+- [x] User says "aceptado" in ROPA chat → draft gets approved
+- [x] User says "rechazado" in ROPA chat → draft gets rejected and deleted
+- [x] Monitor page shows draft detail view when opened from ROPA
+- [x] Tests for accept/reject draft commands
+- [ ] Push to GitHub for Railway deployment
+
+## Phase 57: Fix Brand Firewall - PETLIFE using FAGOR template + Draft Open/Accept/Reject
+- [x] Fix Brand Firewall: PETLIFE emails showing FAGOR logo, colors, and address
+- [x] Ensure each company gets isolated brand profile (logo, colors, address, template)
+- [x] ROPA command to open/show a draft navigates to Monitor and highlights the draft
+- [x] User says "aceptado" in ROPA chat → draft gets approved
+- [x] User says "rechazado" in ROPA chat → draft gets rejected and deleted
+- [x] Tests for brand isolation and accept/reject commands
+- [ ] Push to GitHub for Railway deployment

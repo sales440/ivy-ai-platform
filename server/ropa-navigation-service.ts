@@ -189,6 +189,71 @@ export const ropaNavigationTools = {
     return ropaNavigationTools.openDialog({ dialog: 'newCampaign', data: params });
   },
 
+  /**
+   * Navigate to Monitor and open a specific draft by company name.
+   * The frontend will find the first pending draft for that company and open the popup.
+   */
+  async openDraftForCompany(params: { companyName: string; draftIndex?: number }) {
+    // First navigate to monitor section
+    await ropaNavigationTools.navigateTo({ section: 'monitor' });
+    
+    // Then send a command to open the draft popup
+    const command: NavigationCommand = {
+      id: `draft_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      type: 'dialog',
+      target: 'draft-popup',
+      params: { 
+        action: 'openDraft', 
+        companyName: params.companyName,
+        draftIndex: params.draftIndex || 0,
+      },
+      createdAt: new Date().toISOString(),
+      executed: false,
+    };
+    navigationQueue.push(command);
+    return { success: true, commandId: command.id, message: `Abriendo borrador de ${params.companyName} en Monitor...` };
+  },
+
+  /**
+   * Approve a draft by company name (first pending draft).
+   */
+  async approveDraftForCompany(params: { companyName: string; draftIndex?: number }) {
+    const command: NavigationCommand = {
+      id: `approve_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      type: 'dialog',
+      target: 'draft-action',
+      params: { 
+        action: 'approveDraft', 
+        companyName: params.companyName,
+        draftIndex: params.draftIndex || 0,
+      },
+      createdAt: new Date().toISOString(),
+      executed: false,
+    };
+    navigationQueue.push(command);
+    return { success: true, commandId: command.id, message: `Aprobando borrador de ${params.companyName}...` };
+  },
+
+  /**
+   * Reject and delete a draft by company name (first pending draft).
+   */
+  async rejectDraftForCompany(params: { companyName: string; draftIndex?: number }) {
+    const command: NavigationCommand = {
+      id: `reject_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      type: 'dialog',
+      target: 'draft-action',
+      params: { 
+        action: 'rejectDraft', 
+        companyName: params.companyName,
+        draftIndex: params.draftIndex || 0,
+      },
+      createdAt: new Date().toISOString(),
+      executed: false,
+    };
+    navigationQueue.push(command);
+    return { success: true, commandId: command.id, message: `Rechazando y eliminando borrador de ${params.companyName}...` };
+  },
+
   // Queue management
   async getPendingCommands() {
     const pending = navigationQueue.filter(c => !c.executed);

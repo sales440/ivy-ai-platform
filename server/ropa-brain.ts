@@ -201,8 +201,84 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     return { response, intent, command, platformActionExecuted, platformResult };
   }
 
-  // ============ 4. EMAIL GENERATION (expanded) ============
+  // ============ 3b. DRAFT OPEN / APPROVE / REJECT COMMANDS ============
+  // Pre-declare emailGenVerbs to avoid false positives on approve/reject
   const emailGenVerbs = ['genera', 'crea', 'hazme', 'prepara', 'redacta', 'escribe', 'draft', 'compose', 'elabora', 'haz', 'produce', 'diseña', 'arma'];
+
+  // Detect: "aceptado", "aprobado", "acepto", "apruebo" (approve current draft)
+  // MUST be checked BEFORE openDraftMatch to avoid "rechaza el borrador" matching as open
+  const approveKeywords = ['aceptado', 'aprobado', 'acepto', 'apruebo', 'aprueba', 'acepta', 'apruébalo', 'apruebalo', 'dale', 'perfecto', 'ok aprueba', 'sí aprueba', 'si aprueba', 'aprueba el borrador', 'acepta el borrador', 'aprobar borrador', 'aceptar borrador'];
+  // Use word boundary check to prevent 'haz' matching inside 'rechazado'
+  const matchesAnyWord = (text: string, keywords: string[]) => keywords.some(k => new RegExp(`\\b${k}\\b`).test(text));
+  if (matchesAny(msg, approveKeywords) && !matchesAnyWord(msg, emailGenVerbs)) {
+    intent = 'approve_draft';
+    const approveCompanyMatch = cleanMessage.match(/(?:de|para|borrador\s+de)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+    const companyName = approveCompanyMatch ? approveCompanyMatch[1].trim() : '';
+    
+    try {
+      if (companyName) {
+        platformResult = await ropaNavigationTools.approveDraftForCompany({ companyName });
+        platformActionExecuted = true;
+        response = `Borrador de ${companyName} aprobado. Se ha creado una campaña "En Progreso" automáticamente.`;
+      } else {
+        platformResult = await ropaNavigationTools.approveDraftForCompany({ companyName: '__CURRENT__' });
+        platformActionExecuted = true;
+        response = `Borrador aprobado. Se ha creado una campaña "En Progreso" automáticamente.`;
+      }
+    } catch (err: any) {
+      response = `Error al aprobar: ${err.message}. Puedes aprobarlo manualmente en Monitor.`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // Detect: "rechazado", "rechazar", "rechazo", "no me gusta" (reject and delete current draft)
+  const rejectKeywords = ['rechazado', 'rechazar', 'rechazo', 'rechaza', 'recházalo', 'rechazalo', 'no me gusta', 'no sirve', 'eliminar borrador', 'elimina borrador', 'borrar borrador', 'borra borrador', 'descarta', 'descartado', 'descartar'];
+  if (matchesAny(msg, rejectKeywords) && !matchesAnyWord(msg, emailGenVerbs)) {
+    intent = 'reject_draft';
+    const rejectCompanyMatch = cleanMessage.match(/(?:de|para|borrador\s+de)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+    const companyName = rejectCompanyMatch ? rejectCompanyMatch[1].trim() : '';
+    
+    try {
+      if (companyName) {
+        platformResult = await ropaNavigationTools.rejectDraftForCompany({ companyName });
+        platformActionExecuted = true;
+        response = `Borrador de ${companyName} rechazado y eliminado de Monitor.`;
+      } else {
+        platformResult = await ropaNavigationTools.rejectDraftForCompany({ companyName: '__CURRENT__' });
+        platformActionExecuted = true;
+        response = `Borrador rechazado y eliminado de Monitor.`;
+      }
+    } catch (err: any) {
+      response = `Error al rechazar: ${err.message}. Puedes rechazarlo manualmente en Monitor.`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // Detect: "abre el borrador de EMPRESA", "abre el primer borrador de EMPRESA"
+  const openDraftMatch = cleanMessage.match(/(?:abre|abrir|muestra|mostrar|ver|enseña|enseñame|déjame ver|dejame ver)\s+(?:el\s+)?(?:primer\s+|segundo\s+|tercer\s+|\d+[°º]?\s+)?(?:borrador|draft|email|correo)\s+(?:de\s+(?:la empresa\s+)?)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+  if (openDraftMatch) {
+    const companyName = openDraftMatch[1].trim();
+    // Detect draft index: "segundo borrador" = 1, "tercer" = 2, etc.
+    let draftIndex = 0;
+    if (/segundo/i.test(cleanMessage)) draftIndex = 1;
+    else if (/tercer/i.test(cleanMessage)) draftIndex = 2;
+    else {
+      const numMatch = cleanMessage.match(/(\d+)[°º]?\s+(?:borrador|draft|email)/i);
+      if (numMatch) draftIndex = parseInt(numMatch[1]) - 1;
+    }
+    
+    intent = 'open_draft';
+    try {
+      platformResult = await ropaNavigationTools.openDraftForCompany({ companyName, draftIndex });
+      platformActionExecuted = true;
+      response = `Abriendo el borrador${draftIndex > 0 ? ` #${draftIndex + 1}` : ''} de ${companyName} en Monitor. Puedes revisarlo y decirme "aceptado" para aprobarlo o "rechazado" para rechazarlo y eliminarlo.`;
+    } catch (err: any) {
+      response = `Error al abrir el borrador: ${err.message}`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
+  // ============ 4. EMAIL GENERATION (expanded) ============
   const emailNouns = ['email', 'correo', 'borrador', 'borradores', 'emails', 'correos', 'mail', 'mails', 'mensaje', 'mensajes', 'carta', 'comunicación'];
   
   if (matchesAny(msg, emailGenVerbs) && matchesAny(msg, emailNouns)) {
@@ -1054,6 +1130,9 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     `- Emails: "genera emails para [empresa]"\n` +
     `- Envío masivo: "envío masivo para [empresa]"\n` +
     `- Enviar borradores: "enviar borradores aprobados de [empresa]"\n` +
+    `- Abrir borrador: "abre el borrador de [empresa]"\n` +
+    `- Aprobar borrador: "aceptado" o "aprobado"\n` +
+    `- Rechazar borrador: "rechazado" o "descarta"\n` +
     `- Drive: "muestra archivos de Drive"\n` +
     `- Web: "busca en internet [tema]"\n` +
     `- Stats: "muestra estadísticas"\n` +
