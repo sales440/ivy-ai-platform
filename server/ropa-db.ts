@@ -78,6 +78,18 @@ export async function updateRopaTaskStatus(
   await db.update(ropaTasks).set(updateData).where(eq(ropaTasks.taskId, taskId));
 }
 
+export async function deleteRopaTask(taskId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(ropaTasks).where(eq(ropaTasks.taskId, taskId));
+}
+
+export async function clearCompletedRopaTasks() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(ropaTasks).where(eq(ropaTasks.status, "completed"));
+}
+
 // ============ LOGS ============
 
 export async function createRopaLog(log: InsertRopaLog) {

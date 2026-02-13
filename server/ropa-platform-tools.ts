@@ -5,7 +5,7 @@
  */
 
 import { getDb } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import {
   ivyClients,
   salesCampaigns,
@@ -19,6 +19,8 @@ import {
   type InsertClientLead,
 } from "../drizzle/schema";
 import { createRopaLog, recordRopaMetric } from "./ropa-db";
+import { invokeGemini, isGeminiConfigured } from "./gemini-llm";
+import { invokeLLM } from "./_core/llm";
 
 // ============ COMPANY MANAGEMENT ============
 
@@ -69,11 +71,78 @@ export const companyManagementTools = {
       metadata: { clientId, companyName: params.companyName },
     });
 
+    // === AUTO-GENERATE SALES STRATEGY ===
+    let salesStrategy: string | null = null;
+    try {
+      const strategyPrompt = `Eres un consultor de ventas B2B experto. Genera una propuesta de campaña de ventas con agentes IA para esta empresa:
+
+Empresa: ${params.companyName}
+Industria: ${params.industry || 'No especificada'}
+Contacto: ${params.contactName || 'No especificado'}
+Email: ${params.contactEmail || 'No especificado'}
+
+Genera una propuesta concisa en español que incluya:
+1. ESTRATEGIA DE ABORDAJE: Cómo abordar a esta empresa
+2. CANALES SUGERIDOS: Email, teléfono, LinkedIn, etc.
+3. CONFIGURACIÓN DE AGENTES: Qué agentes IA asignar (ARIA para emails, LUCA para análisis, NOVA para contenido, SAGE para estrategia)
+4. TIMELINE: Cronograma sugerido de 4 semanas
+5. KPIs ESPERADOS: Métricas de éxito
+
+Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
+
+      let strategyResult: string | null = null;
+      if (isGeminiConfigured()) {
+        strategyResult = await invokeGemini([
+          { role: 'system', content: 'Eres un consultor de ventas B2B. Responde en español, sin markdown.' },
+          { role: 'user', content: strategyPrompt },
+        ]);
+      }
+      if (!strategyResult) {
+        const llmResult = await invokeLLM({
+          messages: [
+            { role: 'system', content: 'Eres un consultor de ventas B2B. Responde en español, sin markdown.' },
+            { role: 'user', content: strategyPrompt },
+          ],
+        });
+        strategyResult = llmResult?.choices?.[0]?.message?.content || null;
+      }
+      salesStrategy = strategyResult;
+
+      // Save strategy as notes
+      if (salesStrategy) {
+        await db.update(ivyClients)
+          .set({ notes: `PROPUESTA DE CAMPAÑA DE VENTAS CON AGENTES IA\n\n${salesStrategy}` })
+          .where(eq(ivyClients.clientId, clientId));
+      }
+    } catch (strategyError: any) {
+      console.warn('[Platform] Strategy generation failed:', strategyError.message);
+    }
+
+    // === AUTO-CREATE GOOGLE DRIVE FOLDER STRUCTURE ===
+    let driveResult: any = null;
+    try {
+      const { createClientFolderStructure } = await import('./ropa-drive-service');
+      driveResult = await createClientFolderStructure(clientId, params.companyName);
+      if (driveResult.success && driveResult.clientFolderId) {
+        await db.update(ivyClients)
+          .set({
+            googleDriveFolderId: driveResult.clientFolderId,
+            googleDriveStructure: JSON.stringify(driveResult.folderIds || {}),
+          })
+          .where(eq(ivyClients.clientId, clientId));
+        console.log(`[Platform] Google Drive folders created for ${clientId}`);
+      }
+    } catch (driveError: any) {
+      console.warn('[Platform] Google Drive folder creation failed:', driveError.message);
+    }
+
     return {
       success: true,
       clientId,
       companyName: params.companyName,
-      message: `Empresa "${params.companyName}" creada con ID: ${clientId}`,
+      salesStrategy: salesStrategy ? 'Propuesta generada' : null,
+      googleDrive: driveResult?.success ? 'Carpetas creadas' : 'No disponible',
+      message: `Empresa "${params.companyName}" creada con ID: ${clientId}${salesStrategy ? '. Propuesta de campaña generada.' : ''}${driveResult?.success ? ' Carpetas de Google Drive creadas.' : ''}`,
     };
   },
 
@@ -676,6 +745,180 @@ export const leadManagementTools = {
   },
 };
 
+// ============ KPI / ROI REPORTING ============
+
+export const reportingTools = {
+  /**
+   * Generate KPI report for a company or all companies
+   */
+  async generateKPIReport(params?: { companyName?: string }) {
+    const db = await getDb();
+    if (!db) return { success: false, error: 'Database not available' };
+
+    // Get companies
+    let companies = await db.select().from(ivyClients).orderBy(desc(ivyClients.createdAt));
+    if (params?.companyName) {
+      companies = companies.filter(c => c.companyName.toLowerCase().includes(params.companyName!.toLowerCase()));
+    }
+
+    // Get campaigns
+    const campaigns = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt));
+
+    // Get email drafts
+    const drafts = await db.select().from(emailDrafts).orderBy(desc(emailDrafts.createdAt));
+
+    // Get leads
+    const leads = await db.select().from(clientLeads).orderBy(desc(clientLeads.createdAt));
+
+    // Calculate KPIs
+    const totalCompanies = companies.length;
+    const activeCompanies = companies.filter(c => c.status === 'active').length;
+    const totalCampaigns = campaigns.length;
+    const activeCampaigns = campaigns.filter(c => c.status === 'active').length;
+    const completedCampaigns = campaigns.filter(c => c.status === 'completed').length;
+    const totalDrafts = drafts.length;
+    const approvedDrafts = drafts.filter(d => d.status === 'approved').length;
+    const sentDrafts = drafts.filter(d => d.status === 'sent').length;
+    const totalLeads = leads.length;
+    const qualifiedLeads = leads.filter(l => l.status === 'qualified').length;
+    const closedWon = leads.filter(l => l.status === 'closed_won').length;
+    const closedLost = leads.filter(l => l.status === 'closed_lost').length;
+
+    // Conversion rates
+    const emailApprovalRate = totalDrafts > 0 ? Math.round((approvedDrafts / totalDrafts) * 100) : 0;
+    const leadConversionRate = totalLeads > 0 ? Math.round((closedWon / totalLeads) * 100) : 0;
+    const campaignCompletionRate = totalCampaigns > 0 ? Math.round((completedCampaigns / totalCampaigns) * 100) : 0;
+
+    const report = {
+      generatedAt: new Date().toISOString(),
+      period: 'All Time',
+      summary: {
+        totalCompanies,
+        activeCompanies,
+        totalCampaigns,
+        activeCampaigns,
+        completedCampaigns,
+        totalEmailDrafts: totalDrafts,
+        approvedEmails: approvedDrafts,
+        sentEmails: sentDrafts,
+        totalLeads,
+        qualifiedLeads,
+        closedWon,
+        closedLost,
+      },
+      kpis: {
+        emailApprovalRate: `${emailApprovalRate}%`,
+        leadConversionRate: `${leadConversionRate}%`,
+        campaignCompletionRate: `${campaignCompletionRate}%`,
+        avgCampaignsPerCompany: totalCompanies > 0 ? (totalCampaigns / totalCompanies).toFixed(1) : '0',
+        avgLeadsPerCampaign: totalCampaigns > 0 ? (totalLeads / totalCampaigns).toFixed(1) : '0',
+      },
+      companiesDetail: companies.map(c => ({
+        clientId: c.clientId,
+        name: c.companyName,
+        industry: c.industry,
+        status: c.status,
+        plan: c.plan,
+        campaigns: campaigns.filter(camp => camp.createdBy === 'ROPA').length,
+      })),
+    };
+
+    await createRopaLog({
+      taskId: undefined,
+      level: 'info',
+      message: `[Platform] KPI Report generated`,
+      metadata: { totalCompanies, totalCampaigns, totalLeads },
+    });
+
+    return { success: true, report };
+  },
+
+  /**
+   * Generate ROI report
+   */
+  async generateROIReport(params?: { companyName?: string }) {
+    const db = await getDb();
+    if (!db) return { success: false, error: 'Database not available' };
+
+    const companies = await db.select().from(ivyClients);
+    const campaigns = await db.select().from(salesCampaigns);
+    const drafts = await db.select().from(emailDrafts);
+    const leads = await db.select().from(clientLeads);
+
+    // Estimate costs and value
+    const emailCostPerUnit = 0.05; // $0.05 per email
+    const leadValueEstimate = 500; // $500 per qualified lead
+    const closedDealValue = 5000; // $5000 per closed deal
+    const agencyCostPerMonth = 2000; // $2000/month agency cost
+
+    const totalEmailsSent = drafts.filter(d => d.status === 'sent').length;
+    const totalQualified = leads.filter(l => l.status === 'qualified' || l.status === 'closed_won').length;
+    const totalClosed = leads.filter(l => l.status === 'closed_won').length;
+
+    const totalCost = (totalEmailsSent * emailCostPerUnit) + agencyCostPerMonth;
+    const totalRevenue = (totalQualified * leadValueEstimate) + (totalClosed * closedDealValue);
+    const roi = totalCost > 0 ? ((totalRevenue - totalCost) / totalCost * 100).toFixed(1) : '0';
+
+    const report = {
+      generatedAt: new Date().toISOString(),
+      costs: {
+        emailCosts: `$${(totalEmailsSent * emailCostPerUnit).toFixed(2)}`,
+        agencyCost: `$${agencyCostPerMonth}`,
+        totalCost: `$${totalCost.toFixed(2)}`,
+      },
+      revenue: {
+        qualifiedLeadValue: `$${(totalQualified * leadValueEstimate).toFixed(2)}`,
+        closedDealValue: `$${(totalClosed * closedDealValue).toFixed(2)}`,
+        totalRevenue: `$${totalRevenue.toFixed(2)}`,
+      },
+      roi: `${roi}%`,
+      metrics: {
+        emailsSent: totalEmailsSent,
+        leadsGenerated: leads.length,
+        leadsQualified: totalQualified,
+        dealsClosed: totalClosed,
+        conversionRate: leads.length > 0 ? `${((totalClosed / leads.length) * 100).toFixed(1)}%` : '0%',
+      },
+    };
+
+    return { success: true, report };
+  },
+
+  /**
+   * Get company details with all associated data
+   */
+  async getCompanyDetails(params: { clientId?: string; companyName?: string }) {
+    const db = await getDb();
+    if (!db) return { success: false, error: 'Database not available' };
+
+    let company;
+    if (params.clientId) {
+      const results = await db.select().from(ivyClients).where(eq(ivyClients.clientId, params.clientId));
+      company = results[0];
+    } else if (params.companyName) {
+      const all = await db.select().from(ivyClients);
+      company = all.find(c => c.companyName.toLowerCase().includes(params.companyName!.toLowerCase()));
+    }
+
+    if (!company) return { success: false, error: 'Empresa no encontrada' };
+
+    const campaigns = await db.select().from(salesCampaigns);
+    const drafts = await db.select().from(emailDrafts).where(eq(emailDrafts.company, company.companyName));
+
+    return {
+      success: true,
+      company: {
+        ...company,
+        campaigns: campaigns.length,
+        emailDrafts: drafts.length,
+        pendingDrafts: drafts.filter(d => d.status === 'pending').length,
+        approvedDrafts: drafts.filter(d => d.status === 'approved').length,
+        sentDrafts: drafts.filter(d => d.status === 'sent').length,
+      },
+    };
+  },
+};
+
 // ============ EXPORT ALL PLATFORM TOOLS ============
 
 export const ropaPlatformTools = {
@@ -704,6 +947,11 @@ export const ropaPlatformTools = {
   createLead: leadManagementTools.createLead,
   listLeads: leadManagementTools.listLeads,
   updateLeadStatus: leadManagementTools.updateLeadStatus,
+
+  // KPI / ROI Reporting
+  generateKPIReport: reportingTools.generateKPIReport,
+  generateROIReport: reportingTools.generateROIReport,
+  getCompanyDetails: reportingTools.getCompanyDetails,
 };
 
 export const platformToolCategories = {
@@ -711,6 +959,7 @@ export const platformToolCategories = {
   "Campaign Management": ["createCampaign", "listCampaigns", "updateCampaignStatus", "moveCampaignInCalendar", "deleteCampaign"],
   "Email Drafts (Monitor)": ["createEmailDraft", "listEmailDrafts", "approveEmailDraft", "rejectEmailDraft", "deleteEmailDraft", "generateCampaignEmailDrafts"],
   "Lead Management": ["createLead", "listLeads", "updateLeadStatus"],
+  "Reporting & Analytics": ["generateKPIReport", "generateROIReport", "getCompanyDetails"],
 };
 
 export const PLATFORM_TOOLS_COUNT = Object.keys(ropaPlatformTools).length;

@@ -55,6 +55,8 @@ export function MonitorDraftList({
   const filteredDrafts = drafts.filter((draft) => {
     if (filterType !== 'all' && draft.type !== filterType) return false;
     if (filterStatus !== 'all' && draft.status !== filterStatus) return false;
+    // Auto-hide rejected drafts unless user explicitly filters for them
+    if (filterStatus === 'all' && draft.status === 'rejected') return false;
     return true;
   });
 

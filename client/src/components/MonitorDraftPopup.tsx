@@ -113,12 +113,7 @@ function generatePremiumFagorEmail(subject: string, body: string, company: strin
       <table cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
           <td>
-            <div style="font-size: 28px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
-              FAGOR
-            </div>
-            <div style="font-size: 11px; color: rgba(255,255,255,0.7); letter-spacing: 3px; text-transform: uppercase; margin-top: 2px; font-weight: 300;">
-              Automation
-            </div>
+            <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="height: 48px; width: auto;" />
           </td>
           <td style="text-align: right; vertical-align: top;">
             <div style="display: inline-block; background: rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 16px;">
@@ -241,8 +236,7 @@ function generateSimplePreview(subject: string, body: string, company: string, c
   return `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
       <div style="background: linear-gradient(135deg, #C41230 0%, #8B0D22 100%); padding: 28px 36px; text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">FAGOR</div>
-        <div style="color: rgba(255,255,255,0.7); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; margin-top: 2px;">Automation</div>
+        <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="height: 40px; width: auto; margin-bottom: 8px;" />
         <div style="color: rgba(255,255,255,0.6); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; margin-top: 8px;">CNC Solutions &amp; Industrial Automation</div>
       </div>
       <div style="background: #1a1a2e; padding: 16px 36px; border-bottom: 3px solid #C41230;">
@@ -377,8 +371,31 @@ export function MonitorDraftPopup({
   };
 
   const handlePrint = () => {
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.print();
+    if (!draft) return;
+    const htmlContent = generatePremiumFagorEmail(editedSubject, editedBody, draft.company, draft.recipient, editedCtaText);
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>${editedSubject}</title>
+          <style>
+            @media print {
+              * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+              body { margin: 0; padding: 0; }
+              @page { margin: 0.5cm; size: A4; }
+            }
+          </style>
+        </head>
+        <body>
+          ${htmlContent}
+          <script>window.onload = function() { setTimeout(function() { window.print(); }, 500); }<\/script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
     }
   };
 

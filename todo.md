@@ -581,3 +581,21 @@
 - [x] Live CTA button preview in both modes
 - [x] 13 vitest tests passing
 - [x] Push to GitHub for Railway deployment
+
+## Phase 52: ROPA Sales Agency Orchestrator + Bug Fixes
+- [x] Fix ivy_clients table - table already exists in DB, verified columns match schema
+- [x] Company CRUD: create, read, update, delete with full fields
+- [x] Immediate strategy generation on company creation (LLM-powered via invokeLLM)
+- [x] Google Drive folder automation: create folder structure on company creation
+- [x] Agent orchestration: assign tasks to ARIA/LUCA/NOVA/SAGE
+- [x] KPI/ROI reporting system with campaign metrics (reportingTools.generateKPIReport/generateROIReport)
+- [x] Company details reporting (reportingTools.getCompanyDetails)
+- [ ] Auto-save reports to Google Drive (deferred - requires Drive write access)
+- [x] Update ROPA Brain for new company/campaign commands
+- [x] Fix createCompany platform tool to use ivy_clients table
+- [x] Botones de borrado para empresas, campañas y tareas (delete campaign dialog + delete/clear tasks)
+- [x] Auto-hide rejected emails from monitor list (filtered out unless explicit status filter)
+- [x] FAGOR logo update in email templates (CDN: manuscdn.com)
+- [x] Print/PDF format fix for email preview (new window approach with inline CSS)
+- [x] ROPA Brain v3.0 expanded vocabulary (25+ intent categories, shouldDeferToLLM)
+- [x] 89 vitest tests passing (8 test files)

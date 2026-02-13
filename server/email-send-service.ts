@@ -51,7 +51,7 @@ function generateFagorHtmlTemplate(params: {
   <div class="email-wrapper">
     <!-- Header with FAGOR Branding -->
     <div class="header">
-      <img src="https://www.fagorautomation.com/images/logo-fagor-automation-white.svg" alt="FAGOR Automation" style="max-height: 45px;" />
+      <img src="https://files.manuscdn.com/user_upload_by_module/session_file/310419663031167889/lFvNmUJyWPByzMSL.jpg" alt="FAGOR Automation" style="max-height: 45px;" />
       <div class="header-title">CNC Solutions & Industrial Automation</div>
     </div>
 

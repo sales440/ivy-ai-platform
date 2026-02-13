@@ -176,6 +176,8 @@ export default function RopaDashboardV2() {
   const [showNewCompanyDialog, setShowNewCompanyDialog] = useState(false);
   const [showDeleteCompanyDialog, setShowDeleteCompanyDialog] = useState(false);
   const [companyToDelete, setCompanyToDelete] = useState<any>(null);
+  const [showDeleteCampaignDialog, setShowDeleteCampaignDialog] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<any>(null);
   const [showNewCampaignDialog, setShowNewCampaignDialog] = useState(false);
   const [showEditCompanyDialog, setShowEditCompanyDialog] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
@@ -388,6 +390,24 @@ export default function RopaDashboardV2() {
     onSuccess: () => {
       refetchEmailDrafts();
     },
+  });
+
+  // Delete task mutation
+  const deleteTaskMutation = trpc.ropa.deleteTask.useMutation({
+    onSuccess: () => {
+      refetchTasks();
+      toast.success('Tarea eliminada');
+    },
+    onError: () => toast.error('Error al eliminar la tarea'),
+  });
+
+  // Clear completed tasks mutation
+  const clearCompletedTasksMutation = trpc.ropa.clearCompletedTasks.useMutation({
+    onSuccess: () => {
+      refetchTasks();
+      toast.success('Tareas completadas eliminadas');
+    },
+    onError: () => toast.error('Error al eliminar tareas'),
   });
 
   // Send approved emails mutation (Confirmar Envío)
@@ -1724,6 +1744,15 @@ export default function RopaDashboardV2() {
                   <Trash2 className="w-4 h-4 mr-2" />
                   Borrar Empresas
                 </Button>
+                <Button
+                  onClick={() => setShowDeleteCampaignDialog(true)}
+                  variant="outline"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                  disabled={localCampaigns.length === 0}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Borrar Campañas
+                </Button>
               </div>
 
               {/* Companies Grid */}
@@ -2416,6 +2445,22 @@ export default function RopaDashboardV2() {
 
           {activeSection === "tasks" && (
             <div className="space-y-6">
+              {/* Action Buttons for Tasks */}
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => {
+                    if (confirm('¿Estás seguro de que deseas eliminar todas las tareas completadas?')) {
+                      clearCompletedTasksMutation.mutate();
+                    }
+                  }}
+                  variant="outline"
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Borrar Tareas Completadas
+                </Button>
+              </div>
+
               {/* Tareas Pendientes por Campaña */}
               <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
                 <CardHeader>
@@ -2476,7 +2521,16 @@ export default function RopaDashboardV2() {
                           <p className="text-sm font-medium text-white">{task.type}</p>
                           <p className="text-xs text-slate-400">ID: {task.taskId}</p>
                         </div>
-                        <Badge className="bg-green-500">completada</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-green-500">completada</Badge>
+                          <button
+                            onClick={() => deleteTaskMutation.mutate({ taskId: task.taskId })}
+                            className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                            title="Eliminar tarea"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     )) || <p className="text-slate-500 text-center py-4">Sin tareas completadas</p>}
                   </div>
@@ -3293,6 +3347,84 @@ export default function RopaDashboardV2() {
                     setCompanyToDelete(null);
                     if (updated.length === 0) {
                       setShowDeleteCompanyDialog(false);
+                    }
+                  }}
+                >
+                  Sí, Eliminar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Campaign Dialog */}
+      <Dialog open={showDeleteCampaignDialog} onOpenChange={setShowDeleteCampaignDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-400">
+              <Trash2 className="w-5 h-5" />
+              Borrar Campañas
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Selecciona la campaña que deseas eliminar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {localCampaigns.map((campaign) => {
+              const company = localCompanies.find(c => c.id === campaign.companyId);
+              return (
+                <div
+                  key={campaign.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-slate-700 bg-slate-800/50 hover:border-red-500/50 transition-all"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                      <Megaphone className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-semibold text-white text-sm truncate">{campaign.name}</h4>
+                      <p className="text-xs text-slate-400 truncate">{company?.name || 'Sin empresa'} • {campaign.type}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 shrink-0 ml-2"
+                    onClick={() => setCampaignToDelete(campaign)}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Eliminar
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+          {campaignToDelete && (
+            <div className="mt-4 p-4 rounded-lg border border-red-500/50 bg-red-500/10">
+              <p className="text-sm text-red-300 mb-3">
+                ¿Estás seguro de que deseas eliminar la campaña <strong>{campaignToDelete.name}</strong>? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-600 text-slate-300"
+                  onClick={() => setCampaignToDelete(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => {
+                    const updated = localCampaigns.filter(c => c.id !== campaignToDelete.id);
+                    setLocalCampaigns(updated);
+                    localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                    toast.success(`Campaña "${campaignToDelete.name}" eliminada correctamente`);
+                    setCampaignToDelete(null);
+                    if (updated.length === 0) {
+                      setShowDeleteCampaignDialog(false);
                     }
                   }}
                 >

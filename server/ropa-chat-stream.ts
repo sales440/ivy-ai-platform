@@ -161,6 +161,14 @@ function isDirectCommand(msg: string): boolean {
     /\b(envía|envia|manda|send)\b.*\b(email|correo)\b.*@/,
     // Funnel
     /\b(embudo|funnel|conversión|leads)\b/,
+    // KPI/ROI Reports
+    /\b(kpi|kpis|roi|retorno|rentabilidad|indicadores)\b/,
+    // Company details
+    /\b(detalle|detalles|info de|perfil de|ficha de)\b.*\b(empresa|compañía|cliente)\b/,
+    // Farewell
+    /^(adiós|adios|bye|chao|chau|hasta luego|nos vemos)[!.,]?\s*$/i,
+    // Affirmative/Negative
+    /^(sí|si|ok|vale|dale|claro|no|nada|eso es todo)[!.,]?\s*$/i,
   ];
   
   return commandPatterns.some(p => p.test(lower));
@@ -225,21 +233,28 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
     console.log('[ROPA Stream] TIER 0: Direct command detected, using ROPA Brain');
     try {
       const brainResult = await processWithRopaBrain(cleanMessage, userHour, userDay);
-      const responseText = cleanAssistantMessage(brainResult.response);
       
-      // Save assistant message (non-blocking for speed)
-      addRopaChatMessage({ role: "assistant", message: responseText }).catch(() => {});
-      
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no',
-      });
-      sendSSE(res, { type: 'chunk', text: responseText });
-      sendSSE(res, { type: 'done', fullText: responseText });
-      res.end();
-      return;
+      // If Brain says to defer to LLM, fall through to LLM tiers
+      if (brainResult.shouldDeferToLLM) {
+        console.log('[ROPA Stream] TIER 0: Brain deferred to LLM for intent:', brainResult.intent);
+        // Fall through to LLM tiers below
+      } else {
+        const responseText = cleanAssistantMessage(brainResult.response);
+        
+        // Save assistant message (non-blocking for speed)
+        addRopaChatMessage({ role: "assistant", message: responseText }).catch(() => {});
+        
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'X-Accel-Buffering': 'no',
+        });
+        sendSSE(res, { type: 'chunk', text: responseText });
+        sendSSE(res, { type: 'done', fullText: responseText });
+        res.end();
+        return;
+      }
     } catch (brainError: any) {
       console.warn('[ROPA Stream] ROPA Brain error for direct command:', brainError.message);
       // Fall through to LLM tiers

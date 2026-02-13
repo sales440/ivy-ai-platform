@@ -1,0 +1,178 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "abTestResults"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "abTestVariants"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ab_test_results"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ab_test_variants"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ab_tests"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "agentConfigurations"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "agents"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "auditLogs"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "calls"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "campaignExecutions"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "campaignSteps"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "client_files"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "client_leads"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "commandHistory"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "companies"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "company_files"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "crmIntegrations"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "dashboardWidgets"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "emailCampaigns"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "emailLogs"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "emailSequenceSteps"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "emailSequences"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "email_drafts"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "fagorCampaignEnrollments"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "fagorContacts"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "fagorEmailEvents"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "google_drive_tokens"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ivy_clients"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "knowledgeBase"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "leadActivities"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "leads"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "linkedinPosts"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "marketingLeads"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "multiChannelCampaigns"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "notifications"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "prospectSearches"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_alerts"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_chat_history"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_config"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_learning"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_logs"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_metrics"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "ropa_tasks"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "sales_campaigns"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "savedSearches"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "scheduledTasks"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "systemMetrics"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "tasks"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "tickets"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "uploaded_files"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "userCompanies"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "userPreferences"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "users"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "workflowExecutions"
+    },
+    {
+      "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx": "workflows"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_HoXBpYBQ3qbVm6g7qLEzMx\n__drizzle_migrations\nabTestResults\nabTestVariants\nab_test_results\nab_test_variants\nab_tests\nagentConfigurations\nagents\nauditLogs\ncalls\ncampaignExecutions\ncampaignSteps\nclient_files\nclient_leads\ncommandHistory\ncompanies\ncompany_files\ncrmIntegrations\ndashboardWidgets\nemailCampaigns\nemailLogs\nemailSequenceSteps\nemailSequences\nemail_drafts\nfagorCampaignEnrollments\nfagorContacts\nfagorEmailEvents\ngoogle_drive_tokens\nivy_clients\nknowledgeBase\nleadActivities\nleads\nlinkedinPosts\nmarketingLeads\nmultiChannelCampaigns\nnotifications\nprospectSearches\nropa_alerts\nropa_chat_history\nropa_config\nropa_learning\nropa_logs\nropa_metrics\nropa_tasks\nsales_campaigns\nsavedSearches\nscheduledTasks\nsystemMetrics\ntasks\ntickets\nuploaded_files\nuserCompanies\nuserPreferences\nusers\nworkflowExecutions\nworkflows\n",
+  "stderr": "",
+  "execution_time_ms": 100
+}

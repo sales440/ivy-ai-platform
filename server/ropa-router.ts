@@ -16,6 +16,8 @@ import {
   getConversationContext,
   saveRopaRecommendation,
   saveAgentTraining,
+  deleteRopaTask,
+  clearCompletedRopaTasks,
 } from "./ropa-db";
 import { ropaTools, listAllTools, toolCategories, TOTAL_TOOLS } from "./ropa-tools";
 import { ropaPlatformTools, platformToolCategories, PLATFORM_TOOLS_COUNT } from "./ropa-platform-tools";
@@ -106,6 +108,19 @@ export const ropaRouter = router({
       });
 
       return { success: true, taskId };
+    }),
+
+  deleteTask: protectedProcedure
+    .input(z.object({ taskId: z.string() }))
+    .mutation(async ({ input }) => {
+      await deleteRopaTask(input.taskId);
+      return { success: true };
+    }),
+
+  clearCompletedTasks: protectedProcedure
+    .mutation(async () => {
+      await clearCompletedRopaTasks();
+      return { success: true };
     }),
 
   // ============ CHAT ============
