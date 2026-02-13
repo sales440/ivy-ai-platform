@@ -49,21 +49,38 @@ export interface Draft {
   createdAt: string;
   recipient?: string;
   phoneNumber?: string;
+  ctaText?: string;
 }
 
 interface MonitorDraftPopupProps {
   draft: Draft | null;
   isOpen: boolean;
   onClose: () => void;
-  onApprove: (draftId: string, editedSubject?: string, editedBody?: string) => void;
+  onApprove: (draftId: string, editedSubject?: string, editedBody?: string, editedCtaText?: string) => void;
   onReject: (draftId: string) => void;
-  onSaveEdit?: (draftId: string, subject: string, body: string) => Promise<void>;
+  onSaveEdit?: (draftId: string, subject: string, body: string, ctaText?: string) => Promise<void>;
 }
 
 /**
  * Generate premium FAGOR-branded HTML email for full-screen preview and PDF export
  */
-function generatePremiumFagorEmail(subject: string, body: string, company: string, recipient?: string): string {
+/**
+ * Auto-suggest CTA text based on campaign name
+ */
+function suggestCtaText(campaign: string): string {
+  const c = campaign.toLowerCase();
+  if (c.includes('upgrade') || c.includes('cnc')) return 'Request CNC Demo';
+  if (c.includes('training') || c.includes('formación')) return 'View Training Plan';
+  if (c.includes('teleservice') || c.includes('remote')) return 'Start Teleservice';
+  if (c.includes('service') || c.includes('servicio')) return 'Schedule Service';
+  if (c.includes('repair') || c.includes('motor') || c.includes('drive')) return 'Request Repair Quote';
+  if (c.includes('warranty') || c.includes('garantía')) return 'Extend Warranty';
+  if (c.includes('digital') || c.includes('suite') || c.includes('software')) return 'Explore Digital Suite';
+  if (c.includes('automation')) return 'Discover Automation Solutions';
+  return 'Solicitar Información';
+}
+
+function generatePremiumFagorEmail(subject: string, body: string, company: string, recipient?: string, ctaText?: string): string {
   // Process body: convert newlines to paragraphs for better formatting
   const formattedBody = body
     .split(/\n\n+/)
@@ -155,7 +172,7 @@ function generatePremiumFagorEmail(subject: string, body: string, company: strin
   <!-- CTA Section (if applicable) -->
   <div style="padding: 0 48px 40px; text-align: center;">
     <div style="display: inline-block; background: linear-gradient(135deg, #C41230 0%, #E31937 100%); border-radius: 8px; padding: 14px 36px; text-decoration: none;">
-      <span style="color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.5px;">Solicitar Información</span>
+      <span style="color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.5px;">${ctaText || 'Solicitar Información'}</span>
     </div>
   </div>
 
@@ -220,7 +237,7 @@ function generatePremiumFagorEmail(subject: string, body: string, company: strin
 /**
  * Simple preview for the popup (non-fullscreen)
  */
-function generateSimplePreview(subject: string, body: string, company: string): string {
+function generateSimplePreview(subject: string, body: string, company: string, ctaText?: string): string {
   return `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
       <div style="background: linear-gradient(135deg, #C41230 0%, #8B0D22 100%); padding: 28px 36px; text-align: center;">
@@ -234,6 +251,11 @@ function generateSimplePreview(subject: string, body: string, company: string): 
       </div>
       <div style="padding: 36px; color: #333333; line-height: 1.7; font-size: 15px;">
         ${body}
+      </div>
+      <div style="padding: 0 36px 24px; text-align: center;">
+        <div style="display: inline-block; background: linear-gradient(135deg, #C41230 0%, #E31937 100%); border-radius: 6px; padding: 12px 32px;">
+          <span style="color: #ffffff; font-size: 13px; font-weight: 600;">${ctaText || 'Solicitar Informaci\u00f3n'}</span>
+        </div>
       </div>
       <div style="margin: 0 36px;"><div style="height: 3px; background: linear-gradient(90deg, #C41230, #ff6b6b, #C41230); border-radius: 2px;"></div></div>
       <div style="padding: 24px 36px; color: #666; font-size: 13px;">
@@ -255,6 +277,7 @@ function generateSimplePreview(subject: string, body: string, company: string): 
   `;
 }
 
+
 export function MonitorDraftPopup({
   draft,
   isOpen,
@@ -266,6 +289,7 @@ export function MonitorDraftPopup({
   const [isEditing, setIsEditing] = useState(false);
   const [editedSubject, setEditedSubject] = useState('');
   const [editedBody, setEditedBody] = useState('');
+  const [editedCtaText, setEditedCtaText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'preview' | 'source'>('preview');
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -276,6 +300,7 @@ export function MonitorDraftPopup({
     if (draft) {
       setEditedSubject(draft.subject);
       setEditedBody(draft.body);
+      setEditedCtaText(draft.ctaText || suggestCtaText(draft.campaign));
       setIsEditing(false);
       setViewMode('preview');
       setIsFullScreen(false);
@@ -285,7 +310,7 @@ export function MonitorDraftPopup({
   // Update iframe content when in fullscreen mode
   useEffect(() => {
     if (isFullScreen && iframeRef.current && draft) {
-      const htmlContent = generatePremiumFagorEmail(editedSubject, editedBody, draft.company, draft.recipient);
+      const htmlContent = generatePremiumFagorEmail(editedSubject, editedBody, draft.company, draft.recipient, editedCtaText);
       const iframeDoc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
       if (iframeDoc) {
         iframeDoc.open();
@@ -326,7 +351,7 @@ export function MonitorDraftPopup({
     if (!onSaveEdit) return;
     setIsSaving(true);
     try {
-      await onSaveEdit(draft.id, editedSubject, editedBody);
+      await onSaveEdit(draft.id, editedSubject, editedBody, editedCtaText);
       setIsEditing(false);
       toast.success('Cambios guardados correctamente');
     } catch (error) {
@@ -339,14 +364,15 @@ export function MonitorDraftPopup({
   const handleCancelEdit = () => {
     setEditedSubject(draft.subject);
     setEditedBody(draft.body);
+    setEditedCtaText(draft.ctaText || suggestCtaText(draft.campaign));
     setIsEditing(false);
   };
 
   const handleApprove = () => {
-    if (editedSubject !== draft.subject || editedBody !== draft.body) {
-      onApprove(draft.id, editedSubject, editedBody);
+    if (editedSubject !== draft.subject || editedBody !== draft.body || editedCtaText !== (draft.ctaText || suggestCtaText(draft.campaign))) {
+      onApprove(draft.id, editedSubject, editedBody, editedCtaText);
     } else {
-      onApprove(draft.id);
+      onApprove(draft.id, undefined, undefined, editedCtaText);
     }
   };
 
@@ -356,7 +382,7 @@ export function MonitorDraftPopup({
     }
   };
 
-  const hasChanges = editedSubject !== draft.subject || editedBody !== draft.body;
+  const hasChanges = editedSubject !== draft.subject || editedBody !== draft.body || editedCtaText !== (draft.ctaText || suggestCtaText(draft.campaign));
 
   // ============ FULL SCREEN PREVIEW MODE ============
   if (isFullScreen) {
@@ -565,6 +591,39 @@ export function MonitorDraftPopup({
                   placeholder="Escribe el contenido HTML..."
                 />
               </div>
+              {draft.type === 'email' && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Texto del Botón CTA</h3>
+                    <span className="text-xs text-slate-500">Ej: "Request CNC Demo", "View Training Plan"</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      value={editedCtaText}
+                      onChange={(e) => setEditedCtaText(e.target.value)}
+                      className="bg-slate-800 border-amber-500/50 text-white focus:border-amber-400"
+                      placeholder="Texto del botón de acción..."
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditedCtaText(suggestCtaText(draft.campaign))}
+                      className="text-amber-400 border-amber-400/50 hover:bg-amber-400/10 whitespace-nowrap"
+                      title="Auto-sugerir según campaña"
+                    >
+                      Auto
+                    </Button>
+                  </div>
+                  <div className="mt-2 p-2 bg-slate-800/30 rounded border border-slate-700/50">
+                    <div className="flex items-center gap-2">
+                      <div className="px-4 py-1.5 bg-gradient-to-r from-red-700 to-red-600 rounded text-white text-xs font-semibold">
+                        {editedCtaText || 'Solicitar Información'}
+                      </div>
+                      <span className="text-xs text-slate-500">← Preview del botón</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-3 mb-6">
                 <Button
                   onClick={handleSaveChanges}
@@ -621,9 +680,37 @@ export function MonitorDraftPopup({
                   <div className="bg-gray-100 rounded-xl p-6 border border-gray-300">
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: generateSimplePreview(editedSubject, editedBody, draft.company),
+                        __html: generateSimplePreview(editedSubject, editedBody, draft.company, editedCtaText),
                       }}
                     />
+                  </div>
+                  {/* CTA Text Editor - always visible in preview mode */}
+                  <div className="mt-4 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Botón Call-to-Action</h4>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        value={editedCtaText}
+                        onChange={(e) => setEditedCtaText(e.target.value)}
+                        className="bg-slate-900 border-amber-500/30 text-white focus:border-amber-400 h-9 text-sm"
+                        placeholder="Texto del botón CTA..."
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditedCtaText(suggestCtaText(draft.campaign))}
+                        className="text-amber-400 border-amber-400/30 hover:bg-amber-400/10 h-9 text-xs whitespace-nowrap"
+                      >
+                        Auto-sugerir
+                      </Button>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="px-4 py-1.5 bg-gradient-to-r from-red-700 to-red-600 rounded text-white text-xs font-semibold">
+                        {editedCtaText || 'Solicitar Información'}
+                      </div>
+                      <span className="text-xs text-slate-500">← Así se verá en el email</span>
+                    </div>
                   </div>
                 </div>
               ) : draft.type === 'email' && viewMode === 'source' ? (

@@ -569,4 +569,15 @@
 ## Phase 47: Full-Screen Preview Button + Premium Email Template
 - [x] Activate Preview button in MonitorDraftPopup to open full-screen email view
 - [x] Upgrade email HTML template to high-end/premium quality for PDF attachment
+- [x] Push to GitHub for Railway deployment
+
+## Phase 48: Customizable CTA Button Text per Campaign
+- [x] Add CTA text input field in MonitorDraftPopup (editable per email draft)
+- [x] Pass CTA text to premium email template (generatePremiumFagorEmail)
+- [x] Auto-suggest CTA text based on campaign name (e.g., CNC Upgrade → "Request CNC Demo")
+- [x] Save CTA text with draft when editing
+- [x] CTA editor visible in both edit mode and preview mode
+- [x] Auto-suggest button with campaign-based intelligence
+- [x] Live CTA button preview in both modes
+- [x] 13 vitest tests passing
 - [ ] Push to GitHub for Railway deployment
