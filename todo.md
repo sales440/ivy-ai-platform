@@ -697,3 +697,10 @@
 - [x] Apply autonomous onboarding engine to ALL companies (existing like FAGOR, EPM, TechStart + new like PETLIFE 360)
 - [x] Add "onboard existing companies" startup routine in ropa-autonomous.ts (30s delay after boot)
 - [x] 132 tests passing (12 new onboarding engine tests)
+
+## Fix: Railway production ivy_clients SELECT/INSERT failure (Feb 13) - ROOT CAUSE FOUND
+- [x] ROOT CAUSE: create-ropa-tables.mjs only created ROPA-specific tables, NOT ivy_clients, sales_campaigns, etc.
+- [x] Fix: Added ALL 13 missing tables to create-ropa-tables.mjs (ivy_clients, sales_campaigns, campaign_content, client_leads, client_files, uploaded_files, company_files, client_lists, client_records, ab_tests, ab_test_variants, ab_test_results)
+- [x] Created centralized ivy-clients-db.ts module with raw SQL for all ivy_clients operations
+- [x] All 132 tests passing
+- [ ] Push to GitHub for Railway deployment

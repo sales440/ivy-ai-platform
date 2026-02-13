@@ -157,6 +157,223 @@ async function createRopaTables() {
           created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )`
+      },
+      {
+        name: 'ivy_clients',
+        sql: `CREATE TABLE IF NOT EXISTS ivy_clients (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          client_id varchar(32) NOT NULL UNIQUE,
+          company_name varchar(255) NOT NULL,
+          industry varchar(100),
+          contact_name varchar(255),
+          contact_email varchar(320),
+          contact_phone varchar(50),
+          address text,
+          website varchar(255),
+          logo_url varchar(500),
+          google_drive_folder_id varchar(100),
+          google_drive_structure text,
+          status enum('active', 'inactive', 'prospect', 'churned') NOT NULL DEFAULT 'prospect',
+          \`plan\` enum('free', 'starter', 'professional', 'enterprise') NOT NULL DEFAULT 'free',
+          notes text,
+          created_by varchar(64),
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'sales_campaigns',
+        sql: `CREATE TABLE IF NOT EXISTS sales_campaigns (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          name varchar(255) NOT NULL,
+          type enum('email', 'phone', 'social_media', 'multi_channel') NOT NULL,
+          status enum('draft', 'active', 'paused', 'completed') NOT NULL DEFAULT 'draft',
+          target_audience text,
+          content text,
+          social_platform varchar(50),
+          metrics text,
+          start_date timestamp NULL,
+          end_date timestamp NULL,
+          created_by varchar(64) NOT NULL,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'campaign_content',
+        sql: `CREATE TABLE IF NOT EXISTS campaign_content (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          campaign_id int,
+          company_id int,
+          company_name varchar(255) NOT NULL,
+          company_logo varchar(500),
+          company_address text,
+          company_phone varchar(50),
+          company_email varchar(320),
+          company_website varchar(255),
+          content_type enum('email', 'call_script', 'sms') NOT NULL,
+          subject varchar(500),
+          body text NOT NULL,
+          html_content text,
+          target_recipients text,
+          status enum('pending', 'approved', 'rejected', 'sent') NOT NULL DEFAULT 'pending',
+          rejection_reason text,
+          approved_by varchar(64),
+          approved_at timestamp NULL,
+          sent_at timestamp NULL,
+          sent_count int DEFAULT 0,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'client_leads',
+        sql: `CREATE TABLE IF NOT EXISTS client_leads (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          company_name varchar(255) NOT NULL,
+          contact_name varchar(255),
+          email varchar(320),
+          phone varchar(50),
+          industry varchar(100),
+          company_size varchar(50),
+          status enum('new', 'contacted', 'qualified', 'proposal', 'closed_won', 'closed_lost') NOT NULL DEFAULT 'new',
+          source varchar(100),
+          notes text,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'client_files',
+        sql: `CREATE TABLE IF NOT EXISTS client_files (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          client_id varchar(32) NOT NULL,
+          file_type enum('logo', 'template', 'report', 'backup', 'document', 'campaign_asset', 'client_list', 'other') NOT NULL,
+          file_name varchar(255) NOT NULL,
+          google_drive_file_id varchar(100),
+          google_drive_url varchar(500),
+          mime_type varchar(100),
+          file_size int,
+          description text,
+          uploaded_by varchar(64),
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'uploaded_files',
+        sql: `CREATE TABLE IF NOT EXISTS uploaded_files (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          file_name varchar(255) NOT NULL,
+          file_type varchar(50) NOT NULL,
+          file_size int NOT NULL,
+          s3_key varchar(500) NOT NULL,
+          s3_url varchar(500) NOT NULL,
+          uploaded_by varchar(64) NOT NULL,
+          processed_leads int DEFAULT 0,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'company_files',
+        sql: `CREATE TABLE IF NOT EXISTS company_files (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          company_id int,
+          company_name varchar(255) NOT NULL,
+          file_name varchar(255) NOT NULL,
+          file_type enum('logo', 'email_example', 'branding', 'document', 'client_list', 'other') NOT NULL,
+          mime_type varchar(100) NOT NULL,
+          file_size int NOT NULL,
+          s3_key varchar(500) NOT NULL,
+          s3_url varchar(500) NOT NULL,
+          description text,
+          uploaded_by varchar(64),
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'client_lists',
+        sql: `CREATE TABLE IF NOT EXISTS client_lists (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          company_id int,
+          company_name varchar(255) NOT NULL,
+          list_name varchar(255) NOT NULL,
+          source_file_id int,
+          source_file_name varchar(255),
+          total_records int DEFAULT 0,
+          processed_records int DEFAULT 0,
+          status enum('pending', 'processing', 'completed', 'error') NOT NULL DEFAULT 'pending',
+          error_message text,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'client_records',
+        sql: `CREATE TABLE IF NOT EXISTS client_records (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          list_id int NOT NULL,
+          company_id int,
+          name varchar(255),
+          email varchar(320),
+          phone varchar(50),
+          company varchar(255),
+          position varchar(255),
+          industry varchar(100),
+          location varchar(255),
+          custom_fields text,
+          status enum('active', 'contacted', 'responded', 'converted', 'unsubscribed') NOT NULL DEFAULT 'active',
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ab_tests',
+        sql: `CREATE TABLE IF NOT EXISTS ab_tests (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          campaign_id int,
+          test_name varchar(255) NOT NULL,
+          test_type enum('email_subject', 'email_content', 'call_script', 'sms_content', 'landing_page') NOT NULL,
+          hypothesis text,
+          status enum('draft', 'running', 'completed', 'paused') NOT NULL DEFAULT 'draft',
+          start_date timestamp NULL,
+          end_date timestamp NULL,
+          winner_variant_id int,
+          confidence_level int DEFAULT 95,
+          significance_reached int DEFAULT 0,
+          created_by varchar(64),
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ab_test_variants',
+        sql: `CREATE TABLE IF NOT EXISTS ab_test_variants (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          test_id int NOT NULL,
+          variant_name varchar(100) NOT NULL,
+          is_control int DEFAULT 0,
+          content text NOT NULL,
+          traffic_percentage int DEFAULT 50,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`
+      },
+      {
+        name: 'ab_test_results',
+        sql: `CREATE TABLE IF NOT EXISTS ab_test_results (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          test_id int NOT NULL,
+          variant_id int NOT NULL,
+          impressions int DEFAULT 0,
+          opens int DEFAULT 0,
+          clicks int DEFAULT 0,
+          conversions int DEFAULT 0,
+          bounces int DEFAULT 0,
+          unsubscribes int DEFAULT 0,
+          revenue int DEFAULT 0,
+          conversion_rate int DEFAULT 0,
+          open_rate int DEFAULT 0,
+          click_rate int DEFAULT 0,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
       }
     ];
 
