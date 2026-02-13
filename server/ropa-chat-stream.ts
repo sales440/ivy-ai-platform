@@ -165,6 +165,12 @@ function isDirectCommand(msg: string): boolean {
     /\b(kpi|kpis|roi|retorno|rentabilidad|indicadores)\b/,
     // Company details
     /\b(detalle|detalles|info de|perfil de|ficha de)\b.*\b(empresa|compañía|cliente)\b/,
+    // Company filtering: "tareas de EMPRESA", "campañas de EMPRESA", etc.
+    /\b(tareas|campañas|emails|correos|borradores|alertas|leads|archivos|overview|resumen)\b\s+(de|para|del?\s+cliente|de\s+la\s+empresa)/,
+    // "qué tareas tiene EMPRESA"
+    /\b(qué|que)\s+(tareas|campañas|emails|alertas|leads)\s+(tiene|tienes|hay)/,
+    // "muestra las tareas de EMPRESA"
+    /\b(muestra|lista|dame|enseña|ver|show|list)\s+(las?\s+)?(tareas|campañas|emails|correos|alertas|leads|archivos)\s+(de|para)/,
     // Farewell
     /^(adiós|adios|bye|chao|chau|hasta luego|nos vemos)[!.,]?\s*$/i,
     // Affirmative/Negative

@@ -77,6 +77,10 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     return { response, intent, command, platformActionExecuted, platformResult };
   }
 
+  // ============ EARLY: Company filter pattern detection ============
+  // Detect patterns like "tareas de EMPRESA", "campañas de EMPRESA" early to prevent false matches
+  const isCompanyFilterPattern = /\b(tareas|campañas|emails|correos|borradores|alertas|leads|archivos|overview|resumen|datos|información|informacion|todo)\s+(de|para|del?\s+cliente|de\s+la\s+empresa)\s+/i.test(cleanMessage) || /\b(qué|que)\s+(tareas|campañas|emails|alertas|leads)\s+(tiene|tienes|hay)/i.test(cleanMessage) || /\b(muestra|lista|dame|enseña|ver|show|list)\s+(las?\s+)?(tareas|campañas|emails|correos|alertas|leads|archivos)\s+(de|para)/i.test(cleanMessage);
+
   // ============ 2. NAVIGATION (expanded) ============
   const navKeywords = [
     've a', 'ir a', 'abre', 'abrir', 'navega', 'muestra', 'mostrar',
@@ -88,7 +92,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
   ];
   const isNavRequest = navKeywords.some(k => msg.includes(k));
   
-  if (isNavRequest) {
+  if (isNavRequest && !isCompanyFilterPattern) {
     const sectionMappings: Record<string, string> = {
       'dashboard': 'dashboard', 'panel': 'dashboard', 'inicio': 'dashboard', 'principal': 'dashboard',
       'home': 'dashboard', 'resumen': 'dashboard', 'overview': 'dashboard', 'tablero': 'dashboard',
@@ -230,6 +234,8 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
       platformActionExecuted = true;
       const draftCount = platformResult?.drafts?.length || platformResult?.count || count;
       response = `He generado ${draftCount} borradores de email para ${companyName}. Puedes revisarlos en la sección Monitor para aprobarlos antes de enviarlos.`;
+      // Auto-notify owner (non-blocking)
+      ropaPlatformTools.notifyEmailsGenerated({ companyName, count: draftCount, campaign: campaignName }).catch(() => {});
     } catch (err: any) {
       response = `Error al generar emails: ${err.message}. Intenta de nuevo o especifica la empresa.`;
     }
@@ -346,7 +352,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     'analytics', 'analítica', 'analitica',
   ];
   
-  if (matchesAny(msg, statsKeywords) || (msg.includes('dashboard') && !isNavRequest)) {
+  if (!isCompanyFilterPattern && (matchesAny(msg, statsKeywords) || (msg.includes('dashboard') && !isNavRequest))) {
     intent = 'dashboard_stats';
     
     try {
@@ -369,7 +375,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
   }
 
   // ============ 10. LEAD FUNNEL (expanded) ============
-  if (matchesAny(msg, ['embudo', 'funnel', 'conversión', 'conversion', 'leads', 'pipeline', 'prospecto', 'prospectos', 'oportunidades'])) {
+  if (!isCompanyFilterPattern && matchesAny(msg, ['embudo', 'funnel', 'conversión', 'conversion', 'leads', 'pipeline', 'prospecto', 'prospectos', 'oportunidades'])) {
     intent = 'lead_funnel';
     try {
       platformResult = await ropaSuperTools.getLeadFunnelAnalytics();
@@ -412,7 +418,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
   const driveKeywords = ['google drive', 'carpeta', 'archivo', 'archivos', 'documentos', 'docs', 'fichero', 'ficheros', 'drive'];
   const driveVerbs = ['ver', 'lista', 'muestra', 'revisa', 'busca', 'dame', 'enseña', 'enséñame', 'abre', 'accede', 'consulta'];
   
-  if (matchesAny(msg, driveKeywords) && matchesAny(msg, driveVerbs)) {
+  if (!isCompanyFilterPattern && matchesAny(msg, driveKeywords) && matchesAny(msg, driveVerbs)) {
     intent = 'google_drive';
     
     try {
@@ -480,6 +486,9 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
       `EMPRESAS: "crea empresa NOMBRE", "registra cliente NOMBRE"\n` +
       `CAMPAÑAS: "crea campaña NOMBRE para EMPRESA", "lista campañas"\n` +
       `EMAILS: "genera 5 emails para EMPRESA", "envía email a user@mail.com"\n` +
+      `FILTROS POR EMPRESA: "tareas de EMPRESA", "campañas de EMPRESA", "emails de EMPRESA", "alertas de EMPRESA"\n` +
+      `OVERVIEW: "resumen de EMPRESA", "overview de EMPRESA"\n` +
+      `REPORTES: "reporte KPI", "reporte ROI", "detalles de empresa NOMBRE"\n` +
       `GOOGLE DRIVE: "muestra archivos de Drive", "busca archivo NOMBRE"\n` +
       `WEB: "busca en internet TEMA", "investiga empresa NOMBRE"\n` +
       `ANALYTICS: "muestra estadísticas", "estado del sistema", "embudo de leads"\n` +
@@ -560,6 +569,168 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     return { response: '', intent, command, platformActionExecuted, platformResult, shouldDeferToLLM: true };
   }
 
+  // ============ 20a. COMPANY-SPECIFIC FILTERING ============
+  // Pattern: "tareas de EMPRESA", "campañas de EMPRESA", "emails de EMPRESA", "alertas de EMPRESA", "overview de EMPRESA"
+  const filterKeywords = ['tareas de', 'tasks de', 'campañas de', 'campaigns de', 'emails de', 'correos de', 'borradores de', 'alertas de', 'alerts de', 'leads de', 'archivos de', 'files de', 'overview de', 'resumen de', 'todo de', 'información de', 'informacion de', 'datos de'];
+  const filterForKeywords = ['tareas para', 'tasks para', 'campañas para', 'campaigns para', 'emails para', 'correos para', 'borradores para', 'alertas para', 'alerts para', 'leads para', 'archivos para', 'files para', 'overview para', 'resumen para', 'todo para'];
+  const filterPendingKeywords = ['pendientes de', 'pendientes para', 'pendientes por', 'que tiene pendiente', 'que tienes pendiente'];
+  
+  // Check for "tareas pendientes para la empresa X" or "qué tareas tiene EMPRESA"
+  const companyFilterMatch = cleanMessage.match(/(?:tareas|tasks|campañas|campaigns|emails|correos|borradores|alertas|alerts|leads|archivos|files|overview|resumen|todo|información|informacion|datos|pendientes)\s+(?:de|para|de la empresa|para la empresa|por realizar para|pendientes de|pendientes para)\s+(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+  const companyFilterMatch2 = cleanMessage.match(/(?:qué|que)\s+(?:tareas|campañas|emails|alertas|leads)\s+(?:tiene|tienes|hay|existen)\s+(?:pendientes?\s+)?(?:para|de|en)?\s*(?:la empresa\s+)?["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+  const companyFilterMatch3 = cleanMessage.match(/(?:muestra|lista|dame|enseña|ver|show|list)\s+(?:las?\s+)?(?:tareas|campañas|emails|correos|alertas|leads|archivos)\s+(?:de|para|del cliente|de la empresa)\s+["']?([A-Za-z0-9À-ÿ\s]+)["']?/i);
+  
+  const companyNameFromFilter = (companyFilterMatch?.[1] || companyFilterMatch2?.[1] || companyFilterMatch3?.[1] || '').trim();
+  
+  if (companyNameFromFilter && (matchesAny(msg, filterKeywords) || matchesAny(msg, filterForKeywords) || matchesAny(msg, filterPendingKeywords) || companyFilterMatch2 || companyFilterMatch3)) {
+    // Determine what type of data to filter
+    const isTaskFilter = matchesAny(msg, ['tarea', 'tareas', 'tasks', 'pendiente', 'pendientes']);
+    const isCampaignFilter = matchesAny(msg, ['campaña', 'campañas', 'campaigns', 'campaign']);
+    const isEmailFilter = matchesAny(msg, ['email', 'emails', 'correo', 'correos', 'borrador', 'borradores', 'mail', 'mails']);
+    const isAlertFilter = matchesAny(msg, ['alerta', 'alertas', 'alerts', 'alert']);
+    const isLeadFilter = matchesAny(msg, ['lead', 'leads', 'prospecto', 'prospectos']);
+    const isFileFilter = matchesAny(msg, ['archivo', 'archivos', 'files', 'file', 'documento', 'documentos']);
+    const isOverview = matchesAny(msg, ['overview', 'resumen', 'todo', 'información', 'informacion', 'datos', 'general']);
+    
+    try {
+      if (isTaskFilter) {
+        intent = 'filter_tasks_by_company';
+        const statusFilter = matchesAny(msg, ['pendiente', 'pendientes']) ? 'pending' : undefined;
+        platformResult = await ropaPlatformTools.listTasksForCompany({ companyName: companyNameFromFilter, status: statusFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          response = `Tareas de ${companyNameFromFilter}:\n\n` +
+            `Total: ${platformResult.count}\n` +
+            `Pendientes: ${platformResult.pending} | En progreso: ${platformResult.running} | Completadas: ${platformResult.completed} | Fallidas: ${platformResult.failed}\n\n`;
+          if (platformResult.tasks?.length > 0) {
+            response += platformResult.tasks.map((t: any, i: number) => 
+              `${i + 1}. [${t.status}] ${t.taskType} (Prioridad: ${t.priority || 'normal'})`
+            ).join('\n');
+          } else {
+            response += 'No se encontraron tareas para esta empresa.';
+          }
+        } else {
+          response = `No se encontraron tareas para ${companyNameFromFilter}.`;
+        }
+      } else if (isCampaignFilter) {
+        intent = 'filter_campaigns_by_company';
+        platformResult = await ropaPlatformTools.listCampaignsForCompany({ companyName: companyNameFromFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          response = `Campañas de ${companyNameFromFilter}:\n\n` +
+            `Total: ${platformResult.count}\n` +
+            `Activas: ${platformResult.active} | Borrador: ${platformResult.draft} | Completadas: ${platformResult.completed} | Pausadas: ${platformResult.paused}\n\n`;
+          if (platformResult.campaigns?.length > 0) {
+            response += platformResult.campaigns.map((c: any, i: number) => 
+              `${i + 1}. ${c.name} [${c.status}] - Tipo: ${c.type}`
+            ).join('\n');
+          } else {
+            response += 'No se encontraron campañas para esta empresa.';
+          }
+        } else {
+          response = `No se encontraron campañas para ${companyNameFromFilter}.`;
+        }
+      } else if (isEmailFilter) {
+        intent = 'filter_emails_by_company';
+        const statusFilter = matchesAny(msg, ['aprobado', 'aprobados', 'approved']) ? 'approved' as const
+          : matchesAny(msg, ['rechazado', 'rechazados', 'rejected']) ? 'rejected' as const
+          : matchesAny(msg, ['pendiente', 'pendientes', 'pending']) ? 'pending' as const
+          : matchesAny(msg, ['enviado', 'enviados', 'sent']) ? 'sent' as const
+          : 'all' as const;
+        platformResult = await ropaPlatformTools.listEmailDraftsForCompany({ companyName: companyNameFromFilter, status: statusFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          response = `Emails de ${companyNameFromFilter}${statusFilter !== 'all' ? ` (${statusFilter})` : ''}:\n\n` +
+            `Total: ${platformResult.count}\n` +
+            `Pendientes: ${platformResult.pending} | Aprobados: ${platformResult.approved} | Rechazados: ${platformResult.rejected} | Enviados: ${platformResult.sent}\n\n`;
+          if (platformResult.drafts?.length > 0) {
+            response += platformResult.drafts.map((d: any, i: number) => 
+              `${i + 1}. [${d.status}] ${d.subject}`
+            ).join('\n');
+          } else {
+            response += 'No se encontraron emails para esta empresa.';
+          }
+        } else {
+          response = `No se encontraron emails para ${companyNameFromFilter}.`;
+        }
+      } else if (isAlertFilter) {
+        intent = 'filter_alerts_by_company';
+        platformResult = await ropaPlatformTools.listAlertsForCompany({ companyName: companyNameFromFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          response = `Alertas de ${companyNameFromFilter}:\n\n` +
+            `Total: ${platformResult.count} (${platformResult.unresolved} sin resolver)\n\n`;
+          if (platformResult.alerts?.length > 0) {
+            response += platformResult.alerts.map((a: any, i: number) => 
+              `${i + 1}. [${a.severity}] ${a.message} ${a.resolved ? '✓' : '⚠'}`
+            ).join('\n');
+          } else {
+            response += 'No se encontraron alertas para esta empresa.';
+          }
+        } else {
+          response = `No se encontraron alertas para ${companyNameFromFilter}.`;
+        }
+      } else if (isLeadFilter) {
+        intent = 'filter_leads_by_company';
+        platformResult = await ropaPlatformTools.listLeadsForCompany({ companyName: companyNameFromFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          response = `Leads de ${companyNameFromFilter}:\n\n` +
+            `Total: ${platformResult.count}\n\n`;
+          if (platformResult.leads?.length > 0) {
+            response += platformResult.leads.map((l: any, i: number) => 
+              `${i + 1}. ${l.contactName || l.companyName} [${l.status}] - ${l.email || 'Sin email'}`
+            ).join('\n');
+          } else {
+            response += 'No se encontraron leads para esta empresa.';
+          }
+        } else {
+          response = `No se encontraron leads para ${companyNameFromFilter}.`;
+        }
+      } else if (isFileFilter) {
+        intent = 'filter_files_by_company';
+        platformResult = await ropaPlatformTools.listFilesForCompany({ companyName: companyNameFromFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          response = `Archivos de ${companyNameFromFilter}: ${platformResult.count} archivos encontrados.\n\n`;
+          if (platformResult.files?.length > 0) {
+            response += platformResult.files.map((f: any, i: number) => 
+              `${i + 1}. ${f.fileName} (${f.fileType || f.mimeType})`
+            ).join('\n');
+          }
+        } else {
+          response = `No se encontraron archivos para ${companyNameFromFilter}.`;
+        }
+      } else {
+        // Full overview
+        intent = 'company_overview';
+        platformResult = await ropaPlatformTools.getCompanyFullOverview({ companyName: companyNameFromFilter });
+        platformActionExecuted = true;
+        if (platformResult?.success) {
+          const s = platformResult.summary;
+          const c = platformResult.company;
+          response = `OVERVIEW DE ${c?.companyName || companyNameFromFilter}\n\n`;
+          if (c) {
+            response += `ID: ${c.clientId} | Industria: ${c.industry || 'N/A'} | Estado: ${c.status} | Plan: ${c.plan || 'N/A'}\n`;
+            response += `Contacto: ${c.contactName || 'N/A'} (${c.contactEmail || 'N/A'})\n`;
+            response += `Google Drive: ${c.googleDriveFolderId ? 'Conectado' : 'No configurado'}\n\n`;
+          }
+          response += `Tareas: ${s.tasks}\n`;
+          response += `Campañas: ${s.campaigns}\n`;
+          response += `Emails: ${s.emailDrafts}\n`;
+          response += `Alertas: ${s.alerts}\n`;
+          response += `Leads: ${s.leads}\n`;
+          response += `Archivos: ${s.files}`;
+        } else {
+          response = `No se encontró información para ${companyNameFromFilter}.`;
+        }
+      }
+    } catch (err: any) {
+      response = `Error filtrando datos de ${companyNameFromFilter}: ${err.message}`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
   // ============ 20b. KPI REPORT ============
   const kpiKeywords = ['kpi', 'kpis', 'reporte kpi', 'report kpi', 'reporte de kpi', 'indicadores clave', 'indicadores de rendimiento', 'key performance'];
   if (matchesAny(msg, kpiKeywords)) {
@@ -579,6 +750,8 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
           `Tasa conversión leads: ${r.kpis.leadConversionRate}\n` +
           `Tasa completación campañas: ${r.kpis.campaignCompletionRate}\n` +
           `Promedio campañas/empresa: ${r.kpis.avgCampaignsPerCompany}`;
+        // Auto-notify (non-blocking)
+        ropaPlatformTools.notifyReportReady({ reportType: 'KPI', summary: response }).catch(() => {});
       } else {
         response = 'No se pudo generar el reporte KPI.';
       }

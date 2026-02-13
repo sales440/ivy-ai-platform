@@ -599,3 +599,29 @@
 - [x] Print/PDF format fix for email preview (new window approach with inline CSS)
 - [x] ROPA Brain v3.0 expanded vocabulary (25+ intent categories, shouldDeferToLLM)
 - [x] 89 vitest tests passing (8 test files)
+
+## Phase 53: ROPA Company Filtering Tools + Drive Auto-Save + Notifications
+- [x] DB: getTasksByCompany - filter tasks by company name (ropa-company-filters.ts)
+- [x] DB: getCampaignsByCompany - filter campaigns by company name
+- [x] DB: getEmailDraftsByCompany - filter email drafts by company (approved/rejected/pending)
+- [x] DB: getAlertsByCompany - filter alerts by company name
+- [x] DB: getLeadsByCompany - filter leads by company name
+- [x] DB: getFilesByCompany - filter files by company name
+- [x] DB: getCompanyOverview - full overview of a company (tasks, campaigns, emails, alerts, leads, files)
+- [x] Platform tool: companyFilterTools - 8 filtering tools for ROPA
+- [x] Platform tool: listTasksForCompany
+- [x] Platform tool: listCampaignsForCompany
+- [x] Platform tool: listEmailDraftsForCompany
+- [x] Platform tool: listAlertsForCompany
+- [x] Platform tool: listLeadsForCompany
+- [x] Platform tool: listFilesForCompany
+- [x] Platform tool: getCompanyFullOverview
+- [x] Platform tool: getAllCompanySummaries
+- [x] ROPA Brain: handle "tareas de empresa X", "campañas de X", "emails de X", "alertas de X"
+- [x] ROPA Brain: handle "resumen de empresa X", "overview de X"
+- [x] ROPA Brain: handle "leads de X", "archivos de X"
+- [x] ROPA Brain: isCompanyFilterPattern guard prevents false matches in navigation/stats/funnel/drive
+- [x] Google Drive: auto-save KPI/ROI reports to client folder (ropa-drive-reports.ts)
+- [x] Push notifications: notifyTaskCompletion, notifyEmailsGenerated, notifyReportReady
+- [x] Push notifications integrated into ROPA Brain email generation and KPI report flows
+- [x] 99 vitest tests passing (8 test files, 34 in ropa-features.test.ts)

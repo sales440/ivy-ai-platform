@@ -21,6 +21,22 @@ import {
 import { createRopaLog, recordRopaMetric } from "./ropa-db";
 import { invokeGemini, isGeminiConfigured } from "./gemini-llm";
 import { invokeLLM } from "./_core/llm";
+import {
+  findCompanyByName,
+  listAllCompanies,
+  getTasksByCompany,
+  getCampaignsByCompany,
+  getEmailDraftsByCompany,
+  getCampaignContentByCompany,
+  getAlertsByCompany,
+  getLeadsByCompany,
+  getFilesByCompany,
+  getCompanyOverview,
+  getCompanySummaryStats,
+  type CompanyOverview,
+} from "./ropa-company-filters";
+import { notifyOwner } from "./_core/notification";
+import { saveKPIReportToDrive, saveROIReportToDrive, saveDocumentToDrive } from "./ropa-drive-reports";
 
 // ============ COMPANY MANAGEMENT ============
 
@@ -830,7 +846,13 @@ export const reportingTools = {
       metadata: { totalCompanies, totalCampaigns, totalLeads },
     });
 
-    return { success: true, report };
+    // Auto-save to Google Drive (non-blocking)
+    const reportResult = { success: true, report };
+    saveKPIReportToDrive(reportResult, params?.companyName).catch(err => {
+      console.warn('[Platform] Failed to auto-save KPI report to Drive:', err.message);
+    });
+
+    return reportResult;
   },
 
   /**
@@ -881,7 +903,13 @@ export const reportingTools = {
       },
     };
 
-    return { success: true, report };
+    // Auto-save to Google Drive (non-blocking)
+    const roiResult = { success: true, report };
+    saveROIReportToDrive(roiResult, params?.companyName).catch(err => {
+      console.warn('[Platform] Failed to auto-save ROI report to Drive:', err.message);
+    });
+
+    return roiResult;
   },
 
   /**
@@ -919,6 +947,252 @@ export const reportingTools = {
   },
 };
 
+// ============ COMPANY FILTERING TOOLS ============
+
+export const companyFilterTools = {
+  /**
+   * List tasks for a specific company with optional status filter
+   */
+  async listTasksForCompany(params: { companyName: string; status?: string }) {
+    const tasks = await getTasksByCompany(params.companyName, params.status);
+    return {
+      success: true,
+      companyName: params.companyName,
+      count: tasks.length,
+      pending: tasks.filter(t => t.status === 'pending').length,
+      running: tasks.filter(t => t.status === 'running').length,
+      completed: tasks.filter(t => t.status === 'completed').length,
+      failed: tasks.filter(t => t.status === 'failed').length,
+      tasks: tasks.slice(0, 25).map(t => ({
+        taskId: t.taskId,
+        taskType: t.taskType,
+        status: t.status,
+        priority: t.priority,
+        createdAt: t.createdAt,
+        completedAt: t.completedAt,
+      })),
+    };
+  },
+
+  /**
+   * List campaigns for a specific company with optional status filter
+   */
+  async listCampaignsForCompany(params: { companyName: string; status?: string }) {
+    const campaigns = await getCampaignsByCompany(params.companyName, params.status);
+    return {
+      success: true,
+      companyName: params.companyName,
+      count: campaigns.length,
+      active: campaigns.filter(c => c.status === 'active').length,
+      draft: campaigns.filter(c => c.status === 'draft').length,
+      completed: campaigns.filter(c => c.status === 'completed').length,
+      paused: campaigns.filter(c => c.status === 'paused').length,
+      campaigns: campaigns.slice(0, 25).map(c => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        status: c.status,
+        startDate: c.startDate,
+        endDate: c.endDate,
+        createdAt: c.createdAt,
+      })),
+    };
+  },
+
+  /**
+   * List email drafts for a specific company with optional status filter
+   */
+  async listEmailDraftsForCompany(params: {
+    companyName: string;
+    status?: 'pending' | 'approved' | 'rejected' | 'sent' | 'all';
+  }) {
+    const drafts = await getEmailDraftsByCompany(params.companyName, params.status || 'all');
+    return {
+      success: true,
+      companyName: params.companyName,
+      count: drafts.length,
+      pending: drafts.filter(d => d.status === 'pending').length,
+      approved: drafts.filter(d => d.status === 'approved').length,
+      rejected: drafts.filter(d => d.status === 'rejected').length,
+      sent: drafts.filter(d => d.status === 'sent').length,
+      drafts: drafts.slice(0, 25).map(d => ({
+        id: d.id,
+        draftId: d.draftId,
+        subject: d.subject,
+        campaign: d.campaign,
+        status: d.status,
+        recipientEmail: d.recipientEmail,
+        createdAt: d.createdAt,
+        bodyPreview: d.body.substring(0, 80) + '...',
+      })),
+    };
+  },
+
+  /**
+   * List alerts for a specific company with optional resolved filter
+   */
+  async listAlertsForCompany(params: { companyName: string; resolved?: boolean }) {
+    const alerts = await getAlertsByCompany(params.companyName, params.resolved);
+    return {
+      success: true,
+      companyName: params.companyName,
+      count: alerts.length,
+      unresolved: alerts.filter(a => !a.resolved).length,
+      resolved: alerts.filter(a => a.resolved).length,
+      alerts: alerts.slice(0, 25).map(a => ({
+        id: a.id,
+        alertType: a.alertType,
+        severity: a.severity,
+        message: a.message,
+        resolved: a.resolved,
+        createdAt: a.createdAt,
+        resolvedAt: a.resolvedAt,
+      })),
+    };
+  },
+
+  /**
+   * Get full overview of a company: tasks, campaigns, emails, alerts, leads, files
+   */
+  async getCompanyFullOverview(params: { companyName: string }) {
+    const overview = await getCompanyOverview(params.companyName);
+    
+    const companyInfo = overview.company ? {
+      clientId: overview.company.clientId,
+      companyName: overview.company.companyName,
+      industry: overview.company.industry,
+      contactName: overview.company.contactName,
+      contactEmail: overview.company.contactEmail,
+      status: overview.company.status,
+      plan: overview.company.plan,
+      googleDriveFolderId: overview.company.googleDriveFolderId,
+    } : null;
+
+    return {
+      success: true,
+      company: companyInfo,
+      summary: {
+        tasks: `${overview.tasks.total} total (${overview.tasks.pending} pendientes, ${overview.tasks.running} en progreso, ${overview.tasks.completed} completadas)`,
+        campaigns: `${overview.campaigns.total} total (${overview.campaigns.active} activas, ${overview.campaigns.draft} borrador, ${overview.campaigns.completed} completadas)`,
+        emailDrafts: `${overview.emailDrafts.total} total (${overview.emailDrafts.pending} pendientes, ${overview.emailDrafts.approved} aprobados, ${overview.emailDrafts.rejected} rechazados, ${overview.emailDrafts.sent} enviados)`,
+        alerts: `${overview.alerts.total} total (${overview.alerts.unresolved} sin resolver)`,
+        leads: `${overview.leads.total} leads`,
+        files: `${overview.files.total} archivos`,
+      },
+      details: overview,
+    };
+  },
+
+  /**
+   * Get summary stats for all companies
+   */
+  async getAllCompanySummaries() {
+    const summaries = await getCompanySummaryStats();
+    return {
+      success: true,
+      totalCompanies: summaries.length,
+      companies: summaries,
+    };
+  },
+
+  /**
+   * List leads for a specific company
+   */
+  async listLeadsForCompany(params: { companyName: string }) {
+    const leads = await getLeadsByCompany(params.companyName);
+    return {
+      success: true,
+      companyName: params.companyName,
+      count: leads.length,
+      byStatus: {
+        new: leads.filter(l => l.status === 'new').length,
+        contacted: leads.filter(l => l.status === 'contacted').length,
+        qualified: leads.filter(l => l.status === 'qualified').length,
+        proposal: leads.filter(l => l.status === 'proposal').length,
+        closedWon: leads.filter(l => l.status === 'closed_won').length,
+        closedLost: leads.filter(l => l.status === 'closed_lost').length,
+      },
+      leads: leads.slice(0, 25).map(l => ({
+        id: l.id,
+        companyName: l.companyName,
+        contactName: l.contactName,
+        email: l.email,
+        status: l.status,
+        source: l.source,
+      })),
+    };
+  },
+
+  /**
+   * List files for a specific company
+   */
+  async listFilesForCompany(params: { companyName: string }) {
+    const files = await getFilesByCompany(params.companyName);
+    return {
+      success: true,
+      companyName: params.companyName,
+      count: files.length,
+      files: files.map(f => ({
+        id: f.id,
+        fileName: f.fileName,
+        fileType: f.fileType,
+        mimeType: f.mimeType,
+        s3Url: f.s3Url,
+        createdAt: f.createdAt,
+      })),
+    };
+  },
+};
+
+// ============ NOTIFICATION TOOLS ============
+
+export const notificationTools = {
+  /**
+   * Send push notification to owner when autonomous task completes
+   */
+  async notifyTaskCompletion(params: {
+    taskType: string;
+    companyName?: string;
+    details: string;
+  }) {
+    const title = params.companyName
+      ? `[Ivy.AI] ${params.taskType} - ${params.companyName}`
+      : `[Ivy.AI] ${params.taskType}`;
+    
+    const success = await notifyOwner({
+      title,
+      content: params.details,
+    });
+
+    return { success, message: success ? 'Notificación enviada' : 'Error al enviar notificación' };
+  },
+
+  /**
+   * Notify when emails are generated
+   */
+  async notifyEmailsGenerated(params: { companyName: string; count: number; campaign?: string }) {
+    const title = `[Ivy.AI] ${params.count} emails generados - ${params.companyName}`;
+    const content = params.campaign
+      ? `ROPA ha generado ${params.count} borradores de email para la campaña "${params.campaign}" de ${params.companyName}. Revísalos en la sección Monitor.`
+      : `ROPA ha generado ${params.count} borradores de email para ${params.companyName}. Revísalos en la sección Monitor.`;
+    
+    const success = await notifyOwner({ title, content });
+    return { success, message: success ? 'Notificación enviada' : 'Error al enviar notificación' };
+  },
+
+  /**
+   * Notify when a report is ready
+   */
+  async notifyReportReady(params: { reportType: string; companyName?: string; summary: string }) {
+    const title = params.companyName
+      ? `[Ivy.AI] Reporte ${params.reportType} listo - ${params.companyName}`
+      : `[Ivy.AI] Reporte ${params.reportType} listo`;
+    
+    const success = await notifyOwner({ title, content: params.summary });
+    return { success, message: success ? 'Notificación enviada' : 'Error al enviar notificación' };
+  },
+};
+
 // ============ EXPORT ALL PLATFORM TOOLS ============
 
 export const ropaPlatformTools = {
@@ -952,6 +1226,21 @@ export const ropaPlatformTools = {
   generateKPIReport: reportingTools.generateKPIReport,
   generateROIReport: reportingTools.generateROIReport,
   getCompanyDetails: reportingTools.getCompanyDetails,
+
+  // Company Filtering (per-company data access)
+  listTasksForCompany: companyFilterTools.listTasksForCompany,
+  listCampaignsForCompany: companyFilterTools.listCampaignsForCompany,
+  listEmailDraftsForCompany: companyFilterTools.listEmailDraftsForCompany,
+  listAlertsForCompany: companyFilterTools.listAlertsForCompany,
+  getCompanyFullOverview: companyFilterTools.getCompanyFullOverview,
+  getAllCompanySummaries: companyFilterTools.getAllCompanySummaries,
+  listLeadsForCompany: companyFilterTools.listLeadsForCompany,
+  listFilesForCompany: companyFilterTools.listFilesForCompany,
+
+  // Notifications
+  notifyTaskCompletion: notificationTools.notifyTaskCompletion,
+  notifyEmailsGenerated: notificationTools.notifyEmailsGenerated,
+  notifyReportReady: notificationTools.notifyReportReady,
 };
 
 export const platformToolCategories = {
@@ -960,6 +1249,8 @@ export const platformToolCategories = {
   "Email Drafts (Monitor)": ["createEmailDraft", "listEmailDrafts", "approveEmailDraft", "rejectEmailDraft", "deleteEmailDraft", "generateCampaignEmailDrafts"],
   "Lead Management": ["createLead", "listLeads", "updateLeadStatus"],
   "Reporting & Analytics": ["generateKPIReport", "generateROIReport", "getCompanyDetails"],
+  "Company Filtering": ["listTasksForCompany", "listCampaignsForCompany", "listEmailDraftsForCompany", "listAlertsForCompany", "getCompanyFullOverview", "getAllCompanySummaries", "listLeadsForCompany", "listFilesForCompany"],
+  "Notifications": ["notifyTaskCompletion", "notifyEmailsGenerated", "notifyReportReady"],
 };
 
 export const PLATFORM_TOOLS_COUNT = Object.keys(ropaPlatformTools).length;

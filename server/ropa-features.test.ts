@@ -8,6 +8,45 @@ vi.mock('./ropa-platform-tools', () => ({
     listCompanies: vi.fn().mockResolvedValue({ success: true, companies: [] }),
     generateCampaignEmailDrafts: vi.fn().mockResolvedValue({ success: true, count: 3, drafts: [] }),
     createCampaign: vi.fn().mockResolvedValue({ success: true, campaignId: 1 }),
+    // KPI/ROI reporting (also accessible via ropaPlatformTools)
+    generateKPIReport: vi.fn().mockResolvedValue({
+      success: true,
+      report: {
+        summary: { totalCompanies: 5, activeCompanies: 3, totalCampaigns: 10, activeCampaigns: 4, completedCampaigns: 6, totalEmailDrafts: 50, approvedEmails: 30, sentEmails: 20, totalLeads: 25, qualifiedLeads: 10, closedWon: 5, closedLost: 3 },
+        kpis: { emailApprovalRate: '60%', leadConversionRate: '20%', campaignCompletionRate: '60%', avgCampaignsPerCompany: '2.0', avgLeadsPerCampaign: '2.5' },
+        companiesDetail: [],
+      },
+    }),
+    generateROIReport: vi.fn().mockResolvedValue({
+      success: true,
+      report: {
+        costs: { emailCosts: '$1.00', agencyCost: '$2000', totalCost: '$2001.00' },
+        revenue: { qualifiedLeadValue: '$5000.00', closedDealValue: '$25000.00', totalRevenue: '$30000.00' },
+        roi: '1399.4%',
+        metrics: { emailsSent: 20, leadsGenerated: 25, leadsQualified: 10, dealsClosed: 5, conversionRate: '20.0%' },
+      },
+    }),
+    getCompanyDetails: vi.fn().mockResolvedValue({
+      success: true,
+      company: {
+        clientId: 'test-001', companyName: 'FAGOR', industry: 'Automation', status: 'active', plan: 'premium',
+        contactName: 'John', contactEmail: 'john@fagor.com', campaigns: 3, emailDrafts: 10,
+        pendingDrafts: 2, approvedDrafts: 5, sentDrafts: 3, googleDriveFolderId: 'abc123', createdAt: new Date(),
+      },
+    }),
+    // Company filtering (also accessible via ropaPlatformTools)
+    listTasksForCompany: vi.fn().mockResolvedValue({ success: true, count: 3, pending: 2, running: 0, completed: 1, failed: 0, tasks: [{ status: 'pending', taskType: 'email_generation', priority: 'high' }] }),
+    listCampaignsForCompany: vi.fn().mockResolvedValue({ success: true, count: 2, active: 1, draft: 0, completed: 1, paused: 0, campaigns: [{ name: 'Email Q1', status: 'active', type: 'email' }] }),
+    listEmailDraftsForCompany: vi.fn().mockResolvedValue({ success: true, count: 5, pending: 2, approved: 2, rejected: 0, sent: 1, drafts: [{ status: 'pending', subject: 'Test email' }] }),
+    listAlertsForCompany: vi.fn().mockResolvedValue({ success: true, count: 1, unresolved: 1, alerts: [{ severity: 'warning', message: 'Test alert', resolved: false }] }),
+    listLeadsForCompany: vi.fn().mockResolvedValue({ success: true, count: 3, leads: [{ contactName: 'John', status: 'qualified', email: 'john@test.com' }] }),
+    listFilesForCompany: vi.fn().mockResolvedValue({ success: true, count: 2, files: [{ fileName: 'report.pdf', fileType: 'pdf' }] }),
+    getCompanyFullOverview: vi.fn().mockResolvedValue({ success: true, company: { companyName: 'FAGOR', clientId: 'FAG-001', industry: 'Automation', status: 'active', plan: 'premium', contactName: 'John', contactEmail: 'john@fagor.com', googleDriveFolderId: 'abc123' }, summary: { tasks: 3, campaigns: 2, emailDrafts: 5, alerts: 1, leads: 3, files: 2 } }),
+    getAllCompanySummaries: vi.fn().mockResolvedValue({ success: true, companies: [] }),
+    // Notifications
+    notifyTaskCompletion: vi.fn().mockResolvedValue({ success: true }),
+    notifyEmailsGenerated: vi.fn().mockResolvedValue({ success: true }),
+    notifyReportReady: vi.fn().mockResolvedValue({ success: true }),
   },
   reportingTools: {
     generateKPIReport: vi.fn().mockResolvedValue({
@@ -47,7 +86,22 @@ vi.mock('./ropa-platform-tools', () => ({
       },
     }),
   },
-  PLATFORM_TOOLS_COUNT: 22,
+  PLATFORM_TOOLS_COUNT: 30,
+  notificationTools: {
+    notifyEmailsGenerated: vi.fn().mockResolvedValue({ success: true }),
+    notifyReportReady: vi.fn().mockResolvedValue({ success: true }),
+    notifyCampaignCompleted: vi.fn().mockResolvedValue({ success: true }),
+    notifyTaskCompleted: vi.fn().mockResolvedValue({ success: true }),
+  },
+  companyFilterTools: {
+    listTasksForCompany: vi.fn().mockResolvedValue({ success: true, count: 3, pending: 2, running: 0, completed: 1, failed: 0, tasks: [{ status: 'pending', taskType: 'email_generation', priority: 'high' }] }),
+    listCampaignsForCompany: vi.fn().mockResolvedValue({ success: true, count: 2, active: 1, draft: 0, completed: 1, paused: 0, campaigns: [{ name: 'Email Q1', status: 'active', type: 'email' }] }),
+    listEmailDraftsForCompany: vi.fn().mockResolvedValue({ success: true, count: 5, pending: 2, approved: 2, rejected: 0, sent: 1, drafts: [{ status: 'pending', subject: 'Test email' }] }),
+    listAlertsForCompany: vi.fn().mockResolvedValue({ success: true, count: 1, unresolved: 1, alerts: [{ severity: 'warning', message: 'Test alert', resolved: false }] }),
+    listLeadsForCompany: vi.fn().mockResolvedValue({ success: true, count: 3, leads: [{ contactName: 'John', status: 'qualified', email: 'john@test.com' }] }),
+    listFilesForCompany: vi.fn().mockResolvedValue({ success: true, count: 2, files: [{ fileName: 'report.pdf', fileType: 'pdf' }] }),
+    getCompanyFullOverview: vi.fn().mockResolvedValue({ success: true, company: { companyName: 'FAGOR', clientId: 'FAG-001', industry: 'Automation', status: 'active', plan: 'premium', contactName: 'John', contactEmail: 'john@fagor.com', googleDriveFolderId: 'abc123' }, summary: { tasks: 3, campaigns: 2, emailDrafts: 5, alerts: 1, leads: 3, files: 2 } }),
+  },
 }));
 
 vi.mock('./ropa-super-tools', () => ({
@@ -256,6 +310,75 @@ describe('ROPA Brain v3.0', () => {
       const result = await processWithRopaBrain('qué hora es');
       expect(result.intent).toBe('date_time');
       expect(result.response).toContain('Hoy es');
+    });
+  });
+
+  describe('Company Filtering', () => {
+    it('should filter tasks by company name', async () => {
+      const result = await processWithRopaBrain('tareas de FAGOR');
+      expect(result.intent).toBe('filter_tasks_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('Tareas de FAGOR');
+    });
+
+    it('should filter pending tasks by company', async () => {
+      const result = await processWithRopaBrain('tareas pendientes para FAGOR');
+      expect(result.intent).toBe('filter_tasks_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+    });
+
+    it('should filter campaigns by company', async () => {
+      const result = await processWithRopaBrain('campañas de FAGOR');
+      expect(result.intent).toBe('filter_campaigns_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('Campañas de FAGOR');
+    });
+
+    it('should filter emails by company', async () => {
+      const result = await processWithRopaBrain('emails de FAGOR');
+      expect(result.intent).toBe('filter_emails_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('Emails de FAGOR');
+    });
+
+    it('should filter alerts by company', async () => {
+      const result = await processWithRopaBrain('alertas de FAGOR');
+      expect(result.intent).toBe('filter_alerts_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('Alertas de FAGOR');
+    });
+
+    it('should get company overview', async () => {
+      const result = await processWithRopaBrain('resumen de FAGOR');
+      expect(result.intent).toBe('company_overview');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('OVERVIEW DE FAGOR');
+    });
+
+    it('should handle "qué tareas tiene EMPRESA" pattern', async () => {
+      const result = await processWithRopaBrain('que tareas tiene pendientes FAGOR');
+      expect(result.intent).toBe('filter_tasks_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+    });
+
+    it('should handle "muestra las campañas de EMPRESA" pattern', async () => {
+      const result = await processWithRopaBrain('muestra las campañas de FAGOR');
+      expect(result.intent).toBe('filter_campaigns_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+    });
+
+    it('should filter leads by company', async () => {
+      const result = await processWithRopaBrain('leads de FAGOR');
+      expect(result.intent).toBe('filter_leads_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('Leads de FAGOR');
+    });
+
+    it('should filter files by company', async () => {
+      const result = await processWithRopaBrain('archivos de FAGOR');
+      expect(result.intent).toBe('filter_files_by_company');
+      expect(result.platformActionExecuted).toBe(true);
+      expect(result.response).toContain('Archivos de FAGOR');
     });
   });
 });
