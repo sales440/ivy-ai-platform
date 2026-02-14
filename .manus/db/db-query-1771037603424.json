@@ -1,0 +1,64 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'ivy_clients' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'ivy_clients' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "client_id"
+    },
+    {
+      "COLUMN_NAME": "company_name"
+    },
+    {
+      "COLUMN_NAME": "industry"
+    },
+    {
+      "COLUMN_NAME": "contact_name"
+    },
+    {
+      "COLUMN_NAME": "contact_email"
+    },
+    {
+      "COLUMN_NAME": "contact_phone"
+    },
+    {
+      "COLUMN_NAME": "address"
+    },
+    {
+      "COLUMN_NAME": "website"
+    },
+    {
+      "COLUMN_NAME": "logo_url"
+    },
+    {
+      "COLUMN_NAME": "google_drive_folder_id"
+    },
+    {
+      "COLUMN_NAME": "google_drive_structure"
+    },
+    {
+      "COLUMN_NAME": "status"
+    },
+    {
+      "COLUMN_NAME": "plan"
+    },
+    {
+      "COLUMN_NAME": "notes"
+    },
+    {
+      "COLUMN_NAME": "created_by"
+    },
+    {
+      "COLUMN_NAME": "created_at"
+    },
+    {
+      "COLUMN_NAME": "updated_at"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nclient_id\ncompany_name\nindustry\ncontact_name\ncontact_email\ncontact_phone\naddress\nwebsite\nlogo_url\ngoogle_drive_folder_id\ngoogle_drive_structure\nstatus\nplan\nnotes\ncreated_by\ncreated_at\nupdated_at\n",
+  "stderr": "",
+  "execution_time_ms": 78
+}

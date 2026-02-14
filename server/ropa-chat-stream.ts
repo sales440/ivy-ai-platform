@@ -6,10 +6,10 @@
  * 
  * LLM Tier Architecture:
  * TIER 0: ROPA Brain (instant platform commands - no LLM needed)
- * TIER 1: Gemini Streaming (primary LLM)
- * TIER 2: Gemini Non-Streaming (fallback)
- * TIER 3: Manus Built-in LLM (secondary fallback)
- * TIER 4: n8n Orchestrator (tertiary fallback)
+ * TIER 1: n8n Central Engine (PRIMARY - full platform context)
+ * TIER 2: Gemini Streaming (LLM with DB context)
+ * TIER 3: Gemini Non-Streaming (fallback)
+ * TIER 4: Manus Built-in LLM (secondary fallback)
  * TIER 5: ROPA Brain General (final intelligent fallback)
  */
 
@@ -27,7 +27,7 @@ import { TOTAL_TOOLS } from "./ropa-tools";
 import { PLATFORM_TOOLS_COUNT } from "./ropa-platform-tools";
 import { SUPER_TOOLS_COUNT } from "./ropa-super-tools";
 import { processWithRopaBrain } from "./ropa-brain";
-import { callN8nRopa } from "./ropa-n8n-service";
+import { callN8nRopa, buildContextSummary } from "./ropa-n8n-service";
 
 export const ropaChatStreamRouter = Router();
 
@@ -400,18 +400,57 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
     const config: RopaConfig | undefined = clientConfig && typeof clientConfig === 'object' ? clientConfig : undefined;
     const systemPrompt = buildSystemPrompt(userLang, config);
 
+    // Build real-time DB context for the system prompt
+    let dbContext = '';
+    try {
+      dbContext = await buildContextSummary();
+    } catch (ctxErr) {
+      console.warn('[ROPA Stream] Failed to build DB context:', (ctxErr as any).message);
+    }
+
+    const fullSystemPrompt = dbContext ? `${systemPrompt}\n\n${dbContext}` : systemPrompt;
+
     const llmMessages = [
-      { role: "system" as const, content: systemPrompt },
+      { role: "system" as const, content: fullSystemPrompt },
       ...messages.map(m => ({ role: m.role as "user" | "assistant", content: m.content })),
     ];
 
     let fullResponse = '';
     let streamed = false;
 
-    // ============ TIER 1: Gemini Streaming ============
-    if (isGeminiStreamConfigured()) {
+    // ============ TIER 1: n8n Central Engine (PRIMARY) ============
+    // n8n receives full platform context and has control of the entire app
+    try {
+      console.log('[ROPA Stream] TIER 1: Calling n8n central engine...');
+      const n8nResult = await callN8nRopa(cleanMessage, 'system', {
+        activePage: req.body.activePage,
+        ropaConfig: config,
+      });
+      if (n8nResult && n8nResult.success && n8nResult.response) {
+        fullResponse = n8nResult.response;
+        sendSSE(res, { type: 'chunk', text: cleanAssistantMessage(n8nResult.response) });
+        console.log('[ROPA Stream] TIER 1: n8n engine responded successfully');
+        
+        // If n8n returned actions, execute them
+        if (n8nResult.actions && n8nResult.actions.length > 0) {
+          console.log(`[ROPA Stream] n8n returned ${n8nResult.actions.length} actions to execute`);
+          // Actions will be processed by the action handler
+          sendSSE(res, { type: 'actions', actions: n8nResult.actions });
+        }
+        
+        // If n8n returned a navigation command
+        if (n8nResult.command) {
+          sendSSE(res, { type: 'command', command: n8nResult.command });
+        }
+      }
+    } catch (n8nError: any) {
+      console.warn('[ROPA Stream] TIER 1: n8n engine failed:', n8nError.message, '- falling back to LLM tiers');
+    }
+
+    // ============ TIER 2: Gemini Streaming (with DB context) ============
+    if (!streamed && !fullResponse && isGeminiStreamConfigured()) {
       try {
-        console.log('[ROPA Stream] TIER 1: Attempting Gemini streaming...');
+        console.log('[ROPA Stream] TIER 2: Attempting Gemini streaming...');
         let streamBuffer = '';
         let codeBlockDetected = false;
         const result = await streamGeminiResponse(
@@ -451,58 +490,43 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
         if (result) {
           fullResponse = result;
           streamed = true;
-          console.log('[ROPA Stream] TIER 1: Gemini streaming succeeded');
+          console.log('[ROPA Stream] TIER 2: Gemini streaming succeeded');
         }
       } catch (streamError: any) {
-        console.warn('[ROPA Stream] TIER 1: Gemini streaming failed:', streamError.message);
+        console.warn('[ROPA Stream] TIER 2: Gemini streaming failed:', streamError.message);
       }
     }
 
-    // ============ TIER 2: Gemini Non-Streaming ============
+    // ============ TIER 3: Gemini Non-Streaming ============
     if (!streamed && !fullResponse && isGeminiConfigured()) {
       try {
-        console.log('[ROPA Stream] TIER 2: Falling back to non-streaming Gemini...');
+        console.log('[ROPA Stream] TIER 3: Falling back to non-streaming Gemini...');
         const result = await invokeGemini(llmMessages);
         if (result) {
           fullResponse = result;
           const cleanedResult = cleanAssistantMessage(result);
           sendSSE(res, { type: 'chunk', text: cleanedResult });
-          console.log('[ROPA Stream] TIER 2: Non-streaming Gemini succeeded');
+          console.log('[ROPA Stream] TIER 3: Non-streaming Gemini succeeded');
         }
       } catch (geminiError: any) {
-        console.warn('[ROPA Stream] TIER 2: Non-streaming Gemini failed:', geminiError.message);
+        console.warn('[ROPA Stream] TIER 3: Non-streaming Gemini failed:', geminiError.message);
       }
     }
 
-    // ============ TIER 3: Manus Built-in LLM ============
+    // ============ TIER 4: Manus Built-in LLM ============
     if (!fullResponse) {
       try {
-        console.log('[ROPA Stream] TIER 3: Falling back to Manus LLM...');
+        console.log('[ROPA Stream] TIER 4: Falling back to Manus LLM...');
         const response = await invokeLLM({ messages: llmMessages });
         const rawContent = response.choices[0]?.message?.content;
         if (typeof rawContent === 'string' && rawContent.length > 0) {
           fullResponse = rawContent;
           const cleanedContent = cleanAssistantMessage(rawContent);
           sendSSE(res, { type: 'chunk', text: cleanedContent });
-          console.log('[ROPA Stream] TIER 3: Manus LLM succeeded');
+          console.log('[ROPA Stream] TIER 4: Manus LLM succeeded');
         }
       } catch (llmError: any) {
-        console.warn('[ROPA Stream] TIER 3: Manus LLM failed:', llmError.message);
-      }
-    }
-
-    // ============ TIER 4: n8n Orchestrator ============
-    if (!fullResponse) {
-      try {
-        console.log('[ROPA Stream] TIER 4: Falling back to n8n orchestrator...');
-        const n8nResult = await callN8nRopa(cleanMessage, 'system');
-        if (n8nResult && n8nResult.success && n8nResult.response) {
-          fullResponse = n8nResult.response;
-          sendSSE(res, { type: 'chunk', text: cleanAssistantMessage(n8nResult.response) });
-          console.log('[ROPA Stream] TIER 4: n8n orchestrator succeeded');
-        }
-      } catch (n8nError: any) {
-        console.warn('[ROPA Stream] TIER 4: n8n orchestrator failed:', n8nError.message);
+        console.warn('[ROPA Stream] TIER 4: Manus LLM failed:', llmError.message);
       }
     }
 

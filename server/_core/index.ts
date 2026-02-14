@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { initializeROPA } from "../ropa-autonomous";
 import { handleGoogleCallback } from "../google-callback-handler";
 import { ropaChatStreamRouter } from "../ropa-chat-stream";
+import { ropaN8nActionsRouter } from "../ropa-n8n-actions";
 import { processEmailCallback } from "../email-send-service";
 import { initializeBackupScheduler } from "../backup-scheduler";
 import { initializeCleanupScheduler } from "../backup-retention";
@@ -79,6 +80,9 @@ async function startServer() {
   
   // ROPA Chat Streaming endpoint (SSE)
   app.use(ropaChatStreamRouter);
+  
+  // n8n Action Webhook Receiver - allows n8n to control the app
+  app.use(ropaN8nActionsRouter);
   
   // Email callback endpoint for n8n to report delivery results
   app.post("/api/email-callback", async (req, res) => {

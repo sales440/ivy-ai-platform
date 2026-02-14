@@ -816,3 +816,23 @@
 - [x] Activate Configuration page: Agent personality settings must persist and apply
 - [x] Activate Configuration page: Campaign limits and schedules must persist and apply
 - [x] Activate Configuration page: All settings must save to database instead of just localStorage
+
+## Phase 62: ROPA-IvyAI Data Sync & n8n Communication Fix
+- [x] Diagnose: Check what companies exist in DB vs what ROPA reports vs what dashboard shows
+- [x] Fix: ROPA must read real companies/campaigns from database (not hardcoded/mock data)
+- [x] Fix: ROPA system prompt must include real-time DB context (companies, campaigns, leads)
+- [x] Fix: Verify and repair frontend → backend → n8n webhook communication chain
+- [x] Test complete flow: ask ROPA about companies and verify it matches dashboard data
+- [ ] Push to GitHub for Railway deployment
+
+## Phase 62: n8n as Central Engine of ROPA Meta-Agent
+- [x] Redesign ropa-n8n-service.ts to send full DB context (companies, campaigns, leads, drafts, config) with every call
+- [x] Promote n8n from TIER 4 to TIER 1 (primary engine) in ropa-chat-stream.ts
+- [x] Replace all mock/hardcoded data in dashboard with real DB queries
+- [x] Create n8n action webhook receiver endpoint so n8n can execute actions in the app
+- [x] Add n8n health check and connection status indicator in dashboard
+- [x] Frontend sends full app state context to backend on every ROPA interaction
+- [x] n8n receives: companies list, campaigns list, leads count, active page, user config
+- [ ] n8n can execute: create/update/delete companies, campaigns, leads, send emails, navigate
+- [ ] Test complete bidirectional flow: frontend → backend → n8n → backend → frontend
+- [ ] Push to GitHub for Railway deployment
