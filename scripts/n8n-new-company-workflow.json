@@ -1,0 +1,134 @@
+{
+  "name": "Ivy.AI - New Company Created Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ivy-new-company",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "New Company Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "webhookId": "ivy-new-company"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract company data from Ivy.AI webhook\nconst body = $input.first().json.body || $input.first().json;\n\nconst company = {\n  id: body.company?.id || body.id,\n  name: body.company?.name || body.name,\n  industry: body.company?.industry || body.industry || 'No especificada',\n  contactEmail: body.company?.contactEmail || body.contactEmail || '',\n  contactPhone: body.company?.contactPhone || body.contactPhone || '',\n  website: body.company?.website || body.website || '',\n  status: body.company?.status || body.status || 'active',\n  createdAt: body.company?.createdAt || body.createdAt || new Date().toISOString(),\n  source: body.source || 'ivy-ai-app',\n  createdBy: body.createdBy || 'system'\n};\n\nconst appContext = body.appContext || {};\n\nreturn [{\n  json: {\n    company,\n    appContext,\n    event: 'company_created',\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "parse-company",
+      "name": "Parse Company Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ROPA Onboarding Logic for new company\nconst { company, appContext } = $input.first().json;\n\nconst onboardingPlan = {\n  companyName: company.name,\n  companyId: company.id,\n  steps: [\n    {\n      step: 1,\n      action: 'analyze_company',\n      description: `Analizar perfil de ${company.name} - Industria: ${company.industry}`,\n      status: 'completed'\n    },\n    {\n      step: 2,\n      action: 'create_initial_campaign',\n      description: `Crear campaña inicial de email marketing para ${company.name}`,\n      status: 'pending'\n    },\n    {\n      step: 3,\n      action: 'generate_email_templates',\n      description: `Generar plantillas de email personalizadas para ${company.name}`,\n      status: 'pending'\n    },\n    {\n      step: 4,\n      action: 'setup_lead_tracking',\n      description: `Configurar seguimiento de leads para ${company.name}`,\n      status: 'pending'\n    },\n    {\n      step: 5,\n      action: 'create_drive_folder',\n      description: `Crear carpeta en Google Drive para ${company.name}`,\n      status: 'pending'\n    }\n  ],\n  totalSteps: 5,\n  completedSteps: 1,\n  notification: {\n    title: `🏢 Nueva empresa registrada: ${company.name}`,\n    message: `Se ha creado la empresa ${company.name} (${company.industry}). ROPA ha iniciado el proceso de onboarding automático con ${5} pasos.`,\n    priority: 'high'\n  }\n};\n\nreturn [{ json: { ...onboardingPlan, company } }];"
+      },
+      "id": "ropa-onboarding",
+      "name": "ROPA Onboarding Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upbeat-creativity-production-27ac.up.railway.app/api/ropa/n8n-action",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: 'create_task', data: { title: 'Onboarding: ' + $json.companyName, description: $json.notification.message, type: 'onboarding', priority: 'high', companyName: $json.companyName, metadata: JSON.stringify({ steps: $json.steps, companyId: $json.companyId }) } }) }}",
+        "options": {}
+      },
+      "id": "create-task",
+      "name": "Create Onboarding Task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [940, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upbeat-creativity-production-27ac.up.railway.app/api/ropa/n8n-action",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ action: 'log', data: { level: 'info', message: $json.notification.message, source: 'n8n-onboarding', metadata: JSON.stringify({ companyId: $json.companyId, companyName: $json.companyName, steps: $json.totalSteps }) } }) }}",
+        "options": {}
+      },
+      "id": "log-event",
+      "name": "Log to ROPA",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [940, 400]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Onboarding initiated for ' + $('ROPA Onboarding Plan').first().json.companyName, plan: { steps: $('ROPA Onboarding Plan').first().json.totalSteps, completed: $('ROPA Onboarding Plan').first().json.completedSteps }, timestamp: new Date().toISOString() }) }}"
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1180, 300]
+    }
+  ],
+  "connections": {
+    "New Company Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Company Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Company Data": {
+      "main": [
+        [
+          {
+            "node": "ROPA Onboarding Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ROPA Onboarding Plan": {
+      "main": [
+        [
+          {
+            "node": "Create Onboarding Task",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log to ROPA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Onboarding Task": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

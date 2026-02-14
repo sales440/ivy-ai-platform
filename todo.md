@@ -836,3 +836,8 @@
 - [ ] n8n can execute: create/update/delete companies, campaigns, leads, send emails, navigate
 - [ ] Test complete bidirectional flow: frontend → backend → n8n → backend → frontend
 - [ ] Push to GitHub for Railway deployment
+
+## Phase 63: n8n Workflow - New Company Created Trigger
+- [x] Create n8n workflow with webhook trigger for new company creation
+- [x] Wire backend to call n8n webhook when a company is created in Ivy.AI
+- [x] Test end-to-end flow and push to GitHub

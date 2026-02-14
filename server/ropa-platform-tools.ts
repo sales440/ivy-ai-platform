@@ -241,6 +241,27 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
       console.warn('[Platform] Google Drive folder creation failed:', driveError.message);
     }
 
+    // === NOTIFY n8n: New Company Created ===
+    try {
+      const { syncToN8n } = await import('./ropa-n8n-service');
+      await syncToN8n('company_created', {
+        company: {
+          id: clientId,
+          name: params.companyName,
+          industry: params.industry || null,
+          contactEmail: params.contactEmail || null,
+          contactPhone: params.contactPhone || null,
+          website: params.website || null,
+          status: 'active',
+        },
+        salesStrategy: salesStrategy ? 'generated' : null,
+        googleDrive: driveResult?.success ? 'created' : null,
+      });
+      console.log(`[Platform] n8n notified: company_created ${params.companyName}`);
+    } catch (n8nErr: any) {
+      console.warn('[Platform] n8n notification failed:', n8nErr.message);
+    }
+
     return {
       success: true,
       clientId,

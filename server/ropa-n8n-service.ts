@@ -20,6 +20,7 @@ const N8N_CHAT_WEBHOOK = `${N8N_WEBHOOK_BASE}/ropa-chat`;
 const N8N_CHAT_TEST_WEBHOOK = `${N8N_WEBHOOK_BASE}-test/ropa-chat`;
 const N8N_SYNC_WEBHOOK = `${N8N_WEBHOOK_BASE}/ropa-sync`;
 const N8N_ACTION_WEBHOOK = `${N8N_WEBHOOK_BASE}/ropa-action`;
+const N8N_NEW_COMPANY_WEBHOOK = `${N8N_WEBHOOK_BASE}/ivy-new-company`;
 const N8N_TIMEOUT = 20000; // 20 seconds (increased for context-heavy payloads)
 const N8N_QUICK_TIMEOUT = 5000; // 5 seconds for health checks
 
@@ -260,10 +261,15 @@ export async function syncToN8n(event: string, data?: any): Promise<boolean> {
     source: 'ivy-ai-backend',
   };
 
+  // Route to dedicated webhook for specific events
+  const webhookUrl = event === 'company_created' ? N8N_NEW_COMPANY_WEBHOOK : N8N_SYNC_WEBHOOK;
+
   try {
-    const response = await fetchWithTimeout(N8N_SYNC_WEBHOOK, payload, N8N_QUICK_TIMEOUT);
+    const response = await fetchWithTimeout(webhookUrl, payload, N8N_QUICK_TIMEOUT);
+    console.log(`[n8n Sync] Event '${event}' sent to ${webhookUrl.split('/').pop()}`);
     return !!response;
-  } catch {
+  } catch (err: any) {
+    console.warn(`[n8n Sync] Failed to send '${event}':`, err.message);
     return false;
   }
 }
