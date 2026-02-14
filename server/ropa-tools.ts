@@ -863,6 +863,12 @@ export const codeTools = {
 
 import { analyzeDashboard, analyzeScreenshot, compareScreenshots, monitorForCondition } from "./ropa-vision";
 
+// ============ NEW ADVANCED SUITES (Phase 60) ============
+import { predictiveIntelligenceTools } from "./ropa-suite-predictive";
+import { abTestingTools } from "./ropa-suite-ab-testing";
+import { crmIntegrationTools } from "./ropa-suite-crm-hub";
+import { strategicReasoningTools } from "./ropa-suite-strategic";
+
 // ============ 11. MULTI-AGENT SYSTEM (6 tools) ============
 
 // ============ 12. ADVANCED FEATURES (Etapas 4-7) (12 tools) ============
@@ -1368,6 +1374,128 @@ export const driveTools = {
 
 // ============ EXPORT ALL TOOLS ============
 
+// ============ 13. PREDICTIVE INTELLIGENCE & SENTIMENT (Suite 1) ============
+
+export const predictiveTools = {
+  async analyze_email_sentiment(params: { emailContent: string; senderEmail?: string }) {
+    return predictiveIntelligenceTools.analyzeEmailSentiment(params);
+  },
+  async classify_lead_auto(params: { leadEmail: string; interactions: Array<{ type: string; content: string; date: string }> }) {
+    return predictiveIntelligenceTools.classifyLeadAutomatically(params);
+  },
+  async predict_conversion(params: { leadEmail: string; companyName: string; interactions: number; daysSinceFirst: number; channelsUsed: string[] }) {
+    return predictiveIntelligenceTools.predictConversion(params);
+  },
+  async predict_campaign_success(params: { campaignName: string; companyName: string; channel: string; audienceSize: number; subject?: string; body?: string }) {
+    return predictiveIntelligenceTools.predictCampaignSuccess(params);
+  },
+  async batch_classify_leads(params: { leads: Array<{ email: string; name: string; company: string; lastInteraction: string; responseContent?: string }> }) {
+    return predictiveIntelligenceTools.batchClassifyLeads(params);
+  },
+  async get_predictive_insights(params?: { companyName?: string }) {
+    return predictiveIntelligenceTools.getPredictiveInsights(params);
+  },
+  async analyze_response_patterns(params: { companyName: string; responses: Array<{ date: string; type: string; sentiment: string; converted: boolean }> }) {
+    return predictiveIntelligenceTools.analyzeResponsePatterns(params);
+  },
+  async calculate_lead_score(params: { leadEmail: string; companyName: string; data: { emailOpens: number; linkClicks: number; replies: number; meetingsBooked: number; websiteVisits: number; daysInPipeline: number } }) {
+    return predictiveIntelligenceTools.calculateLeadScore(params);
+  },
+};
+
+// ============ 14. AUTO A/B TESTING (Suite 2) ============
+
+export const abTools = {
+  async generate_ab_variants(params: { campaignName: string; companyName: string; originalSubject: string; originalBody: string; originalCta: string; numVariants?: number; focusArea?: 'subject' | 'body' | 'cta' | 'all' }) {
+    return abTestingTools.generateVariants(params);
+  },
+  async create_ab_test(params: { campaignName: string; companyName: string; variants: any[]; testDuration?: string }) {
+    return abTestingTools.createTest(params);
+  },
+  async deploy_ab_test(params: { test: any; totalAudience: number }) {
+    return abTestingTools.deployTest(params);
+  },
+  async analyze_ab_significance(params: { metrics: any[]; primaryMetric?: 'openRate' | 'clickRate' | 'conversionRate'; minimumConfidence?: number }) {
+    return abTestingTools.analyzeSignificance(params);
+  },
+  async auto_implement_winner(params: { testId: string; campaignName: string; companyName: string; winnerVariant: any; remainingAudience: number }) {
+    return abTestingTools.autoImplementWinner(params);
+  },
+  async run_full_ab_test(params: { campaignName: string; companyName: string; originalSubject: string; originalBody: string; originalCta: string; totalAudience: number; numVariants?: number }) {
+    return abTestingTools.runFullABTest(params);
+  },
+  async get_ab_test_summary(params: { testId: string }) {
+    return abTestingTools.getTestSummary(params);
+  },
+  async optimize_subject_lines(params: { companyName: string; product?: string; targetAudience?: string; count?: number }) {
+    return abTestingTools.optimizeSubjectLines(params);
+  },
+};
+
+// ============ 15. CRM INTEGRATION HUB (Suite 3) ============
+
+export const crmTools = {
+  async configure_crm(params: { provider: 'salesforce' | 'hubspot' | 'zoho' | 'pipedrive'; apiKey: string; instanceUrl?: string; accessToken?: string }) {
+    return crmIntegrationTools.configureCRM(params);
+  },
+  async list_crm_connections() {
+    return crmIntegrationTools.listCRMConnections();
+  },
+  async sync_contacts_from_crm(params: { provider: 'salesforce' | 'hubspot'; companyFilter?: string; limit?: number }) {
+    return crmIntegrationTools.syncContactsFromCRM(params);
+  },
+  async push_contact_to_crm(params: { provider: 'salesforce' | 'hubspot'; contact: any }) {
+    return crmIntegrationTools.pushContactToCRM(params);
+  },
+  async get_client_360(params: { contactEmail?: string; contactName?: string; companyName?: string }) {
+    return crmIntegrationTools.getClient360(params);
+  },
+  async create_crm_task(params: { provider?: 'salesforce' | 'hubspot'; title: string; description: string; assignedTo?: string; contactEmail?: string; dueDate: string; priority: 'high' | 'medium' | 'low' }) {
+    return crmIntegrationTools.createCRMTask(params);
+  },
+  async update_lead_status_crm(params: { provider?: 'salesforce' | 'hubspot'; leadEmail: string; newStatus: string; notes?: string }) {
+    return crmIntegrationTools.updateLeadStatusInCRM(params);
+  },
+  async bidirectional_crm_sync(params: { provider: 'salesforce' | 'hubspot'; syncContacts?: boolean; syncDeals?: boolean; syncTasks?: boolean }) {
+    return crmIntegrationTools.bidirectionalSync(params);
+  },
+  async get_crm_analytics(params?: { provider?: string; period?: 'week' | 'month' | 'quarter' | 'year' }) {
+    return crmIntegrationTools.getCRMAnalytics(params);
+  },
+  async enrich_contact_data(params: { email: string; companyName?: string }) {
+    return crmIntegrationTools.enrichContactData(params);
+  },
+};
+
+// ============ 16. STRATEGIC REASONING ENGINE (Suite 4) ============
+
+export const strategicTools = {
+  async convert_goal_to_plan(params: { objective: string; companyName?: string; budget?: number; timeframe?: string; constraints?: string[]; currentMetrics?: Record<string, number> }) {
+    return strategicReasoningTools.convertGoalToPlan(params);
+  },
+  async design_multichannel_strategy(params: { companyName: string; objective: string; budget: number; channels?: string[]; targetAudience?: string; duration?: string }) {
+    return strategicReasoningTools.designMultichannelStrategy(params);
+  },
+  async generate_campaign_calendar(params: { companyName: string; plan?: any; startDate?: string; weeks?: number }) {
+    return strategicReasoningTools.generateCampaignCalendar(params);
+  },
+  async optimize_budget_allocation(params: { currentAllocation: Record<string, number>; totalBudget: number; performanceData?: Record<string, { spend: number; conversions: number; revenue: number }>; objective?: string }) {
+    return strategicReasoningTools.optimizeBudget(params);
+  },
+  async make_autonomous_decision(params: { context: string; pendingActions: Array<{ action: string; risk: 'low' | 'medium' | 'high'; impact: string }>; daysSinceLastApproval: number; autoApproveThreshold?: number }) {
+    return strategicReasoningTools.makeAutonomousDecision({ ...params, autoApproveThreshold: params.autoApproveThreshold || 3 });
+  },
+  async generate_strategic_report(params: { companyName?: string; period?: string; includeForecasts?: boolean }) {
+    return strategicReasoningTools.generateStrategicReport(params);
+  },
+  async evaluate_plan_progress(params: { plan: any; currentDate?: string }) {
+    return strategicReasoningTools.evaluatePlanProgress(params);
+  },
+  async auto_generate_campaign_assets(params: { companyName: string; campaignName: string; channels: string[]; tone?: string; product?: string }) {
+    return strategicReasoningTools.autoGenerateAssets(params);
+  },
+};
+
 export const ropaTools = {
   ...agentManagementTools,
   ...databaseTools,
@@ -1382,6 +1510,10 @@ export const ropaTools = {
   ...codeTools,
   ...driveTools,
   ...ropaUITools,
+  ...predictiveTools,
+  ...abTools,
+  ...crmTools,
+  ...strategicTools,
 };
 
 // Tool registry for easy lookup
@@ -1412,6 +1544,10 @@ export const toolCategories = {
   "Code & Deployment": Object.keys(codeTools),
   "Google Drive & Files": Object.keys(driveTools),
   "UI Inspection & Self-Correction": Object.keys(ropaUITools),
+  "Predictive Intelligence & Sentiment": Object.keys(predictiveTools),
+  "Auto A/B Testing": Object.keys(abTools),
+  "CRM Integration Hub": Object.keys(crmTools),
+  "Strategic Reasoning Engine": Object.keys(strategicTools),
 };
 
 export const TOTAL_TOOLS = Object.keys(toolRegistry).length;

@@ -115,11 +115,27 @@ export async function getRopaLogsByTaskId(taskId: string) {
 
 // ============ METRICS ============
 
-export async function recordRopaMetric(metric: InsertRopaMetric) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  await db.insert(ropaMetrics).values(metric);
+export async function recordRopaMetric(metric: InsertRopaMetric | (Omit<InsertRopaMetric, 'metricType'> & { metricName?: string; metricType?: string })) {
+  try {
+    const db = await getDb();
+    if (!db) return;
+    
+    // Accept metricName as alias for metricType
+    const values: any = { ...metric };
+    if (values.metricName && !values.metricType) {
+      values.metricType = values.metricName;
+      delete values.metricName;
+    }
+    // Convert tags to metadata if present
+    if (values.tags && !values.metadata) {
+      values.metadata = values.tags;
+      delete values.tags;
+    }
+    
+    await db.insert(ropaMetrics).values(values);
+  } catch (error: any) {
+    console.warn('[ROPA DB] Failed to record metric:', error.message);
+  }
 }
 
 export async function getRecentRopaMetrics(metricType: string, hours = 24) {

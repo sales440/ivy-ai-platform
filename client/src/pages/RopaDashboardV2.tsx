@@ -3887,5 +3887,5 @@ export default function RopaDashboardV2() {
 }
 
 // Import TOTAL_TOOLS from ropa-tools if available
-const TOTAL_TOOLS = 129;
+const TOTAL_TOOLS = 242;
 // Force Railway redeploy: 1768245782

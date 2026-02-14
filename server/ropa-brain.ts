@@ -1139,6 +1139,24 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
   const questionIndicators = ['?', 'cómo', 'como', 'por qué', 'por que', 'cuál', 'cual', 'cuándo', 'cuando', 'dónde', 'donde', 'explica', 'explain', 'describe', 'define', 'qué es', 'que es', 'qué significa', 'que significa'];
   const isQuestion = matchesAny(msg, questionIndicators);
   
+  // ============ SUITE COMMANDS: Predictive, A/B Testing, CRM, Strategic ============
+  const suiteKeywords = [
+    'sentimiento', 'sentiment', 'clasificar lead', 'classify lead', 'predecir', 'predict',
+    'probabilidad de conversión', 'lead score', 'scoring',
+    'a/b test', 'ab test', 'test a/b', 'variantes', 'variants', 'prueba a/b',
+    'significancia', 'significance', 'ganador', 'winner',
+    'crm', 'salesforce', 'hubspot', 'zoho', 'pipedrive', 'sincronizar crm', 'sync crm',
+    'visión 360', 'vision 360', 'client 360', 'cliente 360',
+    'plan estratégico', 'plan estrategico', 'strategic plan', 'goal to plan',
+    'calendario de campaña', 'campaign calendar', 'estrategia multicanal', 'multichannel',
+    'decisión autónoma', 'decision autonoma', 'auto aprobar', 'auto-aprobar',
+    'generar assets', 'generate assets', 'optimizar presupuesto', 'budget optimization',
+  ];
+  if (matchesAny(msg, suiteKeywords)) {
+    intent = 'suite_command';
+    return { response: '', intent, command, platformActionExecuted, platformResult, shouldDeferToLLM: true };
+  }
+
   // Complex requests that should go to LLM
   const complexIndicators = ['analiza', 'analyze', 'compara', 'compare', 'sugiere', 'suggest', 'recomienda', 'recommend', 'planifica', 'plan', 'estrategia', 'strategy', 'optimiza', 'optimize', 'mejora', 'improve', 'evalúa', 'evalua', 'evaluate', 'piensa', 'think', 'opina', 'opinion'];
   const isComplex = matchesAny(msg, complexIndicators);
@@ -1171,7 +1189,16 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     `- Drive: "muestra archivos de Drive"\n` +
     `- Web: "busca en internet [tema]"\n` +
     `- Stats: "muestra estadísticas"\n` +
-    `- Ayuda: "ayuda" o "qué puedes hacer"\n\n` +
+    `- Ayuda: "ayuda" o "qué puedes hacer"\n` +
+    `\n🧠 **Suites Avanzadas:**\n` +
+    `- Sentimiento: "analiza sentimiento de [email]"\n` +
+    `- Lead Score: "calcula lead score de [contacto]"\n` +
+    `- Predicción: "predice conversión de [lead]"\n` +
+    `- A/B Test: "crea test A/B para [campaña]"\n` +
+    `- CRM: "sincroniza CRM" o "visión 360 de [cliente]"\n` +
+    `- Estrategia: "crea plan estratégico para [objetivo]"\n` +
+    `- Calendario: "genera calendario de campaña para [empresa]"\n` +
+    `- Auto-decisión: "decisión autónoma" (72h sin respuesta)\n\n` +
     `¿Qué necesitas?`;
   
   return { response, intent, command, platformActionExecuted, platformResult };

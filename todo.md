@@ -770,3 +770,37 @@
 - [x] Verify ROPA reads companies from database (tRPC clients.list query)
 - [x] Test end-to-end: 219 tests passing
 - [ ] Push to GitHub for Railway deployment
+
+## Phase 60: ROPA Advanced Toolkit Suites (4 New Modules + 72h Auto-Approval)
+
+### Suite 1: Predictive Intelligence & Sentiment Analysis
+- [x] Sentiment Analysis Engine: classify incoming email responses (Interested/Negative/Neutral)
+- [x] Auto-adapt follow-up flow based on sentiment classification
+- [x] Predictive Modeling: estimate lead conversion probability from historical data
+- [x] Campaign success prediction before launch
+
+### Suite 2: Auto-A/B Testing Motor
+- [x] Variant Generator: create multiple subject lines, email bodies, CTAs
+- [x] Test Deployment: auto-split audience and deploy A/B variants
+- [x] Statistical Significance Analyzer: determine winner with confidence (z-test proportions)
+- [x] Auto-Implementation: apply winning variant to remaining campaign automatically
+
+### Suite 3: CRM Integration Hub
+- [x] Salesforce connector (read/write contacts, opportunities, tasks)
+- [x] HubSpot connector (read/write contacts, deals, tasks)
+- [x] Bidirectional sync: read full client history (360° view)
+- [x] Write-back actions: update lead status, create tasks in CRM
+
+### Suite 4: Strategic Reasoning Engine
+- [x] Goal-to-Plan Converter: natural language objective → tactical plan
+- [x] Resource Manager: design multichannel strategy with asset generation
+- [x] Calendar Scheduler: autonomous campaign scheduling and execution
+- [x] Budget allocation optimizer
+
+### Integration & Auto-Approval
+- [x] Register all new tools in ROPA tool registry (242+ total tools)
+- [x] Feed all suites into ROPA Global Context for cross-module decisions
+- [x] 72h Auto-Approval: if user doesn't respond in 3 days, ROPA executes autonomously
+- [x] Update ROPA system prompt with new capabilities
+- [x] Write tests for all 4 suites (254 tests passing)
+- [ ] Push to GitHub for Railway deployment
