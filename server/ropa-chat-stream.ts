@@ -32,10 +32,63 @@ import { callN8nRopa } from "./ropa-n8n-service";
 export const ropaChatStreamRouter = Router();
 
 /**
- * Clean the assistant message - remove markdown formatting for clean display
+ * ROPA Configuration interface - matches frontend ropaConfig state
+ */
+interface RopaConfig {
+  operationMode: 'autonomous' | 'guided' | 'hybrid';
+  language: string;
+  personality: 'professional' | 'friendly' | 'technical';
+  maxEmailsPerDay: number;
+  maxCallsPerDay: number;
+  sendingHoursStart: string;
+  sendingHoursEnd: string;
+  notifications: {
+    criticalAlerts: boolean;
+    dailyReports: boolean;
+    campaignMilestones: boolean;
+    newLeads: boolean;
+  };
+}
+
+/**
+ * Clean the assistant message - remove markdown formatting, internal code, and tool artifacts.
+ * CRITICAL: The LLM sometimes generates <tool_code>print(ROPA.xxx(...))</tool_code> blocks
+ * that must NEVER be shown to the user. This function strips ALL code artifacts.
  */
 function cleanAssistantMessage(text: string): string {
-  return text
+  let cleaned = text;
+  
+  // ============ PHASE 1: Strip internal code blocks (HIGHEST PRIORITY) ============
+  // Remove <tool_code>...</tool_code> blocks entirely
+  cleaned = cleaned.replace(/<tool_code>[\s\S]*?<\/tool_code>/gi, '');
+  // Remove unclosed <tool_code> blocks (truncated responses)
+  cleaned = cleaned.replace(/<tool_code>[\s\S]*/gi, '');
+  // Remove <code>...</code> blocks that contain ROPA/print calls
+  cleaned = cleaned.replace(/<code>[\s\S]*?<\/code>/gi, '');
+  // Remove ```...``` code blocks that contain ROPA/print calls
+  cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
+  // Remove any remaining print(ROPA.*) calls
+  cleaned = cleaned.replace(/print\s*\(\s*ROPA\.[\s\S]*?\)\s*\)?/gi, '');
+  // Remove ROPA.function_name(...) patterns
+  cleaned = cleaned.replace(/ROPA\.[a-zA-Z_]+\s*\([^)]*\)/gi, '');
+  // Remove any XML-like tags that look like code artifacts
+  cleaned = cleaned.replace(/<\/?tool_code>/gi, '');
+  cleaned = cleaned.replace(/<\/?code>/gi, '');
+  // Remove function call patterns: function_name(param="value", ...)
+  cleaned = cleaned.replace(/[a-zA-Z_]+\([a-zA-Z_]+\s*=\s*"[^"]*"[^)]*\)/g, '');
+  // Remove lines that are purely code (contain = or => or function or import)
+  cleaned = cleaned.replace(/^.*(?:import\s|export\s|function\s|const\s|let\s|var\s|=>|===).*$/gm, '');
+  
+  // ============ PHASE 2: Strip "I will execute" code narration ============
+  // Remove sentences that describe executing tool code
+  cleaned = cleaned.replace(/Ejecutaré la primera acción ahora:?\s*/gi, '');
+  cleaned = cleaned.replace(/Ejecutaré las? siguientes? accione?s?:?\s*/gi, '');
+  cleaned = cleaned.replace(/Voy a ejecutar:?\s*/gi, '');
+  cleaned = cleaned.replace(/Ejecutando:?\s*/gi, '');
+  cleaned = cleaned.replace(/Utilizando [`'"]?[a-z_]+[`'"]?\s*(y|para|con)\s*/gi, '');
+  
+  // ============ PHASE 3: Strip markdown formatting ============
+  cleaned = cleaned
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/\*/g, '')
@@ -54,10 +107,21 @@ function cleanAssistantMessage(text: string): string {
     .replace(/marked with/gi, '')
     .replace(/^#{1,6}\s*/gm, '')
     .replace(/^[-*]\s+/gm, '')
-    .replace(/^\d+\.\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '');
+  
+  // ============ PHASE 4: Clean up whitespace ============
+  cleaned = cleaned
     .replace(/\s{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
+    .replace(/^\s*\n/gm, '\n')  // Remove blank lines
     .trim();
+  
+  // If after all cleaning the message is empty or too short, provide a fallback
+  if (!cleaned || cleaned.length < 5) {
+    cleaned = 'Procesando tu solicitud. Dame un momento.';
+  }
+  
+  return cleaned;
 }
 
 /**
@@ -96,69 +160,80 @@ function detectLanguage(text: string): string {
 }
 
 /**
- * Build the system prompt for ROPA
+ * Build the system prompt for ROPA, incorporating user configuration
  */
-function buildSystemPrompt(userLang: string): string {
+function buildSystemPrompt(userLang: string, config?: RopaConfig): string {
+  // Use config language if provided, otherwise use detected language
+  const effectiveLang = config?.language || userLang;
+  
   const langInstructions: Record<string, string> = {
-    'es': 'Responde siempre en español.',
-    'en': 'Always respond in English.',
-    'eu': 'Beti euskaraz erantzun.',
-    'it': 'Rispondi sempre in italiano.',
-    'fr': 'Réponds toujours en français.',
-    'de': 'Antworte immer auf Deutsch.',
-    'zh': '请用中文回复。',
-    'hi': 'कृपया हिंदी में जवाब दें।',
-    'ar': 'الرجاء الرد باللغة العربية.',
+    'es': 'IDIOMA OBLIGATORIO: SIEMPRE responde en español. Tu respuesta DEBE ser en español.',
+    'en': 'MANDATORY LANGUAGE: ALWAYS respond in English. Your response MUST be in English.',
+    'eu': 'DERRIGORREZKO HIZKUNTZA: BETI erantzun euskaraz.',
+    'it': 'LINGUA OBBLIGATORIA: Rispondi SEMPRE in italiano.',
+    'fr': 'LANGUE OBLIGATOIRE: Réponds TOUJOURS en français.',
+    'de': 'PFLICHTSPRACHE: Antworte IMMER auf Deutsch.',
+    'zh': '强制语言：始终用中文回复。',
+    'hi': 'अनिवार्य भाषा: हमेशा हिंदी में जवाब दें।',
+    'ar': 'اللغة الإلزامية: الرد دائماً باللغة العربية.',
   };
+  
+  const langInstruction = langInstructions[effectiveLang] || langInstructions['es'];
+  
+  // Personality style based on config
+  const personalityStyles: Record<string, string> = {
+    'professional': 'Habla de forma profesional, formal y orientada a negocios. Sé directo y eficiente.',
+    'friendly': 'Habla de forma cercana, amigable y conversacional. Usa un tono cálido y accesible.',
+    'technical': 'Habla de forma técnica, detallada y precisa. Incluye datos específicos y métricas.',
+  };
+  const personalityStyle = personalityStyles[config?.personality || 'professional'] || personalityStyles['professional'];
+  
+  // Operation mode instructions
+  const modeInstructions: Record<string, string> = {
+    'autonomous': 'MODO AUTÓNOMO: Ejecutas tareas sin pedir permiso. Actúas de forma independiente.',
+    'guided': 'MODO GUIADO: Siempre pide confirmación antes de ejecutar acciones. Presenta opciones al usuario y espera su aprobación.',
+    'hybrid': 'MODO HÍBRIDO: Ejecuta autónomamente tareas simples (consultas, navegación, reportes). Pide confirmación para acciones importantes (envío de emails, creación de campañas, eliminaciones).',
+  };
+  const modeInstruction = modeInstructions[config?.operationMode || 'autonomous'] || modeInstructions['autonomous'];
 
   return `Eres ROPA, el META-AGENTE autónomo de Ivy.AI - Plataforma de Agentes IA.
 
-IDENTIDAD: Agente autónomo con control total de la plataforma. Ejecutas tareas sin pedir permiso.
+IDENTIDAD: Agente autónomo con control total de la plataforma.
+${modeInstruction}
 
-HERRAMIENTAS: ${TOTAL_TOOLS + PLATFORM_TOOLS_COUNT + SUPER_TOOLS_COUNT}+ disponibles para email, llamadas, SMS, Google Drive, reportes, acceso a internet, IA generativa.
+PROHIBICIÓN ABSOLUTA DE CÓDIGO: NUNCA incluyas código, funciones, scripts, ni llamadas a herramientas en tu respuesta al usuario. NUNCA escribas <tool_code>, print(), ROPA.function(), ni ningún fragmento de código. Tu respuesta debe ser SIEMPRE texto natural conversacional. Si necesitas ejecutar una herramienta, hazlo internamente sin mostrarlo. El usuario NUNCA debe ver nombres de funciones, parámetros técnicos, ni sintaxis de programación. Responde como un asistente humano, no como una máquina.
 
-CAPACIDADES DE SUPER META-AGENTE:
-1. GESTIÓN DE PLATAFORMA: createCompany, updateCompany, deleteCompany, createCampaign, updateCampaignStatus, moveCampaignInCalendar, createEmailDraft, generateCampaignEmailDrafts, createLead, updateLeadStatus
-2. ACCESO A INTERNET: webSearch, fetchUrl, researchCompany
-3. IA GENERATIVA: generatePersonalizedEmail, generateCampaignStrategy, improveEmailContent
-4. AUTOMATIZACIÓN: createWorkflow, scheduleTask, batchOperation, triggerCampaignAction
-5. ANALYTICS: getDashboardMetrics, generatePerformanceReport, getLeadFunnelAnalytics
-6. GOOGLE DRIVE: listAllFiles, listFolderContents, getFullFolderTree, searchFiles, getFileContent, createFolder, moveFile, copyFile, getClientFolder, listAllClients
-7. COMUNICACIÓN: sendEmail, notifyOwner
-8. NAVEGACIÓN DE UI: navigateTo, openDialog, closeDialog, clickElement, scrollTo, toggleSidebar, refreshPage
-9. ORQUESTACIÓN n8n: Motor de orquestación visual con n8n Cloud Pro para flujos complejos
-10. ENVÍO MASIVO via n8n: sendMassEmails, sendMassSMS, triggerMassCalls, executeMultiChannelCampaign
-11. INTELIGENCIA PREDICTIVA: analyze_email_sentiment, classify_lead_auto, predict_conversion, predict_campaign_success, batch_classify_leads, get_predictive_insights, analyze_response_patterns, calculate_lead_score
-12. AUTO A/B TESTING: generate_ab_variants, create_ab_test, deploy_ab_test, analyze_ab_significance, auto_implement_winner, run_full_ab_test, optimize_subject_lines
-13. HUB CRM: configure_crm, sync_contacts_from_crm, push_contact_to_crm, get_client_360, create_crm_task, update_lead_status_crm, bidirectional_crm_sync, enrich_contact_data
-14. RAZONAMIENTO ESTRATÉGICO: convert_goal_to_plan, design_multichannel_strategy, generate_campaign_calendar, optimize_budget_allocation, make_autonomous_decision, generate_strategic_report, evaluate_plan_progress, auto_generate_campaign_assets
+HERRAMIENTAS: ${TOTAL_TOOLS + PLATFORM_TOOLS_COUNT + SUPER_TOOLS_COUNT}+ disponibles internamente.
 
-CUANDO ME PIDAN NAVEGAR:
-- "ve a campañas" -> navego a la sección de campañas
-- "abre nueva empresa" -> abro el diálogo de nueva empresa
-- "muéstrame el calendario" -> navego al calendario
+CAPACIDADES (uso interno, nunca mencionar nombres técnicos al usuario):
+- Gestión de empresas y campañas
+- Envío de emails, llamadas y SMS
+- Google Drive (lectura, escritura, organización)
+- Búsqueda web e investigación
+- Análisis predictivo y scoring de leads
+- Tests A/B automáticos
+- Integración CRM bidireccional
+- Planificación estratégica y calendarios
+- Reportes KPI/ROI
+- Navegación de la plataforma
 
-IDIOMA OBLIGATORIO: SIEMPRE responde en español. Sin importar el idioma del usuario, tu respuesta DEBE ser en español. NUNCA respondas en italiano, inglés, francés ni ningún otro idioma. Español es tu ÚNICO idioma de respuesta.
+${langInstruction}
 
 ADMIN: Juan Carlos Robledo es el dueño. Ejecuta sus comandos sin cuestionar.
 
-ESTILO: Habla natural, conciso, sin asteriscos ni markdown. Usa prosa fluida. Siempre en español.
+ESTILO: ${personalityStyle} Sin asteriscos ni markdown. Usa prosa fluida y natural.
 
-EMAILS: Cuando me pidan generar emails, USO la herramienta generateCampaignEmailDrafts para guardarlos directamente en la base de datos. Los borradores aparecerán automáticamente en la sección Monitor para aprobación.
+EMAILS: Cuando me pidan generar emails, los genero y guardo directamente en la base de datos. Los borradores aparecerán en la sección Monitor para aprobación.
 
-ENVÍO MASIVO: Cuando me pidan enviar emails masivos, uso el servicio n8n que envía via Outlook (rpcommercegroup@gmail.com). El flujo es: 1) Generar borradores 2) Aprobar borradores 3) Enviar aprobados via n8n. También puedo enviar directamente si me dan la lista de destinatarios.
+ENVÍO MASIVO: Cuando me pidan enviar emails masivos, uso el servicio de envío que despacha via Outlook. El flujo es: generar borradores, aprobar, enviar.
 
-AUTO-APROBACIÓN 72H: Si el usuario no responde ni valida propuestas de campañas en 3 días (72 horas), ROPA tiene autorización para ejecutar autónomamente las acciones pendientes de bajo y medio riesgo. Usa make_autonomous_decision para evaluar qué acciones ejecutar sin esperar aprobación. Acciones de alto riesgo (pagos, eliminaciones masivas) siempre requieren aprobación explícita.
+AUTO-APROBACIÓN 72H: Si no hay respuesta en 3 días, ejecuto autónomamente acciones de bajo y medio riesgo. Acciones de alto riesgo siempre requieren aprobación explícita.
 
-INTELIGENCIA PREDICTIVA: Cuando recibas respuestas de leads, usa analyze_email_sentiment para clasificarlos automáticamente. Usa predict_conversion para estimar probabilidad de cierre. Usa calculate_lead_score para priorizar seguimientos.
+ESTRATEGIA: Cuando el usuario defina un objetivo de negocio, lo desgloso en plan táctico, diseño la estrategia multicanal y programo el calendario de ejecución.
 
-A/B TESTING: Cuando generes campañas, ofrece crear variantes A/B automáticamente. Usa run_full_ab_test para ejecutar el ciclo completo: generar variantes, desplegar, analizar significancia, implementar ganador.
+${config?.maxEmailsPerDay ? `LÍMITES: Máximo ${config.maxEmailsPerDay} emails/día, ${config.maxCallsPerDay || 50} llamadas/día. Horario de envío: ${config.sendingHoursStart || '09:00'} a ${config.sendingHoursEnd || '18:00'}.` : ''}
 
-CRM: Si el usuario tiene CRM configurado, sincroniza contactos bidireccionalmente. Usa get_client_360 para visión completa del cliente antes de generar contenido personalizado.
-
-ESTRATEGIA: Cuando el usuario defina un objetivo de negocio, usa convert_goal_to_plan para desglosarlo en plan táctico. Usa design_multichannel_strategy para diseñar la estrategia y generate_campaign_calendar para programar la ejecución.
-
-Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
+Eres ROPA. Respondes en lenguaje natural. NUNCA muestras código.`;
 }
 
 /**
@@ -236,7 +311,7 @@ function sendSSE(res: Response, data: any) {
  * - data: {"type":"error","message":"..."} - Error occurred
  */
 ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Response) => {
-  const { message, clientHour, clientDay } = req.body;
+  const { message, clientHour, clientDay, ropaConfig: clientConfig } = req.body;
 
   if (!message || typeof message !== 'string') {
     res.status(400).json({ error: 'Message is required' });
@@ -321,7 +396,9 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
     }));
 
     const userLang = detectLanguage(message);
-    const systemPrompt = buildSystemPrompt(userLang);
+    // Parse config from client request if provided
+    const config: RopaConfig | undefined = clientConfig && typeof clientConfig === 'object' ? clientConfig : undefined;
+    const systemPrompt = buildSystemPrompt(userLang, config);
 
     const llmMessages = [
       { role: "system" as const, content: systemPrompt },
@@ -335,10 +412,39 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
     if (isGeminiStreamConfigured()) {
       try {
         console.log('[ROPA Stream] TIER 1: Attempting Gemini streaming...');
+        let streamBuffer = '';
+        let codeBlockDetected = false;
         const result = await streamGeminiResponse(
           llmMessages,
           (chunk) => {
-            sendSSE(res, { type: 'chunk', text: chunk });
+            streamBuffer += chunk;
+            // Detect code block opening - stop sending chunks until block closes
+            if (/<tool_code>/i.test(streamBuffer) || /```/.test(chunk) || /print\s*\(\s*ROPA\./i.test(streamBuffer)) {
+              codeBlockDetected = true;
+            }
+            // If code block detected, buffer everything and don't send
+            if (codeBlockDetected) {
+              // Check if code block has closed
+              if (/<\/tool_code>/i.test(streamBuffer) || (streamBuffer.match(/```/g) || []).length >= 2) {
+                // Code block closed - clean and send the cleaned version
+                const cleanedBuffer = cleanAssistantMessage(streamBuffer);
+                if (cleanedBuffer && cleanedBuffer.length > 5 && cleanedBuffer !== 'Procesando tu solicitud. Dame un momento.') {
+                  sendSSE(res, { type: 'chunk', text: cleanedBuffer });
+                }
+                streamBuffer = '';
+                codeBlockDetected = false;
+              }
+              return; // Don't send raw chunks while in code block
+            }
+            // Normal chunk - check for code patterns before sending
+            const safeChunk = chunk
+              .replace(/<tool_code>/gi, '')
+              .replace(/<\/tool_code>/gi, '')
+              .replace(/print\s*\(\s*ROPA\./gi, '')
+              .replace(/ROPA\.[a-zA-Z_]+\(/gi, '');
+            if (safeChunk.trim()) {
+              sendSSE(res, { type: 'chunk', text: safeChunk });
+            }
           }
         );
 
@@ -359,7 +465,8 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
         const result = await invokeGemini(llmMessages);
         if (result) {
           fullResponse = result;
-          sendSSE(res, { type: 'chunk', text: result });
+          const cleanedResult = cleanAssistantMessage(result);
+          sendSSE(res, { type: 'chunk', text: cleanedResult });
           console.log('[ROPA Stream] TIER 2: Non-streaming Gemini succeeded');
         }
       } catch (geminiError: any) {
@@ -375,7 +482,8 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
         const rawContent = response.choices[0]?.message?.content;
         if (typeof rawContent === 'string' && rawContent.length > 0) {
           fullResponse = rawContent;
-          sendSSE(res, { type: 'chunk', text: rawContent });
+          const cleanedContent = cleanAssistantMessage(rawContent);
+          sendSSE(res, { type: 'chunk', text: cleanedContent });
           console.log('[ROPA Stream] TIER 3: Manus LLM succeeded');
         }
       } catch (llmError: any) {
@@ -390,7 +498,7 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
         const n8nResult = await callN8nRopa(cleanMessage, 'system');
         if (n8nResult && n8nResult.success && n8nResult.response) {
           fullResponse = n8nResult.response;
-          sendSSE(res, { type: 'chunk', text: n8nResult.response });
+          sendSSE(res, { type: 'chunk', text: cleanAssistantMessage(n8nResult.response) });
           console.log('[ROPA Stream] TIER 4: n8n orchestrator succeeded');
         }
       } catch (n8nError: any) {
@@ -404,7 +512,7 @@ ropaChatStreamRouter.post("/api/ropa/chat-stream", async (req: Request, res: Res
         console.log('[ROPA Stream] TIER 5: Using ROPA Brain intelligent fallback...');
         const brainResult = await processWithRopaBrain(cleanMessage, userHour, userDay);
         fullResponse = brainResult.response;
-        sendSSE(res, { type: 'chunk', text: fullResponse });
+        sendSSE(res, { type: 'chunk', text: cleanAssistantMessage(fullResponse) });
         console.log('[ROPA Stream] TIER 5: ROPA Brain responded with intent:', brainResult.intent);
       } catch (brainError: any) {
         console.warn('[ROPA Stream] TIER 5: ROPA Brain failed:', brainError.message);

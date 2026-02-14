@@ -1,0 +1,58 @@
+{
+  "query": "INSERT IGNORE INTO ropa_config (config_key, operation_mode, language, personality, max_emails_per_day, max_calls_per_day, sending_hours_start, sending_hours_end, notification_settings) \nVALUES ('global', 'autonomous', 'es', 'professional', 100, 50, '09:00', '18:00', '{\"criticalAlerts\":true,\"dailyReports\":true,\"campaignMilestones\":true,\"newLeads\":false}');\nSELECT * FROM ropa_config;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute INSERT IGNORE INTO ropa_config (config_key, operation_mode, language, personality, max_emails_per_day, max_calls_per_day, sending_hours_start, sending_hours_end, notification_settings) \nVALUES ('global', 'autonomous', 'es', 'professional', 100, 50, '09:00', '18:00', '{\"criticalAlerts\":true,\"dailyReports\":true,\"campaignMilestones\":true,\"newLeads\":false}');\nSELECT * FROM ropa_config;",
+  "rows": [
+    {
+      "id": "1",
+      "key": "ropa_status",
+      "value": "{\"enabled\": true, \"startedAt\": \"2026-02-14T02:21:08.715Z\", \"version\": \"2.0\"}",
+      "description": "NULL",
+      "updated_at": "2026-02-14 02:21:08",
+      "config_key": "global",
+      "operation_mode": "autonomous",
+      "language": "es",
+      "personality": "professional",
+      "max_emails_per_day": "100",
+      "max_calls_per_day": "50",
+      "sending_hours_start": "09:00",
+      "sending_hours_end": "18:00",
+      "notification_settings": "NULL"
+    },
+    {
+      "id": "3",
+      "key": "test_key",
+      "value": "{\"value\": \"test_value\"}",
+      "description": "NULL",
+      "updated_at": "2025-12-31 06:38:03",
+      "config_key": "global",
+      "operation_mode": "autonomous",
+      "language": "es",
+      "personality": "professional",
+      "max_emails_per_day": "100",
+      "max_calls_per_day": "50",
+      "sending_hours_start": "09:00",
+      "sending_hours_end": "18:00",
+      "notification_settings": "NULL"
+    },
+    {
+      "id": "1140028",
+      "key": "",
+      "value": "null",
+      "description": "NULL",
+      "updated_at": "2026-02-14 02:24:00",
+      "config_key": "global",
+      "operation_mode": "autonomous",
+      "language": "es",
+      "personality": "professional",
+      "max_emails_per_day": "100",
+      "max_calls_per_day": "50",
+      "sending_hours_start": "09:00",
+      "sending_hours_end": "18:00",
+      "notification_settings": "{\"criticalAlerts\":true,\"dailyReports\":true,\"campaignMilestones\":true,\"newLeads\":false}"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tkey\tvalue\tdescription\tupdated_at\tconfig_key\toperation_mode\tlanguage\tpersonality\tmax_emails_per_day\tmax_calls_per_day\tsending_hours_start\tsending_hours_end\tnotification_settings\n1\tropa_status\t{\"enabled\": true, \"startedAt\": \"2026-02-14T02:21:08.715Z\", \"version\": \"2.0\"}\tNULL\t2026-02-14 02:21:08\tglobal\tautonomous\tes\tprofessional\t100\t50\t09:00\t18:00\tNULL\n3\ttest_key\t{\"value\": \"test_value\"}\tNULL\t2025-12-31 06:38:03\tglobal\tautonomous\tes\tprofessional\t100\t50\t09:00\t18:00\tNULL\n1140028\t\tnull\tNULL\t2026-02-14 02:24:00\tglobal\tautonomous\tes\tprofessional\t100\t50\t09:00\t18:00\t{\"criticalAlerts\":true,\"dailyReports\":true,\"campaignMilestones\":true,\"newLeads\":false}\n",
+  "stderr": "",
+  "execution_time_ms": 62
+}

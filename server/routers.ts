@@ -15,6 +15,7 @@ import { googleDriveRouter } from "./google-drive-router";
 import { performanceRouter } from "./performance-router";
 import { clientManagementRouter } from "./client-management";
 import { emailDraftsRouter } from "./email-drafts-router";
+import { ropaConfigRouter } from "./ropa-config-router";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -66,6 +67,9 @@ export const appRouter = router({
 
   // Email Drafts Router (Monitor section persistence)
   emailDrafts: emailDraftsRouter,
+
+  // ROPA Configuration Router (settings persistence)
+  ropaConfig: ropaConfigRouter,
 
   // TODO: add feature routers here, e.g.
   // todo: router({

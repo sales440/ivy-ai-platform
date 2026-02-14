@@ -804,3 +804,15 @@
 - [x] Update ROPA system prompt with new capabilities
 - [x] Write tests for all 4 suites (254 tests passing)
 - [ ] Push to GitHub for Railway deployment
+
+## Phase 61: Railway Production Errors - JSON Parse + DB Insert Failures
+- [ ] Fix JSON parse: safeJsonParse doesn't strip markdown ```json wrapper from Gemini responses
+- [ ] Fix DB insert: sales_campaigns table in production missing client_id and company_name columns
+- [ ] Update create-ropa-tables.mjs to ALTER TABLE sales_campaigns ADD COLUMN client_id, company_name
+- [ ] Test locally and push to GitHub
+- [x] CRITICAL BUG: ROPA exposes internal tool code (<tool_code>, print(ROPA.*)) in chat responses - must sanitize all output to show only clean natural Spanish text
+- [x] Activate Configuration page: Language selector must change ROPA's response language
+- [x] Activate Configuration page: Operation mode (Autonomous/Guided/Hybrid) must affect ROPA behavior
+- [x] Activate Configuration page: Agent personality settings must persist and apply
+- [x] Activate Configuration page: Campaign limits and schedules must persist and apply
+- [x] Activate Configuration page: All settings must save to database instead of just localStorage

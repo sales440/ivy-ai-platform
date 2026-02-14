@@ -186,12 +186,16 @@ async function createRopaTables() {
         sql: `CREATE TABLE IF NOT EXISTS sales_campaigns (
           id int AUTO_INCREMENT PRIMARY KEY,
           name varchar(255) NOT NULL,
+          client_id varchar(64),
+          company_name varchar(255),
           type enum('email', 'phone', 'social_media', 'multi_channel') NOT NULL,
           status enum('draft', 'active', 'paused', 'completed') NOT NULL DEFAULT 'draft',
           target_audience text,
           content text,
+          description text,
           social_platform varchar(50),
           metrics text,
+          target_leads int DEFAULT 0,
           start_date timestamp NULL,
           end_date timestamp NULL,
           created_by varchar(64) NOT NULL,
@@ -374,6 +378,23 @@ async function createRopaTables() {
           click_rate int DEFAULT 0,
           updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )`
+      },
+      {
+        name: 'ropa_config',
+        sql: `CREATE TABLE IF NOT EXISTS ropa_config (
+          id int AUTO_INCREMENT PRIMARY KEY,
+          config_key varchar(100) NOT NULL UNIQUE,
+          operation_mode enum('autonomous', 'guided', 'hybrid') NOT NULL DEFAULT 'autonomous',
+          language varchar(10) NOT NULL DEFAULT 'es',
+          personality enum('professional', 'friendly', 'technical') NOT NULL DEFAULT 'professional',
+          max_emails_per_day int NOT NULL DEFAULT 100,
+          max_calls_per_day int NOT NULL DEFAULT 50,
+          sending_hours_start varchar(5) NOT NULL DEFAULT '09:00',
+          sending_hours_end varchar(5) NOT NULL DEFAULT '18:00',
+          notification_settings text,
+          created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )`
       }
     ];
 
@@ -390,7 +411,30 @@ async function createRopaTables() {
       }
     }
 
-    console.log('[ROPA Tables] ✓ All ROPA tables created successfully');
+    console.log('[ROPA Tables] \u2713 All ROPA tables created successfully');
+
+    // ============ MIGRATIONS: Add missing columns to existing tables ============
+    const migrations = [
+      { table: 'sales_campaigns', column: 'client_id', sql: 'ALTER TABLE sales_campaigns ADD COLUMN client_id varchar(64) AFTER name' },
+      { table: 'sales_campaigns', column: 'company_name', sql: 'ALTER TABLE sales_campaigns ADD COLUMN company_name varchar(255) AFTER client_id' },
+      { table: 'sales_campaigns', column: 'description', sql: 'ALTER TABLE sales_campaigns ADD COLUMN description text AFTER content' },
+      { table: 'sales_campaigns', column: 'target_leads', sql: 'ALTER TABLE sales_campaigns ADD COLUMN target_leads int DEFAULT 0 AFTER metrics' },
+    ];
+
+    for (const migration of migrations) {
+      try {
+        await connection.execute(migration.sql);
+        console.log(`[ROPA Tables] \u2713 Added column ${migration.column} to ${migration.table}`);
+      } catch (err) {
+        if (err.code === 'ER_DUP_FIELDNAME' || err.message?.includes('Duplicate column')) {
+          console.log(`[ROPA Tables] \u2713 Column ${migration.column} already exists in ${migration.table}`);
+        } else {
+          console.error(`[ROPA Tables] \u2717 Error adding ${migration.column} to ${migration.table}: ${err.message}`);
+        }
+      }
+    }
+
+    console.log('[ROPA Tables] \u2713 All migrations completed');
   } catch (error) {
     console.error('[ROPA Tables] Error creating tables:', error.message);
     // Don't throw - let the app continue even if table creation fails

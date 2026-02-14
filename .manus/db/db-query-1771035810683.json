@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS ropa_config (\n  id int AUTO_INCREMENT PRIMARY KEY,\n  config_key varchar(100) NOT NULL UNIQUE,\n  operation_mode enum('autonomous', 'guided', 'hybrid') NOT NULL DEFAULT 'autonomous',\n  language varchar(10) NOT NULL DEFAULT 'es',\n  personality enum('professional', 'friendly', 'technical') NOT NULL DEFAULT 'professional',\n  max_emails_per_day int NOT NULL DEFAULT 100,\n  max_calls_per_day int NOT NULL DEFAULT 50,\n  sending_hours_start varchar(5) NOT NULL DEFAULT '09:00',\n  sending_hours_end varchar(5) NOT NULL DEFAULT '18:00',\n  notification_settings text,\n  created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 385B8cqVvDyKYq8.2ff4d9bc4b3d --database HoXBpYBQ3qbVm6g7qLEzMx --execute CREATE TABLE IF NOT EXISTS ropa_config (\n  id int AUTO_INCREMENT PRIMARY KEY,\n  config_key varchar(100) NOT NULL UNIQUE,\n  operation_mode enum('autonomous', 'guided', 'hybrid') NOT NULL DEFAULT 'autonomous',\n  language varchar(10) NOT NULL DEFAULT 'es',\n  personality enum('professional', 'friendly', 'technical') NOT NULL DEFAULT 'professional',\n  max_emails_per_day int NOT NULL DEFAULT 100,\n  max_calls_per_day int NOT NULL DEFAULT 50,\n  sending_hours_start varchar(5) NOT NULL DEFAULT '09:00',\n  sending_hours_end varchar(5) NOT NULL DEFAULT '18:00',\n  notification_settings text,\n  created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 77
+}

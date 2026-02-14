@@ -211,6 +211,15 @@ export default function RopaDashboardV2() {
     onError: (err) => toast.error(`Error: ${err.message}`),
   });
 
+  // ROPA Configuration - load from database
+  const { data: dbConfig, isLoading: configLoading } = trpc.ropaConfig.getConfig.useQuery();
+  const saveConfigMutation = trpc.ropaConfig.saveConfig.useMutation({
+    onSuccess: () => {
+      toast.success('Configuración guardada exitosamente. Los cambios se aplicarán en la próxima conversación con ROPA.');
+    },
+    onError: (err) => toast.error(`Error al guardar configuración: ${err.message}`),
+  });
+
   // Map DB data to the format the UI expects
   const localCompanies = dbCompanies.map((c: any) => ({
     id: c.clientId || String(c.id),
@@ -961,17 +970,26 @@ export default function RopaDashboardV2() {
     },
   });
   
-  // Load config from localStorage on mount
+  // Load config from database when available
   useEffect(() => {
-    const savedConfig = localStorage.getItem('ropaConfig');
-    if (savedConfig) {
-      try {
-        setRopaConfig(JSON.parse(savedConfig));
-      } catch (e) {
-        console.error('Failed to parse saved config');
-      }
+    if (dbConfig) {
+      setRopaConfig({
+        operationMode: (dbConfig.operationMode as any) || 'autonomous',
+        language: dbConfig.language || 'es',
+        personality: (dbConfig.personality as any) || 'professional',
+        maxEmailsPerDay: dbConfig.maxEmailsPerDay ?? 100,
+        maxCallsPerDay: dbConfig.maxCallsPerDay ?? 50,
+        sendingHoursStart: dbConfig.sendingHoursStart || '09:00',
+        sendingHoursEnd: dbConfig.sendingHoursEnd || '18:00',
+        notifications: dbConfig.notifications || {
+          criticalAlerts: true,
+          dailyReports: true,
+          campaignMilestones: true,
+          newLeads: false,
+        },
+      });
     }
-  }, []);
+  }, [dbConfig]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -1209,7 +1227,7 @@ export default function RopaDashboardV2() {
       const response = await fetch('/api/ropa/chat-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, clientHour: new Date().getHours(), clientDay: new Date().toLocaleDateString('es-ES', { weekday: 'long' }) }),
+        body: JSON.stringify({ message: trimmed, clientHour: new Date().getHours(), clientDay: new Date().toLocaleDateString('es-ES', { weekday: 'long' }), ropaConfig }),
       });
       
       if (!response.ok) {
@@ -3124,14 +3142,17 @@ export default function RopaDashboardV2() {
               <div className="flex justify-end">
                 <Button
                   onClick={() => {
-                    // Save config to localStorage for now
-                    localStorage.setItem('ropaConfig', JSON.stringify(ropaConfig));
-                    toast.success("Configuración guardada exitosamente");
+                    saveConfigMutation.mutate(ropaConfig);
                   }}
+                  disabled={saveConfigMutation.isPending}
                   className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 px-8"
                 >
-                  <Save className="w-4 h-4 mr-2" />
-                  Guardar Configuración
+                  {saveConfigMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4 mr-2" />
+                  )}
+                  {saveConfigMutation.isPending ? 'Guardando...' : 'Guardar Configuración'}
                 </Button>
               </div>
             </div>

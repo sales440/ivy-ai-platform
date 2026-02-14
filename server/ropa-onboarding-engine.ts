@@ -128,69 +128,113 @@ async function safeDbMutation<T>(label: string, fn: () => Promise<T>, fallback?:
 function safeJsonParse<T = any>(raw: string, label: string): T | null {
   if (!raw || typeof raw !== 'string') return null;
   
-  // Strategy 1: Clean markdown code blocks and try direct parse
-  let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  // Pre-clean: Strip markdown code blocks aggressively
+  let cleaned = raw
+    .replace(/^```(?:json)?\s*\n?/gm, '')
+    .replace(/\n?```\s*$/gm, '')
+    .trim();
   
+  // Strategy 1: Direct parse
   try {
     return JSON.parse(cleaned);
-  } catch (e1) {
-    // Strategy 2: Fix common LLM JSON issues
-    try {
-      // Remove trailing commas before } or ]
-      let fixed = cleaned.replace(/,\s*([}\]])/g, '$1');
-      // Fix single quotes to double quotes (but not inside strings)
-      fixed = fixed.replace(/'/g, '"');
-      // Remove control characters
-      fixed = fixed.replace(/[\x00-\x1F\x7F]/g, ' ');
-      return JSON.parse(fixed);
-    } catch (e2) {
-      // Strategy 3: Try to extract JSON from surrounding text
-      try {
-        const startIdx = cleaned.search(/[\[{]/);
-        if (startIdx >= 0) {
-          const substr = cleaned.substring(startIdx);
-          // Try parsing from start char, progressively trimming from end
-          try {
-            return JSON.parse(substr);
-          } catch (_) {
-            // Find the last matching bracket and try that substring
-            const openChar = substr[0];
-            const closeChar = openChar === '{' ? '}' : ']';
-            const lastClose = substr.lastIndexOf(closeChar);
-            if (lastClose > 0) {
+  } catch (_) {}
+  
+  // Strategy 2: Fix common LLM JSON issues
+  try {
+    let fixed = cleaned.replace(/,\s*([}\]])/g, '$1');
+    fixed = fixed.replace(/[\x00-\x1F\x7F]/g, ' ');
+    return JSON.parse(fixed);
+  } catch (_) {}
+  
+  // Strategy 3: Extract JSON from surrounding text
+  try {
+    const startIdx = cleaned.search(/[\[{]/);
+    if (startIdx >= 0) {
+      const substr = cleaned.substring(startIdx);
+      try { return JSON.parse(substr); } catch (_) {}
+      const openChar = substr[0];
+      const closeChar = openChar === '{' ? '}' : ']';
+      const lastClose = substr.lastIndexOf(closeChar);
+      if (lastClose > 0) {
+        try { return JSON.parse(substr.substring(0, lastClose + 1)); } catch (_) {}
+      }
+    }
+  } catch (_) {}
+  
+  // Strategy 4: For truncated JSON arrays, extract complete objects
+  try {
+    const startIdx = cleaned.search(/[\[{]/);
+    if (startIdx >= 0) {
+      let text = cleaned.substring(startIdx);
+      // Remove trailing incomplete text after last complete object
+      // Find all complete top-level objects in an array
+      if (text.startsWith('[')) {
+        const objects: any[] = [];
+        let depth = 0;
+        let inString = false;
+        let escape = false;
+        let objStart = -1;
+        
+        for (let i = 1; i < text.length; i++) {
+          const ch = text[i];
+          if (escape) { escape = false; continue; }
+          if (ch === '\\') { escape = true; continue; }
+          if (ch === '"') { inString = !inString; continue; }
+          if (inString) continue;
+          
+          if (ch === '{') {
+            if (depth === 0) objStart = i;
+            depth++;
+          } else if (ch === '}') {
+            depth--;
+            if (depth === 0 && objStart >= 0) {
+              const objStr = text.substring(objStart, i + 1);
               try {
-                return JSON.parse(substr.substring(0, lastClose + 1));
-              } catch (__) { /* fall through */ }
+                objects.push(JSON.parse(objStr));
+              } catch (_) {
+                // Try fixing this individual object
+                try {
+                  const fixed = objStr.replace(/,\s*([}\]])/g, '$1').replace(/[\x00-\x1F\x7F]/g, ' ');
+                  objects.push(JSON.parse(fixed));
+                } catch (__) {}
+              }
+              objStart = -1;
             }
           }
         }
-      } catch (e3) { /* fall through */ }
-      
-      // Strategy 4: For truncated JSON, try to close open brackets
-      {
-        try {
-          let truncated = cleaned;
-          // Count open/close brackets
-          const openBraces = (truncated.match(/{/g) || []).length;
-          const closeBraces = (truncated.match(/}/g) || []).length;
-          const openBrackets = (truncated.match(/\[/g) || []).length;
-          const closeBrackets = (truncated.match(/\]/g) || []).length;
-          
-          // Remove trailing comma if present
-          truncated = truncated.replace(/,\s*$/, '');
-          
-          // Close missing brackets
-          for (let i = 0; i < openBrackets - closeBrackets; i++) truncated += ']';
-          for (let i = 0; i < openBraces - closeBraces; i++) truncated += '}';
-          
-          return JSON.parse(truncated);
-        } catch (e4) {
-          console.warn(`[OnboardingEngine] All JSON parse strategies failed for ${label}:`, raw.substring(0, 200));
-          return null;
+        
+        if (objects.length > 0) {
+          console.log(`[OnboardingEngine] Recovered ${objects.length} complete objects from truncated JSON for ${label}`);
+          return objects as T;
         }
       }
     }
-  }
+  } catch (_) {}
+  
+  // Strategy 5: Close open brackets on truncated JSON
+  try {
+    let truncated = cleaned;
+    const startIdx = truncated.search(/[\[{]/);
+    if (startIdx >= 0) truncated = truncated.substring(startIdx);
+    
+    // Remove trailing incomplete string value
+    truncated = truncated.replace(/,\s*"[^"]*$/, '');
+    truncated = truncated.replace(/"[^"]*$/, '""');
+    truncated = truncated.replace(/,\s*$/, '');
+    
+    const openBraces = (truncated.match(/{/g) || []).length;
+    const closeBraces = (truncated.match(/}/g) || []).length;
+    const openBrackets = (truncated.match(/\[/g) || []).length;
+    const closeBrackets = (truncated.match(/\]/g) || []).length;
+    
+    // Close from innermost to outermost
+    for (let i = 0; i < openBraces - closeBraces; i++) truncated += '}';
+    for (let i = 0; i < openBrackets - closeBrackets; i++) truncated += ']';
+    
+    return JSON.parse(truncated);
+  } catch (_) {}
+  
+  console.warn(`[OnboardingEngine] All JSON parse strategies failed for ${label}:`, raw.substring(0, 200));
   return null;
 }
 
@@ -402,40 +446,14 @@ PERFIL DE EMPRESA:
 - USPs: ${profile.uniqueSellingPoints.join(", ") || "No especificados"}
 - Competidores: ${profile.competitors.join(", ") || "No identificados"}
 
-Genera exactamente 3 campañas de marketing con esta estructura JSON:
-[
-  {
-    "name": "Nombre descriptivo de la campaña",
-    "type": "email|phone|social_media|multi_channel",
-    "channel": "Canal principal (Email, Teléfono, LinkedIn, Multi-canal)",
-    "objective": "Objetivo específico de la campaña",
-    "targetAudience": "Audiencia objetivo específica",
-    "timeline": "Duración (ej: 4 semanas)",
-    "daysFromNow": 0,
-    "durationDays": 28,
-    "tasks": [
-      {
-        "title": "Título de la tarea",
-        "description": "Descripción detallada",
-        "priority": "high|medium|low",
-        "dayOffset": 0,
-        "phase": "Fase 1: Preparación"
-      }
-    ],
-    "drafts": [
-      {
-        "type": "email|sms|call_script",
-        "subject": "Asunto del email o título del guión",
-        "body": "Contenido completo del borrador en español",
-        "recipientType": "Tipo de destinatario (ej: CEO, Director de Compras)"
-      }
-    ]
-  }
-]
+Genera exactamente 3 campañas de marketing. Responde SOLO con un JSON array, SIN markdown, SIN \`\`\`json.
 
-Cada campaña debe tener al menos 4 tareas y 2 borradores (email/SMS/guión de llamada).
-Las campañas deben ser progresivas: la primera empieza inmediatamente, la segunda en 2 semanas, la tercera en 4 semanas.
-Responde SOLO con el JSON array, sin markdown.`;
+Estructura requerida (mantén los textos CORTOS, máximo 50 palabras por campo):
+[{"name":"Nombre","type":"email|phone|social_media|multi_channel","channel":"Canal","objective":"Objetivo breve","targetAudience":"Audiencia","timeline":"4 semanas","daysFromNow":0,"durationDays":28}]
+
+NO incluyas tasks ni drafts en el JSON (se generan después).
+Las campañas deben ser progresivas: primera inmediata (daysFromNow:0), segunda en 14 días, tercera en 28 días.
+Responde ÚNICAMENTE con el JSON array.`;
 
     let campaignResult: string | null = null;
     
@@ -478,19 +496,19 @@ Responde SOLO con el JSON array, sin markdown.`;
         timeline: c.timeline || "4 semanas",
         startDate: new Date(now.getTime() + (c.daysFromNow || 0) * 86400000),
         endDate: new Date(now.getTime() + ((c.daysFromNow || 0) + (c.durationDays || 28)) * 86400000),
-        tasks: (c.tasks || []).map((t: any) => ({
+        tasks: (c.tasks && c.tasks.length > 0) ? c.tasks.map((t: any) => ({
           title: t.title || "Tarea",
           description: t.description || "",
           priority: t.priority || "medium",
           dueDate: new Date(now.getTime() + (t.dayOffset || 0) * 86400000),
           phase: t.phase || "Fase 1",
-        })),
-        drafts: (c.drafts || []).map((d: any) => ({
+        })) : generateDefaultTasks(c.name || profile.companyName, c.daysFromNow || 0),
+        drafts: (c.drafts && c.drafts.length > 0) ? c.drafts.map((d: any) => ({
           type: d.type || "email",
           subject: d.subject || "Sin asunto",
           body: d.body || "",
           recipientType: d.recipientType || "General",
-        })),
+        })) : generateDefaultDrafts(c.name || profile.companyName, profile.companyName, c.type || 'email'),
       }));
     } catch (parseErr) {
       console.warn("[Onboarding] Failed to parse campaign plans:", parseErr);
@@ -500,6 +518,37 @@ Responde SOLO con el JSON array, sin markdown.`;
     console.error("[Onboarding] Campaign generation failed:", err.message);
     return getDefaultCampaignPlans(profile);
   }
+}
+
+/**
+ * Generate default tasks when LLM doesn't include them
+ */
+function generateDefaultTasks(campaignName: string, daysFromNow: number): TaskPlan[] {
+  const now = new Date();
+  const base = daysFromNow * 86400000;
+  return [
+    { title: `Definir audiencia - ${campaignName}`, description: "Segmentar y preparar lista de contactos", priority: "high", dueDate: new Date(now.getTime() + base + 2 * 86400000), phase: "Fase 1: Preparación" },
+    { title: `Crear contenido - ${campaignName}`, description: "Redactar copy y diseñar assets", priority: "high", dueDate: new Date(now.getTime() + base + 5 * 86400000), phase: "Fase 1: Preparación" },
+    { title: `Revisar y aprobar - ${campaignName}`, description: "Validar contenido antes del envío", priority: "medium", dueDate: new Date(now.getTime() + base + 7 * 86400000), phase: "Fase 2: Revisión" },
+    { title: `Ejecutar envío - ${campaignName}`, description: "Lanzar campaña al público objetivo", priority: "critical", dueDate: new Date(now.getTime() + base + 10 * 86400000), phase: "Fase 3: Ejecución" },
+    { title: `Analizar resultados - ${campaignName}`, description: "Medir KPIs y optimizar", priority: "medium", dueDate: new Date(now.getTime() + base + 14 * 86400000), phase: "Fase 4: Análisis" },
+  ];
+}
+
+/**
+ * Generate default drafts when LLM doesn't include them
+ */
+function generateDefaultDrafts(campaignName: string, companyName: string, campaignType: string): DraftPlan[] {
+  const drafts: DraftPlan[] = [
+    { type: "email", subject: `${campaignName} - ${companyName}`, body: `Estimado/a [Nombre],\n\nEn ${companyName} nos complace presentarle nuestra nueva campaña.\n\n¿Le gustaría saber más?\n\nSaludos,\nEquipo ${companyName}`, recipientType: "Director/CEO" },
+  ];
+  if (campaignType === 'phone' || campaignType === 'multi_channel') {
+    drafts.push({ type: "call_script", subject: `Guión - ${campaignName}`, body: `Buenos días, soy [Agente] de ${companyName}. Le llamo respecto a ${campaignName}. ¿Tiene un momento?`, recipientType: "Prospecto" });
+  }
+  if (campaignType === 'multi_channel') {
+    drafts.push({ type: "sms", subject: `SMS - ${campaignName}`, body: `[Nombre], ${companyName} tiene novedades para su empresa. Responda SI para más info.`, recipientType: "Contacto" });
+  }
+  return drafts;
 }
 
 /**
