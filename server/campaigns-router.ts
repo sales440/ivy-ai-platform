@@ -378,4 +378,58 @@ export const campaignsRouter = router({
       return [];
     }
   }),
+
+  // Create a new campaign linked to a company
+  createCampaign: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      clientId: z.string().optional(),
+      companyName: z.string().optional(),
+      type: z.enum(["email", "phone", "social_media", "multi_channel"]),
+      description: z.string().optional(),
+      targetLeads: z.number().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const result = await db.insert(salesCampaigns).values({
+        name: input.name,
+        clientId: input.clientId || null,
+        companyName: input.companyName || null,
+        type: input.type,
+        description: input.description || null,
+        targetLeads: input.targetLeads || 100,
+        status: "draft",
+        createdBy: ctx.user.openId,
+      });
+      
+      return { success: true, id: Number(result[0].insertId) };
+    }),
+
+  // List all campaigns
+  listCampaigns: protectedProcedure.query(async () => {
+    if (isCircuitOpen('listCampaigns')) return [];
+    const db = await getDb();
+    if (!db) return [];
+    try {
+      const result = await db.select().from(salesCampaigns).orderBy(desc(salesCampaigns.createdAt));
+      recordSuccess('listCampaigns');
+      return result;
+    } catch (e) {
+      recordFailure('listCampaigns');
+      console.warn('[listCampaigns] Failed:', (e as any).message);
+      return [];
+    }
+  }),
+
+  // Delete a campaign
+  deleteCampaign: protectedProcedure
+    .input(z.object({ campaignId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.delete(salesCampaigns).where(eq(salesCampaigns.id, input.campaignId));
+      return { success: true };
+    }),
 });

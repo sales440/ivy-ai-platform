@@ -51,12 +51,16 @@ export type InsertClientLead = typeof clientLeads.$inferInsert;
 export const salesCampaigns = mysqlTable("sales_campaigns", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  clientId: varchar("client_id", { length: 32 }), // Reference to ivy_clients.client_id
+  companyName: varchar("company_name", { length: 255 }), // Denormalized for quick access
   type: mysqlEnum("type", ["email", "phone", "social_media", "multi_channel"]).notNull(),
   status: mysqlEnum("status", ["draft", "active", "paused", "completed"]).default("draft").notNull(),
   targetAudience: text("target_audience"),
   content: text("content"),
+  description: text("description"),
   socialPlatform: varchar("social_platform", { length: 50 }),
   metrics: text("metrics"),
+  targetLeads: int("target_leads").default(100),
   startDate: timestamp("start_date"),
   endDate: timestamp("end_date"),
   createdBy: varchar("created_by", { length: 64 }).notNull(),

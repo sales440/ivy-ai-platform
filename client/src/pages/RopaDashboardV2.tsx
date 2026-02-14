@@ -183,8 +183,57 @@ export default function RopaDashboardV2() {
   const [editingCompany, setEditingCompany] = useState<any>(null);
   const [newCompany, setNewCompany] = useState({ name: "", industry: "", contactEmail: "", contactPhone: "" });
   const [newCampaign, setNewCampaign] = useState({ name: "", companyId: "", type: "email", description: "", targetLeads: 100 });
-  const [localCompanies, setLocalCompanies] = useState<any[]>([]);
-  const [localCampaigns, setLocalCampaigns] = useState<any[]>([]);
+  // Companies and campaigns from database (unified with ROPA)
+  const { data: dbCompanies = [], refetch: refetchCompanies } = trpc.clients.list.useQuery();
+  const { data: dbCampaigns = [], refetch: refetchCampaigns } = trpc.campaigns.listCampaigns.useQuery();
+  const createCompanyMutation = trpc.clients.create.useMutation({
+    onSuccess: () => { refetchCompanies(); toast.success('Empresa creada exitosamente'); },
+    onError: (err) => toast.error(`Error al crear empresa: ${err.message}`),
+  });
+  const deleteCompanyMutation = trpc.clients.update.useMutation({
+    onSuccess: () => { refetchCompanies(); toast.success('Empresa eliminada'); },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+  const updateCompanyMutation = trpc.clients.update.useMutation({
+    onSuccess: () => { refetchCompanies(); toast.success('Empresa actualizada'); },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+  const createCampaignMutation = trpc.campaigns.createCampaign.useMutation({
+    onSuccess: () => { refetchCampaigns(); toast.success('Campaña creada exitosamente'); },
+    onError: (err) => toast.error(`Error al crear campaña: ${err.message}`),
+  });
+  const updateCampaignStatusMutation = trpc.campaigns.updateCampaignStatus.useMutation({
+    onSuccess: () => { refetchCampaigns(); },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+  const deleteCampaignMutation = trpc.campaigns.deleteCampaign.useMutation({
+    onSuccess: () => { refetchCampaigns(); toast.success('Campaña eliminada'); },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+
+  // Map DB data to the format the UI expects
+  const localCompanies = dbCompanies.map((c: any) => ({
+    id: c.clientId || String(c.id),
+    name: c.companyName,
+    industry: c.industry || '',
+    contactEmail: c.contactEmail || '',
+    contactPhone: c.contactPhone || '',
+    createdAt: c.createdAt,
+    _dbId: c.id,
+    _clientId: c.clientId,
+  }));
+  const localCampaigns = dbCampaigns.map((c: any) => ({
+    id: String(c.id),
+    name: c.name,
+    companyId: c.clientId || '',
+    companyName: c.companyName || '',
+    type: c.type,
+    status: c.status,
+    description: c.description || '',
+    targetLeads: c.targetLeads || 100,
+    createdAt: c.createdAt,
+    _dbId: c.id,
+  }));
   
   // All drafts for Monitor section - now persisted in database
   const [allDrafts, setAllDrafts] = useState<Draft[]>([]);
@@ -333,17 +382,36 @@ export default function RopaDashboardV2() {
     }
   }, []);
   
-  // Load companies and campaigns from localStorage
+  // Sync localStorage companies to DB on first load (migration)
   useEffect(() => {
-    const savedCompanies = localStorage.getItem('ropaCompanies');
-    const savedCampaigns = localStorage.getItem('ropaCampaigns');
-    if (savedCompanies) {
-      try { setLocalCompanies(JSON.parse(savedCompanies)); } catch (e) {}
-    }
-    if (savedCampaigns) {
-      try { setLocalCampaigns(JSON.parse(savedCampaigns)); } catch (e) {}
-    }
-  }, []);
+    const migrateLocalStorage = async () => {
+      const savedCompanies = localStorage.getItem('ropaCompanies');
+      if (savedCompanies && dbCompanies.length === 0) {
+        try {
+          const companies = JSON.parse(savedCompanies);
+          for (const c of companies) {
+            try {
+              await createCompanyMutation.mutateAsync({
+                companyName: c.name,
+                industry: c.industry || undefined,
+                contactEmail: c.contactEmail || undefined,
+                contactPhone: c.contactPhone || undefined,
+              });
+            } catch (e) {
+              console.warn('[Migration] Failed to migrate company:', c.name, e);
+            }
+          }
+          localStorage.removeItem('ropaCompanies');
+          localStorage.removeItem('ropaCampaigns');
+          console.log('[Migration] Migrated localStorage companies to DB');
+          refetchCompanies();
+        } catch (e) {
+          console.warn('[Migration] Failed to parse localStorage companies:', e);
+        }
+      }
+    };
+    migrateLocalStorage();
+  }, [dbCompanies.length]);
   
   // Load email drafts from database
   const { data: emailDraftsData, refetch: refetchEmailDrafts } = trpc.emailDrafts.getAll.useQuery(
@@ -819,49 +887,28 @@ export default function RopaDashboardV2() {
       // Update local state
       setAllDrafts(prev => prev.map(d => d.id === id ? { ...d, status: 'approved' } : d));
       
-      // Also update localStorage for calendar sync
+      // Create or update campaign in database when draft is approved
       if (draft?.company) {
         const campaignName = draft.campaign || `Email Campaign - ${draft.subject?.substring(0, 30)}`;
         
-        // Update ropaCampaigns localStorage for calendar
-        const existingRopaCampaigns = JSON.parse(localStorage.getItem('ropaCampaigns') || '[]');
-        const existingCampaign = existingRopaCampaigns.find((c: any) => 
-          c.company === draft.company && c.name === campaignName
+        // Check if campaign already exists for this company
+        const existingCampaign = localCampaigns.find((c: any) => 
+          c.companyName === draft.company && c.name === campaignName
         );
         
         if (!existingCampaign) {
-          const newCampaign = {
-            id: `campaign_${Date.now()}`,
+          // Find the company to get clientId
+          const company = localCompanies.find(c => c.name === draft.company);
+          createCampaignMutation.mutate({
             name: campaignName,
-            company: draft.company,
-            companyId: null,
-            status: 'active', // Maps to "En Progreso" in calendar
-            type: draft.type === 'email' ? 'email' : draft.type === 'call' ? 'phone' : 'multi_channel',
-            startDate: new Date().toISOString().split('T')[0],
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            clientId: company?._clientId || undefined,
+            companyName: draft.company,
+            type: (draft.type === 'email' ? 'email' : draft.type === 'call' ? 'phone' : 'multi_channel') as any,
             description: `Campaña creada desde email aprobado en Monitor`,
-            pendingEmails: 1,
-            sentEmails: 0,
-            emailDraftId: id,
-            createdFromDraft: true,
-            createdAt: new Date().toISOString(),
-          };
-          existingRopaCampaigns.push(newCampaign);
-          localStorage.setItem('ropaCampaigns', JSON.stringify(existingRopaCampaigns));
-          
-          // Also update ivy_campaigns for backward compat
-          const ivyCampaigns = JSON.parse(localStorage.getItem('ivy_campaigns') || '[]');
-          ivyCampaigns.push(newCampaign);
-          localStorage.setItem('ivy_campaigns', JSON.stringify(ivyCampaigns));
-          
-          setLocalCampaigns(existingRopaCampaigns);
+          });
           toast.success(`Email aprobado. Campaña "${campaignName}" creada en Campañas y Calendario`);
         } else {
-          const updatedCampaigns = existingRopaCampaigns.map((c: any) => 
-            c.id === existingCampaign.id ? { ...c, status: 'active', pendingEmails: (c.pendingEmails || 0) + 1 } : c
-          );
-          localStorage.setItem('ropaCampaigns', JSON.stringify(updatedCampaigns));
-          setLocalCampaigns(updatedCampaigns);
+          updateCampaignStatusMutation.mutate({ campaignId: existingCampaign._dbId, status: 'active' });
           toast.success(`Email aprobado y agregado a campaña "${existingCampaign.name}"`);
         }
         
@@ -955,9 +1002,8 @@ export default function RopaDashboardV2() {
     refetchInterval: isPageVisible ? 30000 : false,
   });
 
-  const { data: campaigns, refetch: refetchCampaigns } = trpc.campaigns.getCampaigns.useQuery(undefined, {
-    refetchInterval: isPageVisible ? 30000 : false, // Refresh campaigns every 30s
-  });
+  // campaigns data now comes from dbCampaigns/localCampaigns defined above
+  // Legacy getCampaigns query removed - unified with listCampaigns
 
   // Auto-refresh all data when navigating between sections
   useEffect(() => {
@@ -1514,10 +1560,10 @@ export default function RopaDashboardV2() {
                       <div>
                         <p className="text-sm text-slate-400">Campañas Activas</p>
                         <p className="text-2xl font-bold mt-1">
-                          {campaigns?.filter((c) => c.status === "active").length || 0}
+                          {localCampaigns?.filter((c: any) => c.status === "active").length || 0}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          {campaigns?.length || 0} totales
+                          {localCampaigns?.length || 0} totales
                         </p>
                       </div>
                       <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center">
@@ -1914,14 +1960,7 @@ export default function RopaDashboardV2() {
                               </button>
                               <button
                                 onClick={() => {
-                                  const updated = localCompanies.filter(c => c.id !== company.id);
-                                  setLocalCompanies(updated);
-                                  localStorage.setItem('ropaCompanies', JSON.stringify(updated));
-                                  // Also remove campaigns for this company
-                                  const updatedCampaigns = localCampaigns.filter(c => c.companyId !== company.id);
-                                  setLocalCampaigns(updatedCampaigns);
-                                  localStorage.setItem('ropaCampaigns', JSON.stringify(updatedCampaigns));
-                                  toast.success('Empresa eliminada');
+                                  deleteCompanyMutation.mutate({ clientId: company._clientId || company.id, status: 'inactive' });
                                 }}
                                 className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
                               >
@@ -2041,11 +2080,7 @@ export default function RopaDashboardV2() {
                                     {campaign.status === 'active' ? (
                                       <button
                                         onClick={() => {
-                                          const updated = localCampaigns.map(c => 
-                                            c.id === campaign.id ? { ...c, status: 'paused' } : c
-                                          );
-                                          setLocalCampaigns(updated);
-                                          localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                                          updateCampaignStatusMutation.mutate({ campaignId: campaign._dbId, status: 'paused' });
                                           toast.success('Campaña pausada');
                                         }}
                                         className="p-1.5 rounded-lg hover:bg-yellow-500/20 text-slate-400 hover:text-yellow-400 transition-colors"
@@ -2056,11 +2091,7 @@ export default function RopaDashboardV2() {
                                     ) : campaign.status !== 'completed' ? (
                                       <button
                                         onClick={() => {
-                                          const updated = localCampaigns.map(c => 
-                                            c.id === campaign.id ? { ...c, status: 'active' } : c
-                                          );
-                                          setLocalCampaigns(updated);
-                                          localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                                          updateCampaignStatusMutation.mutate({ campaignId: campaign._dbId, status: 'active' });
                                           toast.success('Campaña activada');
                                         }}
                                         className="p-1.5 rounded-lg hover:bg-green-500/20 text-slate-400 hover:text-green-400 transition-colors"
@@ -2071,10 +2102,7 @@ export default function RopaDashboardV2() {
                                     ) : null}
                                     <button
                                       onClick={() => {
-                                        const updated = localCampaigns.filter(c => c.id !== campaign.id);
-                                        setLocalCampaigns(updated);
-                                        localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
-                                        toast.success('Campaña eliminada');
+                                        deleteCampaignMutation.mutate({ campaignId: campaign._dbId });
                                       }}
                                       className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
                                       title="Eliminar"
@@ -3450,18 +3478,10 @@ export default function RopaDashboardV2() {
                   size="sm"
                   className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => {
-                    const updated = localCompanies.filter(c => c.id !== companyToDelete.id);
-                    setLocalCompanies(updated);
-                    localStorage.setItem('ropaCompanies', JSON.stringify(updated));
-                    // Also remove campaigns for this company
-                    const updatedCampaigns = localCampaigns.filter(c => c.companyId !== companyToDelete.id);
-                    setLocalCampaigns(updatedCampaigns);
-                    localStorage.setItem('ropaCampaigns', JSON.stringify(updatedCampaigns));
+                    deleteCompanyMutation.mutate({ clientId: companyToDelete._clientId || companyToDelete.id, status: 'inactive' });
                     toast.success(`Empresa "${companyToDelete.name}" eliminada correctamente`);
                     setCompanyToDelete(null);
-                    if (updated.length === 0) {
-                      setShowDeleteCompanyDialog(false);
-                    }
+                    setShowDeleteCompanyDialog(false);
                   }}
                 >
                   Sí, Eliminar
@@ -3532,14 +3552,10 @@ export default function RopaDashboardV2() {
                   size="sm"
                   className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => {
-                    const updated = localCampaigns.filter(c => c.id !== campaignToDelete.id);
-                    setLocalCampaigns(updated);
-                    localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                    deleteCampaignMutation.mutate({ campaignId: campaignToDelete._dbId });
                     toast.success(`Campaña "${campaignToDelete.name}" eliminada correctamente`);
                     setCampaignToDelete(null);
-                    if (updated.length === 0) {
-                      setShowDeleteCampaignDialog(false);
-                    }
+                    setShowDeleteCampaignDialog(false);
                   }}
                 >
                   Sí, Eliminar
@@ -3633,17 +3649,14 @@ export default function RopaDashboardV2() {
                   toast.error('El nombre de la empresa es requerido');
                   return;
                 }
-                const company = {
-                  id: Date.now().toString(),
-                  ...newCompany,
-                  createdAt: new Date().toISOString(),
-                };
-                const updated = [...localCompanies, company];
-                setLocalCompanies(updated);
-                localStorage.setItem('ropaCompanies', JSON.stringify(updated));
+                createCompanyMutation.mutate({
+                  companyName: newCompany.name,
+                  industry: newCompany.industry || undefined,
+                  contactEmail: newCompany.contactEmail || undefined,
+                  contactPhone: newCompany.contactPhone || undefined,
+                });
                 setShowNewCompanyDialog(false);
                 setNewCompany({ name: "", industry: "", contactEmail: "", contactPhone: "" });
-                toast.success('Empresa creada exitosamente');
               }}
               className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
             >
@@ -3731,15 +3744,16 @@ export default function RopaDashboardV2() {
                   toast.error('El nombre de la empresa es requerido');
                   return;
                 }
-                const updated = localCompanies.map(c => 
-                  c.id === editingCompany?.id ? { ...c, ...newCompany } : c
-                );
-                setLocalCompanies(updated);
-                localStorage.setItem('ropaCompanies', JSON.stringify(updated));
+                updateCompanyMutation.mutate({
+                  clientId: editingCompany?._clientId || editingCompany?.id,
+                  companyName: newCompany.name,
+                  industry: newCompany.industry || undefined,
+                  contactEmail: newCompany.contactEmail || undefined,
+                  contactPhone: newCompany.contactPhone || undefined,
+                });
                 setShowEditCompanyDialog(false);
                 setEditingCompany(null);
                 setNewCompany({ name: "", industry: "", contactEmail: "", contactPhone: "" });
-                toast.success('Empresa actualizada');
               }}
               className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
             >
@@ -3849,19 +3863,17 @@ export default function RopaDashboardV2() {
                   toast.error('Selecciona una empresa');
                   return;
                 }
-                const campaign = {
-                  id: Date.now().toString(),
-                  ...newCampaign,
-                  status: 'draft',
-                  currentLeads: 0,
-                  createdAt: new Date().toISOString(),
-                };
-                const updated = [...localCampaigns, campaign];
-                setLocalCampaigns(updated);
-                localStorage.setItem('ropaCampaigns', JSON.stringify(updated));
+                const selectedCompany = localCompanies.find(c => c.id === newCampaign.companyId);
+                createCampaignMutation.mutate({
+                  name: newCampaign.name,
+                  clientId: selectedCompany?._clientId || newCampaign.companyId,
+                  companyName: selectedCompany?.name || '',
+                  type: newCampaign.type as any,
+                  description: newCampaign.description || undefined,
+                  targetLeads: newCampaign.targetLeads || 100,
+                });
                 setShowNewCampaignDialog(false);
                 setNewCampaign({ name: "", companyId: "", type: "email", description: "", targetLeads: 100 });
-                toast.success('Campaña creada exitosamente');
               }}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
             >

@@ -1,20 +1,64 @@
-import { eq, desc, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import { InsertUser, users, emailDrafts, InsertEmailDraft, EmailDraft, salesCampaigns } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: mysql.Pool | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+// Create a connection pool with auto-reconnect for reliability
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Create a pool instead of single connection to handle ECONNRESET
+      _pool = mysql.createPool({
+        uri: process.env.DATABASE_URL,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000,
+        // Auto-reconnect on connection loss
+        maxIdle: 5,
+        idleTimeout: 60000,
+      });
+      _db = drizzle(_pool);
+      console.log('[Database] Connection pool created successfully');
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      _pool = null;
     }
   }
+  
+  // Test connection health and reconnect if needed
+  if (_db && _pool) {
+    try {
+      await _pool.query('SELECT 1');
+    } catch (error) {
+      console.warn('[Database] Connection lost, reconnecting...', (error as any).message);
+      try {
+        _pool = mysql.createPool({
+          uri: process.env.DATABASE_URL,
+          waitForConnections: true,
+          connectionLimit: 10,
+          queueLimit: 0,
+          enableKeepAlive: true,
+          keepAliveInitialDelay: 10000,
+          maxIdle: 5,
+          idleTimeout: 60000,
+        });
+        _db = drizzle(_pool);
+        console.log('[Database] Reconnected successfully');
+      } catch (reconnectError) {
+        console.error('[Database] Reconnection failed:', reconnectError);
+        _db = null;
+        _pool = null;
+      }
+    }
+  }
+  
   return _db;
 }
 
