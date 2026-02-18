@@ -845,3 +845,14 @@
 ## Phase 64: Fix Email Translation & Monitor Display
 - [x] ROPA cannot translate emails to English - add translation capability
 - [x] ROPA cannot display emails in Monitor page - fix email draft rendering
+
+## Phase 65: Upgrade Email Draft Quality
+- [ ] Replace hardcoded email templates with LLM-generated personalized content per company/industry
+- [ ] Create professional HTML email templates with modern marketing design
+- [ ] Generate compelling subject lines, value propositions, benefits, CTAs tailored to each company
+- [ ] Push to GitHub for Railway deployment
+
+## Phase 66: Fix Company/Campaign Deletion Bug
+- [x] Companies don't disappear from UI after deletion - added real DELETE procedure
+- [ ] Campaigns with N/A company name need cleanup
+- [x] Delete button on company cards and campaign rows now uses real DELETE + auto-refresh

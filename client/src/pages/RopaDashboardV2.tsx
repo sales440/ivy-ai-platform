@@ -184,9 +184,13 @@ export default function RopaDashboardV2() {
     onSuccess: () => { refetchCompanies(); toast.success('Empresa creada exitosamente'); },
     onError: (err) => toast.error(`Error al crear empresa: ${err.message}`),
   });
-  const deleteCompanyMutation = trpc.clients.update.useMutation({
-    onSuccess: () => { refetchCompanies(); toast.success('Empresa eliminada'); },
-    onError: (err) => toast.error(`Error: ${err.message}`),
+  const deleteCompanyMutation = trpc.clients.delete.useMutation({
+    onSuccess: () => { refetchCompanies(); refetchCampaigns(); toast.success('Empresa y sus campañas eliminadas permanentemente'); },
+    onError: (err) => toast.error(`Error al eliminar: ${err.message}`),
+  });
+  const deleteCampaignMutation = trpc.campaigns.deleteCampaign.useMutation({
+    onSuccess: () => { refetchCampaigns(); toast.success('Campaña eliminada'); },
+    onError: (err) => toast.error(`Error al eliminar campaña: ${err.message}`),
   });
   const updateCompanyMutation = trpc.clients.update.useMutation({
     onSuccess: () => { refetchCompanies(); toast.success('Empresa actualizada'); },
@@ -200,11 +204,6 @@ export default function RopaDashboardV2() {
     onSuccess: () => { refetchCampaigns(); },
     onError: (err) => toast.error(`Error: ${err.message}`),
   });
-  const deleteCampaignMutation = trpc.campaigns.deleteCampaign.useMutation({
-    onSuccess: () => { refetchCampaigns(); toast.success('Campaña eliminada'); },
-    onError: (err) => toast.error(`Error: ${err.message}`),
-  });
-
   // ROPA Configuration - load from database
   const { data: dbConfig, isLoading: configLoading } = trpc.ropaConfig.getConfig.useQuery();
   const saveConfigMutation = trpc.ropaConfig.saveConfig.useMutation({
@@ -1979,7 +1978,9 @@ export default function RopaDashboardV2() {
                               </button>
                               <button
                                 onClick={() => {
-                                  deleteCompanyMutation.mutate({ clientId: company._clientId || company.id, status: 'inactive' });
+                                  if (confirm(`¿Eliminar permanentemente "${company.name}" y todas sus campañas?`)) {
+                                    deleteCompanyMutation.mutate({ clientId: company._clientId || company.id });
+                                  }
                                 }}
                                 className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
                               >
@@ -2120,12 +2121,14 @@ export default function RopaDashboardV2() {
                                       </button>
                                     ) : null}
                                     <button
-                                      onClick={() => {
-                                        deleteCampaignMutation.mutate({ campaignId: campaign._dbId });
-                                      }}
-                                      className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
-                                      title="Eliminar"
-                                    >
+                                       onClick={() => {
+                                         if (confirm(`¿Eliminar permanentemente la campaña "${campaign.name}"?`)) {
+                                           deleteCampaignMutation.mutate({ campaignId: campaign._dbId });
+                                         }
+                                       }}
+                                       className="p-1.5 rounded-lg hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors"
+                                       title="Eliminar"
+                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
@@ -3539,8 +3542,7 @@ export default function RopaDashboardV2() {
                   size="sm"
                   className="bg-red-600 hover:bg-red-700 text-white"
                   onClick={() => {
-                    deleteCompanyMutation.mutate({ clientId: companyToDelete._clientId || companyToDelete.id, status: 'inactive' });
-                    toast.success(`Empresa "${companyToDelete.name}" eliminada correctamente`);
+                    deleteCompanyMutation.mutate({ clientId: companyToDelete._clientId || companyToDelete.id });
                     setCompanyToDelete(null);
                     setShowDeleteCompanyDialog(false);
                   }}

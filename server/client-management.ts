@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { eq } from "drizzle-orm";
-import { ivyClients, clientFiles, googleDriveTokens } from "../drizzle/schema";
+import { eq, sql } from "drizzle-orm";
+import { ivyClients, clientFiles, googleDriveTokens, salesCampaigns } from "../drizzle/schema";
 import { getOAuth2Client, uploadFileToDrive } from "./google-drive";
 
 // Generar ID único para cliente: IVY-YYYY-XXXX
@@ -185,6 +185,42 @@ export const clientManagementRouter = router({
         .where(eq(ivyClients.clientId, clientId));
       
       return { success: true };
+    }),
+
+  // Eliminar cliente (DELETE real de la base de datos)
+  delete: protectedProcedure
+    .input(z.object({ clientId: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      // Delete associated campaigns first
+      try {
+        await db.delete(salesCampaigns).where(eq(salesCampaigns.clientId, input.clientId));
+      } catch (e) {
+        // Some campaigns may not have clientId, continue
+        try {
+          // Also try by company name
+          const [client] = await db.select().from(ivyClients).where(eq(ivyClients.clientId, input.clientId)).limit(1);
+          if (client?.companyName) {
+            await db.execute(sql`DELETE FROM sales_campaigns WHERE company_name = ${client.companyName}`);
+          }
+        } catch (e2) { /* ignore */ }
+      }
+      
+      // Delete associated email drafts
+      try {
+        const [client] = await db.select().from(ivyClients).where(eq(ivyClients.clientId, input.clientId)).limit(1);
+        if (client?.companyName) {
+          await db.execute(sql`DELETE FROM email_drafts WHERE company = ${client.companyName}`);
+        }
+      } catch (e) { /* ignore */ }
+      
+      // Delete the client itself
+      await db.delete(ivyClients).where(eq(ivyClients.clientId, input.clientId));
+      
+      console.log(`[Client Management] Deleted client ${input.clientId}`);
+      return { success: true, message: `Cliente ${input.clientId} eliminado permanentemente` };
     }),
 
   // Subir archivo para cliente
