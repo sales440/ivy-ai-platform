@@ -355,6 +355,82 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     return { response, intent, command, platformActionExecuted, platformResult };
   }
 
+  // ============ 4B. EMAIL TRANSLATION ============
+  const translateVerbs = ['traduce', 'traducir', 'translate', 'traduzca', 'tradúceme', 'traduceme', 'pasa a', 'convierte a', 'cambia a', 'pon en'];
+  const languageKeywords = ['inglés', 'ingles', 'english', 'francés', 'frances', 'french', 'alemán', 'aleman', 'german', 'italiano', 'italian', 'portugués', 'portugues', 'portuguese', 'chino', 'chinese', 'vasco', 'euskera', 'basque', 'español', 'spanish'];
+  
+  if (matchesAny(msg, translateVerbs) && (matchesAny(msg, emailNouns) || matchesAny(msg, languageKeywords))) {
+    intent = 'translate_email';
+    
+    // Detect target language
+    let targetLanguage = 'English';
+    for (const lang of languageKeywords) {
+      if (msg.includes(lang)) {
+        targetLanguage = lang;
+        break;
+      }
+    }
+    
+    // Detect company name
+    const companyPatterns = [
+      /(?:para|de|empresa|compañía|cliente)\s+([A-Z][A-Za-z0-9\s]+)/i,
+      /([A-Z][A-Z0-9]+)(?:\s|$)/,
+    ];
+    let companyName = '';
+    for (const pattern of companyPatterns) {
+      const match = cleanMessage.match(pattern);
+      if (match && match[1] && !languageKeywords.includes(match[1].toLowerCase().trim())) {
+        companyName = match[1].trim();
+        break;
+      }
+    }
+    
+    try {
+      if (companyName) {
+        // Translate all pending drafts for this company
+        const draftsResult = await ropaPlatformTools.listEmailDrafts({ company: companyName });
+        const pendingDrafts = (draftsResult?.drafts || []).filter((d: any) => d.status === 'pending');
+        
+        if (pendingDrafts.length === 0) {
+          response = `No encontré borradores pendientes para ${companyName}. Primero genera emails con "genera emails para ${companyName}" y luego tradúcelos.`;
+        } else {
+          let translated = 0;
+          for (const draft of pendingDrafts) {
+            const draftId = draft.draftId || draft.draft_id;
+            if (draftId) {
+              await ropaPlatformTools.translateEmailDraft({ draftId, targetLanguage, saveAsNew: true });
+              translated++;
+            }
+          }
+          response = `He traducido ${translated} email(s) de ${companyName} a ${targetLanguage}. Los nuevos borradores traducidos están en Monitor como pendientes para tu revisión.`;
+          platformActionExecuted = true;
+        }
+      } else {
+        // No company specified - translate most recent pending drafts
+        const draftsResult = await ropaPlatformTools.listEmailDrafts({ status: 'pending' });
+        const pendingDrafts = (draftsResult?.drafts || []).slice(0, 5);
+        
+        if (pendingDrafts.length === 0) {
+          response = `No hay borradores pendientes para traducir. Genera emails primero y luego tradúcelos.`;
+        } else {
+          let translated = 0;
+          for (const draft of pendingDrafts) {
+            const draftId = draft.draftId || draft.draft_id;
+            if (draftId) {
+              await ropaPlatformTools.translateEmailDraft({ draftId, targetLanguage, saveAsNew: true });
+              translated++;
+            }
+          }
+          response = `He traducido ${translated} email(s) a ${targetLanguage}. Los borradores traducidos están en Monitor.`;
+          platformActionExecuted = true;
+        }
+      }
+    } catch (err: any) {
+      response = `Error al traducir emails: ${err.message}. Verifica que existan borradores e intenta de nuevo.`;
+    }
+    return { response, intent, command, platformActionExecuted, platformResult };
+  }
+
   // ============ 5. COMPANY CREATION (expanded) ============
   const createVerbs = ['crea', 'añade', 'registra', 'agrega', 'agregar', 'dar de alta', 'alta', 'incorpora', 'incluye', 'mete', 'pon'];
   const companyNouns = ['empresa', 'compañía', 'compania', 'cliente', 'company', 'negocio', 'organización', 'organizacion', 'firma'];

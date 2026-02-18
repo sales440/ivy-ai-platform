@@ -771,6 +771,235 @@ export const emailDraftTools = {
   },
 
   /**
+   * Translate an email draft to another language using LLM
+   */
+  async translateEmailDraft(params: {
+    draftId: string;
+    targetLanguage: string;
+    saveAsNew?: boolean;
+  }) {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Get the original draft
+    const drafts = await safeQuery(
+      'getDraftForTranslation',
+      async () => db.select().from(emailDrafts).where(eq(emailDrafts.draftId, params.draftId)),
+      async () => {
+        const [rows] = await db.execute(sql`SELECT * FROM email_drafts WHERE draft_id = ${params.draftId}`);
+        return rows as any[];
+      }
+    );
+
+    const original = (drafts as any[])?.[0];
+    if (!original) throw new Error(`Draft ${params.draftId} not found`);
+
+    const langMap: Record<string, string> = {
+      en: 'English', es: 'Spanish', fr: 'French', de: 'German',
+      it: 'Italian', pt: 'Portuguese', zh: 'Chinese', eu: 'Basque',
+      english: 'English', spanish: 'Spanish', french: 'French',
+      german: 'German', italian: 'Italian', portuguese: 'Portuguese',
+      chinese: 'Chinese', basque: 'Basque',
+      inglés: 'English', español: 'Spanish', francés: 'French',
+      alemán: 'German', italiano: 'Italian', portugués: 'Portuguese',
+      chino: 'Chinese', vasco: 'Basque', euskera: 'Basque',
+    };
+    const targetLang = langMap[params.targetLanguage.toLowerCase()] || params.targetLanguage;
+
+    const prompt = `Translate the following email to ${targetLang}. Keep the HTML formatting intact. Only translate the text content, not the HTML tags. Return ONLY the translated content, no explanations.\n\nSubject: ${original.subject}\n\nBody:\n${original.body}`;
+
+    let translatedSubject = original.subject;
+    let translatedBody = original.body;
+
+    try {
+      // Try Gemini first
+      if (isGeminiConfigured()) {
+        const geminiResult = await invokeGemini([
+          { role: 'user', content: prompt }
+        ]);
+        if (geminiResult) {
+          const parts = geminiResult.split('\n\n');
+          if (parts.length >= 2) {
+            translatedSubject = parts[0].replace(/^Subject:\s*/i, '').replace(/^Asunto:\s*/i, '').trim();
+            translatedBody = parts.slice(1).join('\n\n').replace(/^Body:\s*/i, '').replace(/^Cuerpo:\s*/i, '').trim();
+          } else {
+            translatedBody = geminiResult;
+          }
+        }
+      } else {
+        const llmResult = await invokeLLM({
+          messages: [
+            { role: 'system', content: `You are a professional translator. Translate to ${targetLang}. Keep HTML formatting. Return translated subject on first line, then blank line, then translated body.` },
+            { role: 'user', content: prompt },
+          ],
+        });
+        const content = llmResult?.choices?.[0]?.message?.content || '';
+        if (content) {
+          const parts = content.split('\n\n');
+          if (parts.length >= 2) {
+            translatedSubject = parts[0].replace(/^Subject:\s*/i, '').replace(/^Asunto:\s*/i, '').trim();
+            translatedBody = parts.slice(1).join('\n\n').replace(/^Body:\s*/i, '').replace(/^Cuerpo:\s*/i, '').trim();
+          } else {
+            translatedBody = content;
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn('[Platform] Translation LLM failed:', err.message);
+      throw new Error(`Translation failed: ${err.message}`);
+    }
+
+    if (params.saveAsNew) {
+      // Save as a new draft
+      const newDraftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await safeMutation(
+        'insertTranslatedDraft',
+        async () => db.insert(emailDrafts).values({
+          draftId: newDraftId,
+          company: original.company,
+          campaign: original.campaign,
+          subject: translatedSubject,
+          body: translatedBody,
+          recipientEmail: original.recipientEmail || original.recipient_email,
+          recipientName: original.recipientName || original.recipient_name,
+          status: 'pending',
+          createdBy: 'ROPA',
+        }),
+        async () => db.execute(sql`INSERT INTO email_drafts 
+          (draft_id, company, campaign, subject, body, recipient_email, recipient_name, status, created_by)
+          VALUES (${newDraftId}, ${original.company}, ${original.campaign || null}, ${translatedSubject}, 
+                  ${translatedBody}, ${original.recipientEmail || original.recipient_email || null}, 
+                  ${original.recipientName || original.recipient_name || null}, 'pending', 'ROPA')`)
+      );
+
+      return {
+        success: true,
+        originalDraftId: params.draftId,
+        newDraftId,
+        targetLanguage: targetLang,
+        subject: translatedSubject,
+        message: `Email traducido a ${targetLang} y guardado como nuevo borrador (${newDraftId}). Revísalo en Monitor.`,
+      };
+    } else {
+      // Update the existing draft
+      await safeMutation(
+        'updateTranslatedDraft',
+        async () => db.update(emailDrafts)
+          .set({ subject: translatedSubject, body: translatedBody })
+          .where(eq(emailDrafts.draftId, params.draftId)),
+        async () => db.execute(sql`UPDATE email_drafts SET subject = ${translatedSubject}, body = ${translatedBody} WHERE draft_id = ${params.draftId}`)
+      );
+
+      return {
+        success: true,
+        draftId: params.draftId,
+        targetLanguage: targetLang,
+        subject: translatedSubject,
+        message: `Email traducido a ${targetLang} y actualizado en Monitor.`,
+      };
+    }
+  },
+
+  /**
+   * Generate email drafts in a specific language
+   */
+  async generateEmailDraftsInLanguage(params: {
+    company: string;
+    campaign: string;
+    count: number;
+    language: string;
+    emailType: "cold_outreach" | "follow_up" | "promotional" | "newsletter";
+    targetAudience?: string;
+  }) {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    const langMap: Record<string, string> = {
+      en: 'English', es: 'Spanish', fr: 'French', de: 'German',
+      english: 'English', spanish: 'Spanish', inglés: 'English', español: 'Spanish',
+    };
+    const targetLang = langMap[params.language.toLowerCase()] || params.language;
+
+    const typeDescriptions: Record<string, string> = {
+      cold_outreach: 'cold outreach / prospecting',
+      follow_up: 'follow-up after initial contact',
+      promotional: 'promotional offer',
+      newsletter: 'newsletter / company update',
+    };
+
+    const prompt = `Generate ${params.count} professional ${typeDescriptions[params.emailType]} email(s) in ${targetLang} for the company "${params.company}", campaign "${params.campaign}".${params.targetAudience ? ` Target audience: ${params.targetAudience}.` : ''}
+
+For each email, provide:
+SUBJECT: [subject line]
+BODY: [HTML body with <p> tags]
+---
+
+Make them professional, persuasive, and ready to send. Use proper ${targetLang} business language.`;
+
+    let llmContent = '';
+    try {
+      if (isGeminiConfigured()) {
+        llmContent = await invokeGemini([{ role: 'user', content: prompt }]) || '';
+      }
+      if (!llmContent) {
+        const result = await invokeLLM({
+          messages: [
+            { role: 'system', content: `You are a professional email copywriter. Write in ${targetLang}.` },
+            { role: 'user', content: prompt },
+          ],
+        });
+        llmContent = result?.choices?.[0]?.message?.content || '';
+      }
+    } catch (err: any) {
+      console.warn('[Platform] LLM email generation failed:', err.message);
+    }
+
+    const drafts = [];
+    if (llmContent) {
+      // Parse LLM output
+      const emailBlocks = llmContent.split('---').filter(b => b.trim());
+      for (let i = 0; i < Math.min(emailBlocks.length, params.count); i++) {
+        const block = emailBlocks[i];
+        const subjectMatch = block.match(/SUBJECT:\s*(.+)/i);
+        const bodyMatch = block.match(/BODY:\s*([\s\S]+)/i);
+        const subject = subjectMatch?.[1]?.trim() || `${params.campaign} - ${params.company} (${i + 1})`;
+        const body = bodyMatch?.[1]?.trim() || `<p>${block.trim()}</p>`;
+        const draftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        await safeMutation(
+          `insertLangDraft_${i}`,
+          async () => db.insert(emailDrafts).values({
+            draftId, company: params.company, campaign: params.campaign,
+            subject, body, status: 'pending', createdBy: 'ROPA',
+          }),
+          async () => db.execute(sql`INSERT INTO email_drafts 
+            (draft_id, company, campaign, subject, body, status, created_by)
+            VALUES (${draftId}, ${params.company}, ${params.campaign}, ${subject}, ${body}, 'pending', 'ROPA')`)
+        );
+        drafts.push({ draftId, subject });
+      }
+    }
+
+    // If LLM didn't generate enough, fill with templates
+    if (drafts.length < params.count) {
+      const remaining = params.count - drafts.length;
+      const result = await emailDraftTools.generateCampaignEmailDrafts({
+        company: params.company, campaign: params.campaign,
+        count: remaining, emailType: params.emailType, targetAudience: params.targetAudience,
+      });
+      drafts.push(...(result.drafts || []));
+    }
+
+    return {
+      success: true,
+      count: drafts.length,
+      language: targetLang,
+      drafts,
+      message: `${drafts.length} borradores de email en ${targetLang} creados para ${params.company}. Revísalos en Monitor.`,
+    };
+  },
+
+  /**
    * Generate multiple email drafts for a campaign
    */
   async generateCampaignEmailDrafts(params: {
@@ -1363,6 +1592,8 @@ export const ropaPlatformTools = {
   rejectEmailDraft: emailDraftTools.rejectEmailDraft,
   deleteEmailDraft: emailDraftTools.deleteEmailDraft,
   generateCampaignEmailDrafts: emailDraftTools.generateCampaignEmailDrafts,
+  translateEmailDraft: emailDraftTools.translateEmailDraft,
+  generateEmailDraftsInLanguage: emailDraftTools.generateEmailDraftsInLanguage,
   
   // Lead Management
   createLead: leadManagementTools.createLead,
@@ -1393,7 +1624,7 @@ export const ropaPlatformTools = {
 export const platformToolCategories = {
   "Company Management": ["createCompany", "listCompanies", "updateCompany", "deleteCompany"],
   "Campaign Management": ["createCampaign", "listCampaigns", "updateCampaignStatus", "moveCampaignInCalendar", "deleteCampaign"],
-  "Email Drafts (Monitor)": ["createEmailDraft", "listEmailDrafts", "approveEmailDraft", "rejectEmailDraft", "deleteEmailDraft", "generateCampaignEmailDrafts"],
+  "Email Drafts (Monitor)": ["createEmailDraft", "listEmailDrafts", "approveEmailDraft", "rejectEmailDraft", "deleteEmailDraft", "generateCampaignEmailDrafts", "translateEmailDraft", "generateEmailDraftsInLanguage"],
   "Lead Management": ["createLead", "listLeads", "updateLeadStatus"],
   "Reporting & Analytics": ["generateKPIReport", "generateROIReport", "getCompanyDetails"],
   "Company Filtering": ["listTasksForCompany", "listCampaignsForCompany", "listEmailDraftsForCompany", "listAlertsForCompany", "getCompanyFullOverview", "getAllCompanySummaries", "listLeadsForCompany", "listFilesForCompany"],

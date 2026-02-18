@@ -841,3 +841,7 @@
 - [x] Create n8n workflow with webhook trigger for new company creation
 - [x] Wire backend to call n8n webhook when a company is created in Ivy.AI
 - [x] Test end-to-end flow and push to GitHub
+
+## Phase 64: Fix Email Translation & Monitor Display
+- [x] ROPA cannot translate emails to English - add translation capability
+- [x] ROPA cannot display emails in Monitor page - fix email draft rendering
