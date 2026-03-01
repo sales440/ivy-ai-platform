@@ -7,11 +7,13 @@ import { ropaTools } from "./ropa-tools";
 import { createRopaTask, updateRopaTaskStatus, getRopaConfig, setRopaConfig, createRopaLog, createRopaAlert } from "./ropa-db";
 import { initializeFileManagerAgent, FileManager } from "./file-manager-agent";
 import { onboardAllExistingCompanies, startCampaignMonitoringCycle, stopCampaignMonitoringCycle } from "./ropa-onboarding-engine";
+import { analyzeCampaigns } from "./ropa-super-agent";
 
 let maintenanceInterval: NodeJS.Timeout | null = null;
 let healthCheckInterval: NodeJS.Timeout | null = null;
 let marketIntelligenceInterval: NodeJS.Timeout | null = null;
 let fileSyncInterval: NodeJS.Timeout | null = null;
+let superAgentAnalysisInterval: NodeJS.Timeout | null = null;
 
 /**
  * Initialize ROPA autonomous operations
@@ -50,6 +52,7 @@ export async function initializeROPA() {
   startMarketIntelligenceCycle();
   startFileSyncCycle(); // New: Sync files to Google Drive
   startCampaignMonitoringCycle(); // New: 24/7 campaign progress monitoring
+  // Note: startSuperAgentAnalysisCycle is called after function declaration below
 
   // Onboard existing companies that haven't been processed yet (delayed to avoid startup overload)
   setTimeout(async () => {
@@ -62,6 +65,8 @@ export async function initializeROPA() {
     }
   }, 30000); // Wait 30 seconds after startup
 
+  // Start LLM-powered analysis cycle (called here to ensure function is defined)
+  setTimeout(() => startSuperAgentAnalysisCycle(), 0);
   console.log("[ROPA] \u2705 Autonomous operations started");
 }
 
@@ -371,6 +376,85 @@ export async function getROPAStatus() {
     running: healthCheckInterval !== null,
     uptime: configData?.startedAt ? Date.now() - new Date(configData.startedAt).getTime() : 0,
   };
+}
+
+/**
+ * Super Agent Analysis Cycle - Every 30 minutes
+ * Uses LLM to analyze all campaigns and generate actionable recommendations
+ */
+function startSuperAgentAnalysisCycle() {
+  if (superAgentAnalysisInterval) clearInterval(superAgentAnalysisInterval);
+  
+  // Run immediately on start (after 2 min delay to let DB settle)
+  setTimeout(async () => {
+    try {
+      await runSuperAgentAnalysis();
+    } catch (err: any) {
+      console.warn('[ROPA SuperAgent] Initial analysis failed:', err.message);
+    }
+  }, 2 * 60 * 1000);
+  
+  // Then every 30 minutes
+  superAgentAnalysisInterval = setInterval(async () => {
+    try {
+      await runSuperAgentAnalysis();
+    } catch (err: any) {
+      console.warn('[ROPA SuperAgent] Periodic analysis failed:', err.message);
+    }
+  }, 30 * 60 * 1000);
+  
+  console.log('[ROPA] 🧠 Super Agent analysis cycle started (every 30 min)');
+}
+
+async function runSuperAgentAnalysis() {
+  console.log('[ROPA SuperAgent] 🔍 Running autonomous campaign analysis...');
+  try {
+    const analyses = await analyzeCampaigns();
+    
+    if (!analyses || analyses.length === 0) {
+      console.log('[ROPA SuperAgent] No campaigns to analyze');
+      return;
+    }
+    
+    // Create alerts for critical and high urgency campaigns
+    let criticalCount = 0;
+    let highCount = 0;
+    
+    for (const analysis of analyses) {
+      if (analysis.urgency === 'critical') {
+        criticalCount++;
+        await createRopaAlert({
+          severity: 'critical',
+          title: `[ROPA IA] Campaña crítica: ${analysis.campaignName}`,
+          message: `${analysis.recommendation}\n\nPróxima acción: ${analysis.nextAction}`,
+          resolved: false,
+          metadata: { company: analysis.company, campaign: analysis.campaignName, urgency: analysis.urgency }
+        });
+      } else if (analysis.urgency === 'high') {
+        highCount++;
+        await createRopaAlert({
+          severity: 'warning',
+          title: `[ROPA IA] Atención requerida: ${analysis.campaignName}`,
+          message: `${analysis.recommendation}\n\nPróxima acción: ${analysis.nextAction}`,
+          resolved: false,
+          metadata: { company: analysis.company, campaign: analysis.campaignName, urgency: analysis.urgency }
+        });
+      }
+    }
+    
+    await createRopaLog({
+      level: 'info',
+      message: `Super Agent analysis complete: ${analyses.length} campaigns analyzed, ${criticalCount} critical, ${highCount} high priority`
+    });
+    
+    console.log(`[ROPA SuperAgent] ✅ Analysis complete: ${analyses.length} campaigns, ${criticalCount} critical, ${highCount} high`);
+  } catch (err: any) {
+    console.error('[ROPA SuperAgent] Analysis error:', err.message);
+    await createRopaLog({
+      level: 'error',
+      message: `Super Agent analysis failed: ${err.message}`
+    });
+  }
 }
 
 // Export for use in startup

@@ -474,3 +474,60 @@ ${config?.maxEmailsPerDay ? `LÍMITES: Máximo ${config.maxEmailsPerDay} emails/
 
 Eres ROPA. Eres el motor de ventas de Ivy.AI. Generas resultados, no excusas.`;
 }
+
+/**
+ * POST /api/ropa/super-chat
+ * Non-streaming endpoint for n8n and external integrations
+ * Returns a JSON response with the Super Agent's analysis
+ */
+ropaChatStreamRouter.post("/api/ropa/super-chat", async (req: Request, res: Response) => {
+  try {
+    const { message, userId = 'system', context = {} } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'message required' });
+    }
+
+    // Use the Super Agent for intelligent response
+    const { ropaIntelligentResponse } = await import("./ropa-super-agent");
+    const result = await ropaIntelligentResponse({
+      message,
+      companies: context.companies || [],
+      campaigns: context.campaigns || [],
+      drafts: context.drafts || { total: 0, pending: 0, approved: 0 },
+      tasks: context.tasks || { total: 0, completed: 0, pending: 0 },
+      config: context.config || {},
+      conversationHistory: context.history || []
+    });
+
+    return res.json({
+      success: true,
+      response: result.response,
+      command: result.navigationCommand || null,
+      actions: result.actionsExecuted || [],
+      dataChanged: result.dataChanged || false,
+      source: 'ivy-super-agent-v3',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('[ROPA super-chat] Error:', error.message);
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+      response: 'Error procesando la solicitud. Intenta de nuevo.'
+    });
+  }
+});
+
+/**
+ * GET /api/ropa/health
+ * Quick health check endpoint for n8n and monitoring
+ */
+ropaChatStreamRouter.get("/api/ropa/health", async (_req: Request, res: Response) => {
+  try {
+    const { getROPAHealthStatus } = await import("./ropa-super-agent");
+    const health = await getROPAHealthStatus();
+    return res.json(health);
+  } catch (error: any) {
+    return res.status(500).json({ status: 'error', error: error.message });
+  }
+});

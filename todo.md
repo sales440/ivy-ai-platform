@@ -885,4 +885,10 @@
 - [x] Agregar GenerateCampaignButton en cada tarjeta de empresa
 - [x] Mejorar ropa-brain.ts para extraer industria y tipo de email del mensaje
 - [x] Actualizar ropa-chat-stream.ts para usar Super Agent como TIER 1 principal
-- [ ] Crear checkpoint del Super Meta-Agent
+- [x] Crear checkpoint del Super Meta-Agent
+
+## Phase NEXT: Ejecutar 3 pasos recomendados + diagnóstico completo
+- [x] Paso 1: Limpiar DB y generar campañas LLM reales para PET LIFE 360 y FAGOR (6 emails HTML profesionales)
+- [x] Paso 2: Webhook ropa-chat activado en n8n + ROPA Brain v3 actualizado con inteligencia real
+- [x] Paso 3: Loop autónomo activo - análisis LLM cada 30 min + alertas automáticas
+- [x] Diagnóstico honesto: qué falta para que ROPA genere ventas reales (pasos 4-10+)
