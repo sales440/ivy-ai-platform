@@ -900,8 +900,8 @@
 - [x] Configurar FAGOR: jcrobledo@fagor-automation.com
 - [x] Actualizar email-send-service para usar email de empresa como remitente
 - [x] Implementar auto-provisionamiento de workflow n8n al crear empresa
-- [ ] Commit completo a GitHub con token ghp_
-- [ ] Push y deploy en Railway upbeat-creativity-production
+- [x] Commit completo a GitHub con token ghp_ (sales440/ivy-ai-platform)
+- [x] Push y deploy en Railway upbeat-creativity-production (deployment activo)
 
 ## Phase OUTLOOK: Emails Outlook por empresa
 - [x] PET LIFE 360: senderEmail = sales@rpcommercegroupllc.com (Outlook)
@@ -915,4 +915,4 @@
 - [x] Agregar campo n8nWebhookUrl en tabla companies
 - [x] Actualizar email-send-service para rutear al webhook de la empresa
 - [x] Crear n8n-workflow-provisioner.ts - auto-crea workflow al registrar nueva empresa
-- [ ] Commit a GitHub y deploy en Railway
+- [x] Commit a GitHub y deploy en Railway (bb8a265 - ROPA autonomous company creation)
