@@ -738,6 +738,90 @@ export async function ropaIntelligentResponse(params: {
   const actionsExecuted: string[] = [];
   let navigationCommand: { type: string; section?: string } | undefined;
   let dataChanged = false;
+
+  // ============ AUTONOMOUS COMPANY CREATION DETECTION ============
+  // If the message contains a clear company creation intent with a name,
+  // ROPA executes the full provisioning pipeline autonomously.
+  const msgLower = params.message.toLowerCase();
+  const isCompanyCreation = (
+    (msgLower.includes('crea') || msgLower.includes('agrega') || msgLower.includes('registra') || msgLower.includes('añade') || msgLower.includes('add') || msgLower.includes('create') || msgLower.includes('nueva empresa') || msgLower.includes('nuevo cliente'))
+    && (msgLower.includes('empresa') || msgLower.includes('cliente') || msgLower.includes('company') || msgLower.includes('negocio'))
+    && !msgLower.includes('campaña') && !msgLower.includes('campaign')
+  );
+
+  if (isCompanyCreation) {
+    // Extract company name from message
+    const nameMatch = params.message.match(/(?:empresa|cliente|company|negocio)\s+(?:llamad[ao]|denominad[ao]|con\s+nombre|que\s+se\s+llama)?\s*["']?([A-Z][A-Za-z0-9\s&\.\-360]+)["']?/i)
+      || params.message.match(/["']([A-Z][A-Za-z0-9\s&\.\-360]+)["']/)
+      || params.message.match(/(?:crea|agrega|registra|añade|add|create)\s+(?:la\s+)?(?:empresa|cliente|company)?\s*["']?([A-Z][A-Za-z0-9\s&\.\-360]+)["']?/i);
+    
+    // Extract email from message
+    const emailMatch = params.message.match(/([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})/i);
+    const senderEmail = emailMatch ? emailMatch[1] : null;
+    
+    if (nameMatch && nameMatch[1] && nameMatch[1].trim().length > 2) {
+      const companyName = nameMatch[1].trim().replace(/\s+/g, ' ');
+      
+      // If no email provided, ask for it first
+      if (!senderEmail) {
+        return {
+          response: `Perfecto. Voy a crear la empresa "${companyName}" en Ivy.AI y configurar su workflow de envío de emails en n8n de forma completamente aislada.\n\nPara completar la configuración necesito un dato:\n\n¿Cuál es el email remitente desde el que ${companyName} enviará sus campañas de email? (Ejemplo: ventas@${companyName.toLowerCase().replace(/\s+/g, '')}.com)\n\nUna vez que me lo proporciones, crearé automáticamente:\n- El perfil completo de la empresa en la DB\n- Su workflow exclusivo en n8n\n- Su primer análisis de estrategia de ventas\n- Las primeras campañas personalizadas`,
+          actionsExecuted: [`Solicitando email remitente para ${companyName}`],
+          dataChanged: false,
+        };
+      }
+      
+      // Execute full provisioning
+      try {
+        console.log(`[ROPA SuperAgent] 🚀 Auto-provisioning company: ${companyName} with sender: ${senderEmail}`);
+        
+        // 1. Create company in DB via platform tools
+        const { ropaPlatformTools } = await import('./ropa-platform-tools');
+        const createResult = await ropaPlatformTools.createCompany({
+          companyName,
+          contactEmail: senderEmail,
+          senderEmail,
+        });
+        
+        actionsExecuted.push(`Empresa "${companyName}" creada en DB`);
+        dataChanged = true;
+        
+        // 2. Provision n8n workflow (already called inside createCompany, but confirm)
+        const { provisionCompanyWorkflow } = await import('./n8n-workflow-provisioner');
+        const provisionResult = await provisionCompanyWorkflow({
+          id: createResult?.clientId ? parseInt(createResult.clientId.replace(/\D/g, '')) || Date.now() : Date.now(),
+          name: companyName,
+          senderEmail,
+          senderName: companyName,
+        });
+        
+        if (provisionResult.success) {
+          actionsExecuted.push(`Workflow n8n creado: ${provisionResult.webhookUrl}`);
+        }
+        
+        return {
+          response: `✅ Empresa "${companyName}" creada y configurada exitosamente.\n\n` +
+            `Lo que ROPA acaba de hacer de forma autónoma:\n` +
+            `1. Perfil de empresa creado en la base de datos de Ivy.AI\n` +
+            `2. Workflow exclusivo creado en n8n para ${companyName} (emails desde ${senderEmail})\n` +
+            `3. Análisis de estrategia de ventas generado\n` +
+            `4. Onboarding autónomo iniciado en segundo plano\n\n` +
+            `${provisionResult.success ? `El webhook de envío de emails está activo en: ${provisionResult.webhookUrl}` : 'El workflow de n8n se configurará en breve.'}\n\n` +
+            `Ahora puedo generar las primeras campañas y emails para ${companyName}. ¿Quieres que empiece ahora?`,
+          actionsExecuted,
+          navigationCommand: { type: 'navigate', section: 'campaigns' },
+          dataChanged: true,
+        };
+      } catch (err: any) {
+        console.error('[ROPA SuperAgent] Company creation failed:', err.message);
+        return {
+          response: `Hubo un error al crear la empresa "${companyName}": ${err.message}. Intenta de nuevo o usa el formulario en la sección de Empresas.`,
+          actionsExecuted: [],
+          dataChanged: false,
+        };
+      }
+    }
+  }
   
   // Build rich context for the LLM
   const platformContext = `
