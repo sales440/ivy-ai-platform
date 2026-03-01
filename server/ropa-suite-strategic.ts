@@ -198,7 +198,7 @@ Contexto de la plataforma:
         ]
       });
 
-      const content = response.choices[0].message.content || '{}';
+      const content = (typeof response.choices[0].message.content === 'string' ? response.choices[0].message.content : JSON.stringify(response.choices[0].message.content)) || '{}';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const plan: TacticalPlan = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
@@ -281,7 +281,7 @@ Duración: ${params.duration || '3 meses'}`
         ]
       });
 
-      const content = response.choices[0].message.content || '{}';
+      const content = (typeof response.choices[0].message.content === 'string' ? response.choices[0].message.content : JSON.stringify(response.choices[0].message.content)) || '{}';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const allocation: ResourceAllocation = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
@@ -350,7 +350,7 @@ ${params.plan ? `Plan estratégico: ${params.plan.phases?.map(p => p.name).join(
         ]
       });
 
-      const content = response.choices[0].message.content || '{}';
+      const content = (typeof response.choices[0].message.content === 'string' ? response.choices[0].message.content : JSON.stringify(response.choices[0].message.content)) || '{}';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const calendar: CampaignCalendar = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
@@ -401,7 +401,7 @@ Objetivo: ${params.objective || 'Maximizar conversiones'}`
         ]
       });
 
-      const content = response.choices[0].message.content || '{}';
+      const content = (typeof response.choices[0].message.content === 'string' ? response.choices[0].message.content : JSON.stringify(response.choices[0].message.content)) || '{}';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const optimization: BudgetOptimization = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
@@ -541,7 +541,7 @@ Datos de la plataforma:
         ]
       });
 
-      const report = response.choices[0].message.content || 'Error generando informe';
+      const report = (typeof response.choices[0].message.content === 'string' ? response.choices[0].message.content : 'Error generando informe');
       return { success: true, report };
     } catch (error: any) {
       return { success: false, report: '', error: error.message };
@@ -664,7 +664,7 @@ Producto/Servicio: ${params.product || 'Servicios B2B'}`
         ]
       });
 
-      const content = response.choices[0].message.content || '{}';
+      const content = (typeof response.choices[0].message.content === 'string' ? response.choices[0].message.content : JSON.stringify(response.choices[0].message.content)) || '{}';
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 

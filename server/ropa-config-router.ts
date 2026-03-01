@@ -26,7 +26,7 @@ const ropaConfigSchema = z.object({
     dailyReports: z.boolean().default(true),
     campaignMilestones: z.boolean().default(true),
     newLeads: z.boolean().default(false),
-  }).default({}),
+  }).default({ criticalAlerts: true, dailyReports: true, campaignMilestones: true, newLeads: false }),
 });
 
 export const ropaConfigRouter = router({

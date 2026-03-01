@@ -396,7 +396,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
         } else {
           let translated = 0;
           for (const draft of pendingDrafts) {
-            const draftId = draft.draftId || draft.draft_id;
+            const draftId = (draft as any).draftId || (draft as any).draft_id;
             if (draftId) {
               await ropaPlatformTools.translateEmailDraft({ draftId, targetLanguage, saveAsNew: true });
               translated++;
@@ -415,7 +415,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
         } else {
           let translated = 0;
           for (const draft of pendingDrafts) {
-            const draftId = draft.draftId || draft.draft_id;
+            const draftId = (draft as any).draftId || (draft as any).draft_id;
             if (draftId) {
               await ropaPlatformTools.translateEmailDraft({ draftId, targetLanguage, saveAsNew: true });
               translated++;
@@ -756,7 +756,7 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
         const found = companies?.companies?.find((c: any) => 
           (c.companyName || c.company_name || '').toLowerCase().includes(companyName.toLowerCase())
         );
-        const clientId = found?.clientId || found?.client_id || `CLI-${Date.now()}`;
+        const clientId = (found as any)?.clientId || (found as any)?.client_id || `CLI-${Date.now()}`;
         
         runFullOnboarding(clientId, companyName).then(result => {
           console.log(`[ROPA] Onboarding completed for ${companyName}: ${result.campaignsCreated} campaigns`);

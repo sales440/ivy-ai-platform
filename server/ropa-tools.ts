@@ -1378,28 +1378,29 @@ export const driveTools = {
 
 export const predictiveTools = {
   async analyze_email_sentiment(params: { emailContent: string; senderEmail?: string }) {
-    return predictiveIntelligenceTools.analyzeEmailSentiment(params);
+    return predictiveIntelligenceTools.analyzeSentiment({ emailContent: params.emailContent });
   },
   async classify_lead_auto(params: { leadEmail: string; interactions: Array<{ type: string; content: string; date: string }> }) {
-    return predictiveIntelligenceTools.classifyLeadAutomatically(params);
+    const lastInteraction = params.interactions?.[params.interactions.length - 1];
+    return predictiveIntelligenceTools.autoClassifyAndRoute({ emailContent: lastInteraction?.content || '', senderEmail: params.leadEmail });
   },
   async predict_conversion(params: { leadEmail: string; companyName: string; interactions: number; daysSinceFirst: number; channelsUsed: string[] }) {
-    return predictiveIntelligenceTools.predictConversion(params);
+    return predictiveIntelligenceTools.predictLeadConversion({ leadName: params.leadEmail, companyName: params.companyName, touchpoints: params.interactions });
   },
   async predict_campaign_success(params: { campaignName: string; companyName: string; channel: string; audienceSize: number; subject?: string; body?: string }) {
     return predictiveIntelligenceTools.predictCampaignSuccess(params);
   },
   async batch_classify_leads(params: { leads: Array<{ email: string; name: string; company: string; lastInteraction: string; responseContent?: string }> }) {
-    return predictiveIntelligenceTools.batchClassifyLeads(params);
+    return predictiveIntelligenceTools.batchAnalyzeSentiment({ emails: params.leads.map((l, i) => ({ id: l.email || `lead-${i}`, content: l.responseContent || l.lastInteraction, sender: l.name, company: l.company })) });
   },
   async get_predictive_insights(params?: { companyName?: string }) {
-    return predictiveIntelligenceTools.getPredictiveInsights(params);
+    return predictiveIntelligenceTools.getPredictiveDashboard(params);
   },
   async analyze_response_patterns(params: { companyName: string; responses: Array<{ date: string; type: string; sentiment: string; converted: boolean }> }) {
-    return predictiveIntelligenceTools.analyzeResponsePatterns(params);
+    return predictiveIntelligenceTools.getPredictiveDashboard({ companyName: params.companyName });
   },
   async calculate_lead_score(params: { leadEmail: string; companyName: string; data: { emailOpens: number; linkClicks: number; replies: number; meetingsBooked: number; websiteVisits: number; daysInPipeline: number } }) {
-    return predictiveIntelligenceTools.calculateLeadScore(params);
+    return predictiveIntelligenceTools.predictLeadConversion({ leadName: params.leadEmail, companyName: params.companyName, touchpoints: params.data.replies, emailOpens: params.data.emailOpens, linkClicks: params.data.linkClicks, meetingsScheduled: params.data.meetingsBooked });
   },
 };
 

@@ -4,7 +4,8 @@ import mysql from "mysql2/promise";
 import { InsertUser, users, emailDrafts, InsertEmailDraft, EmailDraft, salesCampaigns } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
-let _db: ReturnType<typeof drizzle> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _db: any | null = null;
 let _pool: mysql.Pool | null = null;
 
 // Create a connection pool with auto-reconnect for reliability

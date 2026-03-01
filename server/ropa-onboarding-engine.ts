@@ -356,7 +356,7 @@ Responde SOLO con el JSON, sin markdown ni texto adicional.`;
           { role: "user", content: analysisPrompt },
         ],
       });
-      analysisResult = llmResult?.choices?.[0]?.message?.content || null;
+      analysisResult = (typeof llmResult?.choices?.[0]?.message?.content === 'string' ? llmResult?.choices?.[0]?.message?.content : null);
     }
 
     let profile: CompanyProfile = {
@@ -471,7 +471,7 @@ Responde ÚNICAMENTE con el JSON array.`;
           { role: "user", content: campaignPrompt },
         ],
       });
-      campaignResult = llmResult?.choices?.[0]?.message?.content || null;
+      campaignResult = (typeof llmResult?.choices?.[0]?.message?.content === 'string' ? llmResult?.choices?.[0]?.message?.content : null);
     }
 
     if (!campaignResult) {
@@ -821,7 +821,7 @@ Responde SOLO con el JSON array.`;
           { role: "user", content: alertPrompt },
         ],
       });
-      alertResult = llmResult?.choices?.[0]?.message?.content || null;
+      alertResult = (typeof llmResult?.choices?.[0]?.message?.content === 'string' ? llmResult?.choices?.[0]?.message?.content : null);
     }
 
     if (alertResult) {

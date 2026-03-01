@@ -2081,17 +2081,17 @@ export default function RopaDashboardV2() {
                                   </Badge>
                                 </td>
                                 <td className="py-3 px-4">
-                                  <span className="text-white">{campaign.currentLeads || 0}</span>
+                                  <span className="text-white">{(campaign as any).currentLeads || 0}</span>
                                   <span className="text-slate-500">/{campaign.targetLeads}</span>
                                 </td>
                                 <td className="py-3 px-4 w-32">
                                   <div className="flex items-center gap-2">
                                     <Progress 
-                                      value={((campaign.currentLeads || 0) / campaign.targetLeads) * 100} 
+                                      value={(((campaign as any).currentLeads || 0) / campaign.targetLeads) * 100} 
                                       className="h-2 flex-1" 
                                     />
                                     <span className="text-xs text-slate-400">
-                                      {Math.round(((campaign.currentLeads || 0) / campaign.targetLeads) * 100)}%
+                                      {Math.round((((campaign as any).currentLeads || 0) / campaign.targetLeads) * 100)}%
                                     </span>
                                   </div>
                                 </td>

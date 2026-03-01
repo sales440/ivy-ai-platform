@@ -201,7 +201,7 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
             { role: 'user', content: strategyPrompt },
           ],
         });
-        strategyResult = llmResult?.choices?.[0]?.message?.content || null;
+        strategyResult = (typeof llmResult?.choices?.[0]?.message?.content === 'string' ? llmResult?.choices?.[0]?.message?.content : null);
       }
       salesStrategy = strategyResult;
 
@@ -833,7 +833,7 @@ export const emailDraftTools = {
             { role: 'user', content: prompt },
           ],
         });
-        const content = llmResult?.choices?.[0]?.message?.content || '';
+        const content = (typeof llmResult?.choices?.[0]?.message?.content === 'string' ? llmResult?.choices?.[0]?.message?.content : '') || '';
         if (content) {
           const parts = content.split('\n\n');
           if (parts.length >= 2) {
@@ -948,7 +948,7 @@ Make them professional, persuasive, and ready to send. Use proper ${targetLang} 
             { role: 'user', content: prompt },
           ],
         });
-        llmContent = result?.choices?.[0]?.message?.content || '';
+        llmContent = (typeof result?.choices?.[0]?.message?.content === 'string' ? result?.choices?.[0]?.message?.content : '') || '';
       }
     } catch (err: any) {
       console.warn('[Platform] LLM email generation failed:', err.message);
@@ -1320,8 +1320,8 @@ export const reportingTools = {
     const drafts = await safeQuery('roi_drafts', async () => db.select().from(emailDrafts), async () => { const [r] = await db.execute(sql`SELECT * FROM email_drafts`); return r as any[]; }) || [];
     const leads = await safeQuery('roi_leads', async () => db.select().from(clientLeads), async () => { const [r] = await db.execute(sql`SELECT * FROM client_leads`); return r as any[]; }) || [];
 
-    const draftsArr = (drafts || []) as any[];
-    const leadsArr = (leads || []) as any[];
+    const draftsArr = (drafts || []) as unknown as any[];
+    const leadsArr = (leads || []) as unknown as any[];
 
     const emailCostPerUnit = 0.05;
     const leadValueEstimate = 500;

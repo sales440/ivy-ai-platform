@@ -856,3 +856,17 @@
 - [x] Companies don't disappear from UI after deletion - added real DELETE procedure
 - [ ] Campaigns with N/A company name need cleanup
 - [x] Delete button on company cards and campaign rows now uses real DELETE + auto-refresh
+
+## Phase 67: Complete App to 100% Functionality
+- [ ] Email drafts: Generate fully written content with LLM (not templates with "...")
+- [ ] Email drafts: Include company logo in email HTML
+- [ ] Email drafts: Professional marketing design with sales-oriented copy
+- [ ] Email drafts: Subject lines must be compelling, not generic
+- [ ] Audit all pages: Dashboard, Campañas, Archivos, Monitor, Tareas, Alertas, Salud, Calendario, Configuración
+- [ ] Fix all broken/placeholder buttons across all pages
+- [ ] Fix Monitor page: display email drafts properly with full content
+- [ ] Fix Archivos page: upload/download functionality
+- [ ] Fix Tareas page: create/complete/delete tasks
+- [ ] Fix Alertas page: clear alerts, mark as read
+- [ ] Fix Calendario page: create/edit events
+- [ ] Fix Salud page: real health metrics
