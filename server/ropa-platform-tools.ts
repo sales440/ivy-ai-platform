@@ -241,6 +241,28 @@ Responde en texto plano sin markdown ni asteriscos. Máximo 500 palabras.`;
       console.warn('[Platform] Google Drive folder creation failed:', driveError.message);
     }
 
+    // === AUTO-PROVISION n8n WORKFLOW for this company ===
+    // Each company gets its own isolated n8n workflow with dedicated webhook
+    let n8nProvisionResult: any = null;
+    try {
+      const { provisionCompanyWorkflow } = await import('./n8n-workflow-provisioner');
+      // Use contactEmail as senderEmail, or a default
+      const senderEmail = params.contactEmail || `sales@${(params.website || 'ivybyai.com').replace(/^https?:\/\//, '').split('/')[0]}`;
+      n8nProvisionResult = await provisionCompanyWorkflow({
+        id: clientCount + 1, // approximate id for the new record
+        name: params.companyName,
+        senderEmail,
+        senderName: params.companyName,
+      });
+      if (n8nProvisionResult.success) {
+        console.log(`[Platform] ✅ n8n workflow provisioned for ${params.companyName}: ${n8nProvisionResult.webhookUrl}`);
+      } else {
+        console.warn(`[Platform] ⚠️ n8n workflow provisioning failed for ${params.companyName}: ${n8nProvisionResult.error}`);
+      }
+    } catch (provErr: any) {
+      console.warn('[Platform] n8n workflow provisioning error:', provErr.message);
+    }
+
     // === NOTIFY n8n: New Company Created ===
     try {
       const { syncToN8n } = await import('./ropa-n8n-service');

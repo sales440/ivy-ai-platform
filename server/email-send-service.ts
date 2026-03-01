@@ -12,8 +12,38 @@ import { getApprovedEmailDrafts, markDraftsAsSent, getEmailDraftById, createCamp
 import { generateBrandedEmailHtml, getBrandProfile } from "./brand-firewall";
 import type { EmailDraft } from "../drizzle/schema";
 
-// n8n Mass Email Webhook URL
-const N8N_MASS_EMAIL_WEBHOOK = process.env.N8N_MASS_EMAIL_WEBHOOK || 'https://sales440.app.n8n.cloud/webhook/send-mass-email';
+// Default n8n Mass Email Webhook URL (FAGOR fallback)
+const N8N_MASS_EMAIL_WEBHOOK_DEFAULT = process.env.N8N_MASS_EMAIL_WEBHOOK || 'https://sales440.app.n8n.cloud/webhook/send-mass-email';
+
+/**
+ * Get the company-specific n8n webhook URL from DB
+ * Each company has its own isolated n8n workflow - NO cross-contamination
+ */
+async function getCompanyWebhookUrl(companyName: string): Promise<{ webhookUrl: string; senderEmail: string; senderName: string }> {
+  try {
+    const mysql2 = await import('mysql2/promise');
+    const conn = await mysql2.createConnection(process.env.DATABASE_URL!);
+    const [rows] = await conn.execute(
+      'SELECT n8nWebhookUrl, senderEmail, senderName FROM companies WHERE name = ? OR name LIKE ? LIMIT 1',
+      [companyName, '%' + companyName.split(' ')[0] + '%']
+    ) as any[];
+    await conn.end();
+    if (rows.length > 0 && rows[0].n8nWebhookUrl) {
+      return {
+        webhookUrl: rows[0].n8nWebhookUrl,
+        senderEmail: rows[0].senderEmail || process.env.ROPA_FROM_EMAIL || 'ropa@ivybyai.com',
+        senderName: rows[0].senderName || companyName
+      };
+    }
+  } catch (e) {
+    console.warn('[EmailSend] Could not fetch company webhook URL:', e);
+  }
+  return {
+    webhookUrl: N8N_MASS_EMAIL_WEBHOOK_DEFAULT,
+    senderEmail: process.env.ROPA_FROM_EMAIL || 'ropa@ivybyai.com',
+    senderName: companyName
+  };
+}
 
 /**
  * Generate company-specific HTML email template using Brand Firewall
@@ -122,19 +152,21 @@ export async function sendApprovedEmailsViaN8n(draftIds: string[]): Promise<{
       });
     }
 
-    // Get company-specific contact info for fallback recipient
-    let fallbackEmail = 'info@ivybyai.com';
-    try {
-      const brand = await getBrandProfile(draft.company);
-      if (brand.email) fallbackEmail = brand.email;
-    } catch (e) { /* use default */ }
+    // Get company-specific n8n webhook URL and sender email from DB
+    // Each company has its OWN isolated n8n workflow - NO cross-contamination
+    const companyConfig = await getCompanyWebhookUrl(draft.company);
+    const { webhookUrl: companyWebhookUrl, senderEmail, senderName } = companyConfig;
+    const replyToEmail = senderEmail;
+    const fallbackEmail = senderEmail;
+    
+    console.log(`[EmailSend] Routing ${draft.company} → ${companyWebhookUrl} (from: ${senderEmail})`);
 
     try {
-      // Call n8n webhook to send via Outlook
+      // Call company-specific n8n webhook (ISOLATED per company)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(N8N_MASS_EMAIL_WEBHOOK, {
+      const response = await fetch(companyWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,12 +174,16 @@ export async function sendApprovedEmailsViaN8n(draftIds: string[]): Promise<{
         body: JSON.stringify({
           to: draft.recipientEmail || fallbackEmail,
           subject: draft.subject,
-          htmlBody: htmlContent,
+          body: htmlContent,          // n8n workflow uses 'body' field
+          htmlBody: htmlContent,      // also send as htmlBody for compatibility
           textBody: draft.body.replace(/<[^>]*>/g, ''),
+          from: senderEmail,          // company-specific sender
+          fromName: senderName,
+          replyTo: replyToEmail,
           company: draft.company,
           campaign: draft.campaign,
           draftId: draft.draftId,
-          callbackUrl: `${process.env.RAILWAY_PUBLIC_DOMAIN || process.env.VITE_APP_URL || ''}/api/email-callback`,
+          callbackUrl: `${process.env.RAILWAY_PUBLIC_DOMAIN || process.env.VITE_APP_URL || 'https://upbeat-creativity-production-27ac.up.railway.app'}/api/email-callback`,
         }),
         signal: controller.signal,
       });

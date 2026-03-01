@@ -261,6 +261,16 @@ export const ivyClients = mysqlTable("ivy_clients", {
   address: text("address"),
   website: varchar("website", { length: 255 }),
   logo: varchar("logo_url", { length: 500 }),
+  // Email Sender Configuration (per-company) - ROPA uses this to send campaigns
+  senderEmail: varchar("sender_email", { length: 320 }), // Email desde el que ROPA envía campañas
+  senderName: varchar("sender_name", { length: 255 }), // Nombre del remitente
+  replyToEmail: varchar("reply_to_email", { length: 320 }), // Email de respuesta
+  // Company Profile for ROPA Intelligence
+  icp: text("icp"), // Ideal Customer Profile (JSON)
+  buyerPersona: text("buyer_persona"), // Buyer Persona description
+  competitors: text("competitors"), // Competitors list
+  valueProposition: text("value_proposition"), // Unique value proposition
+  targetMarket: text("target_market"), // Target market description
   // Google Drive Integration
   googleDriveFolderId: varchar("google_drive_folder_id", { length: 100 }), // ID de carpeta raíz en Google Drive
   googleDriveStructure: text("google_drive_structure"), // JSON con IDs de subcarpetas
