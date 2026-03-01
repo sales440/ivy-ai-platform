@@ -1106,6 +1106,86 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
     .query(async ({ input }) => {
       return await ropaNavigationTools.getCommandHistory(input);
     }),
+
+  // ============ SUPER AGENT - Campaign Analysis & Strategy ============
+
+  /**
+   * Analyze all active campaigns and return actionable recommendations
+   */
+  analyzeCampaigns: publicProcedure.query(async () => {
+    const { analyzeCampaigns } = await import('./ropa-super-agent');
+    return await analyzeCampaigns();
+  }),
+
+  /**
+   * Generate a complete campaign strategy for a company
+   */
+  generateCampaignStrategy: publicProcedure
+    .input(z.object({
+      companyId: z.string(),
+      companyName: z.string(),
+      industry: z.string().optional(),
+      contactName: z.string().optional(),
+      contactEmail: z.string().optional(),
+      website: z.string().optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { orchestrateCampaignStrategy } = await import('./ropa-super-agent');
+      const strategy = await orchestrateCampaignStrategy({
+        id: input.companyId,
+        name: input.companyName,
+        industry: input.industry || 'General',
+        contactName: input.contactName,
+        contactEmail: input.contactEmail,
+        website: input.website,
+        notes: input.notes,
+      });
+      return { success: true, strategy };
+    }),
+
+  /**
+   * Generate a full campaign with professional LLM-written emails
+   */
+  generateFullCampaign: publicProcedure
+    .input(z.object({
+      companyId: z.string(),
+      companyName: z.string(),
+      industry: z.string().optional(),
+      campaignName: z.string(),
+      campaignType: z.enum(['cold_outreach', 'follow_up', 'promotional', 'newsletter']).default('cold_outreach'),
+      emailCount: z.number().min(1).max(5).default(3),
+    }))
+    .mutation(async ({ input }) => {
+      const { generateFullCampaignWithEmails } = await import('./ropa-super-agent');
+      const result = await generateFullCampaignWithEmails({
+        company: {
+          id: input.companyId,
+          name: input.companyName,
+          industry: input.industry || 'General',
+        },
+        campaignName: input.campaignName,
+        campaignType: input.campaignType,
+        emailCount: input.emailCount,
+      });
+      return result;
+    }),
+
+  /**
+   * Get ROPA system health status
+   */
+  getSuperAgentHealth: publicProcedure.query(async () => {
+    const { getROPAHealthStatus } = await import('./ropa-super-agent');
+    return await getROPAHealthStatus();
+  }),
+
+  /**
+   * Get full platform context (companies, campaigns, stats)
+   */
+  getPlatformContext: publicProcedure.query(async () => {
+    const { buildAppContext } = await import('./ropa-n8n-service');
+    return await buildAppContext();
+  }),
 });
 
 export type RopaRouter = typeof ropaRouter;

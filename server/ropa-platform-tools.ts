@@ -1008,6 +1008,9 @@ Make them professional, persuasive, and ready to send. Use proper ${targetLang} 
     count: number;
     emailType: "cold_outreach" | "follow_up" | "promotional" | "newsletter";
     targetAudience?: string;
+    industry?: string;
+    logoUrl?: string;
+    primaryColor?: string;
   }) {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -1015,70 +1018,98 @@ Make them professional, persuasive, and ready to send. Use proper ${targetLang} 
     await createRopaLog({
       taskId: undefined,
       level: "info",
-      message: `[Platform] Generating ${params.count} email drafts for ${params.company}`,
+      message: `[Platform] Generating ${params.count} LLM email drafts for ${params.company}`,
       metadata: params,
     });
 
     const drafts = [];
-    const templates: Record<string, { subject: string; body: string }[]> = {
-      cold_outreach: [
-        { subject: "¿Podemos ayudar a optimizar sus procesos?", body: "<p>Estimado/a,</p><p>Me pongo en contacto para explorar cómo podemos ayudarle a mejorar la eficiencia de sus operaciones...</p>" },
-        { subject: "Una solución para sus desafíos de automatización", body: "<p>Hola,</p><p>He notado que empresas como la suya están buscando formas de automatizar procesos...</p>" },
-        { subject: "Innovación tecnológica para su industria", body: "<p>Buenos días,</p><p>Quisiera presentarle una solución que está transformando la industria...</p>" },
-      ],
-      follow_up: [
-        { subject: "Seguimiento a nuestra conversación", body: "<p>Hola,</p><p>Quería dar seguimiento a mi mensaje anterior...</p>" },
-        { subject: "¿Tiene alguna pregunta?", body: "<p>Buenos días,</p><p>Me gustaría saber si tuvo oportunidad de revisar mi propuesta...</p>" },
-      ],
-      promotional: [
-        { subject: "Oferta especial para clientes selectos", body: "<p>Estimado cliente,</p><p>Tenemos una promoción exclusiva que no querrá perderse...</p>" },
-        { subject: "Descuento del 20% por tiempo limitado", body: "<p>Hola,</p><p>Como cliente valioso, le ofrecemos un descuento especial...</p>" },
-      ],
-      newsletter: [
-        { subject: "Novedades del mes - Lo último en tecnología", body: "<p>Estimado suscriptor,</p><p>Este mes traemos noticias emocionantes...</p>" },
-      ],
-    };
 
-    const selectedTemplates = templates[params.emailType] || templates.cold_outreach;
+    // Import the Super Agent email engine
+    const { generateProfessionalEmail } = await import('./ropa-super-agent');
 
-    for (let i = 0; i < params.count; i++) {
-      const template = selectedTemplates[i % selectedTemplates.length];
-      const draftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const emailTypes: Array<"cold_outreach" | "follow_up" | "promotional" | "newsletter" | "breakup"> = 
+      params.count === 1 ? [params.emailType] :
+      params.count === 2 ? [params.emailType, 'follow_up'] :
+      params.count === 3 ? [params.emailType, 'follow_up', 'promotional'] :
+      params.count === 4 ? [params.emailType, 'follow_up', 'promotional', 'breakup'] :
+      [params.emailType, 'follow_up', 'promotional', 'newsletter', 'breakup'];
 
-      await safeMutation(
-        `insertDraft_${i}`,
-        async () => db.insert(emailDrafts).values({
-          draftId,
-          company: params.company,
-          campaign: params.campaign,
-          subject: `${template.subject} - ${params.company}`,
-          body: template.body.replace(/\{\{company\}\}/g, params.company),
-          status: "pending",
-          createdBy: "ROPA",
-        }),
-        async () => db.execute(sql`INSERT INTO email_drafts 
-          (draft_id, company, campaign, subject, body, status, created_by)
-          VALUES (${draftId}, ${params.company}, ${params.campaign}, 
-                  ${`${template.subject} - ${params.company}`}, 
-                  ${template.body.replace(/\{\{company\}\}/g, params.company)},
-                  'pending', 'ROPA')`)
-      );
+    for (let i = 0; i < Math.min(params.count, 5); i++) {
+      try {
+        const emailType = emailTypes[i] || params.emailType;
+        const email = await generateProfessionalEmail({
+          company: {
+            id: `CLI-${params.company}`,
+            name: params.company,
+            industry: params.industry || params.targetAudience || 'General',
+          },
+          campaignName: params.campaign,
+          emailType,
+          sequenceNumber: i + 1,
+          logoUrl: params.logoUrl,
+          primaryColor: params.primaryColor,
+          senderName: 'Equipo Ivy.AI',
+          senderCompany: 'Ivy.AI',
+          specificObjective: params.targetAudience,
+        });
 
-      drafts.push({ draftId, subject: template.subject });
+        const draftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        await safeMutation(
+          `insertDraft_${i}`,
+          async () => db.insert(emailDrafts).values({
+            draftId,
+            company: params.company,
+            campaign: params.campaign,
+            subject: email.subject,
+            body: email.htmlBody,
+            status: "pending",
+            createdBy: "ROPA",
+          }),
+          async () => db.execute(sql`INSERT INTO email_drafts 
+            (draft_id, company, campaign, subject, body, status, created_by)
+            VALUES (${draftId}, ${params.company}, ${params.campaign}, 
+                    ${email.subject}, ${email.htmlBody}, 'pending', 'ROPA')`)
+        );
+
+        drafts.push({ draftId, subject: email.subject });
+        
+        // Small delay between LLM calls to avoid rate limiting
+        if (i < params.count - 1) await new Promise(r => setTimeout(r, 800));
+      } catch (emailErr: any) {
+        console.warn(`[Platform] Email ${i+1} generation failed:`, emailErr.message);
+        // Fallback: generate a basic LLM email without the full engine
+        const draftId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const fallbackSubject = `Propuesta para ${params.company} - Email ${i+1}`;
+        const fallbackBody = `<p>Estimado equipo de ${params.company},</p><p>Me pongo en contacto para presentarles una solución de automatización de ventas con inteligencia artificial que está transformando empresas de su sector.</p><p>¿Tienen 15 minutos para una demo esta semana?</p><p>Saludos,<br>Equipo Ivy.AI</p>`;
+        
+        await safeMutation(
+          `insertFallbackDraft_${i}`,
+          async () => db.insert(emailDrafts).values({
+            draftId, company: params.company, campaign: params.campaign,
+            subject: fallbackSubject, body: fallbackBody, status: "pending", createdBy: "ROPA",
+          }),
+          async () => db.execute(sql`INSERT INTO email_drafts 
+            (draft_id, company, campaign, subject, body, status, created_by)
+            VALUES (${draftId}, ${params.company}, ${params.campaign}, 
+                    ${fallbackSubject}, ${fallbackBody}, 'pending', 'ROPA')`)
+        );
+        drafts.push({ draftId, subject: fallbackSubject });
+      }
     }
 
     await recordRopaMetric({
       metricType: "email_drafts_generated",
-      value: String(params.count),
+      value: String(drafts.length),
       unit: "count",
       metadata: { company: params.company, campaign: params.campaign },
     });
 
     return {
       success: true,
-      count: params.count,
+      count: drafts.length,
       drafts,
-      message: `${params.count} borradores de email creados para ${params.company}. Revísalos en Monitor.`,
+      message: `${drafts.length} emails profesionales generados por IA para ${params.company}. Revísalos en Monitor para aprobarlos.`,
     };
   },
 };

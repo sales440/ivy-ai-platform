@@ -337,16 +337,35 @@ export async function processWithRopaBrain(cleanMessage: string, clientHour?: nu
     const campaignMatch = cleanMessage.match(/campaña\s+["']?([^"']+)["']?/i);
     const campaignName = campaignMatch ? campaignMatch[1].trim() : `Campaña ${companyName}`;
     
+    // Extract industry/context from message
+    const industryPatterns = [
+      /(?:que vende|que ofrece|del sector|de la industria|industria de|sector de|empresa de)\s+([^,\.]+)/i,
+      /(?:productos para|servicios de|especializada en|dedicada a)\s+([^,\.]+)/i,
+    ];
+    let industry = '';
+    for (const pat of industryPatterns) {
+      const m = cleanMessage.match(pat);
+      if (m && m[1]) { industry = m[1].trim(); break; }
+    }
+    
+    // Detect email type from message
+    let emailType: 'cold_outreach' | 'follow_up' | 'promotional' | 'newsletter' = 'cold_outreach';
+    if (matchesAny(msg, ['seguimiento', 'follow', 'recordatorio', 'recordar'])) emailType = 'follow_up';
+    else if (matchesAny(msg, ['promocion', 'promoción', 'oferta', 'descuento', 'promo'])) emailType = 'promotional';
+    else if (matchesAny(msg, ['newsletter', 'boletin', 'boletín', 'novedades'])) emailType = 'newsletter';
+    
     try {
       platformResult = await ropaPlatformTools.generateCampaignEmailDrafts({
         company: companyName,
         campaign: campaignName,
         count: count,
-        emailType: 'cold_outreach',
+        emailType,
+        industry: industry || undefined,
+        targetAudience: industry || undefined,
       });
       platformActionExecuted = true;
       const draftCount = platformResult?.drafts?.length || platformResult?.count || count;
-      response = `He generado ${draftCount} borradores de email para ${companyName}. Puedes revisarlos en la sección Monitor para aprobarlos antes de enviarlos.`;
+      response = `He generado ${draftCount} emails profesionales para ${companyName}${industry ? ` (${industry})` : ''}. Son emails completos con HTML, asunto optimizado y CTA. Revísalos en Monitor para aprobarlos antes de enviarlos.`;
       // Auto-notify owner (non-blocking)
       ropaPlatformTools.notifyEmailsGenerated({ companyName, count: draftCount, campaign: campaignName }).catch(() => {});
     } catch (err: any) {

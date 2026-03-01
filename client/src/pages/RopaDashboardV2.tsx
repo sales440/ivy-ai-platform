@@ -145,6 +145,377 @@ function buildConversionData(companies: any[], campaigns: any[]): { company: str
   });
 }
 
+// ============ CAMPAIGN ANALYSIS PANEL ============
+function CampaignAnalysisPanel() {
+  const { data: analyses, isLoading, refetch } = trpc.ropa.analyzeCampaigns.useQuery(undefined, {
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 30000,
+  });
+  const generateFullCampaignMutation = trpc.ropa.generateFullCampaign.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Campaña creada con ${data.draftsCreated} emails profesionales`);
+      refetch();
+    },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+
+  const urgencyColors: Record<string, string> = {
+    critical: 'border-red-500/50 bg-red-500/10 text-red-400',
+    high: 'border-orange-500/50 bg-orange-500/10 text-orange-400',
+    medium: 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400',
+    low: 'border-green-500/50 bg-green-500/10 text-green-400',
+  };
+  const urgencyIcons: Record<string, string> = {
+    critical: '⚠️', high: '🔴', medium: '🟡', low: '🟢',
+  };
+
+  return (
+    <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-5 h-5 text-cyan-400" />
+            Análisis de Campañas por ROPA
+            <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 text-xs">IA Activa</Badge>
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="border-slate-600 text-slate-400 hover:text-white"
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+            <span className="ml-2">Analizar</span>
+          </Button>
+        </div>
+        <CardDescription className="text-slate-400">
+          ROPA analiza el estado de cada campaña y genera recomendaciones accionables en tiempo real
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8 gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+            <span className="text-slate-400">ROPA analizando campañas...</span>
+          </div>
+        ) : !analyses || analyses.length === 0 ? (
+          <div className="text-center py-8">
+            <Brain className="w-12 h-12 mx-auto text-slate-600 mb-3" />
+            <p className="text-slate-400">No hay campañas para analizar</p>
+            <p className="text-sm text-slate-500">Crea una empresa y una campaña para que ROPA empiece a trabajar</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {analyses.map((analysis: any) => (
+              <div
+                key={analysis.campaignId}
+                className={`p-4 rounded-xl border ${urgencyColors[analysis.urgency] || urgencyColors.medium} transition-all`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm">{urgencyIcons[analysis.urgency] || '🟡'}</span>
+                      <span className="font-semibold text-white truncate">{analysis.campaignName}</span>
+                      <Badge variant="outline" className="text-xs shrink-0">
+                        {analysis.companyName}
+                      </Badge>
+                      <Badge className={`text-xs shrink-0 ${
+                        analysis.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                        analysis.status === 'draft' ? 'bg-slate-500/20 text-slate-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {analysis.status === 'active' ? 'Activa' : analysis.status === 'draft' ? 'Borrador' : analysis.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-slate-300 mb-2">{analysis.recommendation}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <Zap className="w-3 h-3 text-cyan-400" />
+                      <span className="font-medium text-cyan-400">Próxima acción:</span>
+                      <span>{analysis.nextAction}</span>
+                    </div>
+                    {analysis.leadsGenerated > 0 && (
+                      <div className="mt-2 flex items-center gap-4 text-xs text-slate-400">
+                        <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {analysis.leadsGenerated} leads</span>
+                        {analysis.openRate && <span>📧 {analysis.openRate}% apertura</span>}
+                        {analysis.responseRate && <span>💬 {analysis.responseRate}% respuesta</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      onClick={() => generateFullCampaignMutation.mutate({
+                        companyId: `CLI-${analysis.companyName}`,
+                        companyName: analysis.companyName,
+                        campaignName: analysis.campaignName,
+                        campaignType: 'cold_outreach',
+                        emailCount: 3,
+                      })}
+                      disabled={generateFullCampaignMutation.isPending}
+                      className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white text-xs px-3 py-1.5 h-auto"
+                    >
+                      {generateFullCampaignMutation.isPending ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3 h-3" />
+                      )}
+                      <span className="ml-1">Generar Emails</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ SUPER AGENT STATUS PANEL ============
+function SuperAgentStatusPanel() {
+  const { data: health, isLoading, refetch } = trpc.ropa.getSuperAgentHealth.useQuery(undefined, {
+    refetchInterval: 30000,
+    staleTime: 15000,
+  });
+
+  const componentStatusColor: Record<string, string> = {
+    ok: 'text-green-400',
+    degraded: 'text-yellow-400',
+    error: 'text-red-400',
+  };
+  const componentStatusBg: Record<string, string> = {
+    ok: 'bg-green-500/10 border-green-500/30',
+    degraded: 'bg-yellow-500/10 border-yellow-500/30',
+    error: 'bg-red-500/10 border-red-500/30',
+  };
+  const componentStatusIcon: Record<string, string> = {
+    ok: '✅', degraded: '⚠️', error: '❌',
+  };
+  const overallColor = health?.status === 'healthy' ? 'text-green-400' : health?.status === 'degraded' ? 'text-yellow-400' : 'text-red-400';
+  const overallBg = health?.status === 'healthy' ? 'from-green-900/20 to-green-800/10 border-green-500/30' : health?.status === 'degraded' ? 'from-yellow-900/20 to-yellow-800/10 border-yellow-500/30' : 'from-red-900/20 to-red-800/10 border-red-500/30';
+
+  return (
+    <Card className={`bg-gradient-to-br ${overallBg || 'from-slate-900/80 to-slate-800/50 border-slate-700/50'} backdrop-blur`}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-cyan-400" />
+            ROPA Super Meta-Agente
+            {health && (
+              <Badge className={`text-xs ${
+                health.status === 'healthy' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
+                health.status === 'degraded' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                'bg-red-500/20 text-red-400 border-red-500/30'
+              }`}>
+                {health.status === 'healthy' ? '✅ OPERATIVO' : health.status === 'degraded' ? '⚠️ DEGRADADO' : '❌ CRÍTICO'}
+              </Badge>
+            )}
+          </CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="border-slate-600 text-slate-400 hover:text-white"
+            disabled={isLoading}
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+            <span className="ml-2">Actualizar</span>
+          </Button>
+        </div>
+        <CardDescription className="text-slate-400">
+          Estado en tiempo real del motor ROPA y sus componentes de orquestación
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-6 gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+            <span className="text-slate-400">Verificando estado del sistema...</span>
+          </div>
+        ) : health ? (
+          <div className="space-y-4">
+            {/* Components Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Object.entries(health.components || {}).map(([key, comp]: [string, any]) => (
+                <div key={key} className={`p-3 rounded-xl border ${componentStatusBg[comp.status] || componentStatusBg.degraded}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">{componentStatusIcon[comp.status] || '⚠️'}</span>
+                    <span className="text-xs font-semibold text-white capitalize">
+                      {key === 'database' ? 'Base de Datos' :
+                       key === 'n8n' ? 'n8n Engine' :
+                       key === 'llm' ? 'LLM (Gemini)' :
+                       key === 'companies' ? 'Empresas' : key}
+                    </span>
+                  </div>
+                  <p className={`text-xs ${componentStatusColor[comp.status] || 'text-yellow-400'}`}>
+                    {comp.status === 'ok' ? 'Activo' : comp.status === 'degraded' ? 'Degradado' : 'Error'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1 truncate" title={comp.message}>{comp.message}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Recommendations */}
+            {health.recommendations && health.recommendations.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Recomendaciones de ROPA</p>
+                {health.recommendations.map((rec: string, i: number) => (
+                  <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-slate-800/50">
+                    <Zap className="w-3 h-3 text-cyan-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-slate-300">{rec}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-center text-slate-500 py-4">No se pudo obtener el estado del sistema</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ GENERATE CAMPAIGN BUTTON ============
+function GenerateCampaignButton({ company }: { company: any }) {
+  const [showDialog, setShowDialog] = useState(false);
+  const [campaignName, setCampaignName] = useState('');
+  const [emailCount, setEmailCount] = useState(3);
+  const [campaignType, setCampaignType] = useState<'cold_outreach' | 'follow_up' | 'promotional' | 'newsletter'>('cold_outreach');
+  const [result, setResult] = useState<any>(null);
+
+  const generateMutation = trpc.ropa.generateFullCampaign.useMutation({
+    onSuccess: (data) => {
+      setResult(data);
+      toast.success(`✅ Campaña creada con ${data.draftsCreated} emails profesionales para ${company.name}`);
+    },
+    onError: (err) => toast.error(`Error: ${err.message}`),
+  });
+
+  const handleGenerate = () => {
+    if (!campaignName.trim()) {
+      toast.error('Ingresa un nombre para la campaña');
+      return;
+    }
+    generateMutation.mutate({
+      companyId: company._clientId || company.id,
+      companyName: company.name,
+      industry: company.industry || 'General',
+      campaignName: campaignName.trim(),
+      campaignType,
+      emailCount,
+    });
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        onClick={() => { setShowDialog(true); setCampaignName(''); setResult(null); }}
+        className="w-full bg-gradient-to-r from-cyan-500/20 to-teal-500/20 hover:from-cyan-500/30 hover:to-teal-500/30 border border-cyan-500/30 text-cyan-400 hover:text-cyan-300 text-xs py-1.5 h-auto"
+      >
+        <Sparkles className="w-3 h-3 mr-1" />
+        Generar Campaña con ROPA
+      </Button>
+
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="w-5 h-5 text-cyan-400" />
+              ROPA: Generar Campaña para {company.name}
+            </DialogTitle>
+            <DialogDescription className="text-slate-400">
+              ROPA creará una estrategia completa y emails profesionales con IA
+            </DialogDescription>
+          </DialogHeader>
+
+          {result ? (
+            <div className="space-y-3">
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                <p className="text-green-400 font-semibold text-sm">✅ Campaña creada exitosamente</p>
+                <p className="text-xs text-slate-300 mt-1">{result.draftsCreated} emails profesionales generados</p>
+              </div>
+              {result.strategy && (
+                <div className="space-y-2 text-xs">
+                  <p className="text-slate-400 font-semibold">Estrategia ROPA:</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {result.strategy.channels?.slice(0, 3).map((ch: any) => (
+                      <div key={ch.channel} className="p-2 rounded-lg bg-slate-800 border border-slate-700">
+                        <p className="text-white capitalize">{ch.channel}</p>
+                        <p className="text-slate-500">{ch.frequency}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-cyan-400">ROI esperado: {result.strategy.expectedROI}</p>
+                </div>
+              )}
+              <Button onClick={() => setShowDialog(false)} className="w-full bg-cyan-500 hover:bg-cyan-600">
+                Ver en Monitor
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-300 text-sm">Nombre de la campaña</Label>
+                <Input
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  placeholder="Ej: Campaña Enero 2026"
+                  className="mt-1 bg-slate-800 border-slate-600 text-white"
+                />
+              </div>
+              <div>
+                <Label className="text-slate-300 text-sm">Tipo de campaña</Label>
+                <Select value={campaignType} onValueChange={(v: any) => setCampaignType(v)}>
+                  <SelectTrigger className="mt-1 bg-slate-800 border-slate-600 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    <SelectItem value="cold_outreach">Prospección en frío</SelectItem>
+                    <SelectItem value="follow_up">Seguimiento</SelectItem>
+                    <SelectItem value="promotional">Promocional</SelectItem>
+                    <SelectItem value="newsletter">Newsletter</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-slate-300 text-sm">Número de emails ({emailCount})</Label>
+                <input
+                  type="range" min={1} max={5} value={emailCount}
+                  onChange={(e) => setEmailCount(Number(e.target.value))}
+                  className="w-full mt-1 accent-cyan-500"
+                />
+                <div className="flex justify-between text-xs text-slate-500">
+                  <span>1</span><span>3</span><span>5</span>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowDialog(false)} className="border-slate-600 text-slate-400">
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generateMutation.isPending}
+                  className="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600"
+                >
+                  {generateMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" />Generando...</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4 mr-2" />Generar con ROPA</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 // Sidebar menu items
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -1890,6 +2261,9 @@ export default function RopaDashboardV2() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* ROPA Super Agent Status Panel */}
+              <SuperAgentStatusPanel />
             </>
           )}
 
@@ -2003,12 +2377,13 @@ export default function RopaDashboardV2() {
                             )}
                           </div>
                           <div className="mt-3 pt-3 border-t border-slate-700">
-                            <div className="flex items-center justify-between text-xs">
+                            <div className="flex items-center justify-between text-xs mb-2">
                               <span className="text-slate-500">Campañas activas</span>
                               <Badge variant="outline" className="border-cyan-500/50 text-cyan-400">
                                 {localCampaigns.filter(c => c.companyId === company.id && c.status === 'active').length}
                               </Badge>
                             </div>
+                            <GenerateCampaignButton company={company} />
                           </div>
                         </div>
                       ))}
@@ -2016,6 +2391,9 @@ export default function RopaDashboardV2() {
                   )}
                 </CardContent>
               </Card>
+
+              {/* ROPA Campaign Analysis Panel */}
+              <CampaignAnalysisPanel />
 
               {/* Campaigns Table */}
               <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/50 border-slate-700/50 backdrop-blur">
