@@ -5,6 +5,9 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import LandingPage from "./pages/LandingPage";
+import ROIDashboard from "./pages/ROIDashboard";
+import IndustryCases from "./pages/IndustryCases";
 import RopaDashboard from "./pages/RopaDashboard";
 import RopaDashboardV2 from "./pages/RopaDashboardV2";
 import RopaCalendar from "./pages/RopaCalendar";
@@ -16,7 +19,8 @@ import PerformanceMonitor from "./pages/PerformanceMonitor";
 function Router() {
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
+      <Route path={"/"} component={LandingPage} />
+      <Route path={"/app"} component={Home} />
       {/* Legacy ROPA Dashboard */}
       <Route path={"/ropa"} component={RopaDashboard} />
       <Route path={"/ropa-dashboard"} component={RopaDashboard} />
@@ -25,6 +29,8 @@ function Router() {
       <Route path={"/ropa/calendar"} component={RopaCalendar} />
       <Route path={"/calendar"} component={RopaCalendar} />
       <Route path={"/ab-testing"} component={ABTestingDashboard} />
+      <Route path={"/roi"} component={ROIDashboard} />
+      <Route path={"/industrias"} component={IndustryCases} />
       <Route path={"/predictive-insights"} component={PredictiveInsights} />
       <Route path={"/google-drive"} component={GoogleDriveSettings} />
       <Route path={"/performance"} component={PerformanceMonitor} />

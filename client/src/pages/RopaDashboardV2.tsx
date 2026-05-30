@@ -525,6 +525,7 @@ const menuItems = [
   { id: "tasks", label: "Tareas", icon: ListTodo },
   { id: "alerts", label: "Alertas", icon: Bell },
   { id: "health", label: "Salud", icon: HeartPulse },
+  { id: "roi", label: "ROI & Métricas", icon: TrendingUp, isPage: true, href: "/roi" },
   { id: "calendar", label: "Calendario", icon: CalendarDays, isPage: true },
   { id: "settings", label: "Configuración", icon: Settings },
 ];
@@ -1698,7 +1699,9 @@ export default function RopaDashboardV2() {
   };
 
   const handleMenuClick = (item: typeof menuItems[0]) => {
-    if (item.isPage && item.id === "calendar") {
+    if (item.isPage && (item as any).href) {
+      navigate((item as any).href);
+    } else if (item.isPage && item.id === "calendar") {
       navigate("/ropa/calendar");
     } else {
       setActiveSection(item.id);

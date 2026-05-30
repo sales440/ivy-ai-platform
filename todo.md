@@ -916,3 +916,64 @@
 - [x] Actualizar email-send-service para rutear al webhook de la empresa
 - [x] Crear n8n-workflow-provisioner.ts - auto-crea workflow al registrar nueva empresa
 - [x] Commit a GitHub y deploy en Railway (bb8a265 - ROPA autonomous company creation)
+
+## Phase COMPETE: Mejoras Competitivas vs Lumio AI
+
+### Bloque 1: Identidad y Posicionamiento (Landing Page Pública)
+- [ ] Crear landing page pública en ruta "/" (reemplazar Home.tsx actual)
+- [ ] Hero section: "El agente de ventas autónomo que trabaja 24/7 por tu empresa"
+- [ ] Sección ROPA™ Framework con diagrama visual (5 fases: Análisis → Estrategia → Contenido → Ejecución → Optimización)
+- [ ] Sección de casos de uso por industria (E-commerce, B2B SaaS, Servicios Profesionales, Manufactura)
+- [ ] Sección de pricing público (3 planes: Starter $299/mo, Growth $799/mo, Enterprise $1,999/mo)
+- [ ] Sección de testimonios (PET LIFE 360, FAGOR) con métricas reales
+- [ ] Demo CTA: botón "Ver ROPA en acción" que abre demo interactiva sin registro
+- [ ] Sección "Por qué Ivy.AI vs consultoría tradicional" (comparativa directa)
+- [ ] Footer con certificaciones en proceso (GDPR, SOC 2)
+
+### Bloque 2: Voice AI para ROPA
+- [ ] Integrar Twilio Programmable Voice en el servidor
+- [ ] ROPA detecta leads sin respuesta después de 3 emails → dispara llamada automática
+- [ ] Script de llamada generado por LLM personalizado por empresa e industria
+- [ ] Registrar resultado de llamada en DB (contestó/no contestó/interesado/no interesado)
+- [ ] Mostrar historial de llamadas en Monitor por empresa
+- [ ] ROPA reporta en chat: "Llamé a 5 leads de FAGOR, 2 interesados"
+
+### Bloque 3: AI Search Semántico
+- [ ] Endpoint /api/ropa/search que busca en leads, campañas, emails y notas
+- [ ] ROPA responde preguntas como "¿cuáles leads de PET LIFE no han respondido en 30 días?"
+- [ ] Búsqueda semántica con LLM sobre el contexto completo de la empresa
+- [ ] Barra de búsqueda global en el dashboard con resultados en tiempo real
+- [ ] ROPA puede buscar y citar datos específicos en sus respuestas del chat
+
+### Bloque 4: Dashboard de ROI y Métricas Reales
+- [ ] Tabla de métricas por empresa: emails enviados, tasa apertura, leads generados, deals cerrados
+- [ ] Gráfica de embudo de ventas (Contactados → Respondieron → Interesados → Cerrados)
+- [ ] ROI estimado por campaña (inversión en tiempo vs deals proyectados)
+- [ ] Comparativa de rendimiento entre campañas (A/B real)
+- [ ] Exportar reporte de métricas a PDF/Excel por empresa
+- [ ] Widget de "Valor generado por ROPA" en el Dashboard principal
+
+### Bloque 5: Demo Pública Sin Registro
+- [ ] Ruta /demo pública (sin auth) con empresa ficticia pre-cargada
+- [ ] ROPA genera estrategia de campaña en vivo para la empresa demo
+- [ ] Muestra 3 emails HTML generados por LLM en tiempo real
+- [ ] CTA al final: "Crea tu cuenta gratis" → registro
+- [ ] Contador de "X empresas ya usan ROPA" en la demo
+
+## Phase 43: Mejoras Competitivas vs Lumio AI + Páginas Públicas
+- [x] Crear LandingPage.tsx - página de marketing pública con ROPA Framework, pricing, demo CTA
+- [x] Crear ROIDashboard.tsx - dashboard de métricas ROI por empresa
+- [x] Crear IndustryCases.tsx - casos de uso por industria (B2B SaaS, E-Commerce, Servicios, Manufactura, Salud, Educación)
+- [x] Agregar ruta /roi a App.tsx
+- [x] Agregar ruta /industrias a App.tsx
+- [x] Agregar link "Industrias" en navegación de LandingPage
+- [x] Crear ropa-super-agent.ts con orchestrateCampaignStrategy, analyzeCampaigns, generateFullCampaignWithEmails, getROPAHealthStatus
+- [x] Crear n8n-workflow-provisioner.ts - auto-crea workflow n8n por empresa
+- [x] Crear email-sender.ts y email-send-service.ts con routing por empresa
+- [x] Crear ropa-voice-ai.ts - llamadas salientes Twilio con scripts LLM
+- [x] Configurar workflows n8n aislados por empresa (PET LIFE 360 → sales@rpcommercegroupllc.com, FAGOR → jcrobledo@fagor-automation.com)
+- [x] Guardar checkpoint 7e47857d
+- [x] Push a GitHub sales440/ivy-ai-platform
+- [ ] Configurar Twilio env vars en Railway (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)
+- [ ] Agregar segunda credencial Outlook en n8n para segunda empresa
+- [ ] Guardar checkpoint final con todas las mejoras

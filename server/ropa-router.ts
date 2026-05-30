@@ -1172,6 +1172,161 @@ Eres ROPA. No esperas. No preguntas. EJECUTAS.`;
     }),
 
   /**
+   * Voice AI: Generate personalized call script
+   */
+  generateCallScript: protectedProcedure
+    .input(z.object({
+      companyName: z.string(),
+      industry: z.string().default('General'),
+      leadName: z.string(),
+      campaignName: z.string(),
+      emailsNotOpened: z.number().default(2),
+    }))
+    .mutation(async ({ input }) => {
+      const { generateCallScript } = await import('./ropa-voice-ai');
+      const script = await generateCallScript(input);
+      return { script };
+    }),
+
+  /**
+   * Voice AI: Initiate outbound call via Twilio
+   */
+  initiateVoiceCall: protectedProcedure
+    .input(z.object({
+      companyId: z.number(),
+      companyName: z.string(),
+      industry: z.string().default('General'),
+      leadName: z.string(),
+      leadPhone: z.string(),
+      leadEmail: z.string().default(''),
+      campaignName: z.string(),
+      emailsNotOpened: z.number().default(2),
+    }))
+    .mutation(async ({ input }) => {
+      const { initiateVoiceCall } = await import('./ropa-voice-ai');
+      return await initiateVoiceCall(input);
+    }),
+
+  /**
+   * Get voice call history for a company
+   */
+  getVoiceCalls: protectedProcedure
+    .input(z.object({ companyId: z.number() }))
+    .query(async ({ input }) => {
+      const { getVoiceCallsForCompany } = await import('./ropa-voice-ai');
+      return await getVoiceCallsForCompany(input.companyId);
+    }),
+
+  /**
+   * AI Search: semantic search across campaigns, emails, companies
+   */
+  aiSearch: protectedProcedure
+    .input(z.object({
+      query: z.string(),
+      companyId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const { buildAppContext } = await import('./ropa-n8n-service');
+      const context = await buildAppContext();
+      const searchContext = JSON.stringify({
+        companies: context.companies?.slice(0, 20) || [],
+        campaigns: context.campaigns?.slice(0, 30) || [],
+        stats: context.stats || {}
+      });
+      const response = await invokeLLM({
+        messages: [
+          {
+            role: 'system',
+            content: `Eres el motor de búsqueda semántica de ROPA. Dado el contexto de Ivy.AI, responde a la consulta del usuario con resultados relevantes en JSON. Contexto: ${searchContext}`
+          },
+          {
+            role: 'user',
+            content: `Búsqueda: "${input.query}". Devuelve JSON: { results: [{ type, name, description, relevance, action }], summary }`
+          }
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'search_results',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                results: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      type: { type: 'string' },
+                      name: { type: 'string' },
+                      description: { type: 'string' },
+                      relevance: { type: 'number' },
+                      action: { type: 'string' }
+                    },
+                    required: ['type', 'name', 'description', 'relevance', 'action'],
+                    additionalProperties: false
+                  }
+                },
+                summary: { type: 'string' }
+              },
+              required: ['results', 'summary'],
+              additionalProperties: false
+            }
+          }
+        }
+      });
+      const content = response.choices[0]?.message?.content;
+      try {
+        return JSON.parse(typeof content === 'string' ? content : '{}');
+      } catch {
+        return { results: [], summary: 'No se encontraron resultados.' };
+      }
+    }),
+
+  /**
+   * ROI Dashboard: real metrics per company
+   */
+  getROIDashboard: protectedProcedure
+    .input(z.object({ companyId: z.number().optional() }))
+    .query(async ({ input }) => {
+      const { getDb } = await import('./db');
+      const { sql } = await import('drizzle-orm');
+      const db = await getDb();
+      if (!db) return { companies: [], totals: {} };
+      try {
+        const result = await db.execute(sql`
+          SELECT 
+            c.id, c.name, c.industry, c.sender_email,
+            COUNT(DISTINCT camp.id) as total_campaigns,
+            COUNT(DISTINCT ed.id) as total_drafts,
+            SUM(CASE WHEN ed.status = 'sent' THEN 1 ELSE 0 END) as emails_sent,
+            SUM(CASE WHEN ed.status = 'approved' THEN 1 ELSE 0 END) as emails_approved,
+            SUM(CASE WHEN ed.status = 'draft' THEN 1 ELSE 0 END) as emails_draft,
+            MAX(ed.updated_at) as last_activity
+          FROM companies c
+          LEFT JOIN campaigns camp ON camp.company_id = c.id
+          LEFT JOIN email_drafts ed ON ed.campaign_id = camp.id
+          ${input.companyId ? sql`WHERE c.id = ${input.companyId}` : sql``}
+          GROUP BY c.id
+          ORDER BY last_activity DESC
+        `);
+        const rows = Array.isArray(result) ? result : (result as { rows: unknown[] }).rows || [];
+        const totals = rows.reduce((acc: Record<string, number>, r: unknown) => {
+          const row = r as Record<string, unknown>;
+          acc.totalCampaigns = (acc.totalCampaigns || 0) + Number(row.total_campaigns || 0);
+          acc.totalEmailsSent = (acc.totalEmailsSent || 0) + Number(row.emails_sent || 0);
+          acc.totalEmailsApproved = (acc.totalEmailsApproved || 0) + Number(row.emails_approved || 0);
+          acc.totalDrafts = (acc.totalDrafts || 0) + Number(row.total_drafts || 0);
+          return acc;
+        }, {});
+        return { companies: rows, totals };
+      } catch (e) {
+        console.error('[ROI Dashboard]', e);
+        return { companies: [], totals: {} };
+      }
+    }),
+
+  /**
    * Get ROPA system health status
    */
   getSuperAgentHealth: publicProcedure.query(async () => {
