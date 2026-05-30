@@ -1518,16 +1518,79 @@ export default function RopaDashboardV2() {
     }
   };
 
+  // Selects the best available natural male voice (Google Neural/WaveNet preferred)
+  const getBestMaleVoice = (): SpeechSynthesisVoice | null => {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+
+    // Priority list: Google Neural Spanish voices (most natural)
+    const priority = [
+      // Google Neural/WaveNet voices — best quality, sound human
+      (v: SpeechSynthesisVoice) => /google/i.test(v.name) && /es.*us/i.test(v.name) && v.name.toLowerCase().includes('male'),
+      (v: SpeechSynthesisVoice) => /google/i.test(v.name) && /es-us/i.test(v.lang),
+      (v: SpeechSynthesisVoice) => /google/i.test(v.name) && /es/i.test(v.lang) && !/female|mujer/i.test(v.name),
+      (v: SpeechSynthesisVoice) => /google/i.test(v.name) && /es/i.test(v.lang),
+      // Microsoft Neural voices (also very natural)
+      (v: SpeechSynthesisVoice) => /microsoft/i.test(v.name) && /es/i.test(v.lang) && /jorge|carlos|pablo|diego|andrés|andres/i.test(v.name),
+      (v: SpeechSynthesisVoice) => /microsoft/i.test(v.name) && /es/i.test(v.lang) && !/female|mujer|helena|laura|sabina|paloma/i.test(v.name),
+      // Any Spanish male voice
+      (v: SpeechSynthesisVoice) => /es/i.test(v.lang) && /male|hombre|jorge|carlos|pablo|diego/i.test(v.name),
+      // Any Spanish voice as last resort
+      (v: SpeechSynthesisVoice) => /es/i.test(v.lang),
+    ];
+
+    for (const matcher of priority) {
+      const found = voices.find(matcher);
+      if (found) return found;
+    }
+    return null;
+  };
+
   const speakText = (text: string) => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "es-ES";
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
+    if (!("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    // Clean markdown symbols so they don't get read aloud
+    const cleanText = text
+      .replace(/[*_~`#>]/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+
+    // Try to assign best voice; if voices not loaded yet, wait and retry
+    const assignVoiceAndSpeak = () => {
+      const voice = getBestMaleVoice();
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang || 'es-US';
+      } else {
+        utterance.lang = 'es-US';
+      }
+
+      // Natural speech parameters — less robotic, more conversational
+      utterance.rate = 1.08;   // Slightly faster than default = more energetic/young
+      utterance.pitch = 1.05;  // Slightly higher = younger sounding
+      utterance.volume = 1.0;
+
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
       window.speechSynthesis.speak(utterance);
+    };
+
+    // Voices may not be loaded on first call — use onvoiceschanged event
+    if (window.speechSynthesis.getVoices().length > 0) {
+      assignVoiceAndSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        assignVoiceAndSpeak();
+      };
     }
   };
 
