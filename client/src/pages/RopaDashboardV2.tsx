@@ -1079,7 +1079,7 @@ export default function RopaDashboardV2() {
                     });
                     toast.success(`Borrador de ${targetDraft.company} editado por ROPA`);
                     // Refresh drafts
-                    refetchDrafts?.();
+                    refetchEmailDrafts?.();
                   } catch (err) {
                     toast.error('Error al editar el borrador');
                   }
