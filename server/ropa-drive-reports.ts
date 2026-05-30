@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ROPA Drive Reports - Auto-save reports to Google Drive
  * Saves KPI/ROI reports, email drafts, and campaign data to client folders

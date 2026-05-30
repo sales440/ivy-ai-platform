@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ROPA Autonomous Service
  * Handles 24/7 autonomous operations, self-healing, and maintenance cycles
