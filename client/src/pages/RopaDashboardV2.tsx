@@ -1947,33 +1947,71 @@ export default function RopaDashboardV2() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="sticky top-0 z-10 bg-black/30 backdrop-blur-xl border-b border-slate-800/50 px-6 py-4">
+        <header className="sticky top-0 z-10 bg-black/30 backdrop-blur-xl border-b border-slate-800/50 px-6 py-4 relative">
+          {/* 3-column layout: title left | language toggle center | controls right */}
           <div className="flex items-center justify-between">
+            {/* Left: section title */}
             <div>
               <h2 className="text-2xl font-bold">
-                {activeSection === "dashboard" && "Panel de Control"}
-                {activeSection === "campaigns" && "Gestión de Campañas"}
-                {activeSection === "files" && "Archivos de Empresa"}
-                {activeSection === "monitor" && "Monitor de Validación"}
-                {activeSection === "tasks" && "Tareas de ROPA"}
-                {activeSection === "alerts" && "Alertas del Sistema"}
-                {activeSection === "health" && "Salud de la Plataforma"}
-                {activeSection === "settings" && "Configuración"}
+                {ropaConfig.language === 'en' ? (
+                  <>
+                    {activeSection === "dashboard" && "Control Panel"}
+                    {activeSection === "campaigns" && "Campaign Management"}
+                    {activeSection === "files" && "Company Files"}
+                    {activeSection === "monitor" && "Validation Monitor"}
+                    {activeSection === "tasks" && "ROPA Tasks"}
+                    {activeSection === "alerts" && "System Alerts"}
+                    {activeSection === "health" && "Platform Health"}
+                    {activeSection === "settings" && "Settings"}
+                  </>
+                ) : (
+                  <>
+                    {activeSection === "dashboard" && "Panel de Control"}
+                    {activeSection === "campaigns" && "Gestión de Campañas"}
+                    {activeSection === "files" && "Archivos de Empresa"}
+                    {activeSection === "monitor" && "Monitor de Validación"}
+                    {activeSection === "tasks" && "Tareas de ROPA"}
+                    {activeSection === "alerts" && "Alertas del Sistema"}
+                    {activeSection === "health" && "Salud de la Plataforma"}
+                    {activeSection === "settings" && "Configuración"}
+                  </>
+                )}
               </h2>
               <p className="text-sm text-slate-400">
-                Sistema autónomo de IA manteniendo {APP_TITLE} 24/7
+                {ropaConfig.language === 'en'
+                  ? `Autonomous AI system maintaining ${APP_TITLE} 24/7`
+                  : `Sistema autónomo de IA manteniendo ${APP_TITLE} 24/7`}
               </p>
             </div>
 
+            {/* Center: Language toggle — Globe icon + ES/EN pill */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <Globe className="w-5 h-5 text-cyan-400" />
+              <button
+                onClick={() => setRopaConfig(prev => ({ ...prev, language: prev.language === 'es' ? 'en' : 'es' }))}
+                className="flex items-center gap-1 bg-slate-800/80 border border-slate-600 hover:border-cyan-500/60 rounded-full px-3 py-1 transition-all group"
+                title={ropaConfig.language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+              >
+                <span className={`text-xs font-bold transition-colors ${
+                  ropaConfig.language === 'es' ? 'text-cyan-400' : 'text-slate-500'
+                }`}>ES</span>
+                <span className="text-slate-600 text-xs">/</span>
+                <span className={`text-xs font-bold transition-colors ${
+                  ropaConfig.language === 'en' ? 'text-cyan-400' : 'text-slate-500'
+                }`}>EN</span>
+              </button>
+            </div>
+
+            {/* Right: company filter + control buttons */}
             <div className="flex items-center gap-4">
               {/* Company Filter */}
               <Select value={selectedCompany} onValueChange={setSelectedCompany}>
                 <SelectTrigger className="w-48 bg-slate-900/50 border-slate-700">
                   <Building2 className="w-4 h-4 mr-2 text-cyan-400" />
-                  <SelectValue placeholder="Todas las empresas" />
+                  <SelectValue placeholder={ropaConfig.language === 'en' ? 'All companies' : 'Todas las empresas'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todas las empresas</SelectItem>
+                  <SelectItem value="all">{ropaConfig.language === 'en' ? 'All companies' : 'Todas las empresas'}</SelectItem>
                   {localCompanies.map((company: any) => (
                     <SelectItem key={company.id} value={company.id.toString()}>
                       {company.name}
@@ -1991,7 +2029,7 @@ export default function RopaDashboardV2() {
                 className="bg-red-500/10 border-red-500/50 hover:bg-red-500/20"
               >
                 <Square className="w-4 h-4 mr-2" />
-                Detener
+                {ropaConfig.language === 'en' ? 'Stop' : 'Detener'}
               </Button>
               <Button
                 variant="outline"
@@ -2005,7 +2043,7 @@ export default function RopaDashboardV2() {
                 ) : (
                   <Activity className="w-4 h-4 mr-2" />
                 )}
-                Auditoría
+                {ropaConfig.language === 'en' ? 'Audit' : 'Auditoría'}
               </Button>
             </div>
           </div>
